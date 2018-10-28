@@ -7,7 +7,7 @@ jobs:
       - checkout
       - run:
           name: Install
-          command: raco pkg install --auto --link
+          command: raco pkg install --auto --link --name rebellion
       - run:
           name: Test
           command: raco test -p --drdr rebellion
