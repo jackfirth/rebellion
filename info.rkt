@@ -12,5 +12,10 @@
   (list "base"
         "reprovide-lang"))
 
+(define build-deps
+  (list "racket-doc"
+        "rackunit-lib"
+        "scribble-lib"))
+
 (define test-omit-paths
   (list #rx"\\.scrbl$"))
