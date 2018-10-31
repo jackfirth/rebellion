@@ -1,1 +1,1 @@
-# rebellion
+# rebellion [![CircleCI](https://circleci.com/gh/jackfirth/rebellion.svg?style=svg)](https://circleci.com/gh/jackfirth/rebellion) [![Documentation](https://img.shields.io/badge/docs-published-blue.svg)](http://docs.racket-lang.org/rebellion/index.html)
