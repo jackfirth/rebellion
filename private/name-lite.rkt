@@ -7,6 +7,7 @@
   [compound-name-components
    (-> compound-name? (listof name-component?))]
   [compound-name? (-> any/c boolean?)]
+  [name->s-expression (->* (name?) (#:unknown any/c) any/c)]
   [name-component? (-> any/c boolean?)]
   [name-literal (-> any/c name-literal?)]
   [name-literal-value (-> name-literal? any/c)]
@@ -72,6 +73,9 @@
   #:omit-define-syntaxes
   #:transparent)
 
+(define (compound-name leading-name . components)
+  (plain-compound-name leading-name components))
+
 (struct name-literal (value)
   #:omit-define-syntaxes
   #:transparent)
@@ -127,7 +131,7 @@
   (void))
 
 ;@------------------------------------------------------------------------------
-;; integration test
+;; named values integration test
 
 (module+ test
   (test-case "integration-test"
@@ -146,3 +150,44 @@
       (check-equal? (~v w) "#<widget>")
       (check-equal? (~a w) "#<widget>")
       (check-equal? (~s w) "#<widget>"))))
+
+;@------------------------------------------------------------------------------
+;; name->s-expression
+
+(define (name->s-expression name #:unknown [unknown #f])
+  (cond
+    [(unknown-name? name) unknown]
+    [(symbolic-name? name) (symbolic-name->symbol name)]
+    [(compound-name? name)
+     (define leading-sexp
+       (symbolic-name->symbol (compound-name-leading-name name)))
+     (let loop
+       ([components (compound-name-components name)]
+        [backwards-component-sexps (list leading-sexp)])
+       (cond
+         [(empty? components) (reverse backwards-component-sexps)]
+         [else
+          (define component (first components))
+          (define component-sexp
+            (if (name-literal? component)
+                (name-literal-value component)
+                (name->s-expression component #:unknown unknown)))
+          (loop (rest components)
+                (cons component-sexp backwards-component-sexps))]))]))
+
+(module+ test
+  (test-case "name->s-expression"
+    (define name
+      (compound-name (symbolic-name 'and/c)
+                     (symbolic-name 'integer?)
+                     (compound-name (symbolic-name 'not/c)
+                                    (symbolic-name 'even?))
+                     unknown-name
+                     (compound-name (symbolic-name 'not/c)
+                                    (name-literal 7))))
+    (check-equal? (name->s-expression name #:unknown 'anonymous-contract)
+                  (list 'and/c
+                        'integer?
+                        (list 'not/c 'even?)
+                        'anonymous-contract
+                        (list 'not/c 7)))))
