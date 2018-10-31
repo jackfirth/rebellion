@@ -3,7 +3,8 @@
 (module reader syntax/module-reader rebellion/private/dependencies)
 
 (require racket/contract/base
-         racket/format)
+         racket/format
+         racket/list)
 
 (provide ->
          ->*
