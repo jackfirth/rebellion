@@ -6,6 +6,7 @@
          racket/format)
 
 (provide ->
+         ->*
          #%app
          #%datum
          #%module-begin
@@ -17,15 +18,20 @@
          any/c
          boolean?
          cond
+         cons
          contract-out
          contract?
          define
          define-logger
          define-values
          else
+         empty?
          equal?
+         first
          gen:custom-write
          if
+         let
+         list
          listof
          make-struct-type-property
          module+
@@ -36,6 +42,8 @@
          provide
          quote
          require
+         rest
+         reverse
          struct
          struct-type-property/c
          submod
