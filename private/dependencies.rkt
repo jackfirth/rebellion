@@ -3,11 +3,14 @@
 (module reader syntax/module-reader rebellion/private/dependencies)
 
 (require racket/contract/base
+         racket/contract/combinator
+         racket/contract/region
          racket/format
          racket/list)
 
 (provide ->
          ->*
+         ->i
          #%app
          #%datum
          #%module-begin
@@ -16,21 +19,40 @@
          ~a
          ~s
          ~v
+         and
          any/c
+         blame-add-context
          boolean?
+         build-chaperone-contract-property
+         build-compound-type-name
+         build-flat-contract-property
+         chaperone-procedure
+         chaperone-struct
+         coerce-flat-contract
          cond
          cons
+         contract-custom-write-property-proc
+         contract-late-neg-projection
          contract-out
          contract?
          define
          define-logger
          define-values
+         define/contract
+         define/final-prop
          else
          empty?
          equal?
+         exn:fail:contract?
          first
+         flat-contract?
          gen:custom-write
+         gen:equal+hash
+         gensym
+         has-contract?
          if
+         impersonator-prop:blame
+         impersonator-prop:contracted
          let
          list
          listof
@@ -40,6 +62,8 @@
          or
          or/c
          output-port?
+         prop:chaperone-contract
+         prop:flat-contract
          provide
          quote
          require
@@ -51,6 +75,7 @@
          symbol->string
          symbol?
          unless
+         value-contract
          void
          void?
          write-string
