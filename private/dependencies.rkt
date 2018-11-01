@@ -21,6 +21,7 @@
          ~v
          and
          any/c
+         apply
          blame-add-context
          boolean?
          build-chaperone-contract-property
@@ -64,6 +65,7 @@
          output-port?
          prop:chaperone-contract
          prop:flat-contract
+         prop:procedure
          provide
          quote
          require

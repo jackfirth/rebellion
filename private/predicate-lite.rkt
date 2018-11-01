@@ -7,8 +7,7 @@
   [predicate-rename (-> predicate? name? predicate?)]
   [predicate-domain (-> predicate? contract?)]
   [predicate/c (-> flat-contract? contract?)]
-  [predicate-apply
-   (->i ([pred predicate?] [v (pred) (predicate-domain pred)]) [_ boolean?])]
+  [predicate-apply (-> predicate? any/c boolean?)]
   [make-predicate (->* ((-> any/c boolean?)) (#:name name?) predicate?)]))
 
 (require rebellion/private/name-lite)
@@ -61,6 +60,13 @@
   (name->s-expression (predicate-name pred)
                       #:unknown 'anonymous-predicate))
 
+(define (predicate-chaperone pred guard-proc . props+vs)
+  (define pred-proc (predicate-proc pred))
+  (define pred-name (predicate-name pred))
+  (define pred-proc/guard (chaperone-procedure pred-proc guard-proc))
+  (define pred/guard (make-predicate pred-proc/guard #:name pred-name))
+  (apply chaperone-struct pred/guard struct:predicate-impl props+vs))
+
 ;@------------------------------------------------------------------------------
 ;; contracts
 
@@ -79,13 +85,8 @@
    #:late-neg-projection
    (λ (this) (predicate-contract-late-neg-projection this))
    #:val-first-projection
-   (λ (this) (predicate-contract-val-first-projection this))
-   #:projection (λ (this) (predicate-contract-projection this))
-   #:stronger
-   (λ (this other-contract) (predicate-contract-stronger this other-contract))
-   #:equivalent
-   (λ (this other-contract)
-     (predicate-contract-equivalent this other-contract)))
+   (λ (this blm) ((predicate-contract-val-first-projection this) blm))
+   #:projection (λ (this) (predicate-contract-projection this)))
 
   #:methods gen:custom-write
   [(define write-proc contract-custom-write-property-proc)]
@@ -111,13 +112,15 @@
     (define domain-projection/blame (domain-projection blm/domain-context))
     (λ (pred missing-context)
       (define (check-domain v) (domain-projection/blame v missing-context))
-      (define (check-proc-field _ proc) (chaperone-procedure proc check-domain))
-      (chaperone-struct pred struct:predicate-impl
-                        predicate-proc check-proc-field
-                        impersonator-prop:contracted the-predicate-contract
-                        impersonator-prop:blame (cons blm missing-context))))
-  (define val-first-projection #f)
-  (define projection #f)
+      (predicate-chaperone pred check-domain
+                           impersonator-prop:contracted the-predicate-contract
+                           impersonator-prop:blame (cons blm missing-context))))
+  (define (val-first-projection blm)
+    (define late-neg/blame (late-neg-projection blm))
+    (λ (v) (λ (missing-party) (late-neg/blame v missing-party))))
+  (define (projection blm)
+    (define late-neg/blame (late-neg-projection blm))
+    (λ (v) (late-neg/blame v #f)))
   (define the-predicate-contract
     (predicate-contract domain
                         name
@@ -132,17 +135,19 @@
       (predicate-contract-domain (value-contract pred))
       any/c))
 
-(define (predicate-contract-stronger pred-contract other-contract)
-  #f)
-
-(define (predicate-contract-equivalent pred-contract other-contract)
-  #f)
-
 (module+ test
-  (define/contract pred (predicate/c boolean?) (make-predicate (λ (_) #t)))
+  (define/contract test-pred
+    (predicate/c boolean?)
+    (make-predicate (λ (_) #t) #:name (symbolic-name 'test-pred)))
   (test-case "predicate-value-contract"
-    (check-equal? (value-contract pred) (predicate/c boolean?)))
+    (check-equal? (value-contract test-pred) (predicate/c boolean?)))
   (test-case "predicate-domain"
-    (check-equal? (predicate-domain pred) (coerce-flat-contract 'test boolean?))
-    (check-true (pred #t))
-    (check-exn exn:fail:contract? (λ () (pred "not-a-boolean")))))
+    (check-equal? (predicate-domain test-pred)
+                  (coerce-flat-contract 'predicate-domain-test boolean?)))
+  (test-case "predicate-apply"
+    (check-true (predicate-apply test-pred #f))
+    (check-exn exn:fail:contract?
+               (λ () (predicate-apply test-pred "not-a-boolean"))))
+  (test-case "predicate-callable-as-function"
+    (check-true (test-pred #t))
+    (check-exn exn:fail:contract? (λ () (test-pred "not-a-boolean")))))
