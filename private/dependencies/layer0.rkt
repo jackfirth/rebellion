@@ -1,6 +1,6 @@
 #lang racket/base
 
-(module reader syntax/module-reader rebellion/private/dependencies)
+(module reader syntax/module-reader rebellion/private/dependencies/layer0)
 
 (require racket/contract/base
          racket/contract/combinator
