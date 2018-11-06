@@ -1,4 +1,4 @@
-#lang rebellion/private/dependencies
+#lang rebellion/private/dependencies/layer0
 
 (provide
  (contract-out
