@@ -27,6 +27,7 @@
           this-syntax
           vector->immutable-vector)
          ->
+         define-values
          ->i
          ...
          #%app
