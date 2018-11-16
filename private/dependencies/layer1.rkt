@@ -27,6 +27,7 @@
           this-syntax
           vector->immutable-vector)
          ->
+         values
          define-values
          ->i
          ...
