@@ -3,6 +3,7 @@
 (provide
  (contract-out
   [atomic-name? (-> any/c boolean?)]
+  [compound-name (-> symbolic-name? name-component? ... compound-name?)]
   [compound-name-leading-name (-> compound-name? symbolic-name?)]
   [compound-name-components
    (-> compound-name? (listof name-component?))]
