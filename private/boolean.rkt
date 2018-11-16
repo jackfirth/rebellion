@@ -1,12 +1,19 @@
 #lang rebellion/private/dependencies/layer1
 
 (provide
+ and
+ or
  (contract-out
-  [boolean? predicate?]))
+  [boolean? predicate?]
+  [not (-> boolean? boolean?)]))
 
 (require rebellion/private/name-lite
          rebellion/private/predicate-lite
-         (only-in racket/base [boolean? racket:boolean?]))
+         (only-in racket/base
+                  and
+                  or
+                  not
+                  [boolean? racket:boolean?]))
 
 ;@------------------------------------------------------------------------------
 
