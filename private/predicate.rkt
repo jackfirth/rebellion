@@ -10,7 +10,7 @@
   [predicate-apply (-> predicate? any/c boolean?)]
   [make-predicate (->* ((-> any/c boolean?)) (#:name name?) predicate?)]))
 
-(require rebellion/private/name-lite)
+(require rebellion/name)
 
 (module+ test
   (require (submod "..")

@@ -4,8 +4,8 @@
  (contract-out
   [natural? predicate?]))
 
-(require rebellion/private/name-lite
-         rebellion/private/predicate-lite
+(require rebellion/name
+         rebellion/predicate
          (only-in racket/base exact-nonnegative-integer?))
 
 ;@------------------------------------------------------------------------------

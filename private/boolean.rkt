@@ -7,8 +7,8 @@
   [boolean? predicate?]
   [not (-> boolean? boolean?)]))
 
-(require rebellion/private/name-lite
-         rebellion/private/predicate-lite
+(require rebellion/name
+         rebellion/predicate
          (only-in racket/base
                   and
                   or
