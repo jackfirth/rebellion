@@ -15,9 +15,9 @@
 
 (require rebellion/private/boolean
          rebellion/private/keyword
-         rebellion/private/name-lite
+         rebellion/name
          rebellion/private/natural
-         rebellion/private/predicate-lite)
+         rebellion/predicate)
 
 (module+ test
   (require (submod "..")

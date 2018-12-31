@@ -9,8 +9,8 @@
   [unreadable-symbol? predicate?]))
 
 (require rebellion/private/boolean
-         rebellion/private/name-lite
-         rebellion/private/predicate-lite
+         rebellion/name
+         rebellion/predicate
          syntax/parse/define
          (only-in racket/base
                   [quote racket:quote]
