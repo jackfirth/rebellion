@@ -6,3 +6,7 @@
 
 Rebellion is a set of infrastructure libraries for Racketeers to build new
 languages, new frameworks, and new tools with.
+
+@local-table-of-contents[#:style 'immediate-only]
+
+@include-section[(lib "rebellion/private/generative-token.scrbl")]
