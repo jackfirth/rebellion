@@ -11,3 +11,4 @@ languages, new frameworks, and new tools with.
 
 @include-section[(lib "rebellion/private/generative-token.scrbl")]
 @include-section[(lib "rebellion/private/record.scrbl")]
+@include-section[(lib "rebellion/private/variant.scrbl")]
