@@ -10,3 +10,4 @@ languages, new frameworks, and new tools with.
 @local-table-of-contents[#:style 'immediate-only]
 
 @include-section[(lib "rebellion/private/generative-token.scrbl")]
+@include-section[(lib "rebellion/private/record.scrbl")]
