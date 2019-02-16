@@ -100,13 +100,13 @@ instead.
 @defproc[(record-merge2
           [rec1 record?]
           [rec2 record?]
-          [#:merge merge-function (-> any/c any/c any/c) (λ (a b) b)])
+          [#:merge merge (-> any/c any/c any/c) (λ (a b) b)])
          record?]{
  Combines @racket[rec1] and @racket[rec2] into a single record containing the
  entries of both. If a keyword is contained in both records the values for that
- key are combined with @racket[merge-function]. The default merge function
- ignores the first value, causing entries in @racket[rec2] to overwrite entries
- in @racket[rec1].
+ key are combined with @racket[merge]. The default merge function ignores the
+ first value, causing entries in @racket[rec2] to overwrite entries in @racket[
+ rec1].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -118,4 +118,4 @@ instead.
                   (record #:z 100))
    (record-merge2 (record #:x 1 #:y 2 #:z 3)
                   (record #:x -1 #:y -2 #:z -3)
-                  #:merge-function +))}
+                  #:merge +))}
