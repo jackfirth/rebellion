@@ -73,3 +73,16 @@ instead.
              #:age 42
              #:favorite-color 'turqoise))
    (record-size rec))}
+
+@defproc[(record-ref [rec record?] [kw keyword?]) any/c]{
+ Returns the value in @racket[rec] for @racket[kw], or @racket[#f] if none
+ exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define rec
+     (record #:name "Alyssa P. Hacker"
+             #:age 42
+             #:favorite-color 'turqoise))
+   (record-ref rec '#:name)
+   (record-ref rec '#:fur-color)))}
