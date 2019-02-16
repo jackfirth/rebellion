@@ -4,6 +4,7 @@
 
 (provide
  (contract-out
+  [empty-record record?]
   [record (unconstrained-domain-> record?)]
   [record? (-> any/c boolean?)]
   [record-keywords (-> record? (listof keyword?))]
@@ -51,6 +52,8 @@
                                   0
                                   empty
                                   #f))
+
+(define empty-record (record))
 
 (define (record-size rec)
   (length (record-keywords rec)))
