@@ -110,10 +110,8 @@ instead.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (record-merge2 (record #:x 1 #:y 2 #:z 3)
-                  (record #:name "Alyssa P. Hacker"
-                          #:age 42
-                          #:favorite-color 'turqoise))
+   (record-merge2 (record #:x 1 #:y 2)
+                  (record #:name "Alyssa P. Hacker" #:age 42))
    (record-merge2 (record #:x 1 #:y 2 #:z 3)
                   (record #:z 100))
    (record-merge2 (record #:x 1 #:y 2 #:z 3)
