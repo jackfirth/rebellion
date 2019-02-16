@@ -10,6 +10,7 @@
   [record-keywords (-> record? (listof keyword?))]
   [record-values (-> record? list?)]
   [record-ref (-> record? keyword? any/c)]
+  [record-remove (-> record? keyword? record?)]
   [record-size (-> record? natural?)]))
 
 (require racket/list
@@ -90,3 +91,30 @@
               #:favorite-color 'turqoise))
     (check-equal? (record-ref rec '#:name) "Alyssa P. Hacker")
     (check-equal? (record-ref rec '#:foo) #f)))
+
+(define (sorted-keywords-and-values->record kws vs)
+  (keyword-apply record kws vs empty))
+
+(define (record-remove rec kw)
+  (let loop ([kws (record-keywords rec)]
+             [vs (record-values rec)]
+             [checked-kws empty]
+             [checked-vs empty])
+    (cond
+      [(empty? kws)
+       (sorted-keywords-and-values->record (reverse checked-kws)
+                                           (reverse checked-vs))]
+      [(equal? (first kws) kw)
+       (sorted-keywords-and-values->record
+        (append (reverse checked-kws) (rest kws))
+        (append (reverse checked-vs) (rest vs)))]
+      [else
+       (loop (rest kws)
+             (rest vs)
+             (cons (first kws) checked-kws)
+             (cons (first vs) checked-vs))])))
+
+(module+ test
+  (test-case "record-remove"
+    (check-equal? (record-remove (record #:a 1 #:b 2 #:c 3) '#:b)
+                  (record #:a 1 #:c 3))))

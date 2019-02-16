@@ -89,3 +89,10 @@ instead.
              #:favorite-color 'turqoise))
    (record-ref rec '#:name)
    (record-ref rec '#:fur-color)))}
+
+@defproc[(record-remove [rec record?] [kw keyword?]) record?]{
+ Returns @racket[rec] with the entry for @racket[kw] removed.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (record-remove (record #:x 42 #:y 7) '#:x))}
