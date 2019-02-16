@@ -63,6 +63,9 @@ instead.
              #:favorite-color 'turqoise))
    (record-values rec))}
 
+@defthing[empty-record record?]{
+ The empty record, which contains no entries.}
+
 @defproc[(record-size [rec record?]) natural?]{
  Returns the number of keyword-value entries in @racket[rec].
 
