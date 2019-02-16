@@ -1,0 +1,1 @@
+raco setup --doc-index --check-pkg-deps --tidy --unused-pkg-deps --pkgs rebellion
