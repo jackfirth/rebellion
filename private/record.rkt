@@ -92,6 +92,9 @@
     (check-equal? (record-ref rec '#:name) "Alyssa P. Hacker")
     (check-equal? (record-ref rec '#:foo) #f)))
 
+(define (sorted-keywords-and-values->record kws vs)
+  (keyword-apply record kws vs empty))
+
 (define (record-remove rec kw)
   (let loop ([kws (record-keywords rec)]
              [vs (record-values rec)]
