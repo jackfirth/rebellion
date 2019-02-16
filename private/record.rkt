@@ -8,6 +8,7 @@
   [record? (-> any/c boolean?)]
   [record-keywords (-> record? (listof keyword?))]
   [record-values (-> record? list?)]
+  [record-ref (-> record? keyword? any/c)]
   [record-size (-> record? natural?)]))
 
 (require racket/list
@@ -70,3 +71,19 @@
   (check-equal? (equal-hash-code rec) (equal-hash-code rec2))
   (check-equal? (equal-secondary-hash-code rec)
                 (equal-secondary-hash-code rec2)))
+
+(define (record-ref rec kw)
+  (let loop ([kws (record-keywords rec)]
+             [vs (record-values rec)])
+    (cond [(empty? kws) #f]
+          [(equal? (first kws) kw) (first vs)]
+          [else (loop (rest kws) (rest vs))])))
+
+(module+ test
+  (test-case "record-ref"
+    (define rec
+      (record #:name "Alyssa P. Hacker"
+              #:age 42
+              #:favorite-color 'turqoise))
+    (check-equal? (record-ref rec '#:name) "Alyssa P. Hacker")
+    (check-equal? (record-ref rec '#:foo) #f)))
