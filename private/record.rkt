@@ -7,6 +7,7 @@
   [empty-record record?]
   [record (unconstrained-domain-> record?)]
   [record? (-> any/c boolean?)]
+  [record-map (-> record? (-> any/c any/c) record?)]
   [record-merge2
    (->* (record? record?) (#:merge (-> any/c any/c any/c)) record?)]
   [record-keywords (-> record? (listof keyword?))]
@@ -193,3 +194,14 @@
   (test-case "record-remove"
     (check-equal? (record-remove (record #:a 1 #:b 2 #:c 3) '#:b)
                   (record #:a 1 #:c 3))))
+
+(define (record-map rec f)
+  (define kws (record-keywords rec))
+  (define vs (record-values rec))
+  (define mapped-vs (map f vs))
+  (sorted-keywords-and-values->record kws mapped-vs))
+
+(module+ test
+  (test-case "record-map"
+    (check-equal? (record-map (record #:x 1 #:y -1 #:z 0) (λ (x) (* x 100)))
+                  (record #:x 100 #:y -100 #:z 0))))
