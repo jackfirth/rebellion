@@ -117,3 +117,12 @@ instead.
    (record-merge2 (record #:x 1 #:y 2 #:z 3)
                   (record #:x -1 #:y -2 #:z -3)
                   #:merge +))}
+
+@defproc[(record-map [rec record?] [f (-> any/c any/c)]) record?]{
+ Applies @racket[f] to each value in @racket[rec] and returns a new record
+ containing the results with the same keys as @racket[rec].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (record-map (record #:x 1 #:y 2 #:z 3)
+               (λ (x) (* x 100))))}
