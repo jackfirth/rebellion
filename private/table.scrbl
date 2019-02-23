@@ -4,15 +4,13 @@
                      racket/contract/base
                      racket/math
                      rebellion/table)
+          rebellion/private/scribble-evaluator-factory
           scribble/example)
 
-@(define module-sharing-evaluator-factory
-   (make-base-eval-factory (list 'racket/base 'rebellion/table)))
-
-@(define (make-evaluator)
-   (define evaluator (module-sharing-evaluator-factory))
-   (evaluator '(require rebellion/table))
-   evaluator)
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'rebellion/table)
+    #:private (list 'racket/base)))
 
 @title{Tables}
 @defmodule[rebellion/table]

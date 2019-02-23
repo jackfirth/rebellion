@@ -3,15 +3,13 @@
 @(require (for-label racket/base
                      racket/contract/base
                      rebellion/variant)
+          rebellion/private/scribble-evaluator-factory
           scribble/example)
 
-@(define module-sharing-evaluator-factory
-   (make-base-eval-factory (list 'racket/base 'rebellion/variant)))
-
-@(define (make-evaluator)
-   (define evaluator (module-sharing-evaluator-factory))
-   (evaluator '(require rebellion/variant))
-   evaluator)
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'rebellion/variant)
+    #:private (list 'racket/base)))
 
 @title{Variants}
 @defmodule[rebellion/variant]

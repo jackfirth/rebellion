@@ -3,15 +3,13 @@
 @(require (for-label racket/base
                      racket/contract/base
                      rebellion/generative-token)
+          rebellion/private/scribble-evaluator-factory
           scribble/example)
 
-@(define module-sharing-evaluator-factory
-   (make-base-eval-factory (list 'racket/base 'rebellion/generative-token)))
-
-@(define (make-evaluator)
-   (define evaluator (module-sharing-evaluator-factory))
-   (evaluator '(require rebellion/generative-token))
-   evaluator)
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'rebellion/generative-token)
+    #:private (list 'racket/base)))
 
 @title{Generative Tokens}
 @defmodule[rebellion/generative-token]
