@@ -1,6 +1,7 @@
 #lang rebellion/private/dependencies/layer1
 
 (provide
+ keyset
  (contract-out
   [keyset? predicate?]
   [keyset-size (-> keyset? natural?)]
@@ -13,11 +14,12 @@
         [_ (keys) (or/c (and/c natural? (</c (keyset-size keys))) #f)])]
   [keyset-contains? (-> keyset? keyword? boolean?)]))
 
-(require rebellion/private/boolean
-         rebellion/private/keyword
+(require rebellion/generative-token
          rebellion/name
-         rebellion/private/natural
-         rebellion/predicate)
+         rebellion/predicate
+         rebellion/private/boolean
+         rebellion/private/keyword
+         rebellion/private/natural)
 
 (module+ test
   (require (submod "..")
@@ -35,6 +37,8 @@
       (loop (add1 i))))
   (write-string ")" out))
 
+(define keyset-datatype-token (make-generative-token))
+
 (struct keyset-impl (sorted-vector index-hash)
   #:reflection-name 'keyset
   #:constructor-name plain-make-keyset
@@ -43,12 +47,9 @@
   #:methods gen:equal+hash
   [(define (equal-proc this other recur)
      (recur (keyset-sorted-vector this) (keyset-sorted-vector other)))
-   (define type-tag (gensym 'keyset-type-tag))
    (define (hash-proc this recur)
-     (recur (list type-tag (keyset-sorted-vector this))))
-   (define type-tag2 (gensym 'keyset-type-tag))
-   (define (hash2-proc this recur)
-     (recur (list type-tag2 (keyset-sorted-vector this))))]
+     (recur (list keyset-datatype-token (keyset-sorted-vector this))))
+   (define hash2-proc hash-proc)]
   
   #:methods gen:custom-write [(define write-proc write-keyset)])
 
