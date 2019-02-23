@@ -1,17 +1,16 @@
 #lang scribble/manual
+
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
                      rebellion/record)
+          rebellion/private/scribble-evaluator-factory
           scribble/example)
 
-@(define module-sharing-evaluator-factory
-   (make-base-eval-factory (list 'racket/base 'rebellion/record)))
-
-@(define (make-evaluator)
-   (define evaluator (module-sharing-evaluator-factory))
-   (evaluator '(require rebellion/record))
-   evaluator)
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'rebellion/record)
+    #:private (list 'racket/base)))
 
 @title{Records}
 @defmodule[rebellion/record]
