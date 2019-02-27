@@ -13,5 +13,7 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/keyset.scrbl")]
 @include-section[(lib "rebellion/private/record.scrbl")]
 @include-section[(lib "rebellion/private/struct-descriptor.scrbl")]
+@include-section[(lib "rebellion/private/struct-equal-property.scrbl")]
+@include-section[(lib "rebellion/private/struct-write-property.scrbl")]
 @include-section[(lib "rebellion/private/table.scrbl")]
 @include-section[(lib "rebellion/private/variant.scrbl")]
