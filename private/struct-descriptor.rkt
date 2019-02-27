@@ -7,10 +7,10 @@
   [initialized-struct-descriptor? (-> any/c boolean?)]
   [make-struct-type/descriptor
    (->* (#:name symbol?)
-        (#:mutable-fields natural?
+        (#:super-type (or/c struct-type? #f)
+         #:mutable-fields natural?
          #:immutable-fields natural?
          #:auto-fields natural?
-         #:super-type (or/c struct-type? #f)
          #:auto-field-value any/c
          #:property-maker
          (-> uninitialized-struct-descriptor?
@@ -19,31 +19,8 @@
          #:guard (or/c procedure? #f)
          #:constructor-name (or/c symbol? #f))
         initialized-struct-descriptor?)]
-  [struct-descriptor
-   (-> #:type struct-type?
-       #:super-type (or/c struct-type? #f)
-       #:name symbol?
-       #:mutable-fields natural?
-       #:immutable-fields natural?
-       #:auto-fields natural?
-       #:constructor procedure?
-       #:predicate predicate-procedure/c
-       #:accessor accessor-procedure/c
-       #:mutator mutator-procedure/c
-       initialized-struct-descriptor?)]
   [struct-descriptor? (-> any/c boolean?)]
   [struct-descriptor-type (-> initialized-struct-descriptor? struct-type?)]
-  [uninitialized-struct-descriptor
-   (-> #:super-type (or/c struct-type? #f)
-       #:name symbol?
-       #:mutable-fields natural?
-       #:immutable-fields natural?
-       #:auto-fields natural?
-       #:constructor procedure?
-       #:predicate predicate-procedure/c
-       #:accessor accessor-procedure/c
-       #:mutator mutator-procedure/c
-       initialized-struct-descriptor?)]
   [uninitialized-struct-descriptor? (-> any/c boolean?)]))
 
 (require (for-syntax racket/base
@@ -59,9 +36,14 @@
 
 ;@------------------------------------------------------------------------------
 
-(define predicate-procedure/c (-> any/c boolean?))
-(define accessor-procedure/c (-> any/c natural? any/c))
-(define mutator-procedure/c (-> any/c natural? any/c void?))
+(define predicate-procedure/c
+  (or/c struct-predicate-procedure? (-> any/c boolean?)))
+
+(define accessor-procedure/c
+  (or/c struct-accessor-procedure? (-> any/c natural? any/c)))
+
+(define mutator-procedure/c
+  (or/c struct-mutator-procedure? (-> any/c natural? any/c void?)))
 
 (define (struct-descriptor? v)
   (or (initialized-struct-descriptor? v)
@@ -73,7 +55,6 @@
 (begin-for-syntax
   (define (format-one-identifier id template-string)
     (format-id id template-string (syntax-e id) #:source id #:props id)))
-
 
 (define-simple-macro
   (define-and-provide-struct-descriptor-field-accessors
@@ -102,9 +83,9 @@
   [immutable-fields natural?]
   [auto-fields natural?]
   [constructor procedure?]
-  [predicate (-> any/c boolean?)]
-  [accessor (-> any/c any/c any/c)]
-  [mutator (-> any/c any/c any/c void?)])
+  [predicate predicate-procedure/c]
+  [accessor accessor-procedure/c]
+  [mutator mutator-procedure/c])
 
 (struct initialized-struct-descriptor
   (type
