@@ -64,21 +64,22 @@
              [mutator (-> any/c natural? any/c void?)])]{
  Accessors for the various fields of a structure type descriptor.}
 
-@defproc[(make-struct-type/descriptor
-          [#:name name symbol?]
-          [#:mutable-fields mutable-fields natural? 0]
-          [#:immutable-fields immutable-fields natural? 0]
-          [#:auto-fields auto-fields natural? 0]
-          [#:auto-field-value auto-value any/c #f]
-          [#:super-type super-type (or/c struct-type? #f) #f]
-          [#:property-maker prop-maker
-           (-> uninitialized-struct-descriptor?
-               (listof (cons/c struct-type-property? any/c)))
-           (λ (_) empty)]
-          [#:inspector inspector (or/c inspector? 'prefab #f) #f]
-          [#:guard guard (or/c procedure? #f) #f]
-          [#:constructor-name constructor-name (or/c symbol? #f) #f])
-         initialized-struct-descriptor?]{
+@defproc[
+ (make-struct-type/descriptor
+  [#:name name symbol?]
+  [#:mutable-fields mutable-fields natural? 0]
+  [#:immutable-fields immutable-fields natural? 0]
+  [#:auto-fields auto-fields natural? 0]
+  [#:auto-field-value auto-value any/c #f]
+  [#:super-type super-type (or/c struct-type? #f) #f]
+  [#:property-maker prop-maker
+   (-> uninitialized-struct-descriptor?
+       (listof (cons/c struct-type-property? any/c)))
+   (λ (_) empty)]
+  [#:inspector inspector (or/c inspector? 'prefab #f) (current-inspector)]
+  [#:guard guard (or/c procedure? #f) #f]
+  [#:constructor-name constructor-name (or/c symbol? #f) #f])
+ initialized-struct-descriptor?]{
  Like @racket[make-struct-type], but with keyword arguments instead of
  positional arguments and returning a single @racket[struct-descriptor?] value
  instead of multiple values. Additional differences include:
