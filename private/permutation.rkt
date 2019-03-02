@@ -6,6 +6,7 @@
  permutation
  cyclic-permutation
  (contract-out
+  [empty-permutation permutation?]
   [permutation? (-> any/c boolean?)]
   [permutation-ref
    (->i ([perm () permutation?]
@@ -99,6 +100,8 @@
   #:with vec #`(quote #,(vector->immutable-vector vec))
   (permutation-constructor vec))
 
+(define empty-permutation (permutation))
+
 (define (vector-permute vec perm)
   (vector->immutable-vector
    (build-vector (vector-length vec)
@@ -129,6 +132,9 @@
   (test-case "string-permute"
     (check-pred immutable? (string-permute "abcdef" perm))
     (check-equal? (string-permute "abcdef" perm) "dfeabc"))
+  (test-case "empty-permutation"
+    (check-equal? (permutation-size empty-permutation) 0)
+    (check-equal? (string-permute "" empty-permutation) ""))
   (test-case "cyclic-permutation"
     (define perm (cyclic-permutation 0 2 4 6 8))
     (check-equal? (permutation-size perm) 9)

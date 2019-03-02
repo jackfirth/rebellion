@@ -3,16 +3,17 @@
 (provide
  keyset
  (contract-out
+  [empty-keyset keyset?]
   [keyset? predicate?]
-  [keyset-size (-> keyset? natural?)]
+  [keyset-contains? (-> keyset? keyword? boolean?)]
+  [keyset-index-of
+   (->i ([keys keyset?] [kw keyword?])
+        [_ (keys) (or/c (and/c natural? (</c (keyset-size keys))) #f)])]
   [keyset-ref
    (->i ([keys keyset?]
          [pos (keys) (and/c natural? (</c (keyset-size keys)))])
         [_ keyword?])]
-  [keyset-index-of
-   (->i ([keys keyset?] [kw keyword?])
-        [_ (keys) (or/c (and/c natural? (</c (keyset-size keys))) #f)])]
-  [keyset-contains? (-> keyset? keyword? boolean?)]))
+  [keyset-size (-> keyset? natural?)]))
 
 (require rebellion/generative-token
          rebellion/name

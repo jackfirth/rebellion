@@ -34,6 +34,9 @@ at compile-time.
    (keyset #:banana #:orange #:apple #:grape)
    (keyset #:orange #:banana #:banana))}
 
+@defthing[empty-keyset keyset? #:value (keyset)]{
+ The empty @tech{keyset}, which contains no keywords.}
+
 @defproc[(keyset-contains? [keys keyset?] [kw keyword?]) boolean?]{
  Returns @racket[#t] if @racket[kw] is present in @racket[keys]. This is a
  constant-time operation.

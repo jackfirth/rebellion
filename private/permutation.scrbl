@@ -49,6 +49,10 @@ have the same size and rearrange elements in the same way.
    (string-permute "abcdefghijklmnopqrstuvwxyz"
                    (cyclic-permutation 5 17 25 8 0)))}
 
+@defthing[empty-permutation permutation? #:value (permutation)]{
+ The empty permutation, which rearranges nothing. The size of the empty
+ permutation is zero.}
+
 @defproc[(permutation-size [perm permutation?]) natural?]{
  Returns the size of @racket[perm].
 
