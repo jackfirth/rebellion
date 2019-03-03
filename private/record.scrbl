@@ -15,15 +15,18 @@
 @title{Records}
 @defmodule[rebellion/record]
 
-A @deftech{record} maps each of its keywords to a single value. Records are
-similar to hash tables, except keys @emph{must} be keywords. Records are less
-dynamic than general-purpose hash tables, but their specialized nature can offer
-improved performance. In particular, constructing a record with @racket[record]
-and calling a keyword-accepting function with a record impose only constant-time
-overhead. Use records instead of hash tables when keys are expected to be
-literal names written in source code. As a rule of thumb, if you find yourself
-reaching for a hash table whose keys are symbols or strings, use records
-instead.
+A @deftech{record} is a collection of name-value mappings, each which is called
+a @deftech{record field}. The name of a field is a @tech{keyword}. Records
+support constant-time lookup of field values by name.
+
+Records are similar to hash tables, except keys @emph{must} be keywords. Records
+are less dynamic than general-purpose hash tables, but their specialized nature
+can offer improved performance. In particular, constructing a record with
+@racket[record] does not require sorting keywords at runtime, and calling a
+keyword-accepting function with a record imposes only constant-time overhead.
+Use records instead of hash tables when keys are expected to be literal names
+written in source code. As a rule of thumb, if you find yourself reaching for a
+hash table whose keys are symbols or strings, use records instead.
 
 @defproc[(record? [v any/c]) boolean?]{
  A predicate for @tech{records}.}
@@ -125,3 +128,5 @@ instead.
    #:eval (make-evaluator) #:once
    (record-map (record #:x 1 #:y 2 #:z 3)
                (λ (x) (* x 100))))}
+
+@include-section[(lib "rebellion/private/record-field.scrbl")]
