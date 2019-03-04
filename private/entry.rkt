@@ -13,7 +13,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define entry-descriptor (make-tuple-type (tuple-type 'entry 2)))
+(define entry-descriptor (tuple-type-make-implementation (tuple-type 'entry 2)))
 (define entry (tuple-descriptor-constructor entry-descriptor))
 (define entry? (tuple-descriptor-predicate entry-descriptor))
 (define entry-key (make-tuple-field-accessor entry-descriptor 0 'key))

@@ -13,7 +13,9 @@
 (require net/url
          rebellion/tuple-type)
 
-(define web-link-descriptor (make-tuple-type (tuple-type 'web-link 3)))
+(define web-link-descriptor
+  (tuple-type-make-implementation (tuple-type 'web-link 3)))
+
 (define web-link (tuple-descriptor-constructor web-link-descriptor))
 (define web-link? (tuple-descriptor-predicate web-link-descriptor))
 
