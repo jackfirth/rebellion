@@ -20,7 +20,8 @@
 ;@------------------------------------------------------------------------------
 
 (define field-descriptor
-  (make-tuple-type (tuple-type 'field 2 #:constructor-name 'field-constructor)))
+  (tuple-type-make-implementation
+   (tuple-type 'field 2 #:constructor-name 'field-constructor)))
 
 (define field-constructor (tuple-descriptor-constructor field-descriptor))
 (define field? (tuple-descriptor-predicate field-descriptor))

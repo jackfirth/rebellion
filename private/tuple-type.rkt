@@ -15,14 +15,6 @@
                      (</c (tuple-type-size (tuple-descriptor-type desc))))])
         ([field-name symbol?])
         [_ (desc) (-> (tuple-descriptor-predicate desc) any/c)])]
-  [make-tuple-type
-   (->* (tuple-type?)
-        (#:guard (or/c procedure? #f)
-         #:inspector inspector?
-         #:property-maker
-         (-> uninitialized-tuple-descriptor?
-             (listof (cons/c struct-type-property? any/c))))
-        initialized-tuple-descriptor?)]
   [tuple-descriptor? (-> any/c boolean?)]
   [tuple-descriptor-accessor (-> tuple-descriptor? (-> any/c natural? any/c))]
   [tuple-descriptor-constructor (-> tuple-descriptor? procedure?)]
@@ -38,6 +30,14 @@
   [tuple-type? (-> any/c boolean?)]
   [tuple-type-accessor-name (-> tuple-type? symbol?)]
   [tuple-type-constructor-name (-> tuple-type? symbol?)]
+  [tuple-type-make-implementation
+   (->* (tuple-type?)
+        (#:guard (or/c procedure? #f)
+         #:inspector inspector?
+         #:property-maker
+         (-> uninitialized-tuple-descriptor?
+             (listof (cons/c struct-type-property? any/c))))
+        initialized-tuple-descriptor?)]
   [tuple-type-name (-> tuple-type? symbol?)]
   [tuple-type-predicate-name (-> tuple-type? symbol?)]
   [tuple-type-size (-> tuple-type? natural?)]
@@ -220,7 +220,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (make-tuple-type
+(define (tuple-type-make-implementation
          type
          #:guard [guard #f]
          #:inspector [inspector (current-inspector)]
@@ -271,9 +271,9 @@
   (procedure-rename (λ (this) (accessor this pos)) field-accessor-name))
 
 (module+ test
-  (test-case "make-tuple-type"
+  (test-case "tuple-type-make-implementation"
     (define point-type (tuple-type 'point 2))
-    (define point-descriptor (make-tuple-type point-type))
+    (define point-descriptor (tuple-type-make-implementation point-type))
     (define point (tuple-descriptor-constructor point-descriptor))
     (define point? (tuple-descriptor-predicate point-descriptor))
     (define point-x (make-tuple-field-accessor point-descriptor 0 'x))
