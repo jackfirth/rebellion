@@ -12,6 +12,7 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/entry.scrbl")]
 @include-section[(lib "rebellion/private/generative-token.scrbl")]
 @include-section[(lib "rebellion/private/keyset.scrbl")]
+@include-section[(lib "rebellion/private/module-export.scrbl")]
 @include-section[(lib "rebellion/private/pair.scrbl")]
 @include-section[(lib "rebellion/private/permutation.scrbl")]
 @include-section[(lib "rebellion/private/point.scrbl")]
