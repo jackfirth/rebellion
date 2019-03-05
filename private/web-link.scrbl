@@ -24,16 +24,16 @@ source-relationship-target triple. See @hyperlink[rfc8288]{RFC 8288 - Web
 @defproc[(web-link? [v any/c]) boolean?]{
  A predicate for @tech{web links}.}
 
-@defproc[(web-link [source url?] [relation (or/c symbol? url?)] [target url?])
+@defproc[(web-link [source (or/c url? string?)]
+                   [relation (or/c symbol? url? string?)]
+                   [target (or/c url? string?)])
          web-link?]{
  Constructs a @tech{web link} from @racket[source] to @racket[target] with type
  @racket[relation].
 
  @(examples
    #:eval (make-evaluator) #:once
-   (web-link (string->url "http://example.org")
-             'stylesheet
-             (string->url "http://example.org/css")))}
+   (web-link "http://example.org" 'stylesheet "/styles.css"))}
 
 @deftogether[[
  @defproc[(web-link-source [link web-link?]) url?]
