@@ -4,7 +4,7 @@
                      racket/math
                      rebellion/tuple-type
                      rebellion/struct-descriptor)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 
 @(define make-evaluator

@@ -3,7 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      rebellion/permutation)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator

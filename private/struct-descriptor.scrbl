@@ -7,7 +7,7 @@
                      rebellion/struct-descriptor)
           (for-syntax racket/base
                       racket/syntax)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example
           syntax/parse/define)
 

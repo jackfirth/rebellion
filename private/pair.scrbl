@@ -3,7 +3,7 @@
 @(require (for-label (except-in racket/base pair?)
                      racket/contract/base
                      rebellion/pair)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
