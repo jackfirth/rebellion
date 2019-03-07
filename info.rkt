@@ -20,6 +20,3 @@
 
 (define test-omit-paths
   (list #rx"\\.scrbl$"))
-
-(define compile-omit-paths
-  (list "private"))
