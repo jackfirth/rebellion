@@ -131,3 +131,5 @@ distinct implementations of that type.
  prop:custom-write] suitable for most @tech{tuple types}. This function is
  called by @racket[tuple-type-make-implementation] when no @racket[_prop-maker]
  argument is supplied.}
+
+@include-section[(lib "rebellion/private/tuple-type-definition.scrbl")]
