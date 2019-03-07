@@ -4,7 +4,7 @@
                      racket/base
                      racket/contract/base
                      rebellion/web-link)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator

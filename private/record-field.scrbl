@@ -5,7 +5,7 @@
                      racket/math
                      rebellion/record
                      rebellion/record/field)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator

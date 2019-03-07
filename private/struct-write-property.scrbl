@@ -5,7 +5,7 @@
                      racket/struct
                      rebellion/struct-descriptor
                      rebellion/struct-write-property)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator

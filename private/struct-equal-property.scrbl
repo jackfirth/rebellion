@@ -6,7 +6,7 @@
                      rebellion/struct-descriptor
                      rebellion/struct-equal-property
                      rebellion/struct-write-property)
-          rebellion/private/scribble-evaluator-factory
+          (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
@@ -35,7 +35,7 @@
    #:eval (make-evaluator) #:once
    (struct opaque-point (x y))
    (equal? (opaque-point 1 2) (opaque-point 1 2))
-   
+
    (define point-descriptor
      (make-struct-type/descriptor
       #:name 'point
