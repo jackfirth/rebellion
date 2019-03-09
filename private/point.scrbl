@@ -14,8 +14,8 @@
 @title{Points}
 @defmodule[rebellion/point]
 
-A @tech{point} is a location in two-dimensional Euclidean geometry, represented
-by a pair of numbers.
+A @deftech{point} is a location in two-dimensional Euclidean geometry,
+represented by a pair of numbers.
 
 @defproc[(point? [v any/c]) boolean?]{
  A predicate for @tech{points}.}
