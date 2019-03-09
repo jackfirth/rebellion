@@ -11,17 +11,34 @@
   [field<? (-> field? ... boolean?)]))
 
 (require racket/list
-         rebellion/tuple-type)
+         racket/struct
+         rebellion/tuple-type
+         rebellion/struct-equal-property)
 
 (module+ test
   (require (submod "..")
+           racket/format
            rackunit))
 
 ;@------------------------------------------------------------------------------
 
+(define (make-properties descriptor)
+  (define size (tuple-type-size (tuple-descriptor-type descriptor)))
+  (define accessor (tuple-descriptor-accessor descriptor))
+  (define equal+hash (make-equal+hash-property size accessor))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) 'field)
+     (λ (this)
+       (define name (string-append "#:" (keyword->string (field-name this))))
+       (list (unquoted-printing-string name) (field-value this)))))
+  (list (cons prop:equal+hash equal+hash)
+        (cons prop:custom-write custom-write)))
+
 (define field-descriptor
   (tuple-type-make-implementation
-   (tuple-type 'field 2 #:constructor-name 'field-constructor)))
+   (tuple-type 'field 2 #:constructor-name 'field-constructor)
+   #:property-maker make-properties))
 
 (define field-constructor (tuple-descriptor-constructor field-descriptor))
 (define field? (tuple-descriptor-predicate field-descriptor))
@@ -50,7 +67,10 @@
     (define f (field #:widget-price #e49.99))
     (check-equal? (field-name f) '#:widget-price)
     (check-equal? (field-value f) #e49.99)
-    (check-equal? f (field #:widget-price #e49.99))))
+    (check-equal? f (field #:widget-price #e49.99))
+    (check-equal? (~v f) "(field #:widget-price 4999/100)")
+    (check-equal? (~a f) "#<field: #:widget-price 4999/100>")
+    (check-equal? (~s f) "#<field: #:widget-price 4999/100>")))
 
 (define (field<? . fields)
   (or (empty? fields)
