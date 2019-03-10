@@ -13,7 +13,7 @@
 (require racket/list
          racket/struct
          rebellion/tuple-type
-         rebellion/struct-equal-property)
+         rebellion/equal+hash/tuple)
 
 (module+ test
   (require (submod "..")
@@ -23,9 +23,7 @@
 ;@------------------------------------------------------------------------------
 
 (define (make-properties descriptor)
-  (define size (tuple-type-size (tuple-descriptor-type descriptor)))
-  (define accessor (tuple-descriptor-accessor descriptor))
-  (define equal+hash (make-equal+hash-property size accessor))
+  (define equal+hash (make-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) 'field)

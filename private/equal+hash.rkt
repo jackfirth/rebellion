@@ -4,20 +4,16 @@
 
 (provide
  (contract-out
-  [make-equal+hash-property
-   (-> natural? (-> any/c natural? any/c)
-       (list/c procedure? procedure? procedure?))]
-  [make-struct-equal+hash-property
-   (-> uninitialized-struct-descriptor?
+  [make-accessor-based-equal+hash
+   (-> (-> any/c natural? any/c) natural?
        (list/c procedure? procedure? procedure?))]))
 
 (require racket/math
-         rebellion/generative-token
-         rebellion/struct-descriptor)
+         rebellion/generative-token)
 
 ;@------------------------------------------------------------------------------
 
-(define (make-equal+hash-property size accessor)
+(define (make-accessor-based-equal+hash accessor size)
   (define token (make-generative-token))
   (define (equal-proc this other recur)
     (for/and ([pos (in-range size)])
@@ -31,11 +27,3 @@
          (loop next-pos (cons (accessor this next-pos) previous-vs))])))
   (define hash2-proc hash-proc)
   (list equal-proc hash-proc hash2-proc))
-  
-(define (make-struct-equal+hash-property descriptor)
-  (define accessor (struct-descriptor-accessor descriptor))
-  (define size
-    (+ (struct-descriptor-mutable-fields descriptor)
-       (struct-descriptor-immutable-fields descriptor)
-       (struct-descriptor-auto-fields descriptor)))
-  (make-equal+hash-property size accessor))

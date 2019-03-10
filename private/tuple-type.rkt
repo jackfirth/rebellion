@@ -49,7 +49,8 @@
          rebellion/permutation
          rebellion/private/struct-definition-util
          rebellion/struct-descriptor
-         rebellion/struct-equal-property
+         rebellion/equal+hash
+         rebellion/equal+hash/struct
          rebellion/struct-write-property)
 
 (module+ test
@@ -60,7 +61,7 @@
 ;@------------------------------------------------------------------------------
 
 (define (make-transparent-style-properties descriptor)
-  (define equal+hash (make-struct-equal+hash-property descriptor))
+  (define equal+hash (make-struct-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-struct-write-property descriptor))
   (list (cons prop:equal+hash equal+hash)
@@ -70,7 +71,7 @@
   (define accessor (struct-descriptor-accessor descriptor))
   (define type-name (struct-descriptor-name descriptor))
   (define prefix (string-append "#<" (symbol->string type-name) ":"))
-  (define equal+hash (make-struct-equal+hash-property descriptor))
+  (define equal+hash (make-struct-equal+hash descriptor))
   (define (get-name this) (symbol->string (tuple-type-name (accessor this 0))))
   (define (custom-write this out _)
     (write-string prefix out)
@@ -84,7 +85,7 @@
   (define accessor (tuple-descriptor-accessor descriptor))
   (define name (tuple-type-name type))
   (define size (tuple-type-size type))
-  (define equal+hash (make-equal+hash-property size accessor))
+  (define equal+hash (make-accessor-based-equal+hash accessor size))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)
