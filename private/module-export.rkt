@@ -24,7 +24,7 @@
          racket/math
          racket/set
          racket/struct
-         rebellion/struct-equal-property
+         rebellion/equal+hash/tuple
          rebellion/tuple-type
          rebellion/tuple-type-definition
          syntax/parse/define)
@@ -33,15 +33,10 @@
 
 (define empty-set (set))
 
-(define (make-tuple-equal+hash-property descriptor)
-  (define size (tuple-type-size (tuple-descriptor-type descriptor)))
-  (define accessor (tuple-descriptor-accessor descriptor))
-  (make-equal+hash-property size accessor))
-
 ;@------------------------------------------------------------------------------
 
 (define (make-export-properties descriptor)
-  (define equal+hash (make-tuple-equal+hash-property descriptor))
+  (define equal+hash (make-tuple-equal+hash descriptor))
   (define name (tuple-type-name (tuple-descriptor-type descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
   (define custom-write
@@ -62,7 +57,7 @@
         (cons prop:custom-write custom-write)))
 
 (define (make-origin-properties descriptor)
-  (define equal+hash (make-tuple-equal+hash-property descriptor))
+  (define equal+hash (make-tuple-equal+hash descriptor))
   (define name (tuple-type-name (tuple-descriptor-type descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
   (define custom-write

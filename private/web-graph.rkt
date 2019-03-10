@@ -9,7 +9,7 @@
   [web-graph? (-> any/c boolean?)]))
 
 (require racket/struct
-         rebellion/struct-equal-property
+         rebellion/equal+hash/tuple
          rebellion/tuple-type
          rebellion/web-link)
 
@@ -26,11 +26,9 @@
   (tuple-type 'web-graph 1 #:constructor-name 'constructor:web-graph))
 
 (define (property-maker descriptor)
-  (define type (tuple-descriptor-type descriptor))
-  (define name (tuple-type-name type))
-  (define size (tuple-type-size type))
+  (define name (tuple-type-name (tuple-descriptor-type descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
-  (define equal+hash (make-equal+hash-property size accessor))
+  (define equal+hash (make-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)

@@ -29,7 +29,7 @@
          racket/struct
          rebellion/private/struct-definition-util
          rebellion/struct-descriptor
-         rebellion/struct-equal-property
+         rebellion/equal+hash/struct
          syntax/parse/define)
 
 (module+ test
@@ -47,7 +47,7 @@
 
 (define (make-permutation-properties descriptor)
   (list (cons prop:equal+hash
-              (make-struct-equal+hash-property descriptor))
+              (make-struct-equal+hash descriptor))
         (cons prop:custom-write
               (make-constructor-style-printer
                (λ (_) 'permutation)

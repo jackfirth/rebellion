@@ -14,7 +14,7 @@
 (require net/url
          racket/struct
          rebellion/tuple-type
-         rebellion/struct-equal-property)
+         rebellion/equal+hash/tuple)
 
 (module+ test
   (require (submod "..")
@@ -37,11 +37,9 @@
   (if (symbol? relation) relation (url->string relation)))
 
 (define (property-maker descriptor)
-  (define type (tuple-descriptor-type descriptor))
-  (define name (tuple-type-name type))
-  (define size (tuple-type-size type))
+  (define name (tuple-type-name (tuple-descriptor-type descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
-  (define equal+hash (make-equal+hash-property size accessor))
+  (define equal+hash (make-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)
