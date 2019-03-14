@@ -46,12 +46,12 @@
           (equal? (permutation-size perm) expected-size)))))
 
 (define (make-permutation-properties descriptor)
-  (list (cons prop:equal+hash
-              (make-struct-equal+hash descriptor))
-        (cons prop:custom-write
-              (make-constructor-style-printer
-               (λ (_) 'permutation)
-               (λ (this) (permutation-vector this))))))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) 'permutation)
+     (λ (this) (permutation-vector this))))
+  (list (cons prop:equal+hash (make-struct-equal+hash descriptor))
+        (cons prop:custom-write custom-write)))
 
 (define permutation-descriptor
   (make-struct-type/descriptor

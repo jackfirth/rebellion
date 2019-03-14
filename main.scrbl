@@ -9,6 +9,7 @@ languages, new frameworks, and new tools with.
 
 @local-table-of-contents[#:style 'immediate-only]
 
+@include-section[(lib "rebellion/private/custom-write.scrbl")]
 @include-section[(lib "rebellion/private/entry.scrbl")]
 @include-section[(lib "rebellion/private/equal+hash.scrbl")]
 @include-section[(lib "rebellion/private/generative-token.scrbl")]
@@ -19,7 +20,6 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/point.scrbl")]
 @include-section[(lib "rebellion/private/record.scrbl")]
 @include-section[(lib "rebellion/private/struct-descriptor.scrbl")]
-@include-section[(lib "rebellion/private/struct-write-property.scrbl")]
 @include-section[(lib "rebellion/private/table.scrbl")]
 @include-section[(lib "rebellion/private/tuple-type.scrbl")]
 @include-section[(lib "rebellion/private/variant.scrbl")]
