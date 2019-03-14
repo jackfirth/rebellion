@@ -45,13 +45,13 @@
 
 (require racket/math
          racket/struct
+         rebellion/custom-write/struct
+         rebellion/equal+hash
+         rebellion/equal+hash/struct
          rebellion/keyset
          rebellion/permutation
          rebellion/private/struct-definition-util
-         rebellion/struct-descriptor
-         rebellion/equal+hash
-         rebellion/equal+hash/struct
-         rebellion/struct-write-property)
+         rebellion/struct-descriptor)
 
 (module+ test
   (require (submod "..")
@@ -62,8 +62,7 @@
 
 (define (make-transparent-style-properties descriptor)
   (define equal+hash (make-struct-equal+hash descriptor))
-  (define custom-write
-    (make-constructor-style-struct-write-property descriptor))
+  (define custom-write (make-struct-constructor-style-custom-write descriptor))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
