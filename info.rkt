@@ -13,7 +13,8 @@
         "reprovide-lang"))
 
 (define build-deps
-  (list "net-doc"
+  (list "macro-debugger-text-lib"
+        "net-doc"
         "racket-doc"
         "rackunit-lib"
         "scribble-lib"))
