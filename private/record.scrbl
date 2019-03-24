@@ -9,7 +9,7 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/record)
+    #:public (list 'rebellion/record 'rebellion/keyset)
     #:private (list 'racket/base)))
 
 @title{Records}
@@ -98,6 +98,14 @@ hash table whose keys are symbols or strings, use records instead.
  @(examples
    #:eval (make-evaluator) #:once
    (record-remove (record #:x 42 #:y 7) '#:x))}
+
+@defproc[(build-record [builder (-> keyword? any/c)] [keys keyset?]) record?]{
+ Constructs a record by calling @racket[builder] with each keyword in @racket[
+ keys] in an unspecified order.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (build-record keyword->string (keyset #:x #:y #:z)))}
 
 @defproc[(record-merge2
           [rec1 record?]
