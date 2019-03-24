@@ -4,6 +4,7 @@
 
 (provide
  (contract-out
+  [build-record (-> (-> keyword? any/c) keyset? record?)]
   [empty-record record?]
   [record (unconstrained-domain-> record?)]
   [record? (-> any/c boolean?)]
@@ -19,7 +20,8 @@
 (require racket/list
          racket/math
          racket/struct
-         rebellion/generative-token)
+         rebellion/generative-token
+         rebellion/keyset)
 
 (module+ test
   (require (submod "..")
@@ -205,3 +207,13 @@
   (test-case "record-map"
     (check-equal? (record-map (record #:x 1 #:y -1 #:z 0) (λ (x) (* x 100)))
                   (record #:x 100 #:y -100 #:z 0))))
+
+(define (build-record builder keys)
+  (define size (keyset-size keys))
+  (define vs (build-list size (λ (i) (builder (keyset-ref keys i)))))
+  (keyword-apply record (keyset->list keys) vs (list)))
+
+(module+ test
+  (test-case "build-record"
+    (check-equal? (build-record keyword->string (keyset #:x #:y #:z))
+                  (record #:x "x" #:y "y" #:z "z"))))
