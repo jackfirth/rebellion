@@ -75,3 +75,11 @@ at compile-time.
    #:eval (make-evaluator) #:once
    (define fruits (keyset #:banana #:orange #:apple #:grape))
    (keyset-size fruits))}
+
+@defproc[(keyset->list [keys keyset?]) (listof keyword?)]{
+ Converts @racket[keys] into a plain list of keywords.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define greek-gods (keyset #:zeus #:hera #:hades #:athena #:poseidon))
+   (keyset->list greek-gods))}
