@@ -43,6 +43,7 @@
          ~v
          add1
          and/c
+         build-list
          contract-out
          define
          define-simple-macro
@@ -57,6 +58,7 @@
          keyword->string
          let
          list
+         listof
          module+
          only-in
          or/c
@@ -68,4 +70,5 @@
          vector-length
          vector-ref
          when
-         write-string)
+         write-string
+         λ)

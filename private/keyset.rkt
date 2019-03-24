@@ -13,7 +13,8 @@
    (->i ([keys keyset?]
          [pos (keys) (and/c natural? (</c (keyset-size keys)))])
         [_ keyword?])]
-  [keyset-size (-> keyset? natural?)]))
+  [keyset-size (-> keyset? natural?)]
+  [keyset->list (-> keyset? (listof keyword?))]))
 
 (require rebellion/generative-token
          rebellion/name
@@ -113,3 +114,12 @@
     (check-equal? (~v keys) "(keyset #:apple #:banana #:orange)")
     (check-equal? (~a keys) "(keyset #:apple #:banana #:orange)")
     (check-equal? (~s keys) "(keyset #:apple #:banana #:orange)")))
+
+(define (keyset->list keys)
+  (build-list (keyset-size keys) (λ (i) (keyset-ref keys i))))
+
+(module+ test
+  (test-case "keyset->list"
+    (check-equal? (keyset->list empty-keyset) (list))
+    (check-equal? (keyset->list (keyset #:apple #:orange #:banana))
+                  (list '#:apple '#:banana '#:orange))))
