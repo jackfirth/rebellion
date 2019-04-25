@@ -80,19 +80,20 @@
         (triple x y (sub1 z))]))
 
     (define all-small-sorted-triples
-      (set (list 1 2 3)
-           (list 1 2 4)
-           (list 1 2 5)
-           (list 1 3 4)
-           (list 1 3 5)
-           (list 1 4 5)
-           (list 2 3 4)
-           (list 2 3 5)
-           (list 3 4 5)))
+      (set (triple 1 2 3)
+           (triple 1 2 4)
+           (triple 1 2 5)
+           (triple 1 3 4)
+           (triple 1 3 5)
+           (triple 1 4 5)
+           (triple 2 3 4)
+           (triple 2 3 5)
+           (triple 2 4 5)
+           (triple 3 4 5)))
     
     (check-equal? (list->set
                    (weird-hill-climbing-tree-search
-                    (triple 16 9 12)
+                    (triple 11 24 18)
                     #:accept-when small-sorted-triple?
                     #:reject-when nonpositive-triple?
                     #:search-using find-better-triples))
