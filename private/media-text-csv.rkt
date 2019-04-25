@@ -63,6 +63,17 @@
 ;; TODO: move this to its own module and add docs, but make sure it's clear to
 ;;   users that it's a private module used internally by Rebellion and not meant
 ;;   for external use.
+;; TODO: change function to return a set of results sorted by size consumed, so
+;;   we can prioritize exploring the parse trees that consume the most input and
+;;   we can deduplicate parse trees that result in the same consumption and same
+;;   result value (this requires changing block-parse-result to contain a value
+;;   directly instead of a handler function that computes a value).
+;; TODO: consider allowing "error parse results" that represent a parse error
+;;   with consumed input size info, so we can 1) report parse errors with custom
+;;   error messages, and 2) do something similar to what syntax-parse does where
+;;   when a parse fails in multiple ways, only one is presented to the user and
+;;   it's the error that made the most progress (i.e. consumed the most input
+;;   before failing).
 (struct block-parser (function))
 
 (define-tuple-type block-parse-result (handler size))
