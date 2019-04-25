@@ -87,9 +87,17 @@
          (list (block-parse-result values size))
          empty-list))))
 
-;; TODO: functor impl for parsers
 ;; TODO: sequencing parsers together, with requirement they all succeed (this
 ;;   should be an Applicative impl)
+(define (map/bp parser f)
+  (define parser-function (block-parser-function parser))
+  (block-parser
+   (λ (str start end)
+     (for/list ([result (in-list (parser-function str start end))])
+       (define handler (block-parse-result-handler result))
+       (define size (block-parse-result-size result))
+       (block-parse-result (compose1 f handler) size)))))
+
 ;; TODO: choosing between alternate parsers (Alternative impl)
 ;; TODO: Monad impl? maybe?
 ;; TODO: something like (consume-exact/bp "foo") for matching and discarding
