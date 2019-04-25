@@ -87,8 +87,6 @@
          (list (block-parse-result values size))
          empty-list))))
 
-;; TODO: sequencing parsers together, with requirement they all succeed (this
-;;   should be an Applicative impl)
 (define (map/bp parser f)
   (define parser-function (block-parser-function parser))
   (block-parser
@@ -97,6 +95,14 @@
        (define handler (block-parse-result-handler result))
        (define size (block-parse-result-size result))
        (block-parse-result (compose1 f handler) size)))))
+
+;; TODO: implement this, it's the Applicative instance on parsers and it should
+;;   sequence them all together with requirement that they all succeed
+(define (zip/bp f . parsers)
+  (define parser-functions (map block-parser-function parsers))
+  (block-parser
+   (λ (str start end)
+     (error 'zip/bp "unimplemented"))))
 
 ;; TODO: choosing between alternate parsers (Alternative impl)
 ;; TODO: Monad impl? maybe?
