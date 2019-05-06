@@ -9,6 +9,8 @@ languages, new frameworks, and new tools with.
 
 @local-table-of-contents[#:style 'immediate-only]
 
+@include-section[(lib "rebellion/private/bit.scrbl")]
+@include-section[(lib "rebellion/private/byte.scrbl")]
 @include-section[(lib "rebellion/private/custom-write.scrbl")]
 @include-section[(lib "rebellion/private/entry.scrbl")]
 @include-section[(lib "rebellion/private/equal+hash.scrbl")]
