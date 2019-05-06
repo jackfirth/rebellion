@@ -1,7 +1,5 @@
 #lang racket/base
 
-;; TODO: add docs and rebellion/media reprovide module
-
 (require racket/contract/base)
 
 (provide
