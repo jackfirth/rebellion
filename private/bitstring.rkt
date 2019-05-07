@@ -12,9 +12,13 @@
                          (#:padding (integer-in 0 7))
                          bitstring?)]))
 
-(require racket/list
+(require racket/format
+         racket/list
+         racket/struct
          rebellion/bit
          rebellion/byte
+         rebellion/equal+hash/tuple
+         rebellion/tuple-type
          rebellion/tuple-type-definition)
 
 (module+ test
@@ -28,8 +32,31 @@
 
 ;@------------------------------------------------------------------------------
 
-;; TODO: make bitstrings print nicely
-(define-tuple-type bitstring (bytes padding) #:constructor plain-bitstring)
+(define (make-bitstring-properties descriptor)
+  (define equal+hash (make-tuple-equal+hash descriptor))
+  (define accessor (tuple-descriptor-accessor descriptor))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) 'bitstring)
+     (λ (this)
+       (define bytes (accessor this 0))
+       (define padding (accessor this 1))
+       (define num-bytes (bytes-length bytes))
+       (for/list
+           ([byte (in-bytes bytes)]
+            [n (in-naturals)]
+            #:when #t
+            [bit (in-range
+                  (if (equal? n (sub1 num-bytes))
+                      (- 8 padding)
+                      8))])
+         (byte-ref byte bit)))))
+  (list (cons prop:custom-write custom-write)
+        (cons prop:equal+hash equal+hash)))
+
+(define-tuple-type bitstring (bytes padding)
+  #:constructor plain-bitstring
+  #:property-maker make-bitstring-properties)
 
 (define (bitstring . bits)
   (define size (length bits))
@@ -67,7 +94,7 @@
 (define (bitstring->padded-bytes bits) (bitstring-bytes bits))
 
 (define (bytes->bitstring bytes #:padding [padding 0])
-  (cond [(zero? padding) (bitstring bytes 0)]
+  (cond [(zero? padding) (plain-bitstring bytes 0)]
         [else
          (define size (bytes-length bytes))
          (define last-pos (sub1 size))
@@ -75,10 +102,10 @@
          (bytes-copy! mutable-padded-bytes 0
                       bytes 0 last-pos)
          (define last-byte (bytes-ref bytes last-pos))
-         (define padded-last-byte (byte-clear-rightmost-bits padding))
+         (define padded-last-byte (byte-clear-rightmost-bits last-byte padding))
          (bytes-set! mutable-padded-bytes last-pos padded-last-byte)
          (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
-         (bitstring padded-bytes padding)]))
+         (plain-bitstring padded-bytes padding)]))
 
 (module+ test
   (test-case "bitstring"
@@ -92,4 +119,8 @@
                                                 1 0 0 1))
                     (bytes (byte 0 0 0 0 1 1 1 1)
                            (byte 1 1 0 0 1 1 0 0)
-                           (byte 1 0 0 1 0 0 0 0))))))
+                           (byte 1 0 0 1 0 0 0 0))))
+    (test-case "printing"
+      (check-equal? (~a (bitstring 0 1 1 0 0 1 0 1 1 1 1))
+                    "#<bitstring: 0 1 1 0 0 1 0 1 1 1 1>")
+      (check-equal? (~a (bitstring)) "#<bitstring:>"))))
