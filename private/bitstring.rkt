@@ -13,7 +13,8 @@
         [_ bit?])]
   [bitstring->padded-bytes (-> bitstring? immutable-bytes?)]
   [bytes->bitstring
-   (->* (immutable-bytes?) (#:padding (integer-in 0 7)) bitstring?)]))
+   (->* (immutable-bytes?) (#:padding (integer-in 0 7)) bitstring?)]
+  [empty-bitstring bitstring?]))
 
 (require racket/format
          racket/list
@@ -94,6 +95,8 @@
   (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
 
   (plain-bitstring padded-bytes padding-size))
+
+(define empty-bitstring (bitstring))
 
 (define (bitstring->padded-bytes bits) (bitstring-bytes bits))
 
