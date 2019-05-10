@@ -2,18 +2,22 @@
 
 (require racket/contract)
 
-;; TODO: add bitstring-ref
 (provide
  (contract-out
   [bitstring (-> bit? ... bitstring?)]
   [bitstring? predicate/c]
+  [bitstring-size (-> bitstring? natural?)]
+  [bitstring-ref
+   (->i ([bits () bitstring?]
+         [pos (bits) (integer-in 0 (bitstring-size bits))])
+        [_ bit?])]
   [bitstring->padded-bytes (-> bitstring? immutable-bytes?)]
-  [bytes->bitstring (->* (immutable-bytes?)
-                         (#:padding (integer-in 0 7))
-                         bitstring?)]))
+  [bytes->bitstring
+   (->* (immutable-bytes?) (#:padding (integer-in 0 7)) bitstring?)]))
 
 (require racket/format
          racket/list
+         racket/math
          racket/struct
          rebellion/bit
          rebellion/byte
@@ -124,3 +128,31 @@
       (check-equal? (~a (bitstring 0 1 1 0 0 1 0 1 1 1 1))
                     "#<bitstring: 0 1 1 0 0 1 0 1 1 1 1>")
       (check-equal? (~a (bitstring)) "#<bitstring:>"))))
+
+(define (bitstring-size bits)
+  (define num-bytes (bytes-length (bitstring->padded-bytes bits)))
+  (- (* num-bytes 8) (bitstring-padding bits)))
+
+(define (bitstring-ref bits pos)
+  (define-values (byte-pos bit-pos) (quotient/remainder pos 8))
+  (define bytes (bitstring->padded-bytes bits))
+  (byte-ref (bytes-ref bytes byte-pos) bit-pos))
+
+(module+ test
+  (test-case "bitstring-size"
+    (check-equal? (bitstring-size (bitstring)) 0)
+    (check-equal? (bitstring-size (bitstring 0)) 1)
+    (check-equal? (bitstring-size (bitstring 1)) 1)
+    (check-equal? (bitstring-size (bitstring 1 1 1 1 1 1 1 1)) 8)
+    (check-equal? (bitstring-size (bitstring 1 1 1 1 1 1 1 1 1)) 9))
+  (test-case "bitstring-ref"
+    (check-equal? (bitstring-ref (bitstring 0 1) 0) 0)
+    (check-equal? (bitstring-ref (bitstring 0 1) 1) 1)
+    (define bits
+      (bitstring 0 0 0 0 0 1 0 0
+                 0 0 0 1 1 1 1 0
+                 1 1 1))
+    (check-equal? (bitstring-ref bits 10) 0)
+    (check-equal? (bitstring-ref bits 11) 1)
+    (check-equal? (bitstring-ref bits 15) 0)
+    (check-equal? (bitstring-ref bits 16) 1)))
