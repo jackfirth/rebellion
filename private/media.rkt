@@ -34,7 +34,8 @@
          rebellion/tuple-type-definition)
 
 (module+ test
-  (require rackunit))
+  (require racket/format
+           rackunit))
 
 ;@------------------------------------------------------------------------------
 ;; utilities
@@ -62,7 +63,7 @@
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)
-     (λ (this) (media-type->string this))))
+     (λ (this) (list (media-type->string this)))))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
@@ -154,7 +155,11 @@
                   #:parameters (record #:charset "utf-8"
                                        #:other-param "other-value")))
     (check-equal? (media-type->string mt)
-                  "text/example; charset=utf-8; other-param=other-value")))
+                  "text/example; charset=utf-8; other-param=other-value"))
+  (test-case "media-type-printing"
+    (define mt
+      (media-type 'text 'example #:parameters (record #:charset "utf-8")))
+    (check-equal? (~v mt) "(media-type \"text/example; charset=utf-8\")")))
 
 ;@------------------------------------------------------------------------------
 ;; media
