@@ -138,3 +138,12 @@ hash table whose keys are symbols or strings, use records instead.
                (λ (x) (* x 100))))}
 
 @include-section[(lib "rebellion/private/record-field.scrbl")]
+
+@defproc[(record-contains-key? [rec record?] [kw keyword?]) boolean?]{
+ Returns @racket[#t] if @racket[rec] contains a mapping for @racket[kw], returns
+ @racket[#f] otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (record-contains-key? (record #:x 0 #:y 0) '#:x)
+   (record-contains-key? (record #:x 0 #:y 0) '#:theta))}
