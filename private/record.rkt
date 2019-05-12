@@ -8,6 +8,7 @@
   [empty-record record?]
   [record (unconstrained-domain-> record?)]
   [record? (-> any/c boolean?)]
+  [record-contains-key? (-> record? keyword? boolean?)]
   [record-map (-> record? (-> any/c any/c) record?)]
   [record-merge2
    (->* (record? record?) (#:merge (-> any/c any/c any/c)) record?)]
@@ -217,3 +218,12 @@
   (test-case "build-record"
     (check-equal? (build-record keyword->string (keyset #:x #:y #:z))
                   (record #:x "x" #:y "y" #:z "z"))))
+
+(define (record-contains-key? rec kw)
+  (and (member kw (record-keywords rec)) #t))
+
+(module+ test
+  (test-case "record-contains-key?"
+    (check-true (record-contains-key? (record #:x 0 #:y 0) '#:x))
+    (check-true (record-contains-key? (record #:x 0 #:y 0) '#:y))
+    (check-false (record-contains-key? (record #:x 0 #:y 0) '#:z))))
