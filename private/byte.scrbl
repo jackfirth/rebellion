@@ -2,18 +2,18 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/bit
-                     rebellion/byte)
+                     rebellion/binary/bit
+                     rebellion/binary/byte)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/byte)
+    #:public (list 'rebellion/binary/byte)
     #:private (list 'racket/base)))
 
 @title{Bytes}
-@defmodule[rebellion/byte]
+@defmodule[rebellion/binary/byte]
 
 A @deftech{byte} is a sequence of eight @tech{bits}, represented as an exact
 integer between @racket[0] and @racket[255].

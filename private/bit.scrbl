@@ -2,17 +2,17 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/bit)
+                     rebellion/binary/bit)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/bit)
+    #:public (list 'rebellion/binary/bit)
     #:private (list 'racket/base)))
 
 @title{Bits}
-@defmodule[rebellion/bit]
+@defmodule[rebellion/binary/bit]
 
 A @deftech{bit} is either zero or one. Eight bits form a @tech{byte}, and a
 @tech{bitstring} is an arbitrary-length sequence of bits.
