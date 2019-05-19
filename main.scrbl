@@ -1,4 +1,5 @@
 #lang scribble/manual
+
 @(require (for-label rebellion))
 
 @title{Rebellion}
@@ -7,16 +8,13 @@
 Rebellion is a set of infrastructure libraries for Racketeers to build new
 languages, new frameworks, and new tools with.
 
-@local-table-of-contents[#:style 'immediate-only]
+@table-of-contents[]
 
-@include-section[(lib "rebellion/private/bit.scrbl")]
-@include-section[(lib "rebellion/private/bitstring.scrbl")]
-@include-section[(lib "rebellion/private/byte.scrbl")]
+@include-section[(lib "rebellion/private/binary.scrbl")]
 @include-section[(lib "rebellion/private/custom-write.scrbl")]
 @include-section[(lib "rebellion/private/entry.scrbl")]
 @include-section[(lib "rebellion/private/equal+hash.scrbl")]
 @include-section[(lib "rebellion/private/generative-token.scrbl")]
-@include-section[(lib "rebellion/private/immutable-bytes.scrbl")]
 @include-section[(lib "rebellion/private/immutable-string.scrbl")]
 @include-section[(lib "rebellion/private/keyset.scrbl")]
 @include-section[(lib "rebellion/private/media.scrbl")]

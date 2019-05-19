@@ -14,7 +14,7 @@
   [octet-stream->bitstring (-> octet-stream? bitstring?)]
   [octet-stream->media (-> octet-stream? media?)]))
 
-(require rebellion/bitstring
+(require rebellion/binary/bitstring
          rebellion/media
          rebellion/record
          rebellion/tuple-type-definition)
@@ -22,7 +22,7 @@
 (module+ test
   (require (submod "..")
            rackunit
-           rebellion/byte))
+           rebellion/binary/byte))
 
 ;@------------------------------------------------------------------------------
 

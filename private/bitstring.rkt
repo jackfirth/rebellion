@@ -20,8 +20,8 @@
          racket/list
          racket/math
          racket/struct
-         rebellion/bit
-         rebellion/byte
+         rebellion/binary/bit
+         rebellion/binary/byte
          rebellion/equal+hash/tuple
          rebellion/tuple-type
          rebellion/tuple-type-definition)

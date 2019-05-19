@@ -10,7 +10,7 @@
   [byte-drop-rightmost-bits (-> byte? (integer-in 0 8) byte?)]
   [byte-ref (-> byte? (integer-in 0 7) bit?)]))
 
-(require rebellion/bit)
+(require rebellion/binary/bit)
 
 (module+ test
   (require (submod "..")

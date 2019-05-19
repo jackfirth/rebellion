@@ -3,17 +3,17 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/bitstring)
+                     rebellion/binary/bitstring)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/bitstring)
+    #:public (list 'rebellion/binary/bitstring)
     #:private (list 'racket/base)))
 
 @title{Bitstrings}
-@defmodule[rebellion/bitstring]
+@defmodule[rebellion/binary/bitstring]
 
 A @deftech{bitstring} is an immutable, contiguous sequence of @tech{bits}.
 Bitstrings are represented compactly; a bitstring of 8N bits consumes N bytes of
