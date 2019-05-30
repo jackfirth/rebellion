@@ -2,14 +2,8 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/immutable-string)
-          (submod rebellion/private/scribble-evaluator-factory doc)
-          scribble/example)
-
-@(define make-evaluator
-   (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/binary/immutable-bytes)
-    #:private (list 'racket/base)))
+                     racket/math
+                     rebellion/immutable-string))
 
 @title{Immutable Strings}
 @defmodule[rebellion/immutable-string]
