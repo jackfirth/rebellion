@@ -2,14 +2,8 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/immutable-string)
-          (submod rebellion/private/scribble-evaluator-factory doc)
-          scribble/example)
-
-@(define make-evaluator
-   (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/binary/immutable-bytes)
-    #:private (list 'racket/base)))
+                     racket/math
+                     rebellion/immutable-string))
 
 @title{Immutable Strings}
 @defmodule[rebellion/immutable-string]
@@ -30,7 +24,7 @@ always accept and return immutable strings.
 @defproc[(immutable-string-length [string immutable-string?]) natural?]
 
 @defproc[(immutable-string-ref [string immutable-string?] [k natural?])
-         natural?]
+         char?]
 
 @defproc[(immutable-substring [string immutable-string?]
                               [start natural?]
@@ -43,7 +37,7 @@ always accept and return immutable strings.
 @defproc[(immutable-string->list [string immutable-string?]) (listof char?)]
 @defproc[(list->immutable-string [lst (listof char?)]) immutable-string?]
 
-@defproc[(build-string [n natural?] [func (-> natural? char?)])
+@defproc[(build-immutable-string [n natural?] [func (-> natural? char?)])
          immutable-string?]
 
 @defproc[(immutable-string=? [string1 immutable-string?]
@@ -86,14 +80,28 @@ always accept and return immutable strings.
                                  [string2 immutable-string?] ...)
          boolean?]
 
-@defproc[(string-upcase [string immutable-string?]) immutable-string?]
-@defproc[(string-downcase [string immutable-string?]) immutable-string?]
-@defproc[(string-titlecase [string immutable-string?]) immutable-string?]
-@defproc[(string-foldcase [string immutable-string?]) immutable-string?]
-@defproc[(string-normalize-nfd [string immutable-string?]) immutable-string?]
-@defproc[(string-normalize-nfkd [string immutable-string?]) immutable-string?]
-@defproc[(string-normalize-nfc [string immutable-string?]) immutable-string?]
-@defproc[(string-normalize-nfkc [string immutable-string?]) immutable-string?]
+@defproc[(immutable-string-upcase [string immutable-string?]) immutable-string?]
+
+@defproc[(immutable-string-downcase [string immutable-string?])
+         immutable-string?]
+
+@defproc[(immutable-string-titlecase [string immutable-string?])
+         immutable-string?]
+
+@defproc[(immutable-string-foldcase [string immutable-string?])
+         immutable-string?]
+
+@defproc[(immutable-string-normalize-nfd [string immutable-string?])
+         immutable-string?]
+
+@defproc[(immutable-string-normalize-nfkd [string immutable-string?])
+         immutable-string?]
+
+@defproc[(immutable-string-normalize-nfc [string immutable-string?])
+         immutable-string?]
+
+@defproc[(immutable-string-normalize-nfkc [string immutable-string?])
+         immutable-string?]
 
 @defproc[(immutable-string-locale=? [string1 immutable-string?]
                                     [string2 immutable-string?] ...)
@@ -119,8 +127,11 @@ always accept and return immutable strings.
                                        [string2 immutable-string?] ...)
          boolean?]
 
-@defproc[(string-locale-upcase [string immutable-string?]) immutable-string?]
-@defproc[(string-locale-downcase [string immutable-string?]) immutable-string?]
+@defproc[(immutable-string-locale-upcase [string immutable-string?])
+         immutable-string?]
+
+@defproc[(immutable-string-locale-downcase [string immutable-string?])
+         immutable-string?]
 
 @defproc[(empty-immutable-string? [v any/c]) boolean?]
 @defproc[(nonempty-immutable-string? [v any/c]) boolean?]
