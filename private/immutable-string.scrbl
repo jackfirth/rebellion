@@ -24,7 +24,7 @@ always accept and return immutable strings.
 @defproc[(immutable-string-length [string immutable-string?]) natural?]
 
 @defproc[(immutable-string-ref [string immutable-string?] [k natural?])
-         natural?]
+         char?]
 
 @defproc[(immutable-substring [string immutable-string?]
                               [start natural?]
