@@ -9,7 +9,7 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/record 'rebellion/keyset)
+    #:public (list 'rebellion/record 'rebellion/collection/keyset)
     #:private (list 'racket/base)))
 
 @title{Records}

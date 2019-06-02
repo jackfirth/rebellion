@@ -48,7 +48,7 @@
          rebellion/custom-write/struct
          rebellion/equal+hash
          rebellion/equal+hash/struct
-         rebellion/keyset
+         rebellion/collection/keyset
          rebellion/permutation
          rebellion/private/struct-definition-util
          rebellion/struct-descriptor)
