@@ -2,17 +2,17 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/entry)
+                     rebellion/collection/entry)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/entry)
+    #:public (list 'rebellion/collection/entry)
     #:private (list 'racket/base)))
 
 @title{Entries}
-@defmodule[rebellion/entry]
+@defmodule[rebellion/collection/entry]
 
 An @deftech{entry} is a key-value pair representing a mapping in a
 dictionary-like collection. Entries are semantically equivalent to @tech{pairs},
