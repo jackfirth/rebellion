@@ -3,10 +3,10 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/immutable-vector))
+                     rebellion/collection/immutable-vector))
 
 @title{Immutable Vectors}
-@defmodule[rebellion/immutable-vector]
+@defmodule[rebellion/collection/immutable-vector]
 
 An @deftech{immutable vector} is an ordinary @racket[vector?] that is immutable
 in the sense of @racket[immutable?]. The @racketmodname[
