@@ -22,7 +22,7 @@
          racket/math
          racket/struct
          rebellion/generative-token
-         rebellion/keyset)
+         rebellion/collection/keyset)
 
 (module+ test
   (require (submod "..")

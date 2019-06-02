@@ -3,17 +3,17 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/keyset)
+                     rebellion/collection/keyset)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/keyset)
+    #:public (list 'rebellion/collection/keyset)
     #:private (list 'racket/base)))
 
 @title{Keysets}
-@defmodule[rebellion/keyset]
+@defmodule[rebellion/collection/keyset]
 
 A @deftech{keyset} is a data structure representing an immutable sorted set of
 keywords. Keysets can be more efficient than generic sorted set implementations.
