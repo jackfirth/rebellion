@@ -239,7 +239,7 @@
 ;@------------------------------------------------------------------------------
 
 (define (make-record-field-properties descriptor)
-  (define type-name (tuple-type-name (tuple-descriptor-accessor descriptor)))
+  (define type-name (tuple-type-name (tuple-descriptor-type descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
   (define equal+hash (make-tuple-equal+hash descriptor))
   (define custom-write
