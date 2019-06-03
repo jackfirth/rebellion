@@ -23,9 +23,9 @@
   [tuple-descriptor-type (-> tuple-descriptor? tuple-type?)]
   [tuple-type
    (->* (symbol? natural?)
-        (#:predicate-name symbol?
-         #:constructor-name symbol?
-         #:accessor-name symbol?)
+        (#:predicate-name (or/c symbol? #f)
+         #:constructor-name (or/c symbol? #f)
+         #:accessor-name (or/c symbol? #f))
         tuple-type?)]
   [tuple-type? (-> any/c boolean?)]
   [tuple-type-accessor-name (-> tuple-type? symbol?)]
@@ -136,9 +136,13 @@
 (define (tuple-type
          name
          size
-         #:predicate-name [predicate-name (default-tuple-predicate-name name)]
-         #:constructor-name [constructor-name name]
-         #:accessor-name [accessor-name (default-tuple-accessor-name name)])
+         #:predicate-name [predicate-name* #f]
+         #:constructor-name [constructor-name* #f]
+         #:accessor-name [accessor-name* #f])
+  (define predicate-name
+    (or predicate-name* (default-tuple-predicate-name name)))
+  (define constructor-name (or constructor-name* name))
+  (define accessor-name (or accessor-name* (default-tuple-accessor-name name)))
   (constructor:tuple-type
    name size predicate-name constructor-name accessor-name))
 
