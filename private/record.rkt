@@ -238,12 +238,13 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (make-properties descriptor)
+(define (make-record-field-properties descriptor)
+  (define type-name (tuple-type-name (tuple-descriptor-accessor descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
   (define equal+hash (make-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
-     (λ (_) 'field)
+     (λ (_) type-name)
      (λ (this)
        (define name (string-append "#:" (keyword->string (accessor this 0))))
        (list (unquoted-printing-string name) (accessor this 1)))))
@@ -252,7 +253,7 @@
 
 (define-tuple-type record-field (name value)
   #:constructor constructor:record-field
-  #:property-maker make-properties)
+  #:property-maker make-record-field-properties)
 
 (define (record-field-keyword-function kws kw-args)
   (when (> (length kws) 1)
