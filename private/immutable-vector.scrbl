@@ -10,7 +10,7 @@
 
 An @deftech{immutable vector} is an ordinary @racket[vector?] that is immutable
 in the sense of @racket[immutable?]. The @racketmodname[
- rebellion/immutable-vector] module provides functions and predicates that
+ rebellion/collection/immutable-vector] module provides functions and predicates that
 always accept and return immutable vectors. These functions should always be
 used when a vector is known to be immutable, instead of using functions that
 work on either mutable or immutable vectors. This is analogous to how mutable
