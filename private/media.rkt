@@ -29,7 +29,7 @@
 (require racket/string
          racket/struct
          rebellion/equal+hash/tuple
-         rebellion/record
+         rebellion/collection/record
          rebellion/tuple-type
          rebellion/tuple-type-definition)
 

@@ -3,17 +3,17 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/record)
+                     rebellion/collection/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/record 'rebellion/collection/keyset)
+    #:public (list 'rebellion/collection/record 'rebellion/collection/keyset)
     #:private (list 'racket/base)))
 
 @title{Records}
-@defmodule[rebellion/record]
+@defmodule[rebellion/collection/record]
 
 A @deftech{record} is a collection of name-value mappings, each which is called
 a @deftech{record field}. The name of a field is a @tech{keyword}. Records

@@ -19,7 +19,7 @@
          racket/math
          racket/pretty
          rebellion/generative-token
-         rebellion/record
+         rebellion/collection/record
          syntax/parse/define)
 
 (module+ test
