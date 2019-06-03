@@ -16,7 +16,7 @@
 
 (require rebellion/binary/bitstring
          rebellion/media
-         rebellion/record
+         rebellion/collection/record
          rebellion/tuple-type-definition)
 
 (module+ test
