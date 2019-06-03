@@ -26,6 +26,7 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/singleton.scrbl")]
 @include-section[(lib "rebellion/private/text.scrbl")]
 @include-section[(lib "rebellion/private/tuple-type.scrbl")]
+@include-section[(lib "rebellion/private/record-type.scrbl")]
 @include-section[(lib "rebellion/private/variant.scrbl")]
 @include-section[(lib "rebellion/private/web-graph.scrbl")]
 @include-section[(lib "rebellion/private/web-link.scrbl")]
