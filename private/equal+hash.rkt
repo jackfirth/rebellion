@@ -5,14 +5,16 @@
 (provide
  (contract-out
   [make-accessor-based-equal+hash
-   (-> (-> any/c natural? any/c) natural?
-       (list/c procedure? procedure? procedure?))]
-  [make-singleton-equal+hash (-> (list/c procedure? procedure? procedure?))]))
+   (-> (-> any/c natural? any/c) natural? equal+hash/c)]
+  [make-singleton-equal+hash (-> equal+hash/c)]
+  [equal+hash/c contract?]))
 
 (require racket/math
          rebellion/generative-token)
 
 ;@------------------------------------------------------------------------------
+
+(define equal+hash/c (list/c procedure? procedure? procedure?))
 
 (define (make-accessor-based-equal+hash accessor size)
   (define token (make-generative-token))
