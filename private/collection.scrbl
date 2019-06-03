@@ -9,3 +9,4 @@
 @include-section[(lib "rebellion/private/keyset.scrbl")]
 @include-section[(lib "rebellion/private/multiset.scrbl")]
 @include-section[(lib "rebellion/private/record.scrbl")]
+@include-section[(lib "rebellion/private/table.scrbl")]
