@@ -83,3 +83,10 @@ at compile-time.
    #:eval (make-evaluator) #:once
    (define greek-gods (keyset #:zeus #:hera #:hades #:athena #:poseidon))
    (keyset->list greek-gods))}
+
+@defproc[(list->keyset [kws (listof keyword?)]) keyset?]{
+ Sorts @racket[kws] and removes duplicates, returning a @tech{keyset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (list->keyset (list '#:banana '#:orange '#:orange '#:apple '#:grape)))}

@@ -1,4 +1,6 @@
-#lang rebellion/private/dependencies/layer1
+#lang racket/base
+
+(require racket/contract/base)
 
 (provide
  keyset
@@ -14,17 +16,24 @@
          [pos (keys) (and/c natural? (</c (keyset-size keys)))])
         [_ keyword?])]
   [keyset-size (-> keyset? natural?)]
-  [keyset->list (-> keyset? (listof keyword?))]))
+  [keyset->list (-> keyset? (listof keyword?))]
+  [list->keyset (-> (listof keyword?) keyset?)]))
 
-(require rebellion/generative-token
+(require (for-syntax racket/base
+                     racket/list)
+         racket/list
+         rebellion/collection/immutable-vector
+         rebellion/generative-token
          rebellion/name
-         rebellion/predicate
+         (except-in rebellion/predicate predicate/c)
          rebellion/private/boolean
          rebellion/private/keyword
-         rebellion/private/natural)
+         rebellion/private/natural
+         syntax/parse/define)
 
 (module+ test
   (require (submod "..")
+           racket/format
            rackunit))
 
 ;@------------------------------------------------------------------------------
@@ -118,8 +127,18 @@
 (define (keyset->list keys)
   (build-list (keyset-size keys) (λ (i) (keyset-ref keys i))))
 
+(define (list->keyset kws)
+  (make-keyset
+   (list->immutable-vector (remove-duplicates (sort kws keyword<?)))))
+
 (module+ test
   (test-case "keyset->list"
     (check-equal? (keyset->list empty-keyset) (list))
     (check-equal? (keyset->list (keyset #:apple #:orange #:banana))
-                  (list '#:apple '#:banana '#:orange))))
+                  (list '#:apple '#:banana '#:orange)))
+  (test-case "list->keyset"
+    (check-equal? (list->keyset (list)) empty-keyset)
+    (check-equal? (list->keyset (list '#:apple '#:orange '#:banana))
+                  (keyset #:apple #:orange #:banana))
+    (check-equal? (list->keyset (list '#:apple '#:apple '#:orange))
+                  (keyset #:apple #:orange))))
