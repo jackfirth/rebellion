@@ -3,17 +3,17 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/table)
+                     rebellion/collection/table)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/table)
+    #:public (list 'rebellion/collection/table)
     #:private (list 'racket/base)))
 
 @title{Tables}
-@defmodule[rebellion/table]
+@defmodule[rebellion/collection/table]
 
 A @deftech{table} is a data structure made up of a collection of rows. Tables
 contain a list of column names --- represented by keywords --- and each row has
