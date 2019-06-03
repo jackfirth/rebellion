@@ -7,7 +7,7 @@
   [build-record (-> (-> keyword? any/c) keyset? record?)]
   [empty-record record?]
   [record (unconstrained-domain-> record?)]
-  [record? (-> any/c boolean?)]
+  [record? predicate/c]
   [record-contains-key? (-> record? keyword? boolean?)]
   [record-map (-> record? (-> any/c any/c) record?)]
   [record-merge2
@@ -16,16 +16,24 @@
   [record-values (-> record? list?)]
   [record-ref (-> record? keyword? any/c)]
   [record-remove (-> record? keyword? record?)]
-  [record-size (-> record? natural?)]))
+  [record-size (-> record? natural?)]
+  [record-field (unconstrained-domain-> record-field?)]
+  [record-field? predicate/c]
+  [record-field-name (-> record-field? keyword?)]
+  [record-field-value (-> record-field? any/c)]))
 
 (require racket/list
          racket/math
          racket/struct
+         rebellion/collection/keyset
          rebellion/generative-token
-         rebellion/collection/keyset)
+         rebellion/equal+hash/tuple
+         rebellion/tuple-type
+         rebellion/tuple-type-definition)
 
 (module+ test
   (require (submod "..")
+           racket/format
            rackunit))
 
 ;@------------------------------------------------------------------------------
@@ -227,3 +235,48 @@
     (check-true (record-contains-key? (record #:x 0 #:y 0) '#:x))
     (check-true (record-contains-key? (record #:x 0 #:y 0) '#:y))
     (check-false (record-contains-key? (record #:x 0 #:y 0) '#:z))))
+
+;@------------------------------------------------------------------------------
+
+(define (make-properties descriptor)
+  (define accessor (tuple-descriptor-accessor descriptor))
+  (define equal+hash (make-tuple-equal+hash descriptor))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) 'field)
+     (λ (this)
+       (define name (string-append "#:" (keyword->string (accessor this 0))))
+       (list (unquoted-printing-string name) (accessor this 1)))))
+  (list (cons prop:equal+hash equal+hash)
+        (cons prop:custom-write custom-write)))
+
+(define-tuple-type record-field (name value)
+  #:constructor constructor:record-field
+  #:property-maker make-properties)
+
+(define (record-field-keyword-function kws kw-args)
+  (when (> (length kws) 1)
+    (raise-arguments-error 'record-field
+                           "multiple keyword arguments"
+                           "keywords" kws
+                           "values" kw-args))
+  (when (< (length kws) 1)
+    (raise-arguments-error 'record-field "no arguments given"))
+  (constructor:record-field (first kws) (first kw-args)))
+
+(define record-field
+  (procedure-reduce-keyword-arity
+   (make-keyword-procedure record-field-keyword-function)
+   0
+   empty
+   #f))
+
+(module+ test
+  (test-case "record-field"
+    (define f (record-field #:widget-price #e49.99))
+    (check-equal? (record-field-name f) '#:widget-price)
+    (check-equal? (record-field-value f) #e49.99)
+    (check-equal? f (record-field #:widget-price #e49.99))
+    (check-equal? (~v f) "(record-field #:widget-price 4999/100)")
+    (check-equal? (~a f) "#<record-field: #:widget-price 4999/100>")
+    (check-equal? (~s f) "#<record-field: #:widget-price 4999/100>")))
