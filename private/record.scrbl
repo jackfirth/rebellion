@@ -137,8 +137,6 @@ hash table whose keys are symbols or strings, use records instead.
    (record-map (record #:x 1 #:y 2 #:z 3)
                (λ (x) (* x 100))))}
 
-@include-section[(lib "rebellion/private/record-field.scrbl")]
-
 @defproc[(record-contains-key? [rec record?] [kw keyword?]) boolean?]{
  Returns @racket[#t] if @racket[rec] contains a mapping for @racket[kw], returns
  @racket[#f] otherwise.
@@ -147,3 +145,28 @@ hash table whose keys are symbols or strings, use records instead.
    #:eval (make-evaluator) #:once
    (record-contains-key? (record #:x 0 #:y 0) '#:x)
    (record-contains-key? (record #:x 0 #:y 0) '#:theta))}
+
+@section{Record Fields}
+
+@defproc[(record-field? [v any/c]) boolean?]{
+ A predicate for @tech{record fields}.}
+
+@defproc[(record-field [#:<kw> v any/c]) record-field?]{
+ Constructs a @tech{record field} mapping whatever keyword is given for
+ @racket[#:<kw>] to @racket[v].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (record-field #:title "Fabulous Widget 2.0")
+   (record-field #:color 'firetruck-red))}
+
+@deftogether[[
+ @defproc[(record-field-name [field record-field?]) keyword?]
+ @defproc[(record-field-value [field record-field?]) any/c]]]{
+ Accessors for the name and value of a @tech{record field}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define field (record-field #:title "Fabulous Widget 2.0"))
+   (record-field-name field)
+   (record-field-value field))}
