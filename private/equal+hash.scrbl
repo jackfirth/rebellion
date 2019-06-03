@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/math
                      rebellion/struct-descriptor
                      rebellion/tuple-type
                      rebellion/tuple-type-definition
@@ -26,7 +27,7 @@
 
 @defproc[(make-accessor-based-equal+hash [accessor (-> any/c natural? any/c)]
                                          [size natural?])
-         (list/c procedure? procedure? procedure?)]{
+         equal+hash/c]{
  Builds an equality-checking function, a hashing function, and a secondary
  hashing function suitable for use with @racket[prop:equal+hash]. These
  functions extract @racket[size] fields from values using @racket[accessor] and
@@ -34,11 +35,14 @@
  directly; instead clients are expected to use one of @racket[
  make-struct-equal+hash] or @racket[make-tuple-equal+hash].}
 
+@defthing[equal+hash/c contract?
+          #:value (list/c procedure? procedure? procedure?)]
+
 @section{Struct Equality and Hashing}
 @defmodule[rebellion/equal+hash/struct]
 
 @defproc[(make-struct-equal+hash [descriptor struct-descriptor?])
-         (list/c procedure? procedure? procedure?)]{
+         equal+hash/c]{
  Builds an equality-checking function, a hashing function, and a secondary
  hashing function suitable for use with @racket[prop:equal+hash], each of which
  operate on instances of @racket[descriptor]. All fields in @racket[descriptor]
@@ -66,7 +70,7 @@
 @defmodule[rebellion/equal+hash/tuple]
 
 @defproc[(make-tuple-equal+hash [descriptor tuple-descriptor?])
-         (list/c procedure? procedure? procedure?)]{
+         equal+hash/c]{
  Builds an equality-checking function, a hashing function, and a secondary
  hashing function suitable for use with @racket[prop:equal+hash], each of which
  operate on instances of @racket[descriptor]. All fields in @racket[descriptor]
