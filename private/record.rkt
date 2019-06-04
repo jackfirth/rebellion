@@ -28,8 +28,7 @@
          rebellion/collection/keyset
          rebellion/generative-token
          rebellion/equal+hash/tuple
-         rebellion/tuple-type
-         rebellion/tuple-type-definition)
+         rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")

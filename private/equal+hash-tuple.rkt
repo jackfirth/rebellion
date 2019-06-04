@@ -9,7 +9,7 @@
        (list/c procedure? procedure? procedure?))]))
 
 (require rebellion/equal+hash
-         rebellion/tuple-type)
+         rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
 

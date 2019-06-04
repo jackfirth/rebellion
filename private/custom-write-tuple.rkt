@@ -14,7 +14,7 @@
 (require racket/math
          racket/struct
          rebellion/custom-write
-         rebellion/tuple-type)
+         rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
 

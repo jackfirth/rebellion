@@ -10,7 +10,7 @@
 
 (require racket/struct
          rebellion/equal+hash/tuple
-         rebellion/tuple-type
+         rebellion/type/tuple
          rebellion/web-link)
 
 (module+ test

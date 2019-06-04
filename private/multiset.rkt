@@ -20,8 +20,7 @@
          racket/set
          racket/struct
          rebellion/equal+hash/tuple
-         rebellion/tuple-type
-         rebellion/tuple-type-definition)
+         rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")

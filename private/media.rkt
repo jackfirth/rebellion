@@ -30,8 +30,7 @@
          racket/struct
          rebellion/equal+hash/tuple
          rebellion/collection/record
-         rebellion/tuple-type
-         rebellion/tuple-type-definition)
+         rebellion/type/tuple)
 
 (module+ test
   (require racket/format

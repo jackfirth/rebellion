@@ -3,6 +3,7 @@
 (require racket/contract/base)
 
 (provide
+ define-tuple-type
  (contract-out
   [initialized-tuple-descriptor? (-> any/c boolean?)]
   [make-default-tuple-properties
@@ -43,7 +44,9 @@
   [tuple-type-size (-> tuple-type? natural?)]
   [uninitialized-tuple-descriptor? (-> any/c boolean?)]))
 
-(require racket/math
+(require (for-syntax racket/base
+                     racket/syntax)
+         racket/math
          racket/struct
          rebellion/custom-write/struct
          rebellion/equal+hash
@@ -51,7 +54,8 @@
          rebellion/collection/keyset
          rebellion/permutation
          rebellion/private/struct-definition-util
-         rebellion/struct-descriptor)
+         rebellion/struct-descriptor
+         syntax/parse/define)
 
 (module+ test
   (require (submod "..")
@@ -295,3 +299,36 @@
     (check-equal? (~v point?) "#<procedure:point?>")
     (check-equal? (~v point-x) "#<procedure:point-x>")
     (check-equal? (~v point-y) "#<procedure:point-y>")))
+
+;@------------------------------------------------------------------------------
+
+(define-simple-macro
+  (define-tuple-type id:id (field:id ...)
+    (~alt (~optional (~seq #:constructor constructor:id)
+                     #:defaults ([constructor #'id]))
+          (~optional (~seq #:predicate predicate:id)
+                     #:defaults ([predicate
+                                  (format-id #'id "~a?" (syntax-e #'id))]))
+          (~optional (~seq #:property-maker property-maker:expr)
+                     #:defaults ([property-maker
+                                  #'make-default-tuple-properties])))
+    ...)
+  #:do [(define size (length (syntax->list #'(field ...))))]
+  #:with quoted-size #`(quote #,size)
+  #:with (field-accessor ...)
+  (map (λ (field-id)
+         (format-id field-id "~a-~a" (syntax-e #'id) (syntax-e field-id)))
+       (syntax->list #'(field ...)))
+  #:with (field-position ...) (build-list size (λ (n) #`(quote #,n)))
+  (begin
+    (define descriptor
+      (tuple-type-make-implementation
+       (tuple-type 'id quoted-size
+                   #:constructor-name 'constructor
+                   #:predicate-name 'predicate)
+       #:property-maker property-maker))
+    (define constructor (tuple-descriptor-constructor descriptor))
+    (define predicate (tuple-descriptor-predicate descriptor))
+    (define field-accessor
+      (make-tuple-field-accessor descriptor field-position 'field))
+    ...))

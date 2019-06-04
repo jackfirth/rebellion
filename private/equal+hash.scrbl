@@ -4,8 +4,7 @@
                      racket/contract/base
                      racket/math
                      rebellion/struct-descriptor
-                     rebellion/tuple-type
-                     rebellion/tuple-type-definition
+                     rebellion/type/tuple
                      rebellion/equal+hash
                      rebellion/equal+hash/struct
                      rebellion/equal+hash/tuple)
@@ -15,8 +14,7 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/struct-descriptor
-                   'rebellion/tuple-type
-                   'rebellion/tuple-type-definition
+                   'rebellion/type/tuple
                    'rebellion/equal+hash
                    'rebellion/equal+hash/struct
                    'rebellion/equal+hash/tuple)

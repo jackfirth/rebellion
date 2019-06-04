@@ -30,8 +30,7 @@
          rebellion/custom-write/tuple
          rebellion/equal+hash
          rebellion/symbol
-         rebellion/tuple-type
-         rebellion/tuple-type-definition
+         rebellion/type/tuple
          syntax/parse/define)
 
 ;@------------------------------------------------------------------------------
@@ -140,23 +139,23 @@
     (~alt (~optional (~seq #:name name:id)
                      #:name "#:name option"
                      #:defaults ([name #'id.default-name]))
-          
+
           (~optional (~seq #:predicate-name predicate:id)
                      #:name "#:predicate-name option"
                      #:defaults ([predicate #'id.default-predicate-name]))
-          
+
           (~optional (~seq #:descriptor-name descriptor:id)
                      #:name "#:descriptor-name option"
                      #:defaults ([descriptor #'id.default-descriptor-name]))
-          
+
           (~optional (~seq #:type-representation-name type:id)
                      #:name "#:type-representation-name option"
                      #:defaults ([type #'id.default-type-name]))
-          
+
           (~optional (~seq #:inspector inspector:expr)
                      #:name "#:inspector option"
                      #:defaults ([inspector #'(current-inspector)]))
-          
+
           (~optional (~seq #:property-maker prop-maker:expr)
                      #:name "#:property-maker option"
                      #:defaults

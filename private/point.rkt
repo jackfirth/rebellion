@@ -9,7 +9,7 @@
   [point-x (-> point? real?)]
   [point-y (-> point? real?)]))
 
-(require rebellion/tuple-type)
+(require rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
 
