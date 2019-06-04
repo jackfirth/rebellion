@@ -21,7 +21,7 @@
          rebellion/binary/immutable-bytes
          rebellion/media
          rebellion/collection/record
-         rebellion/tuple-type-definition)
+         rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")

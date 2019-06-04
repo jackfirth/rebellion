@@ -25,8 +25,7 @@
          racket/set
          racket/struct
          rebellion/equal+hash/tuple
-         rebellion/tuple-type
-         rebellion/tuple-type-definition
+         rebellion/type/tuple
          syntax/parse/define)
 
 ;@------------------------------------------------------------------------------

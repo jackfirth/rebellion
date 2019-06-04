@@ -9,7 +9,7 @@
   [pair-first (-> pair? any/c)]
   [pair-second (-> pair? any/c)]))
 
-(require rebellion/tuple-type)
+(require rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
 

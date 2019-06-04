@@ -39,8 +39,7 @@
          rebellion/collection/keyset
          rebellion/custom-write
          rebellion/equal+hash
-         rebellion/tuple-type
-         rebellion/tuple-type-definition
+         rebellion/type/tuple
          syntax/parse/define)
 
 (module+ test
@@ -49,7 +48,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define properties/c (listof (cons/c struct-type-property? any/c)))      
+(define properties/c (listof (cons/c struct-type-property? any/c)))
 
 (define-tuple-type record-type
   (name fields predicate-name constructor-name accessor-name)
@@ -104,7 +103,7 @@
   (define descriptor
     (tuple-type-make-implementation (record-type->tuple-type type)
                                     #:inspector inspector
-                                    #:property-maker tuple-prop-maker)) 
+                                    #:property-maker tuple-prop-maker))
   (tuple-descriptor->record-descriptor descriptor type))
 
 (define (record-type->tuple-type type)

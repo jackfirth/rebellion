@@ -13,7 +13,7 @@
 
 (require net/url
          racket/struct
-         rebellion/tuple-type
+         rebellion/type/tuple
          rebellion/equal+hash/tuple)
 
 (module+ test

@@ -23,8 +23,7 @@
          rebellion/binary/bit
          rebellion/binary/byte
          rebellion/equal+hash/tuple
-         rebellion/tuple-type
-         rebellion/tuple-type-definition)
+         rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")

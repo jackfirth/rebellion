@@ -2,18 +2,18 @@
 
 @(require (for-label racket/base
                      racket/math
-                     rebellion/tuple-type
+                     rebellion/type/tuple
                      rebellion/struct-descriptor)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/tuple-type)
+    #:public (list 'rebellion/type/tuple)
     #:private (list 'racket/base)))
 
 @title{Tuple Types}
-@defmodule[rebellion/tuple-type]
+@defmodule[rebellion/type/tuple]
 
 A @deftech{tuple type} is a data type representing immutable fixed-size
 sequences of unnamed values, each of which is a @deftech{tuple instance} of the
@@ -132,4 +132,20 @@ distinct implementations of that type.
  called by @racket[tuple-type-make-implementation] when no @racket[_prop-maker]
  argument is supplied.}
 
-@include-section[(lib "rebellion/private/tuple-type-definition.scrbl")]
+@defform[
+ (define-tuple-type id (field-id ...) option ...)
+ #:grammar
+ ([option (code:line #:constructor constructor-id)
+   (code:line #:predicate predicate-id)
+   (code:line #:property-maker prop-maker-expr)])
+ #:contracts
+ ([prop-maker-expr (-> uninitialized-tuple-descriptor?
+                       (listof (cons/c struct-type-property? any/c)))])]{
+ Defines a new @tech{tuple type}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define-tuple-type point (x y))
+   (point 1 2)
+   (point-x (point 42 0))
+   (point-y (point 42 0)))}

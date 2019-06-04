@@ -9,7 +9,7 @@
   [entry-key (-> entry? any/c)]
   [entry-value (-> entry? any/c)]))
 
-(require rebellion/tuple-type)
+(require rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
 
