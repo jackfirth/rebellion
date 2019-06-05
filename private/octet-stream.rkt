@@ -33,7 +33,7 @@
 
 ;; TODO: handle the "type" parameter
 (define-tuple-type octet-stream (bytes padding)
-  #:constructor plain-octet-stream)
+  #:constructor-name plain-octet-stream)
 
 (define (octet-stream bytes #:padding [padding 0])
   (plain-octet-stream bytes padding))

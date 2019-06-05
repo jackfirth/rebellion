@@ -52,7 +52,7 @@
 
 (define-tuple-type record-type
   (name fields predicate-name constructor-name accessor-name)
-  #:constructor constructor:record-type)
+  #:constructor-name constructor:record-type)
 
 (define (record-type name fields
                      #:predicate-name [predicate-name #f]

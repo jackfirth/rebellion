@@ -50,7 +50,7 @@
 
 (define-tuple-type multiset (size frequencies)
   #:property-maker make-multiset-props
-  #:constructor constructor:multiset)
+  #:constructor-name constructor:multiset)
 
 (define empty-hash (hash))
 

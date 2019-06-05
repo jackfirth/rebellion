@@ -51,7 +51,7 @@
 
 (define-tuple-type web-link (source relation target)
   #:property-maker property-maker
-  #:constructor constructor:web-link)
+  #:constructor-name constructor:web-link)
 
 (define (web-link source relation target)
   (constructor:web-link (url-coerce source)

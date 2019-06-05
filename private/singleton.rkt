@@ -36,7 +36,7 @@
 ;@------------------------------------------------------------------------------
 
 (define-tuple-type singleton-type (name predicate-name)
-  #:constructor constructor:singleton-type)
+  #:constructor-name constructor:singleton-type)
 
 (define (singleton-type name #:predicate-name [pred-name #f])
   (constructor:singleton-type name pred-name))
@@ -50,7 +50,7 @@
 
 (define-tuple-type initialized-singleton-descriptor
   (type instance predicate)
-  #:constructor constructor:initialized-singleton-descriptor
+  #:constructor-name constructor:initialized-singleton-descriptor
   #:property-maker make-singleton-properties)
 
 (define (initialized-singleton-descriptor #:type type
@@ -60,7 +60,7 @@
 
 (define-tuple-type uninitialized-singleton-descriptor
   (type predicate)
-  #:constructor constructor:uninitialized-singleton-descriptor
+  #:constructor-name constructor:uninitialized-singleton-descriptor
   #:property-maker make-singleton-properties)
 
 (define (uninitialized-singleton-descriptor #:type type #:predicate predicate)

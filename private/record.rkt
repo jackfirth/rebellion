@@ -251,7 +251,7 @@
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type record-field (name value)
-  #:constructor constructor:record-field
+  #:constructor-name constructor:record-field
   #:property-maker make-record-field-properties)
 
 (define (record-field-keyword-function kws kw-args)
