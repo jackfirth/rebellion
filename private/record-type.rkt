@@ -101,7 +101,7 @@
   (define (tuple-prop-maker descriptor)
     (prop-maker (tuple-descriptor->record-descriptor descriptor type)))
   (define descriptor
-    (tuple-type-make-implementation (record-type->tuple-type type)
+    (make-tuple-implementation (record-type->tuple-type type)
                                     #:inspector inspector
                                     #:property-maker tuple-prop-maker))
   (tuple-descriptor->record-descriptor descriptor type))

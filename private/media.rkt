@@ -166,7 +166,7 @@
 (define type:media (tuple-type 'media 2))
 (define index:media:type 0)
 (define index:media:bytes 1)
-(define descriptor:media (tuple-type-make-implementation type:media))
+(define descriptor:media (make-tuple-implementation type:media))
 
 (define media (tuple-descriptor-constructor descriptor:media))
 (define media? (tuple-descriptor-predicate descriptor:media))

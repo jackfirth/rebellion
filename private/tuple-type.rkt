@@ -31,7 +31,7 @@
   [tuple-type? (-> any/c boolean?)]
   [tuple-type-accessor-name (-> tuple-type? symbol?)]
   [tuple-type-constructor-name (-> tuple-type? symbol?)]
-  [tuple-type-make-implementation
+  [make-tuple-implementation
    (->* (tuple-type?)
         (#:guard (or/c procedure? #f)
          #:inspector inspector?
@@ -228,7 +228,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (tuple-type-make-implementation
+(define (make-tuple-implementation
          type
          #:guard [guard #f]
          #:inspector [inspector (current-inspector)]
@@ -279,9 +279,9 @@
   (procedure-rename (λ (this) (accessor this pos)) field-accessor-name))
 
 (module+ test
-  (test-case "tuple-type-make-implementation"
+  (test-case "make-tuple-implementation"
     (define point-type (tuple-type 'point 2))
-    (define point-descriptor (tuple-type-make-implementation point-type))
+    (define point-descriptor (make-tuple-implementation point-type))
     (define point (tuple-descriptor-constructor point-descriptor))
     (define point? (tuple-descriptor-predicate point-descriptor))
     (define point-x (make-tuple-field-accessor point-descriptor 0 'x))
@@ -322,7 +322,7 @@
   #:with (field-position ...) (build-list size (λ (n) #`(quote #,n)))
   (begin
     (define descriptor
-      (tuple-type-make-implementation
+      (make-tuple-implementation
        (tuple-type 'id quoted-size
                    #:constructor-name 'constructor
                    #:predicate-name 'predicate)

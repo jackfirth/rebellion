@@ -82,7 +82,7 @@
     (tuple-type (singleton-type-name type) 0
                 #:predicate-name (singleton-type-predicate-name type)))
   (define descriptor
-    (tuple-type-make-implementation type/tuple
+    (make-tuple-implementation type/tuple
                                     #:property-maker make-tuple-props))
   (define instance ((tuple-descriptor-constructor descriptor)))
   (define pred (tuple-descriptor-predicate descriptor))
