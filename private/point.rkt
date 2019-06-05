@@ -13,8 +13,4 @@
 
 ;@------------------------------------------------------------------------------
 
-(define point-descriptor (tuple-type-make-implementation (tuple-type 'point 2)))
-(define point (tuple-descriptor-constructor point-descriptor))
-(define point? (tuple-descriptor-predicate point-descriptor))
-(define point-x (make-tuple-field-accessor point-descriptor 0 'x))
-(define point-y (make-tuple-field-accessor point-descriptor 1 'y))
+(define-tuple-type point (x y))

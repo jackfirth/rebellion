@@ -49,31 +49,13 @@
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
-(define web-link-type
-  (tuple-type 'web-link 3 #:constructor-name 'constructor:web-link))
-
-(define web-link-descriptor
-  (tuple-type-make-implementation web-link-type
-                                  #:property-maker property-maker))
-
-(define constructor:web-link
-  (tuple-descriptor-constructor web-link-descriptor))
+(define-tuple-type web-link (source relation target)
+  #:constructor constructor:web-link)
 
 (define (web-link source relation target)
   (constructor:web-link (url-coerce source)
                         (link-relation-coerce relation)
                         (url-coerce target)))
-
-(define web-link? (tuple-descriptor-predicate web-link-descriptor))
-
-(define web-link-source
-  (make-tuple-field-accessor web-link-descriptor 0 'source))
-
-(define web-link-relation
-  (make-tuple-field-accessor web-link-descriptor 1 'relation))
-
-(define web-link-target
-  (make-tuple-field-accessor web-link-descriptor 2 'target))
 
 (module+ test
   (test-case "prop:custom-write"
