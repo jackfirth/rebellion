@@ -52,7 +52,6 @@
          rebellion/equal+hash
          rebellion/equal+hash/struct
          rebellion/collection/keyset
-         rebellion/permutation
          rebellion/private/struct-definition-util
          rebellion/struct-descriptor
          syntax/parse/define)

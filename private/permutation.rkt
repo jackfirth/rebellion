@@ -24,12 +24,10 @@
 
 (require (for-syntax racket/base
                      racket/list)
-         racket/contract/combinator
          racket/math
          racket/struct
-         rebellion/private/struct-definition-util
-         rebellion/struct-descriptor
-         rebellion/equal+hash/struct
+         rebellion/type/tuple
+         rebellion/equal+hash/tuple
          syntax/parse/define)
 
 (module+ test
@@ -38,34 +36,26 @@
 
 ;@------------------------------------------------------------------------------
 
+(define (make-permutation-properties descriptor)
+  (define type-name (tuple-type-name (tuple-descriptor-type descriptor)))
+  (define accessor (tuple-descriptor-accessor descriptor))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) type-name)
+     (λ (this) (accessor this 0))))
+  (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
+        (cons prop:custom-write custom-write)))
+
+(define-tuple-type permutation (vector)
+  #:constructor-name permutation-constructor
+  #:property-maker make-permutation-properties)
+
 (define (permutation-size/c expected-size)
   (flat-named-contract
    (list 'permutation-size/c expected-size)
    (λ (perm)
      (and (permutation? perm)
           (equal? (permutation-size perm) expected-size)))))
-
-(define (make-permutation-properties descriptor)
-  (define custom-write
-    (make-constructor-style-printer
-     (λ (_) 'permutation)
-     (λ (this) (permutation-vector this))))
-  (list (cons prop:equal+hash (make-struct-equal+hash descriptor))
-        (cons prop:custom-write custom-write)))
-
-(define permutation-descriptor
-  (make-struct-type/descriptor
-   #:name 'permutation
-   #:immutable-fields 1
-   #:property-maker make-permutation-properties))
-
-(define permutation-constructor
-  (struct-descriptor-constructor permutation-descriptor))
-
-(define permutation? (struct-descriptor-predicate permutation-descriptor))
-
-(define-struct-field-accessors permutation (vector)
-  #:descriptor permutation-descriptor)
 
 (define (permutation-size perm) (vector-length (permutation-vector perm)))
 (define (permutation-ref perm pos) (vector-ref (permutation-vector perm) pos))
