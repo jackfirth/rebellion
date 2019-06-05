@@ -5,7 +5,7 @@
 
 (require (for-syntax racket/base
                      racket/syntax)
-         rebellion/struct-descriptor
+         rebellion/type/struct
          syntax/parse/define)
 
 ;@------------------------------------------------------------------------------

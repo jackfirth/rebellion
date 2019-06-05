@@ -3,7 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/struct-descriptor
+                     rebellion/type/struct
                      rebellion/type/tuple
                      rebellion/equal+hash
                      rebellion/equal+hash/struct
@@ -13,7 +13,7 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/struct-descriptor
+    #:public (list 'rebellion/type/struct
                    'rebellion/type/tuple
                    'rebellion/equal+hash
                    'rebellion/equal+hash/struct

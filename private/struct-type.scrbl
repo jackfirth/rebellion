@@ -4,7 +4,7 @@
                      racket/contract/base
                      racket/list
                      racket/math
-                     rebellion/struct-descriptor)
+                     rebellion/type/struct)
           (for-syntax racket/base
                       racket/syntax)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -13,11 +13,11 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/struct-descriptor)
+    #:public (list 'rebellion/type/struct)
     #:private (list 'racket/base)))
 
 @title{Struct Descriptors}
-@defmodule[rebellion/struct-descriptor]
+@defmodule[rebellion/type/struct]
 
 @defproc[(struct-descriptor? [v any/c]) boolean?]{
  A predicate for structure type descriptors, initialized or uninitialized.}
