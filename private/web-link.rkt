@@ -50,6 +50,7 @@
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type web-link (source relation target)
+  #:property-maker property-maker
   #:constructor constructor:web-link)
 
 (define (web-link source relation target)
