@@ -28,10 +28,10 @@
 (define (url-coerce url-ish)
   (if (string? url-ish) (string->url url-ish) url-ish))
 
+(define link-relation-coercible? (or/c url? string? symbol?))
+
 (define (link-relation-coerce relation-ish)
   (if (string? relation-ish) (string->url relation-ish) relation-ish))
-
-(define link-relation-coercible? (or/c url? string? symbol?))
 
 (define (link-relation->writable-value relation)
   (if (symbol? relation) relation (url->string relation)))
