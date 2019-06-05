@@ -135,8 +135,8 @@ distinct implementations of that type.
 @defform[
  (define-tuple-type id (field-id ...) option ...)
  #:grammar
- ([option (code:line #:constructor constructor-id)
-   (code:line #:predicate predicate-id)
+ ([option (code:line #:constructor-name constructor-id)
+   (code:line #:predicate-name predicate-id)
    (code:line #:property-maker prop-maker-expr)])
  #:contracts
  ([prop-maker-expr (-> uninitialized-tuple-descriptor?

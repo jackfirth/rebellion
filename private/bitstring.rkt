@@ -59,7 +59,7 @@
         (cons prop:equal+hash equal+hash)))
 
 (define-tuple-type bitstring (bytes padding)
-  #:constructor plain-bitstring
+  #:constructor-name plain-bitstring
   #:property-maker make-bitstring-properties)
 
 (define (bitstring . bits)

@@ -83,16 +83,16 @@
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type variable-export (name phase origins)
-  #:constructor constructor:variable-export
+  #:constructor-name constructor:variable-export
   #:property-maker make-export-properties)
 
 (define-tuple-type syntax-export (name phase origins)
-  #:constructor constructor:syntax-export
+  #:constructor-name constructor:syntax-export
   #:property-maker make-export-properties)
 
 (define-tuple-type export-origin
   (source-module phase phase-shift imported-alias)
-  #:constructor constructor:export-origin
+  #:constructor-name constructor:export-origin
   #:property-maker make-origin-properties)
 
 (define (variable-export name #:phase [phase 0] #:origins [origins empty-set])

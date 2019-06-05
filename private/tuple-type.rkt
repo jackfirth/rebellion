@@ -304,9 +304,9 @@
 
 (define-simple-macro
   (define-tuple-type id:id (field:id ...)
-    (~alt (~optional (~seq #:constructor constructor:id)
+    (~alt (~optional (~seq #:constructor-name constructor:id)
                      #:defaults ([constructor #'id]))
-          (~optional (~seq #:predicate predicate:id)
+          (~optional (~seq #:predicate-name predicate:id)
                      #:defaults ([predicate
                                   (format-id #'id "~a?" (syntax-e #'id))]))
           (~optional (~seq #:property-maker property-maker:expr)
