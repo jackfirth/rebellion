@@ -22,7 +22,6 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/pair.scrbl")]
 @include-section[(lib "rebellion/private/permutation.scrbl")]
 @include-section[(lib "rebellion/private/point.scrbl")]
-@include-section[(lib "rebellion/private/struct-descriptor.scrbl")]
 @include-section[(lib "rebellion/private/singleton.scrbl")]
 @include-section[(lib "rebellion/private/text.scrbl")]
 @include-section[(lib "rebellion/private/type.scrbl")]

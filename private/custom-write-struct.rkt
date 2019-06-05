@@ -9,7 +9,7 @@
 
 (require racket/struct
          rebellion/custom-write
-         rebellion/struct-descriptor)
+         rebellion/type/struct)
 
 ;@------------------------------------------------------------------------------
 

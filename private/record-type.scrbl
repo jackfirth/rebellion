@@ -5,7 +5,7 @@
                      racket/math
                      rebellion/collection/keyset
                      rebellion/type/record
-                     rebellion/struct-descriptor)
+                     rebellion/type/struct)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 

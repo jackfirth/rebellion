@@ -3,7 +3,7 @@
 @(require (for-label racket/base
                      racket/math
                      rebellion/type/tuple
-                     rebellion/struct-descriptor)
+                     rebellion/type/struct)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 

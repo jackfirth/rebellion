@@ -8,7 +8,7 @@
                      rebellion/custom-write
                      rebellion/custom-write/struct
                      rebellion/custom-write/tuple
-                     rebellion/struct-descriptor
+                     rebellion/type/struct
                      rebellion/type/tuple)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
@@ -19,7 +19,7 @@
                    'rebellion/custom-write
                    'rebellion/custom-write/struct
                    'rebellion/custom-write/tuple
-                   'rebellion/struct-descriptor
+                   'rebellion/type/struct
                    'rebellion/type/tuple)
     #:private (list 'racket/base)))
 

@@ -53,7 +53,7 @@
          rebellion/equal+hash/struct
          rebellion/collection/keyset
          rebellion/private/struct-definition-util
-         rebellion/struct-descriptor
+         rebellion/type/struct
          syntax/parse/define)
 
 (module+ test
