@@ -24,11 +24,11 @@ Tuple types are specifications, not implementations. A tuple type does not
 directly provide a constructor or accessor; it only provides information about
 the type such as its symbolic name, the number of fields, etc. An actual
 implementation of a tuple type is obtained via @racket[
- tuple-type-make-implementation], which generates a new implementation of a
+ make-tuple-implementation], which generates a new implementation of a
 tuple type and returns a @deftech{tuple type descriptor} object. Descriptors
 provide functions that implement the type and a predicate that identifies the
 implementation's values. Descriptors are generative; calling @racket[
- tuple-type-make-implementation] with the same tuple type will make multiple
+ make-tuple-implementation] with the same tuple type will make multiple
 distinct implementations of that type.
 
 @defproc[(tuple-type? [v any/c]) boolean?]{
@@ -49,7 +49,7 @@ distinct implementations of that type.
  @racket[name], and @racket[accessor-name] defaults to @racket[
  name]@verbatim|{-ref}|. Two tuple types constructed with the same arguments are
  @racket[equal?]. To make an implementation of a tuple type, see @racket[
- tuple-type-make-implementation].}
+ make-tuple-implementation].}
 
 @deftogether[[
  @defproc[(tuple-type-name [type tuple-type?]) symbol?]
@@ -69,7 +69,7 @@ distinct implementations of that type.
  initialized yet. The predicate, constructor, and accessor of an uninitialized
  tuple descriptor @bold{must not be called until initialization is complete}, as
  the implementations of those functions won't exist until then. Initialization
- of a descriptor completes when @racket[tuple-type-make-implementation]
+ of a descriptor completes when @racket[make-tuple-implementation]
  returns.}
 
 @deftogether[[
@@ -83,7 +83,7 @@ distinct implementations of that type.
  Accessors for the various fields of a @tech{tuple type descriptor}.}
 
 @defproc[
- (tuple-type-make-implementation
+ (make-tuple-implementation
   [type tuple-type?]
   [#:guard guard (or/c procedure? #f) #f]
   [#:inspector inspector inspector? (current-inspector)]
@@ -104,7 +104,7 @@ distinct implementations of that type.
  @(examples
    #:eval (make-evaluator) #:once
    (define point-descriptor
-     (tuple-type-make-implementation (tuple-type 'point 2)))
+     (make-tuple-implementation (tuple-type 'point 2)))
    (define point (tuple-descriptor-constructor point-descriptor))
    (define point-x (make-tuple-field-accessor point-descriptor 0 'x))
    (define point-y (make-tuple-field-accessor point-descriptor 1 'y))
@@ -121,7 +121,7 @@ distinct implementations of that type.
  Builds a field accessor function that returns the @racket[pos] field of
  instances of the @tech{tuple type} implemented by @racket[descriptor]. If
  @racket[name] is provided, it is used to derive the name of the function for
- debugging purposes. See @racket[tuple-type-make-implementation] for usage
+ debugging purposes. See @racket[make-tuple-implementation] for usage
  examples.}
 
 @defproc[
@@ -129,7 +129,7 @@ distinct implementations of that type.
  (listof (cons/c struct-type-property? any/c))]{
  Returns implementations of @racket[prop:equal+hash] and @racket[
  prop:custom-write] suitable for most @tech{tuple types}. This function is
- called by @racket[tuple-type-make-implementation] when no @racket[_prop-maker]
+ called by @racket[make-tuple-implementation] when no @racket[_prop-maker]
  argument is supplied.}
 
 @defform[
