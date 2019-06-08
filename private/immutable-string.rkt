@@ -49,12 +49,24 @@
   [immutable-string-locale-downcase (-> immutable-string? immutable-string?)]
   [empty-immutable-string empty-immutable-string?]
   [empty-immutable-string? predicate/c]
-  [nonempty-immutable-string? predicate/c]))
+  [nonempty-immutable-string? predicate/c]
+  [symbol->immutable-string (-> symbol? immutable-string?)]
+  [keyword->immutable-string (-> keyword? immutable-string?)]
+  [immutable-string-join
+   (->* ((listof immutable-string?))
+        (immutable-string?
+         #:before-first immutable-string?
+         #:before-last immutable-string?
+         #:after-last immutable-string?)
+        immutable-string?)]
+  [number->immutable-string
+   (->* (number?) ((or/c 2 8 10 16)) immutable-string?)]))
 
 (require (for-syntax racket/base
                      racket/string
                      racket/syntax)
          racket/math
+         racket/string
          syntax/parse/define)
 
 ;@------------------------------------------------------------------------------
@@ -123,7 +135,6 @@
 (define-wrapper (string . chs))
 (define-wrapper (string-append . strs))
 (define-wrapper (make-string k [char #\nul]))
-
 (define-wrapper (list->string lst))
 (define-wrapper (build-string n proc))
 (define-wrapper (string-upcase str))
@@ -136,6 +147,19 @@
 (define-wrapper (string-normalize-nfkd str))
 (define-wrapper (string-normalize-nfc str))
 (define-wrapper (string-normalize-nfkc str))
+(define-wrapper (symbol->string sym))
+(define-wrapper (keyword->string kw))
+(define-wrapper (number->string z [radix 10]))
 
 (define (immutable-substring str start [end (immutable-string-length str)])
   (string->immutable-string (substring str start end)))
+
+(define (immutable-string-join strs [sep " "]
+                               #:before-first [before-first ""]
+                               #:before-last [before-last sep]
+                               #:after-last [after-last ""])
+  (string->immutable-string
+   (string-join strs sep
+                #:before-first before-first
+                #:before-last before-last
+                #:after-last after-last)))
