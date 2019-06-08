@@ -19,6 +19,7 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/media.scrbl")]
 @include-section[(lib "rebellion/private/module-export.scrbl")]
 @include-section[(lib "rebellion/private/octet-stream.scrbl")]
+@include-section[(lib "rebellion/private/package.scrbl")]
 @include-section[(lib "rebellion/private/pair.scrbl")]
 @include-section[(lib "rebellion/private/permutation.scrbl")]
 @include-section[(lib "rebellion/private/point.scrbl")]
