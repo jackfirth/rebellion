@@ -35,6 +35,7 @@
 (require (for-syntax racket/base
                      racket/sequence
                      racket/syntax)
+         racket/format
          racket/struct
          rebellion/collection/keyset
          rebellion/custom-write
@@ -157,9 +158,9 @@
    (λ (this)
      (for*/list ([i (in-range size)]
                  [kw (in-value (keyset-ref fields i))]
-                 [v (in-value (accessor this i))]
-                 [contents (in-list (list kw v))])
-       contents))))
+                 [item (in-list (list (unquoted-printing-keyword kw)
+                                      (accessor this i)))])
+       item))))
 
 (define (make-record-field-accessor descriptor field)
   (define accessor (record-descriptor-accessor descriptor))
@@ -217,4 +218,10 @@
   (check-equal? (person-favorite-color ted) 'grey)
   (check-true (person? ted))
   (define-record-type plant (name))
-  (check-false (person? (plant #:name "Cactus"))))
+  (check-false (person? (plant #:name "Cactus")))
+  (check-equal? (~a ted)
+                "#<person: #:age 42 #:favorite-color grey #:name Ted>")
+  (check-equal? (~v ted)
+                "(person #:age 42 #:favorite-color 'grey #:name \"Ted\")")
+  (check-equal? (~s ted)
+                "#<person: #:age 42 #:favorite-color grey #:name \"Ted\">"))
