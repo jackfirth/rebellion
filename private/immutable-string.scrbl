@@ -136,3 +136,16 @@ always accept and return immutable strings.
 @defproc[(empty-immutable-string? [v any/c]) boolean?]
 @defproc[(nonempty-immutable-string? [v any/c]) boolean?]
 @defthing[empty-immutable-string empty-immutable-string?]
+@defproc[(symbol->immutable-string [sym symbol?]) immutable-string?]
+@defproc[(keyword->immutable-string [kw keyword?]) immutable-string?]
+
+@defproc[(number->immutable-string [z number?] [radix (or/c 2 8 10 16) 10])
+         immutable-string?]
+
+@defproc[(immutable-string-join
+          [strs (listof immutable-string?)]
+          [sep immutable-string? " "]
+          [#:before-first before-first immutable-string? ""]
+          [#:before-last before-last immutable-string? sep]
+          [#:after-last after-last immutable-string? ""])
+         immutable-string?]
