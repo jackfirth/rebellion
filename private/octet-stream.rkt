@@ -15,19 +15,16 @@
   [octet-stream->media (-> octet-stream? media?)]))
 
 (require rebellion/binary/bitstring
-         rebellion/media
+         rebellion/binary/immutable-bytes
          rebellion/collection/record
+         rebellion/immutable-string
+         rebellion/media
          rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")
            rackunit
            rebellion/binary/byte))
-
-;@------------------------------------------------------------------------------
-
-;; TODO: move this somewhere else
-(define (immutable-bytes? v) (and (bytes? v) (immutable? v)))
 
 ;@------------------------------------------------------------------------------
 
@@ -46,7 +43,8 @@
   (if (zero? padding)
       (media-type 'application 'octet-stream)
       (media-type 'application 'octet-stream
-                  #:parameters (record #:padding (number->string padding)))))
+                  #:parameters
+                  (record #:padding (number->immutable-string padding)))))
 
 (define (application/octet-stream? type)
   (and (equal? (media-type-top-level type) 'application)

@@ -28,27 +28,22 @@
 
 (require racket/string
          racket/struct
-         rebellion/equal+hash/tuple
+         rebellion/binary/immutable-bytes
          rebellion/collection/record
+         rebellion/equal+hash/tuple
+         rebellion/immutable-string
          rebellion/type/tuple)
 
 (module+ test
-  (require racket/format
+  (require (submod "..")
+           racket/format
            rackunit))
 
 ;@------------------------------------------------------------------------------
 ;; utilities
 
-;; TODO: move this into a string utils module
-(define (empty-string? v) (and (string? v) (not (non-empty-string? v))))
-
 ;; TODO: move this into a symbol utils module
 (define (interned-symbol? v) (and (symbol? v) (symbol-interned? v)))
-
-;; TODO: add modules for immutable-by-default bytes and strings and add separate
-;;   modules for mutable bytes and strings, like how lists and mlists are split
-(define (immutable-bytes? v) (and (bytes? v) (immutable? v)))
-(define (immutable-string? v) (and (string? v) (immutable? v)))
 
 ;@------------------------------------------------------------------------------
 ;; media-type
@@ -87,45 +82,48 @@
   (define tree (media-type-tree type))
   (define suffix (media-type-suffix type))
   (define parameters (media-type-parameters type))
-  (string-append (symbol->string top-level)
-                 "/"
-                 (if tree (string-append (symbol->string tree) ".") "")
-                 (symbol->string subtype)
-                 (if suffix (string-append "+" (symbol->string suffix)) "")
-                 (media-type-parameters->string parameters)))
+  (immutable-string-append
+   (symbol->immutable-string top-level)
+   "/"
+   (if tree (immutable-string-append (symbol->immutable-string tree) ".") "")
+   (symbol->immutable-string subtype)
+   (if suffix
+       (immutable-string-append "+" (symbol->immutable-string suffix))
+       "")
+   (media-type-parameters->string parameters)))
 
 (define (media-type-parameters->string parameters)
   (define param-strings
     (for/list ([k (in-list (record-keywords parameters))])
       (define param-raw (record-ref parameters k))
-      (define param-name (keyword->string k))
+      (define param-name (keyword->immutable-string k))
       (define param-quoted
         (media-type-parameter-value->possibly-quoted-string param-raw))
-      (string-append param-name "=" param-quoted)))
+      (immutable-string-append param-name "=" param-quoted)))
   (define sep "; ")
-  (define joined (string-join param-strings sep))
-  (if (non-empty-string? joined)
-      (string-append sep joined)
+  (define joined (immutable-string-join param-strings sep))
+  (if (nonempty-immutable-string? joined)
+      (immutable-string-append sep joined)
       joined))
 
 (define (media-type-parameter-value->possibly-quoted-string param-value-string)
   ;; TODO: add backslash quoting (see RFC 7230 Section 3.2.6)
   (if (or (for/or ([c (in-string param-value-string)])
             (media-type-parameter-value-char-requires-quoting? c))
-          (empty-string? param-value-string))
-      (string-append "\"" param-value-string "\"")
+          (empty-immutable-string? param-value-string))
+      (immutable-string-append "\"" param-value-string "\"")
       param-value-string))
 
 (define (media-type-parameter-value-char-requires-quoting? char)
   ;; TODO: use a better data structure here
   (not (string-contains? rfc7230-section-3.2.6-tchar-legal-alphabet
-                         (string char))))
+                         (immutable-string char))))
 
 (define rfc7230-section-3.2.6-tchar-legal-alphabet
-  (string-append "abcdefghijklmnopqrstuvwxyz"
-                 "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                 "0123456789"
-                 "!#$%&'*+-.^_`|~"))
+  (immutable-string-append "abcdefghijklmnopqrstuvwxyz"
+                           "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                           "0123456789"
+                           "!#$%&'*+-.^_`|~"))
 
 (define (string->media-type s)
   ;; TODO: implement media-type parser based on HTTP Content-Type header grammar
