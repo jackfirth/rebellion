@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     rebellion/collection/keyset
                      rebellion/collection/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
