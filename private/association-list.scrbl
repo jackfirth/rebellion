@@ -21,7 +21,7 @@
 @defmodule[rebellion/collection/association-list]
 
 An @deftech{association list} is a collection of key-value mappings, where
-multiple mappings for the same key are allowed. Distinct key-value mappings are
+multiple values for the same key are allowed. Distinct key-value mappings are
 unordered, but order is preserved for mappings with the same key. The
 implementation of association lists behaves similarly to a hash mapping keys to
 nonempty lists, but the interface is based on a single flattened collection of
