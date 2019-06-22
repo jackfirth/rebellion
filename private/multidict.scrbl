@@ -19,9 +19,20 @@
 @title{Multidicts}
 @defmodule[rebellion/collection/multidict]
 
-@defproc[(multidict? [v any/c]) boolean?]
+A @deftech{multidict} is an unordered collection of key-value mappings, where
+multiple unique values for the same key are allowed. The implementation of
+multidicts behaves similarly to a hash from keys to nonempty sets, but the
+interface is based on a flattened collection of key-value pairs.
+
+@defproc[(multidict? [v any/c]) boolean?]{
+ A predicate for @tech{multidicts}.}
 
 @defproc[(multidict [k any/c] [v any/c] ... ...) multidict?]{
+ Constructs a @tech{multidict} containing a mapping from each @racket[k] to each
+ @racket[v]. Multiple values are allowed for the same key, but duplicate values
+ for a key are removed. The order of key-value pairs is insignificant. Two
+ multidicts are equal if they contain the same mappings.
+                                                             
  @(examples
    #:eval (make-evaluator) #:once
    (multidict 'a 1 'b 2 'c 3)
@@ -29,6 +40,8 @@
    (multidict 'a 1 'a 1 'b 1))}
 
 @defproc[(multidict-ref [dict multidict?] [k any/c]) immutable-set?]{
+ Returns the set of values mapped by @racket[k] in @racket[dict].
+                                                                     
  @(examples
    #:eval (make-evaluator) #:once
    (define dict
@@ -42,6 +55,10 @@
    (multidict-ref dict 'dessert))}
 
 @defproc[(multidict-size [dict multidict?]) natural?]{
+ Returns the number of key-value mappings in @racket[dict]. Note that this does
+ @bold{not} return the number of keys in @racket[dict] --- all values mapped by
+ a key contribute to the returned size.
+                                                      
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-size (multidict 'a 1 'b 2 'c 3))
@@ -49,6 +66,9 @@
    (multidict-size (multidict 'a 1 'a 1 'a 1)))}
 
 @defproc[(multidict-keys [dict multidict?]) multiset?]{
+ Returns a @tech{multiset} of the keys in @racket[dict], with a copy of each
+ key for each value mapped by that key.
+                                                       
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-keys
@@ -59,6 +79,8 @@
                'vegetable 'celery)))}
 
 @defproc[(multidict-values [dict multidict?]) multiset?]{
+ Returns a @tech{multiset} of all values in @racket[dict].
+                                                         
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-values
@@ -70,6 +92,8 @@
                "Captain Marvel" 'marvel)))}
 
 @defproc[(multidict-unique-keys [dict multidict?]) immutable-set?]{
+ Returns the set of keys in @racket[dict], ignoring duplicates.
+                                                                   
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-unique-keys
@@ -79,19 +103,69 @@
                'vegetable 'carrot
                'vegetable 'celery)))}
 
-@defproc[(multidict-entries [dict multidict?]) (immutable-set/c entry?)]
+@defproc[(multidict-entries [dict multidict?]) (immutable-set/c entry?)]{
+ Returns the set of @tech{entries} in @racket[dict]. Note that this is
+ @bold{not} a @tech{multiset}, because for each key the collection of values
+ mapped by that key contains no duplicates.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict-entries
+    (multidict 'fruit 'apple
+               'fruit 'orange
+               'fruit 'banana
+               'vegetable 'carrot
+               'vegetable 'celery)))}
 
 @defproc[(multidict->hash [dict multidict?])
-         (hash/c any/c nonempty-immutable-set? #:immutable? #t)]
+         (hash/c any/c nonempty-immutable-set? #:immutable? #t)]{
+ Converts @racket[dict] into a hash table from keys to (nonempty) sets of
+ values.
 
-@defproc[(multidict-contains-key? [dict multidict?] [k any/c]) boolean?]
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict->hash
+    (multidict 'fruit 'apple
+               'fruit 'orange
+               'fruit 'banana
+               'vegetable 'carrot
+               'vegetable 'celery)))}
 
-@defproc[(multidict-contains-value? [dict multidict?] [v any/c]) boolean?]
+@defproc[(multidict-contains-key? [dict multidict?] [k any/c]) boolean?]{
+ Returns @racket[#t] if @racket[dict] contains any mappings for the key
+ @racket[k], returns @racket[#f] otherwise.
 
-@defproc[(multidict-contains-entry? [dict multidict?] [e entry?]) boolean?]
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define dict (multidict 'even 2 'even 4 'odd 1 'odd 5 'odd 3))
+   (multidict-contains-key? dict 'even)
+   (multidict-contains-key? dict 'prime))}
 
-@defthing[empty-multidict empty-multidict?]
+@defproc[(multidict-contains-value? [dict multidict?] [v any/c]) boolean?]{
+ Returns @racket[#t] if @racket[dict] contains any mappings with the value
+ @racket[v], returns @racket[#f] otherwise.
 
-@defproc[(empty-multidict? [v any/c]) boolean?]
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define dict (multidict 'even 2 'even 4 'odd 1 'odd 5 'odd 3))
+   (multidict-contains-value? dict 5)
+   (multidict-contains-value? dict "hello world"))}
 
-@defproc[(nonempty-multidict? [v any/c]) boolean?]
+@defproc[(multidict-contains-entry? [dict multidict?] [e entry?]) boolean?]{
+ Returns @racket[#t] if @racket[dict] contains the mapping @racket[e], returns
+ @racket[#f] otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define dict (multidict 'even 2 'even 4 'odd 1 'odd 5 'odd 3))
+   (multidict-contains-entry? dict (entry 'even 4))
+   (multidict-contains-entry? dict (entry 'odd 4)))}
+
+@defthing[empty-multidict empty-multidict?]{
+ The empty @tech{multidict}, which contains nothing.}
+
+@defproc[(empty-multidict? [v any/c]) boolean?]{
+ A predicate for empty @tech{multidicts}. Implies @racket[multidict?].}
+
+@defproc[(nonempty-multidict? [v any/c]) boolean?]{
+ A predicate for nonempty @tech{multidicts}. Implies @racket[multidict?].}
