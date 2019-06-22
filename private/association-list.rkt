@@ -29,8 +29,10 @@
          racket/math
          racket/sequence
          racket/set
+         racket/struct
          rebellion/collection/entry
          rebellion/collection/immutable-vector
+         rebellion/collection/keyset
          rebellion/collection/multiset
          rebellion/type/record)
 
@@ -55,8 +57,28 @@
 
 ;@------------------------------------------------------------------------------
 
+(define (make-association-list-properties descriptor)
+  (define type (record-descriptor-type descriptor))
+  (define type-name (record-type-name type))
+  (define accessor (record-descriptor-accessor descriptor))
+  (define backing-hash-field
+    (keyset-index-of (record-type-fields type) '#:backing-hash))
+  (define equal+hash (make-record-equal+hash descriptor))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) type-name)
+     (λ (this)
+       (define backing-hash (accessor this backing-hash-field))
+       (for*/list ([(k vs) (in-immutable-hash backing-hash)]
+                   [v (in-vector vs)]
+                   [k-or-v (in-list (list k v))])
+         k-or-v))))
+  (list (cons prop:equal+hash equal+hash)
+        (cons prop:custom-write custom-write)))
+
 (define-record-type association-list (backing-hash size)
-  #:constructor-name constructor:association-list)
+  #:constructor-name constructor:association-list
+  #:property-maker make-association-list-properties)
 
 (define (association-list . entries)
   (define-values (backing-list-hash size)
