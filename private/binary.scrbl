@@ -8,3 +8,4 @@
 @include-section[(lib "rebellion/private/bitstring.scrbl")]
 @include-section[(lib "rebellion/private/byte.scrbl")]
 @include-section[(lib "rebellion/private/immutable-bytes.scrbl")]
+@include-section[(lib "rebellion/private/base-encoding.scrbl")]
