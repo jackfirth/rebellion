@@ -1,0 +1,60 @@
+#lang scribble/manual
+
+@(require (for-label racket/base
+                     racket/contract/base
+                     rebellion/result)
+          (submod rebellion/private/scribble-evaluator-factory doc)
+          scribble/example)
+
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'rebellion/result)
+    #:private (list 'racket/base)))
+
+@title{Results}
+@defmodule[rebellion/result]
+
+A @deftech{result} is a wrapper around a value that represents either a
+successful computation or a failed computation. Success results are constructed
+by wrapping a value with @racket[success], and failure results are constructed
+using @racket[failure]. The @racket[result-case] function provides a basic way
+to unwrap a result. Results are useful when it is difficult to guarantee whether
+a computation will succeed or fail and specifying a contract up front is either
+expensive or impossible, such as in filesystem operations, text parsers, or
+network requests. Wrapping returned values as a result instead of throwing
+exceptions pushes callers to confront the failure case in order to unwrap the
+value.
+
+@defproc[(result? [v any/c]) boolean?]{
+ A predicate for @tech{result} values.}
+
+@defproc[(success? [v any/c]) boolean?]{
+ A predicate for successful @tech{result} values. Implies @racket[result?].}
+
+@defproc[(success [v any/c]) success?]{
+ Constructs a successful @tech{result}.}
+
+@defproc[(success-value [succ success?]) any/c]{
+ Returns the value wrapped by @racket[succ].}
+
+@defproc[(failure? [v any/c]) boolean?]{
+ A predicate for failed @tech{result} values. Implies @racket[result?].}
+
+@defproc[(failure [err any/c]) failure?]{
+ Constructs a failed @tech{result}.}
+
+@defproc[(failure-error [fail failure?]) any/c]{
+ Returns the error value wrapped by @racket[fail].}
+
+@defproc[(result-case [result result?]
+                      [#:success success-handler (-> any/c any/c)]
+                      [#:failure failure-handler (-> any/c any/c)])
+         any/c]{
+ Unwraps @racket[result], then applies either @racket[success-handler] or
+ @racket[failure-handler] to the unwrapped value depending on whether
+ @racket[result] is a successful result or a failed result.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (result-case (success 42) #:success add1 #:failure displayln)
+   (result-case (failure "oh no!") #:success add1 #:failure displayln))}
