@@ -33,3 +33,11 @@
    (base64url-encode #"apple")
    (base64url-encode (bytes->immutable-bytes (crypto-random-bytes 10)))
    (base64url-encode (bytes->immutable-bytes (crypto-random-bytes 50))))}
+
+@defproc[(hex-encode [bytes immutable-bytes?]) immutable-string?]{
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (hex-encode #"apple")
+   (hex-encode (bytes->immutable-bytes (crypto-random-bytes 10)))
+   (hex-encode (bytes->immutable-bytes (crypto-random-bytes 25))))}

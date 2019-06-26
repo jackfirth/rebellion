@@ -5,7 +5,8 @@
 (provide
  (contract-out
   [base64-encode (-> immutable-bytes? immutable-string?)]
-  [base64url-encode (-> immutable-bytes? immutable-string?)]))
+  [base64url-encode (-> immutable-bytes? immutable-string?)]
+  [hex-encode (-> immutable-bytes? immutable-string?)]))
 
 (require racket/list
          rebellion/binary/bitstring
@@ -19,6 +20,12 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
+
+(define (byte-high-bits b n)
+  (byte-drop-rightmost-bits b (- 8 n)))
+
+(define (byte-low-bits b n)
+  (byte-clear-leftmost-bits b (- 8 n)))
 
 (define (make-bitstring size [filler-bit 0])
   (apply bitstring (make-list size filler-bit)))
@@ -139,6 +146,19 @@
 (define (base64url-encode bstr)
   (base64-encode bstr #:options base64url-options))
 
+(define hex-alphabet "0123456789ABCDEF")
+
+(define (byte->hex b)
+  (define pos1 (byte-high-bits b 4))
+  (define pos2 (byte-low-bits b 4))
+  (immutable-string (immutable-string-ref hex-alphabet pos1)
+                    (immutable-string-ref hex-alphabet pos2)))
+
+(define (hex-encode bstr)
+  (apply immutable-string-append
+         (for/list ([b (in-bytes bstr)])
+           (byte->hex b))))
+
 (module+ test
   (test-case "base64"
     (check-equal? (base64-encode #"") "")
@@ -154,10 +174,23 @@
                   "++++")
     (check-equal? (base64-encode (immutable-bytes 255 255 255)) "////"))
   (test-case "base64url"
+    (check-equal? (base64url-encode #"") "")
+    (check-equal? (base64url-encode #"f") "Zg==")
+    (check-equal? (base64url-encode #"fo") "Zm8=")
+    (check-equal? (base64url-encode #"foo") "Zm9v")
     (check-equal? (base64url-encode #"foob") "Zm9vYg==")
+    (check-equal? (base64url-encode #"fooba") "Zm9vYmE=")
     (check-equal? (base64url-encode #"foobar") "Zm9vYmFy")
     (check-equal? (base64url-encode (immutable-bytes (byte 1 1 1 1 1 0 1 1)
                                                      (byte 1 1 1 0 1 1 1 1)
                                                      (byte 1 0 1 1 1 1 1 0)))
                   "----")
-    (check-equal? (base64url-encode (immutable-bytes 255 255 255)) "____")))
+    (check-equal? (base64url-encode (immutable-bytes 255 255 255)) "____"))
+  (test-case "hex"
+    (check-equal? (hex-encode #"") "")
+    (check-equal? (hex-encode #"f") "66")
+    (check-equal? (hex-encode #"fo") "666F")
+    (check-equal? (hex-encode #"foo") "666F6F")
+    (check-equal? (hex-encode #"foob") "666F6F62")
+    (check-equal? (hex-encode #"fooba") "666F6F6261")
+    (check-equal? (hex-encode #"foobar") "666F6F626172")))
