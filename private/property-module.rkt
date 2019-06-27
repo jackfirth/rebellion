@@ -20,7 +20,8 @@
    (-> struct-type-property? any/c property-binding?)]
   [property-binding? predicate/c]
   [property-binding-output
-   (-> property-binding? struct-type-property?)]))
+   (-> property-binding? struct-type-property?)]
+  [make-hidden-type-property (-> symbol? struct-type-property?)]))
 
 (require racket/set)
 
@@ -36,6 +37,11 @@
 (define property-hash/c (hash/c struct-type-property? any/c))
 
 ;@------------------------------------------------------------------------------
+
+(define (make-hidden-type-property name)
+  (define-values (property ignored-predicate ignored-accessor)
+    (make-struct-type-property name))
+  property)
 
 (struct property-binding (function output dependencies)
   #:omit-define-syntaxes
