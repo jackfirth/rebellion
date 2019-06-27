@@ -4,6 +4,7 @@
 
 (provide
  (contract-out
+  [prop:struct struct-type-property?]
   [initialized-struct-descriptor? (-> any/c boolean?)]
   [make-struct-type/descriptor
    (->* (#:name symbol?)
@@ -15,6 +16,7 @@
          #:property-maker
          (-> uninitialized-struct-descriptor?
              (listof (cons/c struct-type-property? any/c)))
+         #:property-module property-module?
          #:inspector (or/c inspector? #f 'prefab)
          #:guard (or/c procedure? #f)
          #:constructor-name (or/c symbol? #f))
@@ -27,6 +29,7 @@
                      racket/syntax)
          racket/list
          racket/math
+         rebellion/type/property-module
          syntax/parse/define)
 
 (module+ test
@@ -35,6 +38,8 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
+
+(define prop:struct (make-hidden-type-property 'struct))
 
 (define predicate-procedure/c
   (or/c struct-predicate-procedure? (-> any/c boolean?)))
@@ -156,16 +161,26 @@
    accessor
    mutator))
 
-(define (make-struct-type/descriptor #:name name
-                                     #:mutable-fields [mutables 0]
-                                     #:immutable-fields [immutables 0]
-                                     #:auto-fields [autos 0]
-                                     #:super-type [super-type #f]
-                                     #:auto-field-value [auto-field-value #f]
-                                     #:property-maker [prop-maker (λ (_) empty)]
-                                     #:inspector [inspector (current-inspector)]
-                                     #:guard [guard #f]
-                                     #:constructor-name [constructor-name #f])
+(define (make-struct-type/descriptor
+         #:name name
+         #:mutable-fields [mutables 0]
+         #:immutable-fields [immutables 0]
+         #:auto-fields [autos 0]
+         #:super-type [super-type #f]
+         #:auto-field-value [auto-field-value #f]
+         #:property-maker [prop-maker* #f]
+         #:property-module [propmod empty-property-module]
+         #:inspector [inspector (current-inspector)]
+         #:guard [guard #f]
+         #:constructor-name [constructor-name #f])
+  (define prop-maker
+    (or prop-maker*
+        (λ (descriptor)
+          (define struct-binding
+            (constant-property-binding prop:struct descriptor))
+          (hash->list
+           (property-module-instantiate
+            (property-module-add-binding propmod struct-binding))))))
   (define immutable-field-positions (range mutables (+ mutables immutables)))
   (define (uninitialized-constructor . vs) (apply constructor vs))
   (define (uninitialized-predicate v) (predicate v))
@@ -208,23 +223,40 @@
 
 (module+ test
   (test-case "make-struct-type/descriptor"
-    (define (make-point-props descriptor)
-      (define accessor (struct-descriptor-accessor descriptor))
-      (define (write-proc this out _)
-        (write-string "(point " out)
-        (write (accessor this 0) out)
-        (write-string " " out)
-        (write (accessor this 1) out)
-        (write-string ")" out))
-      (list (cons prop:custom-write write-proc)))
-    (define point-descriptor
-      (make-struct-type/descriptor
-       #:name 'point
-       #:immutable-fields 2
-       #:property-maker make-point-props))
-    (define point (struct-descriptor-constructor point-descriptor))
-    (define point-accessor (struct-descriptor-accessor point-descriptor))
-    (define p (point 42 88))
-    (check-equal? (point-accessor p 0) 42)
-    (check-equal? (point-accessor p 1) 88)
-    (check-equal? (~v p) "(point 42 88)")))
+    (define ((write-proc accessor) this out _)
+      (write-string "(point " out)
+      (write (accessor this 0) out)
+      (write-string " " out)
+      (write (accessor this 1) out)
+      (write-string ")" out))
+    (test-case "#:property-module"
+      (define point-props
+        (property-module
+         (property-binding prop:custom-write
+                           (λ (descriptor)
+                             (write-proc
+                              (struct-descriptor-accessor descriptor)))
+                           prop:struct)))
+      (define point-descriptor
+        (make-struct-type/descriptor
+         #:name 'point
+         #:immutable-fields 2
+         #:property-module point-props))
+      (define point (struct-descriptor-constructor point-descriptor))
+      (define p (point 42 88))
+      (check-equal? (~v p) "(point 42 88)"))
+    (test-case "#:property-maker"
+      (define (make-point-props descriptor)
+        (define accessor (struct-descriptor-accessor descriptor))
+        (list (cons prop:custom-write (write-proc accessor))))
+      (define point-descriptor
+        (make-struct-type/descriptor
+         #:name 'point
+         #:immutable-fields 2
+         #:property-maker make-point-props))
+      (define point (struct-descriptor-constructor point-descriptor))
+      (define point-accessor (struct-descriptor-accessor point-descriptor))
+      (define p (point 42 88))
+      (check-equal? (point-accessor p 0) 42)
+      (check-equal? (point-accessor p 1) 88)
+      (check-equal? (~v p) "(point 42 88)"))))
