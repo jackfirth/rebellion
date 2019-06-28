@@ -13,6 +13,31 @@
 @title{Singletons}
 @defmodule[rebellion/singleton]
 
+@defproc[(singleton-type? [v any/c]) boolean?]
+
+@defproc[(singleton-type
+          [name interned-symbol?]
+          [#:predicate-name pred-name (or/c interned-symbol? #f) #f])
+         singleton-type?]
+
+@defproc[(singleton-type-name [type singleton-type?]) interned-symbol?]
+
+@defproc[(singleton-type-predicate-name [type singleton-type?])
+         interned-symbol?]
+
+@defproc[(singleton-descriptor? [v any/c]) boolean?]
+
+@defproc[(initialized-singleton-descriptor? [v any/c]) boolean?]
+
+@defproc[(uninitialized-singleton-descriptor? [v any/c]) boolean?]
+
+@defproc[(singleton-descriptor-predicate [descriptor singleton-descriptor?])
+         predicate/c]
+
+@defproc[(singleton-descriptor-instance
+          [descriptor initialized-singleton-descriptor?])
+         (singleton-descriptor-predicate descriptor)]
+
 @defform[
  (define-singleton-type id singleton-option ...)
  #:grammar ([singleton-option
