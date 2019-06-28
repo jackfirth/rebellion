@@ -1,17 +1,52 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
-                     rebellion/singleton)
+                     rebellion/type/singleton)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/singleton)
+    #:public (list 'rebellion/type/singleton)
     #:private (list 'racket/base)))
 
 @title{Singletons}
-@defmodule[rebellion/singleton]
+@defmodule[rebellion/type/singleton]
+
+@defproc[(singleton-type? [v any/c]) boolean?]
+
+@defproc[(singleton-type
+          [name interned-symbol?]
+          [#:predicate-name pred-name (or/c interned-symbol? #f) #f])
+         singleton-type?]
+
+@defproc[(singleton-type-name [type singleton-type?]) interned-symbol?]
+
+@defproc[(singleton-type-predicate-name [type singleton-type?])
+         interned-symbol?]
+
+@defproc[(make-singleton-type
+          [type singleton-type?]
+          [#:inspector inspector inspector? (current-inspector)]
+          [#:property-maker prop-maker
+           (-> uninitialized-singleton-descriptor?
+               (listof (cons/c struct-type-property? any/c)))
+           make-default-singleton-properties])
+         initialized-singleton-descriptor?]
+
+@defproc[(singleton-descriptor? [v any/c]) boolean?]
+
+@defproc[(initialized-singleton-descriptor? [v any/c]) boolean?]
+
+@defproc[(uninitialized-singleton-descriptor? [v any/c]) boolean?]
+
+@defproc[(singleton-descriptor-predicate [descriptor singleton-descriptor?])
+         predicate/c]
+
+@defproc[(singleton-descriptor-instance
+          [descriptor initialized-singleton-descriptor?])
+         (singleton-descriptor-predicate descriptor)]
+
 
 @defform[
  (define-singleton-type id singleton-option ...)
@@ -51,3 +86,6 @@
    (infinity? infinity)
    descriptor:infinity
    type:infinity)}
+
+@defproc[(make-default-singleton-properties [descriptor singleton-descriptor?])
+         (listof (cons/c struct-type-property? any/c))]
