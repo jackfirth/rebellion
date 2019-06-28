@@ -1,17 +1,17 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
-                     rebellion/singleton)
+                     rebellion/type/singleton)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/singleton)
+    #:public (list 'rebellion/type/singleton)
     #:private (list 'racket/base)))
 
 @title{Singletons}
-@defmodule[rebellion/singleton]
+@defmodule[rebellion/type/singleton]
 
 @defproc[(singleton-type? [v any/c]) boolean?]
 

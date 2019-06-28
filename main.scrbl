@@ -23,7 +23,6 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/permutation.scrbl")]
 @include-section[(lib "rebellion/private/point.scrbl")]
 @include-section[(lib "rebellion/private/result.scrbl")]
-@include-section[(lib "rebellion/private/singleton.scrbl")]
 @include-section[(lib "rebellion/private/text.scrbl")]
 @include-section[(lib "rebellion/private/type.scrbl")]
 @include-section[(lib "rebellion/private/variant.scrbl")]

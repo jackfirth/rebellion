@@ -17,7 +17,7 @@
   [filter-apply (-> filter? any/c (or/c keep? discard?))]
   [filter-function (-> filter? (-> any/c (or/c keep? discard?)))]))
 
-(require rebellion/singleton)
+(require rebellion/type/singleton)
 
 ;@------------------------------------------------------------------------------
 

@@ -6,4 +6,5 @@
 
 @include-section[(lib "rebellion/private/record-type.scrbl")]
 @include-section[(lib "rebellion/private/tuple-type.scrbl")]
+@include-section[(lib "rebellion/private/singleton-type.scrbl")]
 @include-section[(lib "rebellion/private/struct-type.scrbl")]
