@@ -25,6 +25,15 @@
 @defproc[(singleton-type-predicate-name [type singleton-type?])
          interned-symbol?]
 
+@defproc[(make-singleton-type
+          [type singleton-type?]
+          [#:inspector inspector inspector? (current-inspector)]
+          [#:property-maker prop-maker
+           (-> uninitialized-singleton-descriptor?
+               (listof (cons/c struct-type-property? any/c)))
+           make-default-singleton-properties])
+         initialized-singleton-descriptor?]
+
 @defproc[(singleton-descriptor? [v any/c]) boolean?]
 
 @defproc[(initialized-singleton-descriptor? [v any/c]) boolean?]
@@ -37,6 +46,7 @@
 @defproc[(singleton-descriptor-instance
           [descriptor initialized-singleton-descriptor?])
          (singleton-descriptor-predicate descriptor)]
+
 
 @defform[
  (define-singleton-type id singleton-option ...)
@@ -76,3 +86,6 @@
    (infinity? infinity)
    descriptor:infinity
    type:infinity)}
+
+@defproc[(make-default-singleton-properties [descriptor singleton-descriptor?])
+         (listof (cons/c struct-type-property? any/c))]

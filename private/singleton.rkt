@@ -12,7 +12,7 @@
   [singleton-type-name (-> singleton-type? interned-symbol?)]
   [singleton-type-predicate-name (-> singleton-type? interned-symbol?)]
   [singleton-descriptor? (-> any/c boolean?)]
-  [singleton-type-make-implementation
+  [make-singleton-type
    (->* (singleton-type?)
         (#:inspector inspector?
          #:property-maker (-> uninitialized-singleton-descriptor?
@@ -22,7 +22,10 @@
   [uninitialized-singleton-descriptor? (-> any/c boolean?)]
   [singleton-descriptor-instance (-> initialized-singleton-descriptor? any/c)]
   [singleton-descriptor-predicate
-   (-> singleton-descriptor? (-> any/c boolean?))]))
+   (-> singleton-descriptor? (-> any/c boolean?))]
+  [make-default-singleton-properties
+   (-> uninitialized-singleton-descriptor?
+       (listof (cons/c struct-type-property? any/c)))]))
 
 (require (for-syntax racket/base
                      racket/syntax)
@@ -43,10 +46,10 @@
 
 (define (make-singleton-properties descriptor)
   (define accessor (tuple-descriptor-accessor descriptor))
-    (list (cons prop:object-name
-                (λ (this) (singleton-type-name (accessor this 0))))
-          (cons prop:custom-write
-                (make-tuple-named-object-custom-write descriptor))))
+  (list (cons prop:object-name
+              (λ (this) (singleton-type-name (accessor this 0))))
+        (cons prop:custom-write
+              (make-tuple-named-object-custom-write descriptor))))
 
 (define-tuple-type initialized-singleton-descriptor
   (type instance predicate)
@@ -70,7 +73,7 @@
   (or (initialized-singleton-descriptor? v)
       (uninitialized-singleton-descriptor? v)))
 
-(define (singleton-type-make-implementation
+(define (make-singleton-type
          type
          #:inspector [inspector (current-inspector)]
          #:property-maker [prop-maker make-default-singleton-properties])
@@ -83,7 +86,7 @@
                 #:predicate-name (singleton-type-predicate-name type)))
   (define descriptor
     (make-tuple-implementation type/tuple
-                                    #:property-maker make-tuple-props))
+                               #:property-maker make-tuple-props))
   (define instance ((tuple-descriptor-constructor descriptor)))
   (define pred (tuple-descriptor-predicate descriptor))
   (initialized-singleton-descriptor #:type type
@@ -164,7 +167,7 @@
   (begin
     (define type (singleton-type 'name #:predicate-name 'predicate))
     (define descriptor
-      (singleton-type-make-implementation
+      (make-singleton-type
        type #:inspector inspector #:property-maker prop-maker))
     (define name (singleton-descriptor-instance descriptor))
     (define predicate (singleton-descriptor-predicate descriptor))))
