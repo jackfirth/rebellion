@@ -132,17 +132,19 @@
   (define hash2-proc hash-proc)
   (list equal-proc hash-proc hash2-proc))
 
-(define (make-default-wrapper-properties descriptor)
-  (define type (wrapper-descriptor-type descriptor))
-  (define type-name (wrapper-type-name type))
+(define (make-wrapper-equal+hash descriptor)
+  (make-delegating-equal+hash (wrapper-descriptor-accessor descriptor)))
+
+(define (make-wrapper-custom-write descriptor)
+  (define type-name (wrapper-type-name (wrapper-descriptor-type descriptor)))
   (define accessor (wrapper-descriptor-accessor descriptor))
-  (define equal+hash (make-delegating-equal+hash accessor))
-  (define custom-write
-    (make-constructor-style-printer
+  (make-constructor-style-printer
      (λ (_) type-name)
      (λ (this) (list (accessor this)))))
-  (list (cons prop:equal+hash equal+hash)
-        (cons prop:custom-write custom-write)))
+
+(define (make-default-wrapper-properties descriptor)
+  (list (cons prop:equal+hash (make-wrapper-equal+hash descriptor))
+        (cons prop:custom-write (make-wrapper-custom-write descriptor))))
 
 (define-simple-macro
   (define-wrapper-type id:id
