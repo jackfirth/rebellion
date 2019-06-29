@@ -122,7 +122,6 @@
   (define hash2-proc hash-proc)
   (list equal-proc hash-proc hash2-proc))
 
-;; TODO: finish this function
 (define (make-default-wrapper-properties descriptor)
   (define type (wrapper-descriptor-type descriptor))
   (define type-name (wrapper-type-name type))
