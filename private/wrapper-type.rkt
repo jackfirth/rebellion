@@ -27,7 +27,9 @@
    (-> uninitialized-wrapper-descriptor?
        (listof (cons/c struct-type-property? any/c)))]))
 
-(require rebellion/symbol
+(require racket/struct
+         rebellion/generative-token
+         rebellion/symbol
          rebellion/type/record
          rebellion/type/tuple
          syntax/parse/define)
@@ -63,6 +65,11 @@
 (define (wrapper-descriptor? v)
   (or (uninitialized-wrapper-descriptor? v)
       (initialized-wrapper-descriptor? v)))
+
+(define (wrapper-descriptor-type desc)
+  (if (uninitialized-wrapper-descriptor? desc)
+      (uninitialized-wrapper-descriptor-type desc)
+      (initialized-wrapper-descriptor-type desc)))
 
 (define (wrapper-descriptor-predicate desc)
   (if (uninitialized-wrapper-descriptor? desc)
@@ -106,10 +113,25 @@
    #:constructor (tuple-descriptor-constructor tuple-impl)
    #:accessor (procedure-rename accessor (tuple-type-accessor-name type))))
 
+(define (make-delegating-equal+hash delegate-extractor)
+  (define token (make-generative-token))
+  (define (equal-proc this other recur)
+    (recur (delegate-extractor this) (delegate-extractor other)))
+  (define (hash-proc this recur)
+    (recur (cons token (delegate-extractor this))))
+  (define hash2-proc hash-proc)
+  (list equal-proc hash-proc hash2-proc))
+
 ;; TODO: finish this function
 (define (make-default-wrapper-properties descriptor)
-  (define equal+hash #f)
-  (define custom-write #f)
+  (define type (wrapper-descriptor-type descriptor))
+  (define type-name (wrapper-type-name type))
+  (define accessor (wrapper-descriptor-accessor descriptor))
+  (define equal+hash (make-delegating-equal+hash accessor))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) type-name)
+     (λ (this) (list (accessor this)))))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
