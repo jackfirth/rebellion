@@ -6,7 +6,12 @@
  define-wrapper-type
  (contract-out
   [wrapper-type? predicate/c]
-  [wrapper-type procedure?]
+  [wrapper-type
+   (->* (interned-symbol?)
+        (#:predicate-name (or/c interned-symbol? #f)
+         #:constructor-name (or/c interned-symbol? #f)
+         #:accessor-name (or/c interned-symbol? #f))
+        wrapper-type?)]
   [make-wrapper-implementation
    (->* (wrapper-type?)
         (#:property-maker (-> uninitialized-wrapper-descriptor?
@@ -54,14 +59,14 @@
 
 (define (wrapper-type
          name
-         #:predicate-name [predicate-name (format-symbol "~a?" name)]
-         #:constructor-name [constructor-name name]
-         #:accessor-name [accessor-name (format-symbol "~a-value" name)])
+         #:predicate-name [predicate-name #f]
+         #:constructor-name [constructor-name #f]
+         #:accessor-name [accessor-name #f])
   (constructor:wrapper-type
    #:name name
-   #:predicate-name predicate-name
-   #:constructor-name constructor-name
-   #:accessor-name accessor-name))
+   #:predicate-name (or predicate-name (format-symbol "~a?" name))
+   #:constructor-name (or constructor-name name)
+   #:accessor-name (or accessor-name (format-symbol "~a-value" name))))
 
 (define-record-type initialized-wrapper-descriptor
   (type predicate constructor accessor))
