@@ -36,7 +36,7 @@
                      racket/syntax)
          racket/struct
          rebellion/base/generative-token
-         rebellion/symbol
+         rebellion/base/symbol
          rebellion/type/record
          rebellion/type/tuple
          syntax/parse/define)

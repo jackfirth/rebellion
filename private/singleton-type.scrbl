@@ -1,6 +1,7 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
+                     rebellion/base/symbol
                      rebellion/type/singleton)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
@@ -81,7 +82,7 @@
  @(examples
    #:eval (make-evaluator) #:once
    (define-singleton-type infinity)
-   
+
    infinity
    (infinity? infinity)
    descriptor:infinity

@@ -32,7 +32,7 @@
          rebellion/custom-write
          rebellion/custom-write/tuple
          rebellion/equal+hash
-         rebellion/symbol
+         rebellion/base/symbol
          rebellion/type/tuple
          syntax/parse/define)
 
