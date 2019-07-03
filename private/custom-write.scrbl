@@ -87,7 +87,7 @@ must satisfy the @racket[custom-write-function/c] contract.
      (list (cons prop:custom-write custom-write)))
 
    (define point-descriptor
-     (make-struct-type/descriptor #:name 'point
+     (make-struct-implementation #:name 'point
                                   #:immutable-fields 2
                                   #:property-maker make-props))
    (define point (struct-descriptor-constructor point-descriptor))

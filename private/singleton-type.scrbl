@@ -10,7 +10,7 @@
     #:public (list 'rebellion/type/singleton)
     #:private (list 'racket/base)))
 
-@title{Singletons}
+@title{Singleton Types}
 @defmodule[rebellion/type/singleton]
 
 @defproc[(singleton-type? [v any/c]) boolean?]
@@ -25,7 +25,7 @@
 @defproc[(singleton-type-predicate-name [type singleton-type?])
          interned-symbol?]
 
-@defproc[(make-singleton-type
+@defproc[(make-singleton-implementation
           [type singleton-type?]
           [#:inspector inspector inspector? (current-inspector)]
           [#:property-maker prop-maker

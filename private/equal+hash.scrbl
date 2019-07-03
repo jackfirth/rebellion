@@ -51,7 +51,7 @@
    (equal? (opaque-point 1 2) (opaque-point 1 2))
 
    (define point-descriptor
-     (make-struct-type/descriptor
+     (make-struct-implementation
       #:name 'point
       #:immutable-fields 2
       #:property-maker

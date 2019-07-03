@@ -24,15 +24,15 @@
 
 @defproc[(initialized-struct-descriptor? [v any/c]) boolean?]{
  A predicate for initialized structure type descriptors, as returned by the
- @racket[make-struct-type/descriptor] function. Implies @racket[
+ @racket[make-struct-implementation] function. Implies @racket[
  struct-descriptor?].}
 
 @defproc[(uninitialized-struct-descriptor? [v any/c]) boolean?]{
  A predicate for uninitialized structure type descriptors, as passed to the
- @racket[_prop-maker] argument of @racket[make-struct-type/descriptor]. An
+ @racket[_prop-maker] argument of @racket[make-struct-implementation]. An
  uninitialized descriptor's constructor, predicate, accessor, and mutator
  functions @bold{must not be called} until the structure type is created ---
- that is, until the corresponding call to @racket[make-struct-type/descriptor]
+ that is, until the corresponding call to @racket[make-struct-implementation]
  returns.}
 
 @defproc[(struct-descriptor-type [descriptor initialized-struct-descriptor?])
@@ -65,7 +65,7 @@
  Accessors for the various fields of a structure type descriptor.}
 
 @defproc[
- (make-struct-type/descriptor
+ (make-struct-implementation
   [#:name name symbol?]
   [#:mutable-fields mutable-fields natural? 0]
   [#:immutable-fields immutable-fields natural? 0]
@@ -93,7 +93,7 @@
  @item{Structure type properties are created by the @racket[prop-maker]
    function, which is called with the descriptor before it is initialized. This
    allows property values to refer to the functions associated with the
-   descriptor, without requiring users of @racket[make-struct-type/descriptor]
+   descriptor, without requiring users of @racket[make-struct-implementation]
    to create mutually recursive definitions.}
 
  @item{The @racket[proc-spec] argument is not supported directly. This argument
@@ -104,6 +104,6 @@
  @(examples
    #:eval (make-evaluator) #:once
    (define point-descriptor
-     (make-struct-type/descriptor #:name 'point #:immutable-fields 2))
+     (make-struct-implementation #:name 'point #:immutable-fields 2))
    (define point (struct-descriptor-constructor point-descriptor))
    (point 1 2))}

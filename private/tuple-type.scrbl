@@ -102,7 +102,7 @@ distinct implementations of that type.
  the same as the corresponding arguments of @racket[make-struct-type], although
  there are no transparent or prefab tuple types. The @racket[prop-maker]
  argument is similar to the corresponding argument of @racket[
- make-struct-type/descriptor]. By default, tuple types are created with
+ make-struct-implementation]. By default, tuple types are created with
  properties that make them print and compare in a manner similar to transparent
  structure types --- see @racket[make-default-tuple-properties] for details.
 
