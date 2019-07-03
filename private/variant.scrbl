@@ -2,17 +2,17 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/variant)
+                     rebellion/base/variant)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/variant)
+    #:public (list 'rebellion/base/variant)
     #:private (list 'racket/base)))
 
 @title{Variants}
-@defmodule[rebellion/variant]
+@defmodule[rebellion/base/variant]
 
 A @deftech{variant} is a value tagged with a keyword. Variants are used to
 distinguish different kinds of values by name, without knowing anything about

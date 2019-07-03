@@ -2,17 +2,17 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/generative-token)
+                     rebellion/base/generative-token)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/generative-token)
+    #:public (list 'rebellion/base/generative-token)
     #:private (list 'racket/base)))
 
 @title{Generative Tokens}
-@defmodule[rebellion/generative-token]
+@defmodule[rebellion/base/generative-token]
 
 A @deftech{generative token} is a primitive data type for unique objects. Two
 generative tokens are only @racket[equal?] if they are @racket[eq?], and the

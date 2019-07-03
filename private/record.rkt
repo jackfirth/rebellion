@@ -26,7 +26,7 @@
          racket/math
          racket/struct
          rebellion/collection/keyset
-         rebellion/generative-token
+         rebellion/base/generative-token
          rebellion/type/tuple)
 
 (module+ test

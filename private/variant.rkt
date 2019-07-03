@@ -11,7 +11,7 @@
 
 (require racket/list
          racket/struct
-         rebellion/generative-token)
+         rebellion/base/generative-token)
 
 (module+ test
   (require (submod "..")

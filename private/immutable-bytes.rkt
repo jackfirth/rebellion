@@ -51,7 +51,7 @@
                      racket/string)
          racket/math
          racket/bytes
-         rebellion/immutable-string
+         rebellion/base/immutable-string
          syntax/parse/define)
 
 ;@------------------------------------------------------------------------------

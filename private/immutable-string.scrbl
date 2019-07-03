@@ -3,14 +3,14 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/immutable-string))
+                     rebellion/base/immutable-string))
 
 @title{Immutable Strings}
-@defmodule[rebellion/immutable-string]
+@defmodule[rebellion/base/immutable-string]
 
 An @deftech{immutable string} is an ordinary @racket[string?] that is immutable
 in the sense of @racket[immutable?]. The @racketmodname[
- rebellion/immutable-string] module provides functions and predicates that
+ rebellion/base/immutable-string] module provides functions and predicates that
 always accept and return immutable strings.
 
 @defproc[(immutable-string? [v any/c]) boolean?]{

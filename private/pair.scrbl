@@ -2,20 +2,20 @@
 
 @(require (for-label (except-in racket/base pair?)
                      racket/contract/base
-                     rebellion/pair)
+                     rebellion/base/pair)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/pair)
+    #:public (list 'rebellion/base/pair)
     #:private (list 'racket/base)))
 
 @title{Pairs}
-@defmodule[rebellion/pair]
+@defmodule[rebellion/base/pair]
 
 A @deftech{pair} is a container of two values. Pairs as defined by
-@racketmodname[rebellion/pair] are distinct from the pair datatype defined by
+@racketmodname[rebellion/base/pair] are distinct from the pair datatype defined by
 @racketmodname[racket/base], and are meant to be a drop-in replacement for them.
 Changes include:
 
@@ -27,11 +27,11 @@ Changes include:
  @item{@racket[(pair 1 2)] writes as @literal{(pair 1 2)} instead of
   @literal{(1 . 2)}}]
 
-Note that @racketmodname[rebellion/pair] provides a @racket[pair?] predicate
+Note that @racketmodname[rebellion/base/pair] provides a @racket[pair?] predicate
 that conflicts with the one provided by @racketmodname[racket/base].
 
 @defproc[(pair? [v any/c]) boolean?]{
- A predicate for @tech{pairs}, as defined by @racketmodname[rebellion/pair].
+ A predicate for @tech{pairs}, as defined by @racketmodname[rebellion/base/pair].
  Mututally exclusive with @racket[list?].
 
  @(examples
