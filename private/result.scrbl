@@ -2,17 +2,17 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/result)
+                     rebellion/base/result)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/result)
+    #:public (list 'rebellion/base/result)
     #:private (list 'racket/base)))
 
 @title{Results}
-@defmodule[rebellion/result]
+@defmodule[rebellion/base/result]
 
 A @deftech{result} is a wrapper around a value that represents either a
 successful computation or a failed computation. Success results are constructed
