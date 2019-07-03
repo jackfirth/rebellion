@@ -12,7 +12,7 @@
   [singleton-type-name (-> singleton-type? interned-symbol?)]
   [singleton-type-predicate-name (-> singleton-type? interned-symbol?)]
   [singleton-descriptor? (-> any/c boolean?)]
-  [make-singleton-type
+  [make-singleton-implementation
    (->* (singleton-type?)
         (#:inspector inspector?
          #:property-maker (-> uninitialized-singleton-descriptor?
@@ -73,7 +73,7 @@
   (or (initialized-singleton-descriptor? v)
       (uninitialized-singleton-descriptor? v)))
 
-(define (make-singleton-type
+(define (make-singleton-implementation
          type
          #:inspector [inspector (current-inspector)]
          #:property-maker [prop-maker make-default-singleton-properties])
@@ -167,7 +167,7 @@
   (begin
     (define type (singleton-type 'name #:predicate-name 'predicate))
     (define descriptor
-      (make-singleton-type
+      (make-singleton-implementation
        type #:inspector inspector #:property-maker prop-maker))
     (define name (singleton-descriptor-instance descriptor))
     (define predicate (singleton-descriptor-predicate descriptor))))

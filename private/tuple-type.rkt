@@ -119,21 +119,21 @@
   (keyset #:type #:predicate #:constructor #:accessor #:struct-type))
 
 (define descriptor:tuple-type
-  (make-struct-type/descriptor
+  (make-struct-implementation
    #:name 'tuple-type
    #:immutable-fields (keyset-size fields:tuple-type)
    #:constructor-name 'constructor:tuple-type
    #:property-maker make-transparent-style-properties))
 
 (define descriptor:uninitialized-tuple-descriptor
-  (make-struct-type/descriptor
+  (make-struct-implementation
    #:name 'uninitialized-tuple-descriptor
    #:immutable-fields (keyset-size fields:uninitialized-tuple-descriptor)
    #:constructor-name 'constructor:uninitialized-tuple-descriptor
    #:property-maker make-descriptor-style-properties))
 
 (define descriptor:initialized-tuple-descriptor
-  (make-struct-type/descriptor
+  (make-struct-implementation
    #:name 'initialized-tuple-descriptor
    #:immutable-fields (keyset-size fields:initialized-tuple-descriptor)
    #:constructor-name 'constructor:initialized-tuple-descriptor
@@ -257,7 +257,7 @@
       #:constructor (get-constructor descriptor)
       #:accessor (get-accessor descriptor))))
   (define descriptor
-    (make-struct-type/descriptor
+    (make-struct-implementation
      #:name (tuple-type-name type)
      #:immutable-fields (tuple-type-size type)
      #:constructor-name (tuple-type-constructor-name type)

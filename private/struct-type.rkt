@@ -5,7 +5,7 @@
 (provide
  (contract-out
   [initialized-struct-descriptor? (-> any/c boolean?)]
-  [make-struct-type/descriptor
+  [make-struct-implementation
    (->* (#:name symbol?)
         (#:super-type (or/c struct-type? #f)
          #:mutable-fields natural?
@@ -156,7 +156,7 @@
    accessor
    mutator))
 
-(define (make-struct-type/descriptor #:name name
+(define (make-struct-implementation #:name name
                                      #:mutable-fields [mutables 0]
                                      #:immutable-fields [immutables 0]
                                      #:auto-fields [autos 0]
@@ -207,7 +207,7 @@
                      #:mutator mutator))
 
 (module+ test
-  (test-case "make-struct-type/descriptor"
+  (test-case "make-struct-implementation"
     (define (make-point-props descriptor)
       (define accessor (struct-descriptor-accessor descriptor))
       (define (write-proc this out _)
@@ -218,7 +218,7 @@
         (write-string ")" out))
       (list (cons prop:custom-write write-proc)))
     (define point-descriptor
-      (make-struct-type/descriptor
+      (make-struct-implementation
        #:name 'point
        #:immutable-fields 2
        #:property-maker make-point-props))
