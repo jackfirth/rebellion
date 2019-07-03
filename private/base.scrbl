@@ -9,3 +9,4 @@
 @include-section[(lib "rebellion/private/option.scrbl")]
 @include-section[(lib "rebellion/private/pair.scrbl")]
 @include-section[(lib "rebellion/private/result.scrbl")]
+@include-section[(lib "rebellion/private/variant.scrbl")]
