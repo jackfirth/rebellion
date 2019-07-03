@@ -4,7 +4,7 @@
                      racket/contract/base
                      racket/math
                      rebellion/binary/immutable-bytes
-                     rebellion/immutable-string))
+                     rebellion/base/immutable-string))
 
 @title{Immutable Bytestrings}
 @defmodule[rebellion/binary/immutable-bytes]

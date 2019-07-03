@@ -30,7 +30,7 @@
          racket/struct
          rebellion/binary/immutable-bytes
          rebellion/collection/record
-         rebellion/immutable-string
+         rebellion/base/immutable-string
          rebellion/type/tuple)
 
 (module+ test

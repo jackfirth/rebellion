@@ -17,7 +17,7 @@
 (require rebellion/binary/bitstring
          rebellion/binary/immutable-bytes
          rebellion/collection/record
-         rebellion/immutable-string
+         rebellion/base/immutable-string
          rebellion/media
          rebellion/type/tuple)
 
