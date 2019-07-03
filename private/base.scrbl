@@ -4,4 +4,5 @@
 
 @local-table-of-contents[]
 
+@include-section[(lib "rebellion/private/generative-token.scrbl")]
 @include-section[(lib "rebellion/private/option.scrbl")]

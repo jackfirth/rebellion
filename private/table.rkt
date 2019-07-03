@@ -18,7 +18,7 @@
          racket/list
          racket/math
          racket/pretty
-         rebellion/generative-token
+         rebellion/base/generative-token
          rebellion/collection/record
          syntax/parse/define)
 

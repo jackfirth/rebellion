@@ -35,7 +35,7 @@
 (require (for-syntax racket/base
                      racket/syntax)
          racket/struct
-         rebellion/generative-token
+         rebellion/base/generative-token
          rebellion/symbol
          rebellion/type/record
          rebellion/type/tuple

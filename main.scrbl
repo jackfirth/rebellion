@@ -15,7 +15,6 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/collection.scrbl")]
 @include-section[(lib "rebellion/private/custom-write.scrbl")]
 @include-section[(lib "rebellion/private/equal+hash.scrbl")]
-@include-section[(lib "rebellion/private/generative-token.scrbl")]
 @include-section[(lib "rebellion/private/immutable-string.scrbl")]
 @include-section[(lib "rebellion/private/media.scrbl")]
 @include-section[(lib "rebellion/private/module-export.scrbl")]

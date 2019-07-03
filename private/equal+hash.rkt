@@ -10,7 +10,7 @@
   [equal+hash/c contract?]))
 
 (require racket/math
-         rebellion/generative-token)
+         rebellion/base/generative-token)
 
 ;@------------------------------------------------------------------------------
 

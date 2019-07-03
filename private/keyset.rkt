@@ -23,7 +23,7 @@
                      racket/list)
          racket/list
          rebellion/collection/immutable-vector
-         rebellion/generative-token
+         rebellion/base/generative-token
          rebellion/name
          (except-in rebellion/predicate predicate/c)
          rebellion/private/boolean
