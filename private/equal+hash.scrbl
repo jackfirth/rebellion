@@ -6,8 +6,7 @@
                      rebellion/type/struct
                      rebellion/type/tuple
                      rebellion/equal+hash
-                     rebellion/equal+hash/struct
-                     rebellion/equal+hash/tuple)
+                     rebellion/equal+hash/struct)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
@@ -16,8 +15,7 @@
     #:public (list 'rebellion/type/struct
                    'rebellion/type/tuple
                    'rebellion/equal+hash
-                   'rebellion/equal+hash/struct
-                   'rebellion/equal+hash/tuple)
+                   'rebellion/equal+hash/struct)
     #:private (list 'racket/base)))
 
 @title{Equality and Hashing Implementations}
@@ -63,23 +61,3 @@
 
    (define point (struct-descriptor-constructor point-descriptor))
    (equal? (point 1 2) (point 1 2)))}
-
-@section{Tuple Equality and Hashing}
-@defmodule[rebellion/equal+hash/tuple]
-
-@defproc[(make-tuple-equal+hash [descriptor tuple-descriptor?])
-         equal+hash/c]{
- Builds an equality-checking function, a hashing function, and a secondary
- hashing function suitable for use with @racket[prop:equal+hash], each of which
- operate on instances of @racket[descriptor]. All fields in @racket[descriptor]
- are compared and hashed by the returned procedures. This causes @racket[equal?]
- to behave roughly the same as it does on transparent structure types.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (define-tuple-type point (x y)
-     #:property-maker
-     (λ (descriptor)
-       (list (cons prop:equal+hash (make-tuple-equal+hash descriptor)))))
-   (equal? (point 1 2) (point 1 2))
-   (equal? (point 1 2) (point 2 1)))}

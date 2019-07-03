@@ -27,7 +27,6 @@
          racket/struct
          rebellion/collection/keyset
          rebellion/generative-token
-         rebellion/equal+hash/tuple
          rebellion/type/tuple)
 
 (module+ test

@@ -2,6 +2,10 @@
 
 @(require (for-label racket/base
                      racket/math
+                     racket/pretty
+                     racket/struct
+                     rebellion/custom-write
+                     rebellion/equal+hash
                      rebellion/type/tuple
                      rebellion/type/struct)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -9,7 +13,8 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/type/tuple)
+    #:public (list 'racket/pretty
+                   'rebellion/type/tuple)
     #:private (list 'racket/base)))
 
 @title{Tuple Types}
@@ -131,6 +136,41 @@ distinct implementations of that type.
  prop:custom-write] suitable for most @tech{tuple types}. This function is
  called by @racket[make-tuple-implementation] when no @racket[_prop-maker]
  argument is supplied.}
+
+@defproc[(make-tuple-equal+hash [descriptor tuple-descriptor?])
+         equal+hash/c]{
+ Builds an equality-checking function, a hashing function, and a secondary
+ hashing function suitable for use with @racket[prop:equal+hash], each of which
+ operate on instances of @racket[descriptor]. All fields in @racket[descriptor]
+ are compared and hashed by the returned procedures. This causes @racket[equal?]
+ to behave roughly the same as it does on transparent structure types.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define-tuple-type point (x y)
+     #:property-maker
+     (λ (descriptor)
+       (list (cons prop:equal+hash (make-tuple-equal+hash descriptor)))))
+   (equal? (point 1 2) (point 1 2))
+   (equal? (point 1 2) (point 2 1)))}
+
+@defproc[(make-tuple-custom-write [descriptor tuple-descriptor?])
+         custom-write-function/c]{
+ Constructs a @tech{custom write implementation} that prints instances of the
+ @tech{tuple type} described by @racket[descriptor] in a manner similar to the
+ way that @racket[make-constructor-style-printer] prints values.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define-tuple-type point (x y)
+     #:property-maker
+     (λ (descriptor)
+       (define custom-write (make-tuple-custom-write descriptor))
+       (list (cons prop:custom-write custom-write))))
+
+   (point 1 2)
+   (parameterize ([pretty-print-columns 10])
+     (pretty-print (point 100000000000000 200000000000000))))}
 
 @defform[
  (define-tuple-type id (field-id ...) option ...)

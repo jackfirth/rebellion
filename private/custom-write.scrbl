@@ -99,26 +99,6 @@ must satisfy the @racket[custom-write-function/c] contract.
 @section{Tuple Custom Write Implementations}
 @defmodule[rebellion/custom-write/tuple]
 
-@defproc[(make-tuple-constructor-style-custom-write
-          [descriptor tuple-descriptor?])
-         custom-write-function/c]{
- Constructs a @tech{custom write implementation} that prints instances of the
- @tech{tuple type} described by @racket[descriptor] in a manner similar to the
- way that @racket[make-constructor-style-printer] prints values.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (define-tuple-type point (x y)
-     #:property-maker
-     (λ (descriptor)
-       (define custom-write
-         (make-tuple-constructor-style-custom-write descriptor))
-       (list (cons prop:custom-write custom-write))))
-
-   (point 1 2)
-   (parameterize ([pretty-print-columns 10])
-     (pretty-print (point 100000000000000 200000000000000))))}
-
 @defproc[(make-tuple-named-object-custom-write
           [descriptor tuple-descriptor?]
           [#:name-field name-field (or/c natural? #f) #f])
