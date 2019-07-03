@@ -19,7 +19,6 @@
 (require racket/math
          racket/set
          racket/struct
-         rebellion/equal+hash/tuple
          rebellion/type/tuple)
 
 (module+ test

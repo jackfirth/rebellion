@@ -9,6 +9,8 @@
   [make-default-tuple-properties
    (-> uninitialized-tuple-descriptor?
        (listof (cons/c struct-type-property? any/c)))]
+  [make-tuple-equal+hash (-> tuple-descriptor? equal+hash/c)]
+  [make-tuple-custom-write (-> tuple-descriptor? custom-write-function/c)]
   [make-tuple-field-accessor
    (->i ([desc () tuple-descriptor?]
          [pos (desc)
@@ -48,6 +50,7 @@
                      racket/syntax)
          racket/math
          racket/struct
+         rebellion/custom-write
          rebellion/custom-write/struct
          rebellion/equal+hash
          rebellion/equal+hash/struct
@@ -82,18 +85,23 @@
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
-(define (make-default-tuple-properties descriptor)
-  (define type (tuple-descriptor-type descriptor))
+(define (make-tuple-equal+hash descriptor)
   (define accessor (tuple-descriptor-accessor descriptor))
-  (define name (tuple-type-name type))
+  (define size (tuple-type-size (tuple-descriptor-type descriptor)))
+  (make-accessor-based-equal+hash accessor size))
+
+(define (make-tuple-custom-write descriptor)
+  (define type (tuple-descriptor-type descriptor))
+  (define type-name (tuple-type-name type))
   (define size (tuple-type-size type))
-  (define equal+hash (make-accessor-based-equal+hash accessor size))
-  (define custom-write
-    (make-constructor-style-printer
-     (λ (_) name)
-     (λ (this) (build-list size (λ (pos) (accessor this pos))))))
-  (list (cons prop:equal+hash equal+hash)
-        (cons prop:custom-write custom-write)))
+  (define accessor (tuple-descriptor-accessor descriptor))
+  (make-constructor-style-printer
+   (λ (_) type-name)
+   (λ (this) (build-list size (λ (pos) (accessor this pos))))))
+
+(define (make-default-tuple-properties descriptor)
+  (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
+        (cons prop:custom-write (make-tuple-custom-write descriptor))))
 
 ;@------------------------------------------------------------------------------
 

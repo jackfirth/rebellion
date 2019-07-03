@@ -30,7 +30,6 @@
          racket/struct
          rebellion/binary/immutable-bytes
          rebellion/collection/record
-         rebellion/equal+hash/tuple
          rebellion/immutable-string
          rebellion/type/tuple)
 

@@ -9,7 +9,6 @@
   [web-graph? (-> any/c boolean?)]))
 
 (require racket/struct
-         rebellion/equal+hash/tuple
          rebellion/type/tuple
          rebellion/web-link)
 

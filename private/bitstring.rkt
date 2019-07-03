@@ -22,7 +22,6 @@
          racket/struct
          rebellion/binary/bit
          rebellion/binary/byte
-         rebellion/equal+hash/tuple
          rebellion/type/tuple)
 
 (module+ test

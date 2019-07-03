@@ -27,7 +27,6 @@
          racket/math
          racket/struct
          rebellion/type/tuple
-         rebellion/equal+hash/tuple
          syntax/parse/define)
 
 (module+ test
