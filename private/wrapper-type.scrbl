@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     rebellion/base/symbol
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/wrapper)

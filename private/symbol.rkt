@@ -1,45 +1,44 @@
-#lang rebellion/private/dependencies/layer1
+#lang racket/base
+
+(require racket/contract/base)
 
 (provide
- symbol
  (contract-out
-  [symbol? predicate?]
-  [interned-symbol? predicate?]
-  [uninterned-symbol? predicate?]
-  [unreadable-symbol? predicate?]))
+  [interned-symbol? predicate/c]
+  [uninterned-symbol? predicate/c]
+  [unreadable-symbol? predicate/c]))
 
-(require rebellion/private/boolean
-         rebellion/name
-         rebellion/predicate
-         syntax/parse/define
-         (only-in racket/base
-                  [quote racket:quote]
-                  [symbol? racket:symbol?]
-                  [symbol-interned? racket:symbol-interned?]
-                  [symbol-unreadable? racket:symbol-unreadable?]))
+(module+ test
+  (require (submod "..")
+           rackunit))
 
 ;@------------------------------------------------------------------------------
 
-(define-simple-macro (symbol id:id) (racket:quote id))
+(define (interned-symbol? v) (and (symbol? v) (symbol-interned? v)))
+(define (unreadable-symbol? v) (and (symbol? v) (symbol-unreadable? v)))
 
-(define (plain-interned-symbol? v)
-  (and (racket:symbol? v) (racket:symbol-interned? v)))
+(define (uninterned-symbol? v)
+  (and (symbol? v)
+       (not (symbol-interned? v))
+       (not (symbol-unreadable? v))))
 
-(define (plain-uninterned-symbol? v)
-  (and (racket:symbol? v)
-       (not (racket:symbol-interned? v))
-       (not (racket:symbol-unreadable? v))))
-
-(define (plain-unreadable-symbol? v)
-  (and (racket:symbol? v) (racket:symbol-unreadable? v)))
-
-(define-simple-macro (define-predicates [pred-id:id proc-expr:expr] ...)
-  (define-values (pred-id ...)
-    (values (make-predicate proc-expr #:name (symbolic-name (symbol pred-id)))
-            ...)))
-
-(define-predicates
-  [symbol? racket:symbol?]
-  [interned-symbol? plain-interned-symbol?]
-  [uninterned-symbol? plain-uninterned-symbol?]
-  [unreadable-symbol? plain-unreadable-symbol?])
+(module+ test
+  (test-case "symbol-predicates"
+    (define x 'interned)
+    (define y (string->unreadable-symbol "unreadable"))
+    (define z (string->uninterned-symbol "uninterned"))
+    (test-case "interned-symbol?"
+      (check-true (interned-symbol? x))
+      (check-false (interned-symbol? y))
+      (check-false (interned-symbol? z))
+      (check-false (interned-symbol? 42)))
+    (test-case "unreadable-symbol?"
+      (check-false (unreadable-symbol? x))
+      (check-true (unreadable-symbol? y))
+      (check-false (unreadable-symbol? z))
+      (check-false (unreadable-symbol? 42)))
+    (test-case "uninterned-symbol?"
+      (check-false (uninterned-symbol? x))
+      (check-false (uninterned-symbol? y))
+      (check-true (uninterned-symbol? z))
+      (check-false (uninterned-symbol? 42)))))

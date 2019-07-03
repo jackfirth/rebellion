@@ -31,18 +31,13 @@
          rebellion/binary/immutable-bytes
          rebellion/collection/record
          rebellion/base/immutable-string
+         rebellion/base/symbol
          rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")
            racket/format
            rackunit))
-
-;@------------------------------------------------------------------------------
-;; utilities
-
-;; TODO: move this into a symbol utils module
-(define (interned-symbol? v) (and (symbol? v) (symbol-interned? v)))
 
 ;@------------------------------------------------------------------------------
 ;; media-type

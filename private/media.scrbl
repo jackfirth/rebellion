@@ -1,8 +1,10 @@
 #lang scribble/manual
 
-@;; TODO: document and import immutable-{string,bytes}? and interned-symbol?
 @(require (for-label racket/base
                      racket/contract/base
+                     rebellion/base/immutable-string
+                     rebellion/base/symbol
+                     rebellion/binary/immutable-bytes
                      rebellion/media)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
