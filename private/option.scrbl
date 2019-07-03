@@ -2,17 +2,17 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/option)
+                     rebellion/base/option)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/option)
+    #:public (list 'rebellion/base/option)
     #:private (list 'racket/base)))
 
 @title{Option Values}
-@defmodule[rebellion/option]
+@defmodule[rebellion/base/option]
 
 @defproc[(option? [v any/c]) boolean?]
 

@@ -10,6 +10,7 @@ languages, new frameworks, and new tools with.
 
 @table-of-contents[]
 
+@include-section[(lib "rebellion/private/base.scrbl")]
 @include-section[(lib "rebellion/private/binary.scrbl")]
 @include-section[(lib "rebellion/private/collection.scrbl")]
 @include-section[(lib "rebellion/private/custom-write.scrbl")]
@@ -19,7 +20,6 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/media.scrbl")]
 @include-section[(lib "rebellion/private/module-export.scrbl")]
 @include-section[(lib "rebellion/private/octet-stream.scrbl")]
-@include-section[(lib "rebellion/private/option.scrbl")]
 @include-section[(lib "rebellion/private/pair.scrbl")]
 @include-section[(lib "rebellion/private/permutation.scrbl")]
 @include-section[(lib "rebellion/private/point.scrbl")]

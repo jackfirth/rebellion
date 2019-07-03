@@ -1,0 +1,7 @@
+#lang scribble/manual
+
+@title[#:style (list 'toc)]{Base Libraries}
+
+@local-table-of-contents[]
+
+@include-section[(lib "rebellion/private/option.scrbl")]
