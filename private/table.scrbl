@@ -74,9 +74,9 @@ is significant and duplicate rows are allowed.
             (row "Japan" 126400000 "Tokyo")))
    (table-rows-ref countries 2))}
 
-@defproc[(table-columns-ref [tab table?] [column keyword?]) list?]{
- Returns a list of all the values for @racket[column] in @racket[tab], with each
- element of the list corresponding to one row in @racket[tab].
+@defproc[(table-columns-ref [tab table?] [column keyword?]) immutable-vector?]{
+ Returns a vector of all the values for @racket[column] in @racket[tab], with
+ each element corresponding to one row in @racket[tab].
 
  @(examples
    #:eval (make-evaluator) #:once

@@ -8,7 +8,7 @@
  table
  (contract-out
   [table? (-> any/c boolean?)]
-  [table-columns (-> table? (listof keyword?))]
+  [table-columns (-> table? keyset?)]
   [table-columns-ref (-> table? keyword? list?)]
   [table-ref (-> table? natural? keyword? any/c)]
   [table-rows-ref (-> table? natural? record?)]
@@ -19,6 +19,7 @@
          racket/math
          racket/pretty
          rebellion/base/generative-token
+         rebellion/collection/keyset
          rebellion/collection/record
          syntax/parse/define)
 
@@ -107,7 +108,8 @@
   (define-values (ignored-out-line start-out-column ignored-out-position)
     (port-next-location out))
   (write-string "(table (columns" out)
-  (for ([column (in-list columns)])
+  (for ([i (in-range (keyset-size columns))])
+    (define column (keyset-ref columns i))
     (write-string " #:" out)
     (write-string (keyword->string column) out))
   (write-string ")" out)
@@ -116,7 +118,8 @@
       (write-char #\newline out)
       (write-string (make-string (+ (or start-out-column 0) 7) #\space) out)
       (write-string "(row" out)
-      (for ([column (in-list columns)])
+      (for ([i (in-range (keyset-size columns))])
+        (define column (keyset-ref columns i))
         (write-string " " out)
         (define v (first (record-ref tab-rec column)))
         (if (custom-write? v)

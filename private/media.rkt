@@ -28,10 +28,11 @@
 
 (require racket/string
          racket/struct
-         rebellion/binary/immutable-bytes
-         rebellion/collection/record
          rebellion/base/immutable-string
          rebellion/base/symbol
+         rebellion/binary/immutable-bytes
+         rebellion/collection/keyset
+         rebellion/collection/record
          rebellion/type/tuple)
 
 (module+ test
@@ -87,10 +88,12 @@
    (media-type-parameters->string parameters)))
 
 (define (media-type-parameters->string parameters)
+  (define parameter-keys (record-keywords parameters))
   (define param-strings
-    (for/list ([k (in-list (record-keywords parameters))])
-      (define param-raw (record-ref parameters k))
-      (define param-name (keyword->immutable-string k))
+    (for/list ([i (in-range (keyset-size parameter-keys))])
+      (define kw (keyset-ref parameter-keys i))
+      (define param-raw (record-ref parameters kw))
+      (define param-name (keyword->immutable-string kw))
       (define param-quoted
         (media-type-parameter-value->possibly-quoted-string param-raw))
       (immutable-string-append param-name "=" param-quoted)))

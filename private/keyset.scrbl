@@ -3,13 +3,15 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     racket/set
                      rebellion/collection/keyset)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/keyset)
+    #:public (list 'racket/set
+                   'rebellion/collection/keyset)
     #:private (list 'racket/base)))
 
 @title{Keysets}
@@ -76,6 +78,22 @@ at compile-time.
    (define fruits (keyset #:banana #:orange #:apple #:grape))
    (keyset-size fruits))}
 
+@defproc[(keyset-add [keys keyset?] [kw keyword?]) keyset?]{
+ Adds @racket[kw] to @racket[keys], returning the modified @tech{keyset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define fruits (keyset #:banana #:orange #:apple #:grape))
+   (keyset-add fruits '#:peach))}
+
+@defproc[(keyset-remove [keys keyset?] [kw keyword?]) keyset?]{
+ Removes @racket[kw] from @racket[keys], returning the modified @tech{keyset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define fruits (keyset #:banana #:orange #:apple #:grape))
+   (keyset-remove fruits '#:banana))}
+
 @defproc[(keyset->list [keys keyset?]) (listof keyword?)]{
  Converts @racket[keys] into a plain list of keywords.
 
@@ -90,3 +108,17 @@ at compile-time.
  @(examples
    #:eval (make-evaluator) #:once
    (list->keyset (list '#:banana '#:orange '#:orange '#:apple '#:grape)))}
+
+@defproc[(keyset->set [keys keyset?]) (immutable-set/c keyword?)]{
+ Converts @racket[keys] into a plain @tech{set} of keywords.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (keyset->set (keyset #:red #:blue #:green #:yellow)))}
+
+@defproc[(set->keyset [kw-set (immutable-set/c keyword?)]) keyset?]{
+ Sorts @racket[kw-set], returning a @tech{keyset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (set->keyset (set '#:red '#:blue '#:green '#:yellow)))}

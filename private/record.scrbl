@@ -42,9 +42,8 @@ hash table whose keys are symbols or strings, use records instead.
            #:age 42
            #:favorite-color 'turqoise))}
 
-@defproc[(record-keywords [rec record?]) (listof keyword?)]{
- Returns the keywords contained in @racket[rec], sorted in ascending order by
- @racket[keyword<?].
+@defproc[(record-keywords [rec record?]) keyset?]{
+ Returns a @tech{keyset} of the keywords contained in @racket[rec].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -54,7 +53,7 @@ hash table whose keys are symbols or strings, use records instead.
              #:favorite-color 'turqoise))
    (record-keywords rec))}
 
-@defproc[(record-values [rec record?]) list?]{
+@defproc[(record-values [rec record?]) immutable-vector?]{
  Returns the values contained in @racket[rec], in the same order as the value's
  corresponding keyword in @racket[(record-keywords rec)].
 

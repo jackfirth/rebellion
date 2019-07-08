@@ -15,15 +15,20 @@
    (->i ([keys keyset?]
          [pos (keys) (and/c natural? (</c (keyset-size keys)))])
         [_ keyword?])]
+  [keyset-add (-> keyset? keyword? keyset?)]
+  [keyset-remove (-> keyset? keyword? keyset?)]
   [keyset-size (-> keyset? natural?)]
   [keyset->list (-> keyset? (listof keyword?))]
-  [list->keyset (-> (listof keyword?) keyset?)]))
+  [list->keyset (-> (listof keyword?) keyset?)]
+  [keyset->set (-> keyset? (set/c keyword?))]
+  [set->keyset (-> (set/c keyword?) keyset?)]))
 
 (require (for-syntax racket/base
                      racket/list)
          racket/list
-         rebellion/collection/immutable-vector
+         racket/set
          rebellion/base/generative-token
+         rebellion/collection/immutable-vector
          rebellion/name
          (except-in rebellion/predicate predicate/c)
          rebellion/private/boolean
@@ -131,6 +136,12 @@
   (make-keyset
    (list->immutable-vector (remove-duplicates (sort kws keyword<?)))))
 
+(define (keyset->set keys)
+  (for/set ([i (in-range (keyset-size keys))])
+    (keyset-ref keys i)))
+
+(define (set->keyset kw-set) (list->keyset (set->list kw-set)))
+
 (module+ test
   (test-case "keyset->list"
     (check-equal? (keyset->list empty-keyset) (list))
@@ -141,4 +152,28 @@
     (check-equal? (list->keyset (list '#:apple '#:orange '#:banana))
                   (keyset #:apple #:orange #:banana))
     (check-equal? (list->keyset (list '#:apple '#:apple '#:orange))
-                  (keyset #:apple #:orange))))
+                  (keyset #:apple #:orange)))
+  (test-case "keyset->set"
+    (check-equal? (keyset->set empty-keyset) (set))
+    (check-equal? (keyset->set (keyset #:a #:b #:c)) (set '#:a '#:b '#:c)))
+  (test-case "set->keyset"
+    (check-equal? (set->keyset (set)) empty-keyset)
+    (check-equal? (set->keyset (set '#:a '#:b '#:c)) (keyset #:a #:b #:c))))
+
+(define (keyset-add keys kw)
+  (set->keyset (set-add (keyset->set keys) kw)))
+
+(define (keyset-remove keys kw)
+  (set->keyset (set-remove (keyset->set keys) kw)))
+
+(module+ test
+  (test-case "keyset-add"
+    (check-equal? (keyset-add (keyset #:apple #:orange #:banana) '#:peach)
+                  (keyset #:apple #:orange #:banana #:peach))
+    (check-equal? (keyset-add (keyset #:apple #:orange #:banana) '#:apple)
+                  (keyset #:apple #:orange #:banana)))
+  (test-case "keyset-remove"
+    (check-equal? (keyset-remove (keyset #:apple #:orange #:banana) '#:apple)
+                  (keyset #:orange #:banana))
+    (check-equal? (keyset-remove (keyset #:apple #:orange #:banana) '#:peach)
+                  (keyset #:apple #:orange #:banana))))
