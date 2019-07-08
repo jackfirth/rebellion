@@ -12,8 +12,8 @@
   [record-map (-> record? (-> any/c any/c) record?)]
   [record-merge2
    (->* (record? record?) (#:merge (-> any/c any/c any/c)) record?)]
-  [record-keywords (-> record? (listof keyword?))]
-  [record-values (-> record? list?)]
+  [record-keywords (-> record? keyset?)]
+  [record-values (-> record? immutable-vector?)]
   [record-ref (-> record? keyword? any/c)]
   [record-remove (-> record? keyword? record?)]
   [record-size (-> record? natural?)]
@@ -24,9 +24,11 @@
 
 (require racket/list
          racket/math
+         racket/set
          racket/struct
-         rebellion/collection/keyset
          rebellion/base/generative-token
+         rebellion/collection/immutable-vector
+         rebellion/collection/keyset
          rebellion/type/tuple)
 
 (module+ test
@@ -39,7 +41,7 @@
 (define record-datatype-token (make-generative-token))
 
 (struct record (keywords values)
-  #:constructor-name plain-record
+  #:constructor-name internal-record-constructor
   #:omit-define-syntaxes
   #:methods gen:custom-write
   [(define write-proc
@@ -47,8 +49,8 @@
       (λ (this) 'record)
       (λ (this)
         (apply append
-               (for/list ([kw (in-list (record-keywords this))]
-                          [v (in-list (record-values this))])
+               (for/list ([kw (in-list (keyset->list (record-keywords this)))]
+                          [v (in-vector (record-values this))])
                  (list (unquoted-printing-string (format "~s" kw)) v))))))]
   #:methods gen:equal+hash
   [(define (equal-proc this other recur)
@@ -60,107 +62,89 @@
                   (record-values this))))
    (define hash2-proc hash-proc)])
 
+(define (record-keyword-procedure kws vs)
+  (internal-record-constructor (list->keyset kws) (list->immutable-vector vs)))
+
 (define record
-  (procedure-reduce-keyword-arity (make-keyword-procedure plain-record)
-                                  0
-                                  empty
-                                  #f))
+  (procedure-reduce-keyword-arity
+   (make-keyword-procedure record-keyword-procedure)
+   0
+   empty
+   #f))
 
 (define empty-record (record))
 
 (define (record-size rec)
-  (length (record-keywords rec)))
+  (keyset-size (record-keywords rec)))
+
+(define (record-ref rec kw)
+  (define index (keyset-index-of (record-keywords rec) kw))
+  (and index (immutable-vector-ref (record-values rec) index)))
 
 (module+ test
   (define rec
     (record #:name "Alyssa P. Hacker"
             #:age 42
             #:favorite-color 'turqoise))
-  (check-equal? (record-size rec) 3)
-  (check-equal? (record-keywords rec) (list '#:age '#:favorite-color '#:name))
-  (check-equal? (record-values rec) (list 42 'turqoise "Alyssa P. Hacker"))
-  (define rec2
-    (record #:name "Alyssa P. Hacker"
-            #:age 42
-            #:favorite-color 'turqoise))
-  (check-equal? rec rec2)
-  (check-equal? (equal-hash-code rec) (equal-hash-code rec2))
-  (check-equal? (equal-secondary-hash-code rec)
-                (equal-secondary-hash-code rec2)))
-
-(define (record-ref rec kw)
-  (let loop ([kws (record-keywords rec)]
-             [vs (record-values rec)])
-    (cond [(empty? kws) #f]
-          [(equal? (first kws) kw) (first vs)]
-          [else (loop (rest kws) (rest vs))])))
-
-(module+ test
-  (test-case "record-ref"
-    (define rec
+  (test-case "basic-integration-test"
+    (check-equal? (record-size rec) 3)
+    (check-equal? (record-keywords rec) (keyset #:age #:favorite-color #:name))
+    (check-equal? (record-values rec)
+                  (immutable-vector 42 'turqoise "Alyssa P. Hacker"))
+    (define rec2
       (record #:name "Alyssa P. Hacker"
               #:age 42
               #:favorite-color 'turqoise))
+    (check-equal? rec rec2)
+    (check-equal? (equal-hash-code rec) (equal-hash-code rec2))
+    (check-equal? (equal-secondary-hash-code rec)
+                  (equal-secondary-hash-code rec2)))
+  (test-case "record-ref"
     (check-equal? (record-ref rec '#:name) "Alyssa P. Hacker")
     (check-equal? (record-ref rec '#:foo) #f)))
 
 (define (record-merge2 rec1 rec2
                        #:merge [merge-function (λ (a b) b)])
-  (let loop ([rec1-kws (record-keywords rec1)]
-             [rec2-kws (record-keywords rec2)]
-             [rec1-vs (record-values rec1)]
-             [rec2-vs (record-values rec2)]
-             [merged-kws empty]
-             [merged-vs empty])
-    (define rec1-empty? (empty? rec1-kws))
-    (define rec2-empty? (empty? rec2-kws))
-    (cond
-      [(and rec1-empty? rec2-empty?)
-       (keyword-apply record
-                      (reverse merged-kws)
-                      (reverse merged-vs)
-                      empty)]
-      [rec1-empty?
-       (loop empty
-             (rest rec2-kws)
-             empty
-             (rest rec2-vs)
-             (cons (first rec2-kws) merged-kws)
-             (cons (first rec2-vs) merged-vs))]
-      [rec2-empty?
-       (loop (rest rec1-kws)
-             empty
-             (rest rec1-vs)
-             empty
-             (cons (first rec1-kws) merged-kws)
-             (cons (first rec1-vs) merged-vs))]
-      [else
-       (define kw1 (first rec1-kws))
-       (define kw2 (first rec2-kws))
-       (define v1 (first rec1-vs))
-       (define v2 (first rec2-vs))
-       (cond
-         [(equal? kw1 kw2)
-          (loop (rest rec1-kws)
-                (rest rec2-kws)
-                (rest rec1-vs)
-                (rest rec2-vs)
-                (cons kw1 merged-kws)
-                (cons (merge-function v1 v2) merged-vs))]
-         [(keyword<? kw1 kw2)
-          (loop (rest rec1-kws)
-                rec2-kws
-                (rest rec1-vs)
-                rec2-vs
-                (cons kw1 merged-kws)
-                (cons v1 merged-vs))]
-         [else
-          (loop rec1-kws
-                (rest rec2-kws)
-                rec1-vs
-                (rest rec2-vs)
-                (cons kw2 merged-kws)
-                (cons v2 merged-vs))])])))
+  (define keys1 (record-keywords rec1))
+  (define keys2 (record-keywords rec2))
+  (define values1 (record-values rec1))
+  (define values2 (record-values rec2))
+  (define merged-keys
+    (set->keyset (set-union (keyset->set keys1) (keyset->set keys2))))
+  (build-record (λ (kw)
+                  (define in1? (keyset-contains? keys1 kw))
+                  (define in2? (keyset-contains? keys2 kw))
+                  (cond
+                    [(and in1? in2?)
+                     (merge-function (record-ref rec1 kw) (record-ref rec2 kw))]
+                    [in1? (record-ref rec1 kw)]
+                    [else (record-ref rec2 kw)]))
+                merged-keys))
+
+(define (sorted-keywords-and-values->record kws vs)
+  (keyword-apply record kws vs empty))
+
+(define (record-remove rec kw)
+  (define keys (keyset-remove (record-keywords rec) kw))
+  (build-record (λ (kw) (record-ref rec kw)) keys))
+
+(define (record-map rec f)
+  (define kws (record-keywords rec))
+  (define vs (record-values rec))
+  (define mapped-vs (immutable-vector-map f vs))
+  (internal-record-constructor kws mapped-vs))
+
+(define (build-record builder keys)
+  (define size (keyset-size keys))
+  (define vs
+    (vector->immutable-vector
+     (for/vector #:length size
+       ([i (in-range size)])
+       (builder (keyset-ref keys i)))))
+  (internal-record-constructor keys vs))
+
+(define (record-contains-key? rec kw)
+  (keyset-contains? (record-keywords rec) kw))
 
 (module+ test
   (test-case "record-merge2"
@@ -175,60 +159,16 @@
                   (record #:foo 2))
     (check-equal? (record-merge2 (record #:foo 1) (record #:foo 2)
                                  #:merge +)
-                  (record #:foo 3))))
-
-(define (sorted-keywords-and-values->record kws vs)
-  (keyword-apply record kws vs empty))
-
-(define (record-remove rec kw)
-  (let loop ([kws (record-keywords rec)]
-             [vs (record-values rec)]
-             [checked-kws empty]
-             [checked-vs empty])
-    (cond
-      [(empty? kws)
-       (sorted-keywords-and-values->record (reverse checked-kws)
-                                           (reverse checked-vs))]
-      [(equal? (first kws) kw)
-       (sorted-keywords-and-values->record
-        (append (reverse checked-kws) (rest kws))
-        (append (reverse checked-vs) (rest vs)))]
-      [else
-       (loop (rest kws)
-             (rest vs)
-             (cons (first kws) checked-kws)
-             (cons (first vs) checked-vs))])))
-
-(module+ test
+                  (record #:foo 3)))
   (test-case "record-remove"
     (check-equal? (record-remove (record #:a 1 #:b 2 #:c 3) '#:b)
-                  (record #:a 1 #:c 3))))
-
-(define (record-map rec f)
-  (define kws (record-keywords rec))
-  (define vs (record-values rec))
-  (define mapped-vs (map f vs))
-  (sorted-keywords-and-values->record kws mapped-vs))
-
-(module+ test
+                  (record #:a 1 #:c 3)))
   (test-case "record-map"
     (check-equal? (record-map (record #:x 1 #:y -1 #:z 0) (λ (x) (* x 100)))
-                  (record #:x 100 #:y -100 #:z 0))))
-
-(define (build-record builder keys)
-  (define size (keyset-size keys))
-  (define vs (build-list size (λ (i) (builder (keyset-ref keys i)))))
-  (keyword-apply record (keyset->list keys) vs (list)))
-
-(module+ test
+                  (record #:x 100 #:y -100 #:z 0)))
   (test-case "build-record"
     (check-equal? (build-record keyword->string (keyset #:x #:y #:z))
-                  (record #:x "x" #:y "y" #:z "z"))))
-
-(define (record-contains-key? rec kw)
-  (and (member kw (record-keywords rec)) #t))
-
-(module+ test
+                  (record #:x "x" #:y "y" #:z "z")))
   (test-case "record-contains-key?"
     (check-true (record-contains-key? (record #:x 0 #:y 0) '#:x))
     (check-true (record-contains-key? (record #:x 0 #:y 0) '#:y))
