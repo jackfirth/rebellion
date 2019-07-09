@@ -13,6 +13,9 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/base.scrbl")]
 @include-section[(lib "rebellion/private/binary.scrbl")]
 @include-section[(lib "rebellion/private/collection.scrbl")]
+@include-section[(lib "rebellion/private/type.scrbl")]
+@include-section[(lib "rebellion/private/module.scrbl")]
+
 @include-section[(lib "rebellion/private/custom-write.scrbl")]
 @include-section[(lib "rebellion/private/equal+hash.scrbl")]
 @include-section[(lib "rebellion/private/media.scrbl")]
@@ -21,6 +24,5 @@ languages, new frameworks, and new tools with.
 @include-section[(lib "rebellion/private/permutation.scrbl")]
 @include-section[(lib "rebellion/private/point.scrbl")]
 @include-section[(lib "rebellion/private/text.scrbl")]
-@include-section[(lib "rebellion/private/type.scrbl")]
 @include-section[(lib "rebellion/private/web-graph.scrbl")]
 @include-section[(lib "rebellion/private/web-link.scrbl")]
