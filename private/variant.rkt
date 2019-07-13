@@ -12,7 +12,8 @@
 
 (require racket/list
          racket/struct
-         rebellion/base/generative-token)
+         rebellion/base/generative-token
+         rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")
@@ -20,29 +21,23 @@
 
 ;@------------------------------------------------------------------------------
 
-(define variant-datatype-token (make-generative-token))
-
-(struct variant (tag value)
-  #:constructor-name plain-variant
-  #:omit-define-syntaxes
-
-  #:methods gen:custom-write
-  [(define write-proc
-     (make-constructor-style-printer
-      (λ (this) 'variant)
+(define (make-variant-properties descriptor)
+  (define type-name (tuple-type-name (tuple-descriptor-type descriptor)))
+  (define accessor (tuple-descriptor-accessor descriptor))
+  (define custom-write
+    (make-constructor-style-printer
+      (λ (this) type-name)
       (λ (this)
-        (define tag (variant-tag this))
+        (define tag (accessor this 0))
+        (define value (accessor this 1))
         (define tag-str (string-append "#:" (keyword->string tag)))
-        (list (unquoted-printing-string tag-str) (variant-value this)))))]
+        (list (unquoted-printing-string tag-str) value))))
+  (list (cons prop:custom-write custom-write)
+        (cons prop:equal+hash (make-tuple-equal+hash descriptor))))
 
-  #:methods gen:equal+hash
-  [(define (equal-proc this other recur)
-     (and (recur (variant-tag this) (variant-tag other))
-          (recur (variant-value this) (variant-value other))))
-   (define (hash-proc this recur)
-     (recur
-         (list variant-datatype-token (variant-tag this) (variant-value this))))
-   (define hash2-proc hash-proc)])
+(define-tuple-type variant (tag value)
+  #:constructor-name constructor:variant
+  #:property-maker make-variant-properties)
 
 (define (variant-keyword-function kws kw-args)
   (when (> (length kws) 1)
@@ -52,7 +47,7 @@
                            "values" kw-args))
   (when (< (length kws) 1)
     (raise-arguments-error 'variant "no arguments given"))
-  (plain-variant (first kws) (first kw-args)))
+  (constructor:variant (first kws) (first kw-args)))
 
 (define variant
   (procedure-reduce-keyword-arity
