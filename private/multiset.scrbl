@@ -3,13 +3,15 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/collection/multiset)
+                     rebellion/collection/multiset
+                     rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/multiset)
+    #:public (list 'rebellion/collection/multiset
+                   'rebellion/streaming/reducer)
     #:private (list 'racket/base)))
 
 @title{Multisets}
@@ -38,6 +40,15 @@ can contain duplicate elements. Elements are always compared with @racket[
    #:eval (make-evaluator) #:once
    (define set (multiset 5 8 8 8))
    (multiset-size set))}
+
+@defproc[(multiset-add [set multiset?] [v any/c]) multiset?]{
+ Adds @racket[v] to @racket[set], returning an updated @tech{multiset}. The
+ original @racket[set] is not mutated.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-add (multiset 'apple 'orange 'banana) 'grape)
+   (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
 
 @defproc[(multiset-contains? [set multiset?] [v any/c]) boolean?]{
  Returns @racket[#t] if @racket[set] contains @racket[v], @racket[#f] otherwise.
@@ -75,6 +86,46 @@ can contain duplicate elements. Elements are always compared with @racket[
  @(examples
    #:eval (make-evaluator) #:once
    (multiset-unique-elements (multiset 5 8 8 8 13 13)))}
+
+@section{Multiset Iteration and Comprehension}
+
+@defproc[(in-multiset [set multiset?]) sequence?]{
+ Returns a @tech{sequence} that iterates over the elements of @racket[set],
+ including duplicates.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define set (multiset 5 8 8 8 5 3))
+   (for ([v (in-multiset set)])
+     (displayln v)))}
+
+@defthing[into-multiset reducer?]{
+ A @tech{reducer} that collects elements into a @tech{multiset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all into-multiset (in-string "happy birthday!")))}
+
+@defform[(for/multiset (for-clause ...) body-or-break ... body)]{
+ Like @racket[for], but collects the iterated values into a @tech{multiset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for/multiset ([char (in-string "Hello World")])
+     (cond [(char-whitespace? char) 'whitespace]
+           [(char-upper-case? char) 'uppercase-letter]
+           [else 'lowercase-letter])))}
+
+@defform[(for*/multiset (for-clause ...) body-or-break ... body)]{
+ Like @racket[for*], but collects the iterated values into a @tech{multiset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for*/multiset ([str (in-list (list "the" "quick" "brown" "fox"))]
+                   [char (in-string str)])
+     char))}
+
+@section{Multiset Conversions}
 
 @defproc[(multiset->list [set multiset?]) list?]{
  Returns a list of all the elements of @racket[set]. Duplicate elements are
