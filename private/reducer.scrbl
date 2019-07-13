@@ -84,3 +84,19 @@
    #:eval (make-evaluator) #:once
    (define numbers-into-sum (reducer-filter into-sum number?))
    (reduce numbers-into-sum 1 'a 2 3 'b 'c 'd 4 'e 5))}
+
+@section{Iteration and Comprehension with Reducers}
+
+@defform[(for/reducer reducer-expr (for-clause ...) body-or-break ... body)
+         #:contracts ([reducer-expr reducer?])]{
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for/reducer into-sum
+     ([char (in-string "aaa0aa00a0aa")])
+     (if (char-alphabetic? char)
+         1
+         -1)))}
+
+@defform[(for*/reducer reducer-expr (for-clause ...) body-or-break ... body)
+         #:contracts ([reducer-expr reducer?])]
