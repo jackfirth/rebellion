@@ -45,3 +45,12 @@ the types of those values.
    #:eval (make-evaluator) #:once
    (variant-tag (variant #:success 42))
    (variant-tag (variant #:failure 'oops)))}
+
+@defproc[(variant-tagged-as? [var variant?] [tag-keyword keyword?]) boolean?]{
+ Returns @racket[#t] if @racket[var] is tagged with @racket[tag-keyword],
+ returns @racket[#f] otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (variant-tagged-as? (variant #:success 42) '#:success)
+   (variant-tagged-as? (variant #:success 42) '#:failure))}
