@@ -68,6 +68,19 @@
 @defproc[(reducer-map [red reducer?]
                       [#:domain f (-> any/c any/c) values]
                       [#:range g (-> any/c any/c) values])
-         reducer?]
+         reducer?]{
 
-@defproc[(reducer-filter [red reducer?] [pred predicate/c]) reducer?]
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define strings-into-sum
+     (reducer-map into-sum
+                  #:domain string->number
+                  #:range number->string))
+   (reduce strings-into-sum "100" "200" "300"))}
+
+@defproc[(reducer-filter [red reducer?] [pred predicate/c]) reducer?]{
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define numbers-into-sum (reducer-filter into-sum number?))
+   (reduce numbers-into-sum 1 'a 2 3 'b 'c 'd 4 'e 5))}

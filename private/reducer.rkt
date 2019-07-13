@@ -24,7 +24,12 @@
   [reduce-all (-> reducer? sequence? any/c)]
   [into-sum reducer?]
   [into-product reducer?]
-  [into-count reducer?]))
+  [into-count reducer?]
+  [reducer-map
+   (->* (reducer?)
+        (#:domain (-> any/c any/c) #:range (-> any/c any/c))
+        reducer?)]
+  [reducer-filter (-> reducer? predicate/c reducer?)]))
 
 (require racket/bool
          racket/list
@@ -111,3 +116,32 @@
                               (in-hash-values (hash 'a 2 'b 3 'c 5 'd 7)))
                   210)
     (check-equal? (reduce-all into-count (in-string "abcde")) 5)))
+
+(define (reducer-map red #:domain [f values] #:range [g values])
+  (define consumer (reducer-consumer red))
+  (define finisher (reducer-finisher red))
+  (define early-finisher (reducer-early-finisher red))
+  (make-reducer #:starter (reducer-starter red)
+                #:consumer (λ (s v) (consumer s (f v)))
+                #:finisher (λ (s) (g (finisher s)))
+                #:early-finisher (λ (s) (g (early-finisher s)))))
+
+(define (reducer-filter red pred)
+  (define consumer (reducer-consumer red))
+  (define (filtering-consumer s v)
+    (if (pred v)
+        (consumer s v)
+        (variant #:consume s)))
+  (make-reducer #:starter (reducer-starter red)
+                #:consumer filtering-consumer
+                #:finisher (reducer-finisher red)
+                #:early-finisher (reducer-early-finisher red)))
+
+(module+ test
+  (test-case "reducer-map"
+    (define into-sum/string
+      (reducer-map into-sum #:domain string->number #:range number->string))
+    (check-equal? (reduce into-sum/string "1" "2" "3" "4" "5") "15"))
+  (test-case "reducer-filter"
+    (define numbers-into-sum (reducer-filter into-sum number?))
+    (check-equal? (reduce numbers-into-sum 1 'a 'b 2 3 4 'c 5 'd) 15)))
