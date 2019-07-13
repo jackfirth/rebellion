@@ -3,6 +3,8 @@
 (require racket/contract/base)
 
 (provide
+ for/reducer
+ for*/reducer
  (contract-out
   [reducer? predicate/c]
   [make-fold-reducer
@@ -33,9 +35,11 @@
 
 (require racket/bool
          racket/list
+         rebellion/base/immutable-string
          rebellion/base/symbol
          rebellion/base/variant
-         rebellion/type/reference)
+         rebellion/type/reference
+         syntax/parse/define)
 
 (module+ test
   (require (submod "..")
@@ -145,3 +149,58 @@
   (test-case "reducer-filter"
     (define numbers-into-sum (reducer-filter into-sum number?))
     (check-equal? (reduce numbers-into-sum 1 'a 'b 2 3 4 'c 5 'd) 15)))
+
+(define-simple-macro
+  (for/reducer reducer-expr:expr (for-clause ...) body ... tail-expr)
+  #:with original this-syntax
+  (let ([reducer reducer-expr])
+    (define starter (reducer-starter reducer))
+    (define consumer (reducer-consumer reducer))
+    (define finisher (reducer-finisher reducer))
+    (define early-finisher (reducer-early-finisher reducer))
+    (for/fold/derived original
+      ([tagged-state (starter)]
+       #:result (if (variant-tagged-as? tagged-state '#:consume)
+                    (finisher (variant-value tagged-state))
+                    (early-finisher (variant-value tagged-state))))
+      (for-clause ... #:break (variant-tagged-as? tagged-state '#:early-finish))
+      body ...
+      (consumer (variant-value tagged-state) tail-expr))))
+
+(define-simple-macro
+  (for*/reducer reducer-expr:expr (for-clause ...) body ... tail-expr)
+  #:with original this-syntax
+  (let ([reducer reducer-expr])
+    (define starter (reducer-starter reducer))
+    (define consumer (reducer-consumer reducer))
+    (define finisher (reducer-finisher reducer))
+    (define early-finisher (reducer-early-finisher reducer))
+    (for*/fold/derived original
+      ([tagged-state (starter)]
+       #:result (if (variant-tagged-as? tagged-state '#:consume)
+                    (finisher (variant-value tagged-state))
+                    (early-finisher (variant-value tagged-state))))
+      (for-clause ... #:break (variant-tagged-as? tagged-state '#:early-finish))
+      body ...
+      (consumer (variant-value tagged-state) tail-expr))))
+
+(define into-list
+  (reducer-map (make-fold-reducer (λ (lst v) (cons v lst)) (list))
+               #:range reverse))
+
+(define into-string (reducer-map into-list #:range list->immutable-string))
+
+(module+ test
+  (test-case "for/reducer"
+    (check-equal? (for/reducer into-list
+                    ([n (in-naturals)]
+                     [char (in-string "ab1c23d4ef")])
+                    (if (char-alphabetic? char) n 'digit))
+                  (list 0 1 'digit 3 'digit 'digit 6 'digit 8 9)))
+  (test-case "for*/reducer"
+    (check-equal? (for*/reducer into-string
+                    ([str (in-list (list "foo1" "bar2" "baz3"))]
+                     [char (in-string str)]
+                     #:when (char-alphabetic? char))
+                    char)
+                  "foobarbaz")))
