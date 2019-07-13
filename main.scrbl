@@ -11,9 +11,10 @@ languages, new frameworks, and new tools with.
 @table-of-contents[]
 
 @include-section[(lib "rebellion/private/base.scrbl")]
-@include-section[(lib "rebellion/private/binary.scrbl")]
-@include-section[(lib "rebellion/private/collection.scrbl")]
 @include-section[(lib "rebellion/private/type.scrbl")]
+@include-section[(lib "rebellion/private/streaming.scrbl")]
+@include-section[(lib "rebellion/private/collection.scrbl")]
+@include-section[(lib "rebellion/private/binary.scrbl")]
 @include-section[(lib "rebellion/private/module.scrbl")]
 
 @include-section[(lib "rebellion/private/custom-write.scrbl")]
