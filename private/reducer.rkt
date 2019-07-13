@@ -33,13 +33,22 @@
         reducer?)]
   [reducer-filter (-> reducer? predicate/c reducer?)]))
 
-(require racket/bool
+(require (for-syntax racket/base
+                     racket/contract/base
+                     syntax/parse)
+         racket/bool
          racket/list
          rebellion/base/immutable-string
          rebellion/base/symbol
          rebellion/base/variant
          rebellion/type/reference
          syntax/parse/define)
+
+(begin-for-syntax
+  (provide
+   (contract-out
+    [make-reducer-based-for-comprehensions
+     (-> syntax? (values (-> syntax? syntax?) (-> syntax? syntax?)))])))
 
 (module+ test
   (require (submod "..")
@@ -151,8 +160,8 @@
     (check-equal? (reduce numbers-into-sum 1 'a 'b 2 3 4 'c 5 'd) 15)))
 
 (define-simple-macro
-  (for/reducer reducer-expr:expr (for-clause ...) body ... tail-expr)
-  #:with original this-syntax
+  (for/reducer/derived original reducer-expr:expr (for-clause ...)
+    body ... tail-expr)
   (let ([reducer reducer-expr])
     (define starter (reducer-starter reducer))
     (define consumer (reducer-consumer reducer))
@@ -168,8 +177,8 @@
       (consumer (variant-value tagged-state) tail-expr))))
 
 (define-simple-macro
-  (for*/reducer reducer-expr:expr (for-clause ...) body ... tail-expr)
-  #:with original this-syntax
+  (for*/reducer/derived original reducer-expr:expr (for-clause ...)
+    body ... tail-expr)
   (let ([reducer reducer-expr])
     (define starter (reducer-starter reducer))
     (define consumer (reducer-consumer reducer))
@@ -183,6 +192,14 @@
       (for-clause ... #:break (variant-tagged-as? tagged-state '#:early-finish))
       body ...
       (consumer (variant-value tagged-state) tail-expr))))
+
+(define-simple-macro (for/reducer reducer-expr:expr clauses body ... tail-expr)
+  #:with original this-syntax
+  (for/reducer/derived original reducer-expr clauses body ... tail-expr))
+
+(define-simple-macro (for*/reducer reducer-expr:expr clauses body ... tail-expr)
+  #:with original this-syntax
+  (for*/reducer/derived original reducer-expr clauses body ... tail-expr))
 
 (define into-list
   (reducer-map (make-fold-reducer (λ (lst v) (cons v lst)) (list))
@@ -204,3 +221,19 @@
                      #:when (char-alphabetic? char))
                     char)
                   "foobarbaz")))
+
+(begin-for-syntax
+  (define (make-reducer-based-for-comprehensions reducer-expr)
+    (define (for-comprehension stx)
+      (syntax-parse stx
+        [(_ clauses body ... tail-expr)
+         #:with original stx
+         #:with reducer reducer-expr
+         #'(for/reducer/derived original reducer clauses body ... tail-expr)]))
+    (define (for*-comprehension stx)
+      (syntax-parse stx
+        [(_ clauses body ... tail-expr)
+         #:with original stx
+         #:with reducer reducer-expr
+         #'(for*/reducer/derived original reducer clauses body ... tail-expr)]))
+    (values for-comprehension for*-comprehension)))

@@ -100,3 +100,15 @@
 
 @defform[(for*/reducer reducer-expr (for-clause ...) body-or-break ... body)
          #:contracts ([reducer-expr reducer?])]
+
+@defproc[(make-reducer-based-for-comprehensions [reducer-expression syntax?])
+         (values (-> syntax? syntax?)
+                 (-> syntax? syntax?))]{
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (require (for-syntax racket/base))
+   (define-syntaxes (for/sum for*/sum)
+     (make-reducer-based-for-comprehensions #'into-sum))
+   (for/sum ([str (in-list (list "apple" "orange" "banana" "grapefruit"))])
+     (string-length str)))}
