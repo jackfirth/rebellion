@@ -7,7 +7,8 @@
   [variant (unconstrained-domain-> variant?)]
   [variant? (-> any/c boolean?)]
   [variant-value (-> variant? any/c)]
-  [variant-tag (-> variant? keyword?)]))
+  [variant-tag (-> variant? keyword?)]
+  [variant-tagged-as? (-> variant? keyword? boolean?)]))
 
 (require racket/list
          racket/struct
@@ -65,3 +66,11 @@
   (check-equal? (variant-tag var) '#:success)
   (check-equal? (variant-value var) 42)
   (check-equal? var (variant #:success 42)))
+
+(define (variant-tagged-as? var tag-keyword)
+  (equal? (variant-tag var) tag-keyword))
+
+(module+ test
+  (test-case "variant-tagged-as?"
+    (check-true (variant-tagged-as? (variant #:success 42) '#:success))
+    (check-false (variant-tagged-as? (variant #:failure "oh no") '#:success))))
