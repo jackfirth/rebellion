@@ -3,9 +3,13 @@
 (require racket/contract/base)
 
 (provide
+ for/multidict
+ for*/multidict
  (contract-out
   [multidict (->* () #:rest key-value-list/c multidict?)]
   [multidict? predicate/c]
+  [multidict-add (-> multidict? any/c any/c multidict?)]
+  [multidict-add-entry (-> multidict? entry? multidict?)]
   [multidict-size (-> multidict? natural?)]
   [multidict-ref (-> multidict? any/c immutable-set?)]
   [multidict-keys (-> multidict? multiset?)]
@@ -20,16 +24,21 @@
        (hash/c any/c nonempty-immutable-set? #:immutable #t #:flat? #t))]
   [empty-multidict empty-multidict?]
   [empty-multidict? predicate/c]
-  [nonempty-multidict? predicate/c]))
+  [nonempty-multidict? predicate/c]
+  [in-multidict-entries (-> multidict? (sequence/c entry?))]
+  [into-multidict reducer?]))
 
-(require racket/list
+(require (for-syntax racket/base)
+         racket/list
          racket/math
          racket/sequence
          racket/set
+         racket/stream
          racket/struct
          rebellion/collection/entry
          rebellion/collection/multiset
          rebellion/collection/keyset
+         rebellion/streaming/reducer
          rebellion/type/record)
 
 (module+ test
@@ -60,49 +69,62 @@
     (make-constructor-style-printer
      (λ (_) type-name)
      (λ (this)
-       (define backing-hash (accessor this backing-hash-field))
-       (for*/list ([(k vs) (in-immutable-hash backing-hash)]
-                   [v (in-immutable-set vs)]
-                   [k-or-v (in-list (list k v))])
+       (for*/list ([e (sequence this)]
+                   [k-or-v (in-list (list (entry-key e) (entry-value e)))])
          k-or-v))))
+  (define (sequence this)
+    (define backing-hash (accessor this backing-hash-field))
+    (for*/stream ([(k vs) (in-immutable-hash backing-hash)]
+                    [v (in-immutable-set vs)])
+      (entry k v)))
   (list (cons prop:equal+hash equal+hash)
+        (cons prop:sequence sequence)
         (cons prop:custom-write custom-write)))
 
 (define-record-type multidict (backing-hash size)
   #:constructor-name constructor:multidict
   #:property-maker make-multidict-properties)
 
+(define (in-multidict-entries dict) dict)
+
+(define empty-multidict (constructor:multidict #:backing-hash (hash) #:size 0))
+
+(define (multidict-add dict k v)
+  (define backing-hash (multidict-backing-hash dict))
+  (define size (multidict-size dict))
+  (define k-vs (hash-ref backing-hash k (set)))
+  (if (set-member? k-vs v)
+      dict
+      (constructor:multidict
+       #:backing-hash (hash-set backing-hash k (set-add k-vs v))
+       #:size (add1 size))))
+
+(define (multidict-add-entry dict e)
+  (multidict-add dict (entry-key e) (entry-value e)))
+
+(define into-multidict
+  (make-fold-reducer multidict-add-entry
+                     empty-multidict
+                     #:name 'into-multidict))
+
+(define-syntaxes (for/multidict for*/multidict)
+  (make-reducer-based-for-comprehensions #'into-multidict))
+
 (define (multidict . entries)
-  (define backing-hash
-    (for/fold ([h (hash)])
-              ([e (in-slice 2 entries)])
-      (define k (first e))
-      (define v (second e))
-      (hash-update h k (λ (st) (set-add st v)) (set))))
-  (define size
-    (for/sum ([vs (in-immutable-hash-values backing-hash)])
-      (set-count vs)))
-  (constructor:multidict #:backing-hash backing-hash #:size size))
+  (for/multidict ([entry-pair (in-slice 2 entries)])
+    (entry (first entry-pair) (second entry-pair))))
 
 (define (multidict-keys dict)
-  (list->multiset
-   (for*/list ([(k vs) (in-immutable-hash (multidict-backing-hash dict))]
-               [_ (in-range (set-count vs))])
-     k)))
+  (for/multiset ([e (in-multidict-entries dict)]) (entry-key e)))
 
 (define (multidict-unique-keys dict)
-  (list->set (hash-keys (multidict-backing-hash dict))))
+  (for/set ([k (in-hash-keys (multidict-backing-hash dict))]) k))
 
 (define (multidict-values dict)
-  (list->multiset
-   (for*/list ([vs (in-immutable-hash-values (multidict-backing-hash dict))]
-               [v (in-immutable-set vs)])
-     v)))
+  (for/multiset ([e (in-multidict-entries dict)]) (entry-value e)))
 
 (define (multidict-entries dict)
-  (for*/set ([(k vs) (in-immutable-hash (multidict-backing-hash dict))]
-             [v (in-immutable-set vs)])
-    (entry k v)))
+  (for/set ([e (in-multidict-entries dict)]) e))
 
 (define (multidict->hash dict) (multidict-backing-hash dict))
 
@@ -117,8 +139,6 @@
 
 (define (multidict-contains-entry? dict e)
   (set-member? (multidict-ref dict (entry-key e)) (entry-value e)))
-
-(define empty-multidict (multidict))
 
 (define (empty-multidict? v) (equal? v empty-multidict))
 
