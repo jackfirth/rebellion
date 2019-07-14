@@ -204,16 +204,26 @@ reducers with increasing power and complexity:
                       [#:domain f (-> any/c any/c) values]
                       [#:range g (-> any/c any/c) values])
          reducer?]{
+ Wraps @racket[red] to apply @racket[f] to each sequence element and to apply
+ @racket[g] to its reduction result. Both @racket[f] and @racket[g] default to
+ @racket[values].
 
  @(examples
    #:eval (make-evaluator) #:once
-   (define strings-into-sum
+   (define into-total-letters
+     (reducer-map into-sum #:domain string-length))
+   (reduce into-total-letters "the" "quick" "brown" "fox")
+   
+   (define stringly-typed-into-sum
      (reducer-map into-sum
                   #:domain string->number
                   #:range number->string))
-   (reduce strings-into-sum "100" "200" "300"))}
+   (reduce stringly-typed-into-sum "12" "5" "42" "17"))}
 
 @defproc[(reducer-filter [red reducer?] [pred predicate/c]) reducer?]{
+ Wraps @racket[red] to only reduce sequence elements for which @racket[pred]
+ returns @racket[#t], and ignore elements completely when @racket[pred] returns
+ @racket[#f].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -224,6 +234,8 @@ reducers with increasing power and complexity:
 
 @defform[(for/reducer reducer-expr (for-clause ...) body-or-break ... body)
          #:contracts ([reducer-expr reducer?])]{
+ Iterates like @racket[for], but the sequence of iterated @racket[body] results
+ is reduced with @racket[reducer-expr].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -234,11 +246,22 @@ reducers with increasing power and complexity:
          -1)))}
 
 @defform[(for*/reducer reducer-expr (for-clause ...) body-or-break ... body)
-         #:contracts ([reducer-expr reducer?])]
+         #:contracts ([reducer-expr reducer?])]{
+ Iterates like @racket[for*], but the sequence of iterated @racket[body] results
+ is reduced with @racket[reducer-expr].}
 
 @defproc[(make-reducer-based-for-comprehensions [reducer-expression syntax?])
          (values (-> syntax? syntax?)
                  (-> syntax? syntax?))]{
+ Returns two @tech{syntax transformers} suitable for use with @racket[
+ define-syntaxes] that implement two @racket[for]-like macros. The returned
+ macros use @racket[reducer-expression] to iterate like @racket[for/reducer]
+ and @racket[for*/reducer], respectively. Provided at phase 1.
+
+ In order to prevent confusion over how many times @racket[reducer-expression]
+ is expanded and evaluated, strongly prefer using a single identifier for
+ @racket[reducer-expression] instead of an expression using
+ @racket[reducer-map], @racket[make-fold-reducer], etc.
 
  @(examples
    #:eval (make-evaluator) #:once
