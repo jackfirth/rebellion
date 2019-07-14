@@ -5,15 +5,17 @@
                      racket/math
                      rebellion/collection/entry
                      rebellion/collection/multidict
-                     rebellion/collection/multiset)
+                     rebellion/collection/multiset
+                     rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/multidict
-                   'rebellion/collection/entry
-                   'rebellion/collection/multiset)
+    #:public (list 'rebellion/collection/entry
+                   'rebellion/collection/multidict
+                   'rebellion/collection/multiset
+                   'rebellion/streaming/reducer)
     #:private (list 'racket/base)))
 
 @title{Multidicts}
@@ -53,6 +55,27 @@ interface is based on a flattened collection of key-value pairs.
    (multidict-ref dict 'fruit)
    (multidict-ref dict 'vegetable)
    (multidict-ref dict 'dessert))}
+
+@defproc[(multidict-add [dict multidict?] [k any/c] [v any/c]) multidict?]{
+ Adds a mapping from @racket[k] to @racket[v] in @racket[dict], returning a new
+ updated @tech{multidict}. If @racket[dict] already contains an entry for
+ @racket[k] and @racket[v], the dict is returned unchanged.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict-add (multidict 'a 1) 'b 2)
+   (multidict-add (multidict 'a 1) 'a 2)
+   (multidict-add (multidict 'a 1) 'a 1))}
+
+@defproc[(multidict-add-entry [dict multidict?] [e entry?]) multidict?]{
+ Like @racket[multidict-add], but with the key and value wrapped in the @tech{
+  entry} @racket[e].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict-add-entry (multidict 'a 1) (entry 'b 2))
+   (multidict-add-entry (multidict 'a 1) (entry 'a 2))
+   (multidict-add-entry (multidict 'a 1) (entry 'a 1)))}
 
 @defproc[(multidict-size [dict multidict?]) natural?]{
  Returns the number of key-value mappings in @racket[dict]. Note that this does
@@ -169,3 +192,35 @@ interface is based on a flattened collection of key-value pairs.
 
 @defproc[(nonempty-multidict? [v any/c]) boolean?]{
  A predicate for nonempty @tech{multidicts}. Implies @racket[multidict?].}
+
+@section{Multidict Iterations and Comprehensions}
+
+@defproc[(in-multidict-entries [dict multidict?]) (sequence/c entry?)]{
+ Returns a @tech{sequence} of the @tech{entries} in @racket[dict].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define food-classifications
+     (multidict 'fruit 'apple
+                'vegetable 'carrot
+                'fruit 'orange
+                'fruit 'banana
+                'vegetable 'celery))
+   (for ([e (in-multidict-entries food-classifications)])
+     (printf "key: ~a    value: ~a"
+             (entry-key e)
+             (entry-value e))))}
+
+@defform[(for/multidict (for-clause ...) body-or-break ... body)
+         #:contracts ([body entry?])]{
+ Iterates like @racket[for], but collects each @tech{entry} returned by @racket[
+ body] into a @tech{multidict}.}
+
+@defform[(for*/multidict (for-clause ...) body-or-break ... body)
+         #:contracts ([body entry?])]{
+ Iterates like @racket[for*], but collects each @tech{entry} returned by
+ @racket[body] into a @tech{multidict}.}
+
+@defthing[into-multidict reducer?]{
+ A @tech{reducer} that reduces a sequence of @tech{entries} into a
+ @tech{multidict}.}
