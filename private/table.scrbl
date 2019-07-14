@@ -3,13 +3,18 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
-                     rebellion/collection/table)
+                     rebellion/base/symbol
+                     rebellion/collection/record
+                     rebellion/collection/table
+                     rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/table)
+    #:public (list 'rebellion/collection/record
+                   'rebellion/collection/table
+                   'rebellion/streaming/reducer)
     #:private (list 'racket/base)))
 
 @title{Tables}
@@ -87,3 +92,42 @@ is significant and duplicate rows are allowed.
             (row "Nigeria" 198600000 "Abuja")
             (row "Japan" 126400000 "Tokyo")))
    (table-columns-ref countries '#:capital-city))}
+
+@section{Table Comprehensions}
+
+@defform[(for/table (for-clause ...) body-or-break ... body)
+         #:contracts ([body record?])]{
+ Iterates like @racket[for], but each @racket[body] must evaluate to a @tech{
+  record} and the resulting records are collected into a @tech{table}. All
+ @racket[body] records must have the same keys. If @racket[body] is never
+ evaluated, for instance because the loop iterates over an empty collection,
+ then an empty table with no rows and no columns is returned.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for/table ([god (in-list (list "Zeus" "hera" "hades" "Athena" "PosEIdon"))])
+     (define name (string-titlecase god))
+     (record #:name name
+             #:correct-case? (equal? name god)
+             #:name-length (string-length god))))}
+
+@defform[(for*/table (for-clause ...) body-or-break ... body)
+         #:contracts ([body record?])]{
+ Like @racket[for/table], but iterates like @racket[for*].}
+
+@defthing[into-table reducer?]{
+ A @tech{reducer} that reduces @tech{records} into a @tech{table}, in the same
+ manner as @racket[for/table].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce into-table
+           (record #:person "Sam"
+                   #:age 78
+                   #:favorite-color 'green)
+           (record #:person "Jamie"
+                   #:age 30
+                   #:favorite-color 'purple)
+           (record #:person "Ned"
+                   #:age 40
+                   #:favorite-color 'red)))}

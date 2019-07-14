@@ -6,21 +6,27 @@
  columns
  row
  table
+ for/table
+ for*/table
  (contract-out
   [table? (-> any/c boolean?)]
   [table-columns (-> table? keyset?)]
-  [table-columns-ref (-> table? keyword? list?)]
+  [table-columns-ref (-> table? keyword? immutable-vector?)]
   [table-ref (-> table? natural? keyword? any/c)]
   [table-rows-ref (-> table? natural? record?)]
-  [table-size (-> table? natural?)]))
+  [table-size (-> table? natural?)]
+  [into-table reducer?]))
 
 (require (for-syntax racket/base)
          racket/list
          racket/math
          racket/pretty
          rebellion/base/generative-token
+         rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
+         rebellion/streaming/reducer
+         rebellion/type/record
          syntax/parse/define)
 
 (module+ test
@@ -79,18 +85,19 @@
          list
          (syntax->list #'(column ...))
          (map syntax->list (syntax->list #'((row-value ...) ...))))
-  #:with ((column-kw-arg ...) ...) #'((column-kw (list column-value ...)) ...)
+  #:with ((column-kw-arg ...) ...)
+  #'((column-kw (immutable-vector column-value ...)) ...)
   (plain-table (record column-kw-arg ... ...) 'size))
 
 (define (table-columns-ref tab column)
   (record-ref (table-record tab) column))
 
 (define (table-ref tab pos column)
-  (list-ref (table-columns-ref tab column) pos))
+  (immutable-vector-ref (table-columns-ref tab column) pos))
 
 (define (table-rows-ref tab pos)
   (record-map (table-record tab)
-              (λ (column-values) (list-ref column-values pos))))
+              (λ (column-values) (immutable-vector-ref column-values pos))))
 
 (define (table-columns tab)
   (record-keywords (table-record tab)))
@@ -105,28 +112,27 @@
   (define tab-rec (table-record tab))
   (define size (table-size tab))
   (define columns (record-keywords tab-rec))
+  (define num-columns (keyset-size columns))
   (define-values (ignored-out-line start-out-column ignored-out-position)
     (port-next-location out))
   (write-string "(table (columns" out)
-  (for ([i (in-range (keyset-size columns))])
+  (for ([i (in-range num-columns)])
     (define column (keyset-ref columns i))
     (write-string " #:" out)
     (write-string (keyword->string column) out))
   (write-string ")" out)
-  (let loop ([tab-rec tab-rec] [size size])
-    (unless (zero? size)
-      (write-char #\newline out)
-      (write-string (make-string (+ (or start-out-column 0) 7) #\space) out)
-      (write-string "(row" out)
-      (for ([i (in-range (keyset-size columns))])
-        (define column (keyset-ref columns i))
-        (write-string " " out)
-        (define v (first (record-ref tab-rec column)))
-        (if (custom-write? v)
-            ((custom-write-accessor v) v out mode)
-            (default-custom-write v out)))
-      (write-string ")" out)
-      (loop (record-map tab-rec rest) (sub1 size))))
+  (for ([row (in-range size)])
+    (write-char #\newline out)
+    (write-string (make-string (+ (or start-out-column 0) 7) #\space) out)
+    (write-string "(row" out)
+    (for ([col (in-range (keyset-size columns))])
+      (define col-kw (keyset-ref columns col))
+      (write-string " " out)
+      (define v (immutable-vector-ref (record-ref tab-rec col-kw) row))
+      (if (custom-write? v)
+          ((custom-write-accessor v) v out mode)
+          (default-custom-write v out)))
+    (write-string ")" out))
   (write-string ")" out)
   (void))
 
@@ -153,3 +159,76 @@
        (row "Tokyo" "Japan" 126400000))
 END
                   )))
+
+;@------------------------------------------------------------------------------
+
+(define-record-type table-builder (size columns lists))
+
+(define (empty-table-builder)
+  (table-builder #:size 0
+                 #:columns empty-keyset
+                 #:lists (make-vector 0 #f)))
+
+(define (table-builder-add builder record)
+  (define size (table-builder-size builder))
+  (define columns (table-builder-columns builder))
+  (define lists (table-builder-lists builder))
+  (cond [(zero? size)
+         (define lists
+           (for/vector #:length (record-size record)
+             ([v (in-vector (record-values record))])
+             (list v)))
+         (table-builder #:size 1
+                        #:columns (record-keywords record)
+                        #:lists lists)]
+        [else
+         (unless (equal? columns (record-keywords record))
+           (define msg "record contains different keys than previous records")
+           (raise-arguments-error 'into-table
+                                  msg
+                                  "record" record
+                                  "previous-keys" columns))
+         (for ([lst (in-vector lists)]
+               [i (in-naturals)])
+           (define kw (keyset-ref columns i))
+           (vector-set! lists i (cons (record-ref record kw) lst)))
+         (table-builder #:size (add1 size)
+                        #:columns columns
+                        #:lists lists)]))
+
+(define (build-table builder)
+  (define size (table-builder-size builder))
+  (define columns (table-builder-columns builder))
+  (define lists (table-builder-lists builder))
+  (define (build kw)
+    (define mut-vec (make-vector size #f))
+    (for ([v (in-list (vector-ref lists (keyset-index-of columns kw)))]
+          [reverse-i (in-range (sub1 size) -1 -1)])
+      (vector-set! mut-vec reverse-i v))
+    (vector->immutable-vector mut-vec))
+  (define columns-record (build-record build columns))
+  (plain-table columns-record size))
+
+(define into-table
+  (make-effectful-fold-reducer table-builder-add
+                               empty-table-builder
+                               build-table
+                               #:name 'into-table))
+
+(define-syntaxes (for/table for*/table)
+  (make-reducer-based-for-comprehensions #'into-table))
+
+(module+ test
+  (test-case "table-comprehensions"
+    (define actual
+      (for/table ([str (in-list (list "hello" "my" "good" "friend"))]
+                  [i (in-naturals)])
+        (record #:string str
+                #:position i
+                #:length (string-length str))))
+    (check-equal? actual
+                  (table (columns #:string #:position #:length)
+                         (row "hello" 0 5)
+                         (row "my" 1 2)
+                         (row "good" 2 4)
+                         (row "friend" 3 6)))))
