@@ -29,6 +29,7 @@
          rebellion/base/generative-token
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
+         rebellion/type/record
          rebellion/type/tuple)
 
 (module+ test
@@ -38,29 +39,25 @@
 
 ;@------------------------------------------------------------------------------
 
-(define record-datatype-token (make-generative-token))
-
-(struct record (keywords values)
-  #:constructor-name internal-record-constructor
-  #:omit-define-syntaxes
-  #:methods gen:custom-write
-  [(define write-proc
-     (make-constructor-style-printer
+(define (make-record-properties descriptor)
+  (define accessor (tuple-descriptor-accessor descriptor))
+  (define custom-write
+    (make-constructor-style-printer
       (λ (this) 'record)
       (λ (this)
-        (apply append
-               (for/list ([kw (in-list (keyset->list (record-keywords this)))]
-                          [v (in-vector (record-values this))])
-                 (list (unquoted-printing-string (format "~s" kw)) v))))))]
-  #:methods gen:equal+hash
-  [(define (equal-proc this other recur)
-     (and (recur (record-keywords this) (record-keywords other))
-          (recur (record-values this) (record-values other))))
-   (define (hash-proc this recur)
-     (recur (list record-datatype-token
-                  (record-keywords this)
-                  (record-values this))))
-   (define hash2-proc hash-proc)])
+        (define keywords (accessor this 0))
+        (define values (accessor this 1))
+        (for/list ([kw (in-list (keyset->list keywords))]
+                   [v (in-vector values)]
+                   #:when #t
+                   [kw-or-v (in-list (list (unquoted-printing-string (format "~s" kw)) v))])
+          kw-or-v))))
+  (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
+        (cons prop:custom-write custom-write)))
+
+(define-tuple-type record (keywords values)
+  #:constructor-name internal-record-constructor
+  #:property-maker make-record-properties)
 
 (define (record-keyword-procedure kws vs)
   (internal-record-constructor (list->keyset kws) (list->immutable-vector vs)))
