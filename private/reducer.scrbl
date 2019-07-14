@@ -2,23 +2,39 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/vector
                      rebellion/base/symbol
                      rebellion/base/variant
-                     rebellion/streaming/reducer)
+                     rebellion/streaming/reducer
+                     rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/streaming/reducer)
+    #:public (list 'racket/vector
+                   'rebellion/base/variant
+                   'rebellion/streaming/reducer
+                   'rebellion/type/record)
     #:private (list 'racket/base)))
 
 @title{Reducers}
 @defmodule[rebellion/streaming/reducer]
 
-@defproc[(reducer? [v any/c]) boolean?]
+A @deftech{reducer} is an object that can combine a (possibly infinite) sequence
+of elements into a single result value. Reducers are state machines; performing
+a reduction involves @emph{starting} the reducer to get an initial state, then
+@emph{consuming} elements one at a time to transform the current state into a
+new, updated state. When no more elements are available, the reducer's @emph{
+ finisher} is called to transform the final state into a result value.
+Optionally, a reducer may terminate the reduction early, before the sequence is
+fully consumed.
+
+@defproc[(reducer? [v any/c]) boolean?]{
+ A predicate for @tech{reducers}.}
 
 @defproc[(reduce [red reducer?] [v any/c] ...) any/c]{
+ Reduces @racket[v]s with @racket[red], in left-to-right order.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -26,7 +42,10 @@
    (reduce into-product 2 3 5 7 11 13 17 19 23)
    (reduce into-count 'a 'b 'c 'd 'e))}
 
-@defproc[(reduce-all [red reducer?] [vs sequence?]) any/c]{
+@defproc[(reduce-all [red reducer?] [seq sequence?]) any/c]{
+ Reduces @racket[seq] with @racket[red]. The sequence is iterated lazily, so if
+ @racket[red] terminates the reduction early then the sequence will not be fully
+ traversed.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -34,24 +53,92 @@
    (reduce-all into-product (in-range 1 20))
    (reduce-all into-count (in-hash-values (hash 'a 1 'b 2 'c 3 'd 4))))}
 
-@defthing[into-sum reducer?]
-@defthing[into-product reducer?]
-@defthing[into-count reducer?]
+@defthing[into-sum reducer?]{
+ A @tech{reducer} that reduces a sequence of numbers into their sum with
+ @racket[+].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce into-sum 1 2 3)
+   (reduce into-sum)
+   (reduce-all into-sum (in-range 10000)))}
+
+@defthing[into-product reducer?]{
+ A @tech{reducer} that reduces a sequence of numbers into their product with
+ @racket[*].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce into-product 2 3 4)
+   (reduce into-product)
+   (reduce-all into-product (in-range 1 20)))}
+
+@defthing[into-count reducer?]{
+ A @tech{reducer} that ignores the specific elements it reduces and returns only
+ a count of how many elements were reduced.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce into-count 'a 'b 'c)
+   (reduce-all into-count "hello world"))}
 
 @section{Reducer Constructors}
+
+The full reducer interface is captured by the @racket[make-reducer] constructor,
+but this is sufficiently more power than most users should need. Three separate
+constructors are provided, each designed for three different categories of
+reducers with increasing power and complexity:
+
+@itemlist[
+ @item{@racket[make-fold-reducer] constructs @tech{fold reducers}, which can
+  express the same reductions as @racket[foldl].}
+
+ @item{@racket[make-effectful-fold-reducer] constructs @tech{effectful fold
+   reducers}, which can express folds where a private, potentially mutable
+  state value is initialized at the start of reduction and converted into a
+  public result value at the end of reduction. Effectful fold reducers are a
+  superset of fold reducers.}
+
+ @item{@racket[make-reducer] constructs general @tech{reducers}, with the full
+  power of the reduction protocol and the ability to terminate the sequence
+  early.}]
 
 @defproc[(make-fold-reducer
           [consumer (-> any/c any/c any/c)]
           [init-state any/c]
           [#:name name (or/c interned-symbol? #f) #f])
-         reducer?]
+         reducer?]{
+ Constructs a @deftech{fold reducer}, the simplest type of reducer. A fold
+ reducer starts each reduction with an initial state of @racket[init-state] and
+ transforms it into a new state by calling @racket[(consumer state element)]
+ with each reduced sequence element. When no more elements are available, the
+ state is returned as the reduction result.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define into-reversed-list
+     (make-fold-reducer (λ (lst v) (cons v lst)) (list)))
+   (reduce-all into-reversed-list (in-range 5 25)))}
 
 @defproc[(make-effectful-fold-reducer
           [consumer (-> any/c any/c any/c)]
           [init-state-maker (-> any/c)]
           [finisher (-> any/c any/c)]
           [#:name name (or/c interned-symbol? #f) #f])
-         reducer?]
+         reducer?]{
+ Constructs an @deftech{effectful fold reducer}, which is like a @tech{fold
+  reducer} with a private, possibly mutable state. An effectful fold reducer
+ starts each reduction by calling @racket[(init-state-maker)] to construct an
+ initial state. Elements are consumed in the same way as @tech{fold reducers} by
+ calling @racket[(consumer state element)]. When no more elements are available,
+ @racket[(finisher state)] is called to determine the convert the final state
+ into the reduction result.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define into-list
+     (make-effectful-fold-reducer (λ (lst v) (cons v lst)) list reverse))
+   (reduce-all into-list (in-range 5 25)))}
 
 @defproc[(make-reducer
           [#:starter starter
@@ -61,7 +148,55 @@
           [#:finisher finisher (-> any/c any/c)]
           [#:early-finisher early-finisher (-> any/c any/c)]
           [#:name name (or/c interned-symbol? #f) #f])
-         reducer?]
+         reducer?]{
+ Constructs a @tech{reducer} that reduces sequences by following the following
+ steps, known as the @deftech{reduction protocol}:
+
+ @itemlist[
+ @item{Start the reduction by calling @racket[(starter)] to create the initial
+   reduction state, which must be a @tech{variant} tagged as either @racket[
+ #:consume] or @racket[#:early-finish].}
+
+ @item{If the current state is tagged as @racket[#:consume], and the sequence is
+   not empty, call @racket[(consumer (variant-value state) element)] with the
+   next sequence element to get the updated reduction state. Repeat this step
+   until either no more elements are available or until the reduction state is
+   tagged as @racket[#:early-finish].}
+
+ @item{If the current state is tagged as @racket[#:early-finish], call @racket[
+ (early-finisher (variant-value state))] to determine the @deftech{reduction
+    result}. Otherwise, call @racket[(finisher (variant-value state))] to get
+   the reduction result.}]
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define-record-type state (vector position))
+
+   (define into-small-immutable-vector
+     (make-reducer
+      #:starter
+      (λ ()
+        (variant #:consume
+                 (state #:vector (make-vector 10 #f)
+                        #:position 0)))
+      #:consumer
+      (λ (st v)
+        (define i (state-position st))
+        (define vec (state-vector st))
+        (vector-set! vec i v)
+        (define i* (add1 i))
+        (if (< i* 10)
+            (variant #:consume (state #:vector vec #:position i*))
+            (variant #:early-finish vec)))
+      #:finisher
+      (λ (st)
+        (define vec (state-vector st))
+        (define i (state-position st))
+        (vector->immutable-vector (vector-copy vec 0 i)))
+      #:early-finisher vector->immutable-vector))
+
+   (reduce into-small-immutable-vector 1 2 3)
+   (reduce-all into-small-immutable-vector (in-naturals)))}
 
 @section{Reducer Operators}
 
