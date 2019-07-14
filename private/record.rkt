@@ -50,7 +50,9 @@
         (for/list ([kw (in-list (keyset->list keywords))]
                    [v (in-vector values)]
                    #:when #t
-                   [kw-or-v (in-list (list (unquoted-printing-string (format "~s" kw)) v))])
+                   [kw-or-v
+                    (in-list (list (unquoted-printing-string (format "~s" kw))
+                                   v))])
           kw-or-v))))
   (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
         (cons prop:custom-write custom-write)))
