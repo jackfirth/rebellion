@@ -5,6 +5,7 @@
 @local-table-of-contents[]
 
 @include-section[(lib "rebellion/private/entry.scrbl")]
+@include-section[(lib "rebellion/private/list.scrbl")]
 @include-section[(lib "rebellion/private/immutable-vector.scrbl")]
 @include-section[(lib "rebellion/private/multiset.scrbl")]
 @include-section[(lib "rebellion/private/multidict.scrbl")]
