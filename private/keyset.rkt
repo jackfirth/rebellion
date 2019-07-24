@@ -18,6 +18,7 @@
   [keyset-add (-> keyset? keyword? keyset?)]
   [keyset-remove (-> keyset? keyword? keyset?)]
   [keyset-size (-> keyset? natural?)]
+  [in-keyset (-> keyset? (sequence/c keyword?))]
   [keyset->list (-> keyset? (listof keyword?))]
   [list->keyset (-> (listof keyword?) keyset?)]
   [keyset->set (-> keyset? (set/c keyword?))]
@@ -26,6 +27,7 @@
 (require (for-syntax racket/base
                      racket/list)
          racket/list
+         racket/sequence
          racket/set
          rebellion/base/generative-token
          rebellion/collection/immutable-vector
@@ -45,12 +47,9 @@
 
 (define (write-keyset keys out mode)
   (write-string "(keyset" out)
-  (define size (keyset-size keys))
-  (let loop ([i 0])
-    (when (< i size)
-      (write-string " #:" out)
-      (write-string (keyword->string (keyset-ref keys i)) out)
-      (loop (add1 i))))
+  (for ([kw (in-keyset keys)])
+    (write-string " #:" out)
+    (write-string (keyword->string kw) out))
   (write-string ")" out))
 
 (define keyset-datatype-token (make-generative-token))
@@ -59,6 +58,8 @@
   #:reflection-name 'keyset
   #:constructor-name plain-make-keyset
   #:omit-define-syntaxes
+
+  #:property prop:sequence (λ (this) (in-keyset this))
   
   #:methods gen:equal+hash
   [(define (equal-proc this other recur)
@@ -78,6 +79,9 @@
 
 (define (keyset-ref keys pos)
   (vector-ref (keyset-sorted-vector keys) pos))
+
+(define (in-keyset keys)
+  (sequence-map (λ (i) (keyset-ref keys i)) (in-range 0 (keyset-size keys))))
 
 (define (keyset-index-of keys kw)
   (hash-ref (keyset-index-hash keys) kw #f))
@@ -130,19 +134,21 @@
     (check-equal? (~s keys) "(keyset #:apple #:banana #:orange)")))
 
 (define (keyset->list keys)
-  (build-list (keyset-size keys) (λ (i) (keyset-ref keys i))))
+  (sequence->list keys))
 
 (define (list->keyset kws)
   (make-keyset
    (list->immutable-vector (remove-duplicates (sort kws keyword<?)))))
 
-(define (keyset->set keys)
-  (for/set ([i (in-range (keyset-size keys))])
-    (keyset-ref keys i)))
+(define (keyset->set keys) (for/set ([kw (in-keyset keys)]) kw))
 
 (define (set->keyset kw-set) (list->keyset (set->list kw-set)))
 
 (module+ test
+  (test-case "in-keyset"
+    (define keys (keyset #:apple #:orange #:banana))
+    (check-equal? (for/list ([kw (in-keyset keys)]) kw)
+                  (list '#:apple '#:banana '#:orange)))
   (test-case "keyset->list"
     (check-equal? (keyset->list empty-keyset) (list))
     (check-equal? (keyset->list (keyset #:apple #:orange #:banana))

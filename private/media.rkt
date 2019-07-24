@@ -90,8 +90,7 @@
 (define (media-type-parameters->string parameters)
   (define parameter-keys (record-keywords parameters))
   (define param-strings
-    (for/list ([i (in-range (keyset-size parameter-keys))])
-      (define kw (keyset-ref parameter-keys i))
+    (for/list ([kw (in-keyset parameter-keys)])
       (define param-raw (record-ref parameters kw))
       (define param-name (keyword->immutable-string kw))
       (define param-quoted
