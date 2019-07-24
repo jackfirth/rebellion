@@ -9,9 +9,12 @@
   [module-binding-source (-> module-binding? module-path?)]
   [module-binding-name (-> module-binding? symbol?)]
   [module-binding-phase (-> module-binding? phase?)]
-  [module-bindings (-> module-path? (set/c module-binding?))]
-  [module-provided-bindings (-> module-path? (set/c module-binding?))]
-  [module-internal-bindings (-> module-path? (set/c module-binding?))]))
+  [module-bindings
+   (->* (module-path?) (#:namespace namespace?) (set/c module-binding?))]
+  [module-provided-bindings
+   (->* (module-path?) (#:namespace namespace?) (set/c module-binding?))]
+  [module-internal-bindings
+   (->* (module-path?) (#:namespace namespace?) (set/c module-binding?))]))
 
 (require racket/list
          racket/set
@@ -24,28 +27,34 @@
 
 ;@------------------------------------------------------------------------------
 
+(define (dynamic-declare mod #:namespace [ns (current-namespace)])
+  (parameterize ([current-namespace ns])
+    (dynamic-require mod (void))))
+
 (define-tuple-type module-binding (source phase name))
 
-(define (module-provided-bindings mod)
-  (dynamic-require mod #f)
-  (define-values (exported-variables exported-syntax) (module->exports mod))
-  (for*/set ([export-list (in-list (list exported-variables exported-syntax))]
-             [phase-export-list (in-list export-list)]
-             [ph (in-value (phase (first phase-export-list)))]
-             [export (in-list (rest phase-export-list))])
-    (define name (first export))
-    (module-binding mod ph name)))
+(define (module-provided-bindings mod #:namespace [ns (make-base-namespace)])
+  (parameterize ([current-namespace ns])
+    (dynamic-declare mod)
+    (define-values (exported-variables exported-syntax) (module->exports mod))
+    (for*/set ([export-list (in-list (list exported-variables exported-syntax))]
+               [phase-export-list (in-list export-list)]
+               [ph (in-value (phase (first phase-export-list)))]
+               [export (in-list (rest phase-export-list))])
+      (define name (first export))
+      (module-binding mod ph name))))
 
-(define (module-internal-bindings mod)
-  (dynamic-require mod #f)
-  (for*/set ([phase-name-list (in-list (module->indirect-exports mod))]
-             [ph (in-value (phase (first phase-name-list)))]
-             [name (in-list (rest phase-name-list))])
-    (module-binding mod ph name)))
+(define (module-internal-bindings mod #:namespace [ns (make-base-namespace)])
+  (parameterize ([current-namespace ns])
+    (dynamic-declare mod)
+    (for*/set ([phase-name-list (in-list (module->indirect-exports mod))]
+               [ph (in-value (phase (first phase-name-list)))]
+               [name (in-list (rest phase-name-list))])
+      (module-binding mod ph name))))
 
-(define (module-bindings mod)
-  (set-union (module-provided-bindings mod)
-             (module-internal-bindings mod)))
+(define (module-bindings mod #:namespace [ns (make-base-namespace)])
+  (set-union (module-provided-bindings mod #:namespace ns)
+             (module-internal-bindings mod #:namespace ns)))
 
 (module+ test
   (test-case "module-provided-bindings"
