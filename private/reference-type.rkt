@@ -47,7 +47,7 @@
          racket/list
          racket/math
          rebellion/base/symbol
-         rebellion/collection/keyset
+         rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
          rebellion/type/record

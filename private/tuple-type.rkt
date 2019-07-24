@@ -54,7 +54,7 @@
          rebellion/custom-write/struct
          rebellion/equal+hash
          rebellion/equal+hash/struct
-         rebellion/collection/keyset
+         rebellion/collection/keyset/low-dependency
          rebellion/private/struct-definition-util
          rebellion/type/struct
          syntax/parse/define)

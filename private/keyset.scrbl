@@ -5,7 +5,8 @@
                      racket/math
                      racket/set
                      rebellion/base/immutable-string
-                     rebellion/collection/keyset)
+                     rebellion/collection/keyset
+                     rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
@@ -13,7 +14,8 @@
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/set
                    'rebellion/base/immutable-string
-                   'rebellion/collection/keyset)
+                   'rebellion/collection/keyset
+                   'rebellion/streaming/reducer)
     #:private (list 'racket/base)))
 
 @title{Keysets}
@@ -104,6 +106,33 @@ at compile-time.
    (define fruits (keyset #:banana #:orange #:apple #:grape))
    (for/set ([kw (in-keyset fruits)])
      (keyword->immutable-string kw)))}
+
+@defthing[into-keyset reducer?]{
+ A @tech{reducer} that collects keywords into a @tech{keyset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce into-keyset '#:apple '#:orange '#:banana))}
+
+@defform[(for/keyset (for-clause ...) body-or-break ... body)
+         #:contracts ([body keyword?])]{
+ Iterates like @racket[for], but collects each @racket[body] --- which must
+ evaluate to a keyword --- into a @tech{keyset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for/keyset ([str (in-list (list "hello" "darkness" "my" "old" "friend"))])
+     (string->keyword str)))}
+
+@defform[(for*/keyset (for-clause ...) body-or-break ... body)
+         #:contracts ([body keyword?])]{
+ Iterates like @racket[for*], but collects each @racket[body] --- which must
+ evaluate to a keyword --- into a @tech{keyset}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for*/keyset ([str (in-list (list "hello" "darkness" "my" "old" "friend"))])
+     (string->keyword str)))}
 
 @defproc[(keyset->list [keys keyset?]) (listof keyword?)]{
  Converts @racket[keys] into a plain list of keywords.
