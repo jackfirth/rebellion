@@ -134,12 +134,11 @@
   (internal-record-constructor kws mapped-vs))
 
 (define (build-record builder keys)
-  (define size (keyset-size keys))
   (define vs
     (vector->immutable-vector
-     (for/vector #:length size
-       ([i (in-range size)])
-       (builder (keyset-ref keys i)))))
+     (for/vector #:length (keyset-size keys)
+       ([kw (in-keyset keys)])
+       (builder kw))))
   (internal-record-constructor keys vs))
 
 (define (record-contains-key? rec kw)

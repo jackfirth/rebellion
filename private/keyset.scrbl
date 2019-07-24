@@ -4,6 +4,7 @@
                      racket/contract/base
                      racket/math
                      racket/set
+                     rebellion/base/immutable-string
                      rebellion/collection/keyset)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
@@ -11,6 +12,7 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/set
+                   'rebellion/base/immutable-string
                    'rebellion/collection/keyset)
     #:private (list 'racket/base)))
 
@@ -23,7 +25,7 @@ For example, the @racket[keyset] constructor is a macro that sorts the keywords
 at compile-time.
 
 @defproc[(keyset? [v any/c]) boolean?]{
- A predicate for @tech{keysets}.}
+ A predicate for @tech{keysets}. Implies @racket[sequence?].}
 
 @defform[(keyset keyword ...)]{
  Constructs a @tech{keyset} containing each @racket[keyword], excluding
@@ -93,6 +95,15 @@ at compile-time.
    #:eval (make-evaluator) #:once
    (define fruits (keyset #:banana #:orange #:apple #:grape))
    (keyset-remove fruits '#:banana))}
+
+@defproc[(in-keyset [keys keyset?]) (sequence/c keyword?)]{
+ Returns a @tech{sequence} of the keywords in @racket[keys], in ascending order.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define fruits (keyset #:banana #:orange #:apple #:grape))
+   (for/set ([kw (in-keyset fruits)])
+     (keyword->immutable-string kw)))}
 
 @defproc[(keyset->list [keys keyset?]) (listof keyword?)]{
  Converts @racket[keys] into a plain list of keywords.
