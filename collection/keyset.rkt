@@ -1,2 +1,3 @@
 #lang reprovide
-rebellion/private/keyset
+rebellion/collection/keyset/low-dependency
+rebellion/private/keyset-reducer
