@@ -2,7 +2,9 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/sequence
                      racket/vector
+                     rebellion/base/immutable-string
                      rebellion/base/symbol
                      rebellion/base/variant
                      rebellion/streaming/reducer
@@ -12,7 +14,9 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'racket/vector
+    #:public (list 'racket/sequence
+                   'racket/vector
+                   'rebellion/base/immutable-string
                    'rebellion/base/variant
                    'rebellion/streaming/reducer
                    'rebellion/type/record)
@@ -81,6 +85,24 @@ fully consumed.
    #:eval (make-evaluator) #:once
    (reduce into-count 'a 'b 'c)
    (reduce-all into-count "hello world"))}
+
+@defproc[(join-into-string
+          [sep immutable-string?]
+          [#:before-first before-first immutable-string? ""]
+          [#:before-last before-last immutable-string? sep]
+          [#:after-last after-last immutable-string? ""])
+         reducer?]{
+ Constructs a @tech{reducer} that joins a sequence of immutable strings into a
+ single immutable string, in the same manner as @racket[string-join].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (join-into-string " + ")
+               (sequence-map number->immutable-string (in-range 1 10)))
+   (reduce-all (join-into-string ", " #:before-last ", and ")
+               (sequence-map number->immutable-string (in-range 1 10)))
+   (reduce-all (join-into-string ", " #:before-first "func(" #:after-last ")")
+               (sequence-map number->immutable-string (in-range 1 10))))}
 
 @section{Reducer Constructors}
 

@@ -27,6 +27,12 @@
   [into-sum reducer?]
   [into-product reducer?]
   [into-count reducer?]
+  [join-into-string
+   (->* (immutable-string?)
+        (#:before-first immutable-string?
+         #:before-last immutable-string?
+         #:after-last immutable-string?)
+        reducer?)]
   [reducer-map
    (->* (reducer?)
         (#:domain (-> any/c any/c) #:range (-> any/c any/c))
@@ -237,3 +243,24 @@
          #:with reducer reducer-expr
          #'(for*/reducer/derived original reducer clauses body ... tail-expr)]))
     (values for-comprehension for*-comprehension)))
+
+(define (join-into-string sep
+                          #:before-first [before-first ""]
+                          #:before-last [before-last sep]
+                          #:after-last [after-last ""])
+  (define (join strs)
+    (immutable-string-join strs sep
+                           #:before-first before-first
+                           #:before-last before-last
+                           #:after-last after-last))
+  (reducer-map into-list #:range join))
+
+(module+ test
+  (test-case "join-into-string"
+    (check-equal? (reduce (join-into-string ", "
+                                            #:before-first "["
+                                            #:after-last "]")
+                          "foo"
+                          "bar"
+                          "baz")
+                  "[foo, bar, baz]")))
