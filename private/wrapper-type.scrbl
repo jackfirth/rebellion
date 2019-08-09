@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/contract/region
                      rebellion/base/symbol
                      rebellion/custom-write
                      rebellion/equal+hash
@@ -11,11 +12,34 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/type/wrapper)
+    #:public (list 'racket/contract/base
+                   'racket/contract/region
+                   'rebellion/type/wrapper)
     #:private (list 'racket/base)))
 
 @title{Wrapper Types}
 @defmodule[rebellion/type/wrapper]
+
+A @deftech{wrapper type} is a kind of @tech{data type} for values that are
+simple wrappers around other values. An instance of a wrapper type has a single
+field containing the wrapped value, and two instances of the same wrapper type
+are @racket[equal?] if they wrap @racket[equal?] values. Wrapper types are
+useful when the same kind of data is used in many different ways that need to be
+distinguished.
+
+@(examples
+  #:eval (make-evaluator) #:label #f
+  (eval:no-prompt
+   (define-wrapper-type celsius)
+   (define-wrapper-type fahrenheit)
+   code:blank
+   (define/contract (celsius->fahrenheit c)
+     (-> celsius? fahrenheit?)
+     (fahrenheit (+ (* (celsius-value c) 9/5) 32))))
+  
+  (celsius->fahrenheit (celsius 0))
+  (celsius->fahrenheit (celsius 100))
+  (eval:error (celsius->fahrenheit (fahrenheit 100))))
 
 @defform[
  (define-wrapper-type id option ...)
