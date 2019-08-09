@@ -27,6 +27,7 @@
   [into-sum reducer?]
   [into-product reducer?]
   [into-count reducer?]
+  [into-string reducer?]
   [join-into-string
    (->* (immutable-string?)
         (#:before-first immutable-string?
@@ -211,8 +212,6 @@
   (reducer-map (make-fold-reducer (λ (lst v) (cons v lst)) (list))
                #:range reverse))
 
-(define into-string (reducer-map into-list #:range list->immutable-string))
-
 (module+ test
   (test-case "for/reducer"
     (check-equal? (for/reducer into-list
@@ -244,6 +243,8 @@
          #'(for*/reducer/derived original reducer clauses body ... tail-expr)]))
     (values for-comprehension for*-comprehension)))
 
+(define into-string (reducer-map into-list #:range list->immutable-string))
+
 (define (join-into-string sep
                           #:before-first [before-first ""]
                           #:before-last [before-last sep]
@@ -256,6 +257,8 @@
   (reducer-map into-list #:range join))
 
 (module+ test
+  (test-case "into-string"
+    (check-equal? (reduce-all into-string "hello world") "hello world"))
   (test-case "join-into-string"
     (check-equal? (reduce (join-into-string ", "
                                             #:before-first "["
