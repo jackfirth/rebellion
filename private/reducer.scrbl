@@ -86,6 +86,15 @@ fully consumed.
    (reduce into-count 'a 'b 'c)
    (reduce-all into-count "hello world"))}
 
+@defthing[into-string reducer?]{
+ A @tech{reducer} that collects a sequence of individual characters into an
+ immutable string.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce into-string #\h #\e #\l #\l #\o)
+   (reduce-all into-string (list #\a #\b #\c)))}
+
 @defproc[(join-into-string
           [sep immutable-string?]
           [#:before-first before-first immutable-string? ""]
