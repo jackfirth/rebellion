@@ -1,7 +1,20 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
-                     rebellion/type/record))
+                     rebellion/type/record
+                     rebellion/type/singleton
+                     rebellion/type/tuple
+                     rebellion/type/wrapper)
+          (submod rebellion/private/scribble-evaluator-factory doc)
+          scribble/example)
+
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'rebellion/type/record
+                   'rebellion/type/singleton
+                   'rebellion/type/tuple
+                   'rebellion/type/wrapper)
+    #:private (list 'racket/base)))
 
 @title[#:style (list 'toc)]{Data Types}
 @defmodule[rebellion/type]
@@ -10,6 +23,26 @@ A @deftech{data type} or simply @deftech{type} is a set of values together with
 1) some basic operations on those values and 2) a predicate to test whether a
 value is within that set. There are many different kinds of data types, with
 different basic operations and meant for different use cases.
+
+@(examples
+  #:eval (make-evaluator) #:once #:label #f
+  (define-tuple-type point (x y))
+  (point 7 42))
+
+@(examples
+  #:eval (make-evaluator) #:once #:label #f
+  (define-record-type circle (radius color))
+  (circle #:radius 5 #:color 'red))
+
+@(examples
+  #:eval (make-evaluator) #:once #:label #f
+  (define-wrapper-type inches)
+  (inches 17))
+
+@(examples
+  #:eval (make-evaluator) #:once #:label #f
+  (define-singleton-type undefined)
+  undefined)
 
 @local-table-of-contents[]
 
