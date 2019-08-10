@@ -50,6 +50,20 @@ distinguished.
  #:contracts ([prop-maker-expr
                (-> uninitialized-wrapper-descriptor?
                    (listof (cons/c struct-type-property? any/c)))])]{
+ Creates a new @tech{wrapper type} named @racket[id] and binds the following
+ identifiers:
+
+ @itemlist[
+ @item{@racket[constructor-id], which defaults to @racket[id] --- a constructor
+   function that wraps a value and returns an instance of the created type.}
+
+ @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
+   a predicate function that returns @racket[#t] when given instances of the
+   created type and returns @racket[#f] otherwise.}
+
+ @item{@racket[accessor-id], which defaults to @racket[id]@racketidfont{-value}
+   --- an accessor function that unwraps instances of the created type and
+   returns their underlying value.}]
 
  @(examples
    #:eval (make-evaluator) #:once
