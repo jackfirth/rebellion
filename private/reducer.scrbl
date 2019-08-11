@@ -86,6 +86,17 @@ fully consumed.
    (reduce into-count 'a 'b 'c)
    (reduce-all into-count "hello world"))}
 
+@defproc[(into-nth [n natural?]) reducer?]{
+ Constructs a @tech{reducer} that returns the @racket[n]th element it reduces,
+ wrapped in an @tech{option} value. If the reduced sequence has fewer than
+ @racket[n] elements, the reducer returns @racket[absent].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-nth 8) "hello world")
+   (reduce-all (into-nth 20) "hello world")
+   (reduce-all (into-nth 0) "hello world"))}
+
 @defthing[into-string reducer?]{
  A @tech{reducer} that collects a sequence of individual characters into an
  immutable string.
