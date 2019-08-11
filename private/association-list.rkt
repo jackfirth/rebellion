@@ -34,6 +34,7 @@
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/multiset
+         rebellion/private/spliced-printing-entry
          rebellion/type/record)
 
 (module+ test
@@ -70,9 +71,8 @@
      (λ (this)
        (define backing-hash (accessor this backing-hash-field))
        (for*/list ([(k vs) (in-immutable-hash backing-hash)]
-                   [v (in-vector vs)]
-                   [k-or-v (in-list (list k v))])
-         k-or-v))))
+                   [v (in-vector vs)])
+         (spliced-printing-entry k v)))))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 

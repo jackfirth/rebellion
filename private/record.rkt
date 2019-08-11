@@ -29,6 +29,7 @@
          rebellion/base/generative-token
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
+         rebellion/private/spliced-printing-entry
          rebellion/type/record
          rebellion/type/tuple)
 
@@ -48,12 +49,9 @@
         (define keywords (accessor this 0))
         (define values (accessor this 1))
         (for/list ([kw (in-list (keyset->list keywords))]
-                   [v (in-vector values)]
-                   #:when #t
-                   [kw-or-v
-                    (in-list (list (unquoted-printing-string (format "~s" kw))
-                                   v))])
-          kw-or-v))))
+                   [v (in-vector values)])
+          (define kw-str (unquoted-printing-string (format "~s" kw)))
+          (spliced-printing-entry kw-str v)))))
   (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
         (cons prop:custom-write custom-write)))
 

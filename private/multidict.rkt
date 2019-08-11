@@ -38,6 +38,7 @@
          rebellion/collection/entry
          rebellion/collection/multiset
          rebellion/collection/keyset
+         rebellion/private/spliced-printing-entry
          rebellion/streaming/reducer
          rebellion/type/record)
 
@@ -69,9 +70,8 @@
     (make-constructor-style-printer
      (λ (_) type-name)
      (λ (this)
-       (for*/list ([e (sequence this)]
-                   [k-or-v (in-list (list (entry-key e) (entry-value e)))])
-         k-or-v))))
+       (for*/list ([e (sequence this)])
+         (spliced-printing-entry (entry-key e) (entry-value e))))))
   (define (sequence this)
     (define backing-hash (accessor this backing-hash-field))
     (for*/stream ([(k vs) (in-immutable-hash backing-hash)]
