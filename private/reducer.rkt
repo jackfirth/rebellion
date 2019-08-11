@@ -27,6 +27,7 @@
   [into-sum reducer?]
   [into-product reducer?]
   [into-count reducer?]
+  [into-nth (-> natural? reducer?)]
   [into-string reducer?]
   [join-into-string
    (->* (immutable-string?)
@@ -45,7 +46,9 @@
                      syntax/parse)
          racket/bool
          racket/list
+         racket/math
          rebellion/base/immutable-string
+         rebellion/base/option
          rebellion/base/symbol
          rebellion/base/variant
          rebellion/type/reference
@@ -267,3 +270,22 @@
                           "bar"
                           "baz")
                   "[foo, bar, baz]")))
+
+(define (into-nth n)
+  (make-reducer
+   #:starter (λ () (variant #:consume n))
+   #:consumer
+   (λ (n v)
+     (if (zero? n)
+         (variant #:early-finish (present v))
+         (variant #:consume (sub1 n))))
+   #:finisher (λ (_) absent)
+   #:early-finisher values
+   #:name 'into-nth))
+
+(module+ test
+  (test-case "into-nth"
+    (check-equal? (reduce-all (into-nth 3) "magic") (present #\i))
+    (check-equal? (reduce-all (into-nth 10) "magic") absent)
+    (check-equal? (reduce-all (into-nth 0) (in-naturals)) (present 0))
+    (check-equal? (reduce-all (into-nth 0) "") absent)))
