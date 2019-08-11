@@ -17,11 +17,61 @@
 @title{Record Types}
 @defmodule[rebellion/type/record]
 
-A @deftech{record type} is a data type representing immutable fixed-size sets of
-fields, called a @deftech{record instance} of that record type. All instances of
-a record type share the same set of field names, but may map those names to
-different values. A record type's set of names is accessible from the type using
-@racket[record-type-fields].
+A @deftech{record type} is a kind of @tech{data type} for composite values that
+contain an unordered set of named fields. The definition of each record type
+declares how many fields it has and what their names are. Constructing an
+instance of a record type requires passing a keyword argument for each field to
+the type's constructor. Record types are useful when a fixed number of different
+pieces of data together represent a single logical thing, and there isn't an
+obvious order to those pieces.
+
+@(examples
+  #:eval (make-evaluator) #:once
+  (eval:no-prompt
+   (define-record-type opcode (name argument addressing-mode))
+   (define add-42
+     (opcode #:name 'ADD
+             #:argument 42
+             #:addressing-mode 'immediate)))
+
+  add-42
+  (opcode-name add-42))
+
+@defform[(define-record-type id (field-id ...) option ...)
+         #:grammar ([option
+                     (code:line #:constructor-name constructor-id)
+                     (code:line #:predicate-name predicate-id)
+                     (code:line #:property-maker prop-maker-expr)])
+         #:contracts
+         ([prop-maker-expr
+           (-> uninitialized-record-descriptor?
+               (listof (cons/c struct-type-property? any/c)))])]{
+ Creates a new @tech{record type} named @racket[id] and binds the following
+ identifiers:
+
+ @itemlist[
+ @item{@racket[constructor-id], which defaults to @racket[id] --- a constructor
+   function that accepts one mandatory keyword argument for each @racket[
+ field-id] and returns an instance of the created type.}
+
+ @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
+   a predicate function that returns @racket[#t] when given instances of the
+   created type and returns @racket[#f] otherwise.}
+
+ @item{@racket[id]@racketidfont{-}@racket[field-id] for each @racket[field-id]
+   --- an accessor function that returns the value for @racket[field-id] when
+   given an instance of the created type.}]
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-record-type color (red green blue))
+    (define yellow  (color #:red 0 #:green 255 #:blue 255)))
+   yellow
+   (color? yellow)
+   (color-red yellow)
+   (color-green yellow)
+   (color-blue yellow))}
 
 @defproc[(record-type? [v any/c]) boolean?]{
  A predicate for @tech{record types}.}
@@ -74,13 +124,3 @@ different values. A record type's set of names is accessible from the type using
 
 @defproc[(make-record-custom-write [descriptor record-descriptor?])
          custom-write-function/c]
-
-@defform[(define-record-type id (field-id ...) option ...)
-         #:grammar ([option
-                     (code:line #:constructor-name constructor-id)
-                     (code:line #:predicate-name predicate-id)
-                     (code:line #:property-maker prop-maker-expr)])
-         #:contracts
-         ([prop-maker-expr
-           (-> uninitialized-record-descriptor?
-               (listof (cons/c struct-type-property? any/c)))])]
