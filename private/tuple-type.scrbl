@@ -1,6 +1,7 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
+                     racket/contract/base
                      racket/math
                      racket/pretty
                      racket/struct
@@ -50,10 +51,10 @@ distinct implementations of that type.
  The optional @racket[predicate-name], @racket[constructor-name], and @racket[
  accessor-name] arguments control the result of @racket[object-name] on the
  functions implementing the type. If not provided, @racket[predicate-name]
- defaults to @racket[name]@verbatim|{?}|, @racket[constructor-name] defaults to
- @racket[name], and @racket[accessor-name] defaults to @racket[
- name]@verbatim|{-ref}|. Two tuple types constructed with the same arguments are
- @racket[equal?]. To make an implementation of a tuple type, see @racket[
+ defaults to @racket[name]@racketidfont{?}, @racket[constructor-name] defaults
+ to @racket[name], and @racket[accessor-name] defaults to @racket[
+ name]@racketidfont{-ref}. Two tuple types constructed with the same arguments
+ are @racket[equal?]. To make an implementation of a tuple type, see @racket[
  make-tuple-implementation].}
 
 @deftogether[[
