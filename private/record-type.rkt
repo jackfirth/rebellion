@@ -40,6 +40,7 @@
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
+         rebellion/private/spliced-printing-entry
          rebellion/type/tuple
          syntax/parse/define)
 
@@ -157,10 +158,10 @@
    (λ (_) type-name)
    (λ (this)
      (for*/list ([i (in-range size)]
-                 [kw (in-value (keyset-ref fields i))]
-                 [item (in-list (list (unquoted-printing-keyword kw)
-                                      (accessor this i)))])
-       item))))
+                 [kw (in-value (keyset-ref fields i))])
+       (define v (accessor this i))
+       (define kw-str (unquoted-printing-keyword kw))
+       (spliced-printing-entry kw-str v)))))
 
 (define (make-record-field-accessor descriptor field)
   (define accessor (record-descriptor-accessor descriptor))
