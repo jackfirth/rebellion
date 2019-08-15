@@ -10,10 +10,13 @@
 
 (define deps
   (list "base"
+        "lathe-comforts-lib"
         "reprovide-lang"))
 
 (define build-deps
-  (list "net-doc"
+  (list "lathe-comforts-doc"
+        "net-doc"
+        "parendown-lib"
         "racket-doc"
         "rackunit-lib"
         "scribble-lib"))

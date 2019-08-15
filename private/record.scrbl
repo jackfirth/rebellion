@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     (only-in lathe-comforts/maybe just maybe? nothing)
                      rebellion/collection/keyset
                      rebellion/collection/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -78,6 +79,19 @@ hash table whose keys are symbols or strings, use records instead.
              #:age 42
              #:favorite-color 'turqoise))
    (record-size rec))}
+
+@defproc[(record-ref-maybe [rec record?] [kw keyword?]) maybe?]{
+ Returns a @racket{just} of the value in @racket[rec] for @racket[kw], or
+ @racket[(nothing)] if none exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define rec
+     (record #:name "Alyssa P. Hacker"
+             #:age 42
+             #:favorite-color 'turqoise))
+   (record-ref-maybe rec '#:name)
+   (record-ref-maybe rec '#:fur-color)))}
 
 @defproc[(record-ref [rec record?] [kw keyword?]) any/c]{
  Returns the value in @racket[rec] for @racket[kw], or @racket[#f] if none
