@@ -1,11 +1,11 @@
-#lang racket/base
+#lang parendown racket/base
 
 (require racket/contract/base)
 
 (provide
  for/reducer
- for*/reducer
- (contract-out
+ for*/reducer)
+(provide #/contract-out
   [reducer? predicate/c]
   [make-fold-reducer
    (->* ((-> any/c any/c any/c) any/c)
@@ -39,7 +39,7 @@
    (->* (reducer?)
         (#:domain (-> any/c any/c) #:range (-> any/c any/c))
         reducer?)]
-  [reducer-filter (-> reducer? predicate/c reducer?)]))
+  [reducer-filter (-> reducer? predicate/c reducer?)])
 
 (require (for-syntax racket/base
                      racket/contract/base
@@ -47,6 +47,9 @@
          racket/bool
          racket/list
          racket/math
+         (only-in lathe-comforts dissectfn expect fn mat w-loop)
+         (only-in lathe-comforts/list nat->maybe)
+         (only-in lathe-comforts/maybe just)
          rebellion/base/immutable-string
          rebellion/base/option
          rebellion/base/symbol
@@ -55,10 +58,9 @@
          syntax/parse/define)
 
 (begin-for-syntax
-  (provide
-   (contract-out
+  (provide #/contract-out
     [make-reducer-based-for-comprehensions
-     (-> syntax? (values (-> syntax? syntax?) (-> syntax? syntax?)))])))
+     (-> syntax? (values (-> syntax? syntax?) (-> syntax? syntax?)))]))
 
 (module+ test
   (require (submod "..")
@@ -69,32 +71,31 @@
 (define-reference-type reducer (starter consumer finisher early-finisher))
 
 (define (make-fold-reducer consumer init-state #:name [name #f])
-  (make-effectful-fold-reducer consumer (λ () init-state) values #:name name))
+  (make-effectful-fold-reducer consumer (fn init-state) values #:name name))
 
 (define (make-effectful-fold-reducer consumer init-state-maker finisher
                                      #:name [name #f])
-  (make-reducer #:starter (λ () (variant #:consume (init-state-maker)))
-                #:consumer (λ (s v) (variant #:consume (consumer s v)))
+  (make-reducer #:starter (fn #/variant #:consume #/init-state-maker)
+                #:consumer (fn s v #/variant #:consume #/consumer s v)
                 #:finisher finisher
                 #:early-finisher values
                 #:name name))
 
 (define into-sum (make-fold-reducer + 0 #:name 'into-sum))
 (define into-product (make-fold-reducer * 1 #:name 'into-product))
-(define into-count (make-fold-reducer (λ (s _) (add1 s)) 0 #:name 'into-count))
+(define into-count (make-fold-reducer (fn s v #/add1 s) 0 #:name 'into-count))
 
 (define (reduce red . vs)
   (define starter (reducer-starter red))
   (define consumer (reducer-consumer red))
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
-  (let loop ([tagged-state (starter)] [vs vs])
+  (w-loop loop tagged-state (starter) vs vs
     (define state (variant-value tagged-state))
-    (cond
-      [(variant-tagged-as? tagged-state '#:early-finish)
-       (early-finisher state)]
-      [(empty? vs) (finisher state)]
-      [else (loop (consumer state (first vs)) (rest vs))])))
+    (if (variant-tagged-as? tagged-state '#:early-finish)
+      (early-finisher state)
+    #/expect vs (cons v vs) (finisher state)
+    #/loop (consumer state v) vs)))
 
 (define (reduce-all red seq)
   (define starter (reducer-starter red))
@@ -102,28 +103,28 @@
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
   (define-values (first-vs generate-rest) (sequence-generate* seq))
-  (let loop ([tagged-state (starter)]
-             [sequence-position 0]
-             [first-vs first-vs]
-             [generate-rest generate-rest])
+  (w-loop loop
+    tagged-state (starter)
+    sequence-position 0
+    first-vs first-vs
+    generate-rest generate-rest
+    
     (define state (variant-value tagged-state))
-    (cond
-      [(variant-tagged-as? tagged-state '#:early-finish)
-       (early-finisher state)]
-      [(false? first-vs)
-       (finisher state)]
-      [(not (equal? (length first-vs) 1))
-       (apply raise-result-arity-error
-              'reduce-all 1
-              (format "\n  in: sequence elements at position ~a"
-                      sequence-position)
-              first-vs)]
-      [else
-       (define-values (next-vs next-generate-rest) (generate-rest))
-       (loop (consumer state (first first-vs))
-             (add1 sequence-position)
-             next-vs
-             next-generate-rest)])))
+    (if (variant-tagged-as? tagged-state '#:early-finish)
+      (early-finisher state)
+    #/mat first-vs #f (finisher state)
+    #/expect first-vs (list first-v)
+      (apply raise-result-arity-error
+            'reduce-all 1
+            (format "\n  in: sequence elements at position ~a"
+                    sequence-position)
+            first-vs)
+    #/let ()
+      (define-values (next-vs next-generate-rest) (generate-rest))
+    #/loop (consumer state first-v)
+           (add1 sequence-position)
+           next-vs
+           next-generate-rest)))
 
 (module+ test
   (test-case "reduce"
@@ -134,20 +135,20 @@
     (check-equal? (reduce into-product) 1)
     (check-equal? (reduce into-count) 0))
   (test-case "reduce-all"
-    (check-equal? (reduce-all into-sum (in-range 6)) 15)
+    (check-equal? (reduce-all into-sum #/in-range 6) 15)
     (check-equal? (reduce-all into-product
-                              (in-hash-values (hash 'a 2 'b 3 'c 5 'd 7)))
+                              (in-hash-values #/hash 'a 2 'b 3 'c 5 'd 7))
                   210)
-    (check-equal? (reduce-all into-count (in-string "abcde")) 5)))
+    (check-equal? (reduce-all into-count #/in-string "abcde") 5)))
 
 (define (reducer-map red #:domain [f values] #:range [g values])
   (define consumer (reducer-consumer red))
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
   (make-reducer #:starter (reducer-starter red)
-                #:consumer (λ (s v) (consumer s (f v)))
-                #:finisher (λ (s) (g (finisher s)))
-                #:early-finisher (λ (s) (g (early-finisher s)))))
+                #:consumer (fn s v #/consumer s (f v))
+                #:finisher (fn s #/g #/finisher s)
+                #:early-finisher (fn s #/g #/early-finisher s)))
 
 (define (reducer-filter red pred)
   (define consumer (reducer-consumer red))
@@ -180,8 +181,8 @@
     (for/fold/derived original
       ([tagged-state (starter)]
        #:result (if (variant-tagged-as? tagged-state '#:consume)
-                    (finisher (variant-value tagged-state))
-                    (early-finisher (variant-value tagged-state))))
+                    (finisher #/variant-value tagged-state)
+                    (early-finisher #/variant-value tagged-state)))
       (for-clause ... #:break (variant-tagged-as? tagged-state '#:early-finish))
       body ...
       (consumer (variant-value tagged-state) tail-expr))))
@@ -197,8 +198,8 @@
     (for*/fold/derived original
       ([tagged-state (starter)]
        #:result (if (variant-tagged-as? tagged-state '#:consume)
-                    (finisher (variant-value tagged-state))
-                    (early-finisher (variant-value tagged-state))))
+                    (finisher #/variant-value tagged-state)
+                    (early-finisher #/variant-value tagged-state)))
       (for-clause ... #:break (variant-tagged-as? tagged-state '#:early-finish))
       body ...
       (consumer (variant-value tagged-state) tail-expr))))
@@ -212,7 +213,7 @@
   (for*/reducer/derived original reducer-expr clauses body ... tail-expr))
 
 (define into-list
-  (reducer-map (make-fold-reducer (λ (lst v) (cons v lst)) (list))
+  (reducer-map (make-fold-reducer (fn lst v #/cons v lst) (list))
                #:range reverse))
 
 (module+ test
@@ -224,7 +225,7 @@
                   (list 0 1 'digit 3 'digit 'digit 6 'digit 8 9)))
   (test-case "for*/reducer"
     (check-equal? (for*/reducer into-string
-                    ([str (in-list (list "foo1" "bar2" "baz3"))]
+                    ([str (in-list #/list "foo1" "bar2" "baz3")]
                      [char (in-string str)]
                      #:when (char-alphabetic? char))
                     char)
@@ -252,12 +253,11 @@
                           #:before-first [before-first ""]
                           #:before-last [before-last sep]
                           #:after-last [after-last ""])
-  (define (join strs)
+  (reducer-map into-list #:range #/fn strs
     (immutable-string-join strs sep
                            #:before-first before-first
                            #:before-last before-last
-                           #:after-last after-last))
-  (reducer-map into-list #:range join))
+                           #:after-last after-last)))
 
 (module+ test
   (test-case "into-string"
@@ -273,13 +273,13 @@
 
 (define (into-nth n)
   (make-reducer
-   #:starter (λ () (variant #:consume n))
+   #:starter (fn #/variant #:consume n)
    #:consumer
-   (λ (n v)
-     (if (zero? n)
-         (variant #:early-finish (present v))
-         (variant #:consume (sub1 n))))
-   #:finisher (λ (_) absent)
+   (fn n v
+     (expect (nat->maybe n) (just n)
+       (variant #:early-finish (present v))
+       (variant #:consume n)))
+   #:finisher (dissectfn _ absent)
    #:early-finisher values
    #:name 'into-nth))
 
@@ -287,5 +287,5 @@
   (test-case "into-nth"
     (check-equal? (reduce-all (into-nth 3) "magic") (present #\i))
     (check-equal? (reduce-all (into-nth 10) "magic") absent)
-    (check-equal? (reduce-all (into-nth 0) (in-naturals)) (present 0))
+    (check-equal? (reduce-all (into-nth 0) #/in-naturals) (present 0))
     (check-equal? (reduce-all (into-nth 0) "") absent)))

@@ -1,9 +1,8 @@
-#lang racket/base
+#lang parendown racket/base
 
 (require racket/contract)
 
-(provide
- (contract-out
+(provide #/contract-out
   [application/octet-stream (->* () (#:padding (integer-in 0 7)) media-type?)]
   [media->octet-stream (-> media? octet-stream?)]
   [octet-stream
@@ -12,9 +11,11 @@
   [octet-stream-bytes (-> octet-stream? immutable-bytes?)]
   [octet-stream-padding (-> octet-stream? (integer-in 0 7))]
   [octet-stream->bitstring (-> octet-stream? bitstring?)]
-  [octet-stream->media (-> octet-stream? media?)]))
+  [octet-stream->media (-> octet-stream? media?)])
 
-(require rebellion/binary/bitstring
+(require (only-in lathe-comforts expect fn mat w-)
+         (only-in lathe-comforts/maybe just)
+         rebellion/binary/bitstring
          rebellion/binary/immutable-bytes
          rebellion/collection/record
          rebellion/base/immutable-string
@@ -35,38 +36,39 @@
 (define (octet-stream bytes #:padding [padding 0])
   (plain-octet-stream bytes padding))
 
+(define (dissect-octet-stream octets body)
+  (body (octet-stream-bytes octets) (octet-stream-padding octets)))
+
 (define (octet-stream->bitstring octets)
-  (bytes->bitstring (octet-stream-bytes octets)
-                    #:padding (octet-stream-padding octets)))
+  (dissect-octet-stream octets #/fn bytes padding
+  #/bytes->bitstring bytes #:padding padding))
 
 (define (application/octet-stream #:padding [padding 0])
-  (if (zero? padding)
-      (media-type 'application 'octet-stream)
-      (media-type 'application 'octet-stream
-                  #:parameters
-                  (record #:padding (number->immutable-string padding)))))
+  (mat padding 0
+    (media-type 'application 'octet-stream)
+    (media-type 'application 'octet-stream
+                #:parameters
+                (record #:padding #/number->immutable-string padding))))
 
 (define (application/octet-stream? type)
-  (and (equal? (media-type-top-level type) 'application)
-       (equal? (media-type-subtype type) 'octet-stream)
-       (not (media-type-tree type))
-       (not (media-type-suffix type))))
+  (and (equal? 'application #/media-type-top-level type)
+       (equal? 'octet-stream #/media-type-subtype type)
+       (not #/media-type-tree type)
+       (not #/media-type-suffix type)))
 
 (define (media->octet-stream m)
-  (define bstr (media-bytes m))
-  (define type (media-get-type m))
-  (define padding
-    (cond [(application/octet-stream? type)
-           (define params (media-type-parameters type))
-           (if (record-contains-key? params '#:padding)
-               (string->number (record-ref params '#:padding))
-               0)]
-          [else 0]))
-  (octet-stream bstr #:padding padding))
+  (w- bstr (media-bytes m)
+  #/w- type (media-get-type m)
+  #/w- padding
+    (expect (application/octet-stream? type) #t 0
+    #/w- params (media-type-parameters type)
+    #/expect (record-ref-maybe params '#:padding) (just padding) 0
+      padding)
+  #/octet-stream bstr #:padding padding))
 
 (define (octet-stream->media octets)
-  (media (application/octet-stream #:padding (octet-stream-padding octets))
-         (octet-stream-bytes octets)))
+  (dissect-octet-stream octets #/fn bytes padding
+  #/media (application/octet-stream #:padding padding) bytes))
 
 (module+ test
   (test-case "octet-stream->bitstring"

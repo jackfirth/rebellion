@@ -1,9 +1,8 @@
-#lang racket/base
+#lang parendown racket/base
 
 (require racket/contract/base)
 
-(provide
- (contract-out
+(provide #/contract-out
   [build-record (-> (-> keyword? any/c) keyset? record?)]
   [empty-record record?]
   [record (unconstrained-domain-> record?)]
@@ -14,18 +13,21 @@
    (->* (record? record?) (#:merge (-> any/c any/c any/c)) record?)]
   [record-keywords (-> record? keyset?)]
   [record-values (-> record? immutable-vector?)]
+  [record-ref-maybe (-> record? keyword? maybe?)]
   [record-ref (-> record? keyword? any/c)]
   [record-remove (-> record? keyword? record?)]
   [record-size (-> record? natural?)]
   [record-field (unconstrained-domain-> record-field?)]
   [record-field? predicate/c]
   [record-field-name (-> record-field? keyword?)]
-  [record-field-value (-> record-field? any/c)]))
+  [record-field-value (-> record-field? any/c)])
 
 (require racket/list
          racket/math
          racket/set
          racket/struct
+         (only-in lathe-comforts dissectfn dissect expect fn mat w-)
+         (only-in lathe-comforts/maybe just maybe? maybe-if)
          rebellion/base/generative-token
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
@@ -44,11 +46,11 @@
   (define accessor (tuple-descriptor-accessor descriptor))
   (define custom-write
     (make-constructor-style-printer
-      (λ (this) 'record)
-      (λ (this)
-        (define keywords (accessor this 0))
-        (define values (accessor this 1))
-        (for/list ([kw (in-list (keyset->list keywords))]
+      (fn this 'record)
+      (fn this
+        (w- keywords (accessor this 0)
+        #/w- values (accessor this 1)
+        #/for/list ([kw (in-list (keyset->list keywords))]
                    [v (in-vector values)])
           (define kw-str (unquoted-printing-string (format "~s" kw)))
           (spliced-printing-entry kw-str v)))))
@@ -71,12 +73,21 @@
 
 (define empty-record (record))
 
+(define (dissect-record rec body)
+  (body (record-keywords rec) (record-values rec)))
+
 (define (record-size rec)
-  (keyset-size (record-keywords rec)))
+  (dissect-record rec #/fn kws vs
+  #/keyset-size kws))
+
+(define (record-ref-maybe rec kw)
+  (dissect-record rec #/fn kws vs
+  #/w- index (keyset-index-of kws kw)
+  #/maybe-if index #/fn #/immutable-vector-ref vs index))
 
 (define (record-ref rec kw)
-  (define index (keyset-index-of (record-keywords rec) kw))
-  (and index (immutable-vector-ref (record-values rec) index)))
+  (mat (record-ref-maybe rec kw) (just result) result
+    #f))
 
 (module+ test
   (define rec
@@ -101,35 +112,28 @@
     (check-equal? (record-ref rec '#:foo) #f)))
 
 (define (record-merge2 rec1 rec2
-                       #:merge [merge-function (λ (a b) b)])
-  (define keys1 (record-keywords rec1))
-  (define keys2 (record-keywords rec2))
-  (define values1 (record-values rec1))
-  (define values2 (record-values rec2))
-  (define merged-keys
-    (set->keyset (set-union (keyset->set keys1) (keyset->set keys2))))
-  (build-record (λ (kw)
-                  (define in1? (keyset-contains? keys1 kw))
-                  (define in2? (keyset-contains? keys2 kw))
-                  (cond
-                    [(and in1? in2?)
-                     (merge-function (record-ref rec1 kw) (record-ref rec2 kw))]
-                    [in1? (record-ref rec1 kw)]
-                    [else (record-ref rec2 kw)]))
-                merged-keys))
+                       #:merge [merge-function (fn a b b)])
+  (dissect-record rec1 #/fn keys1 values1
+  #/dissect-record rec2 #/fn keys2 values2
+  #/w- merged-keys
+    (set->keyset #/set-union (keyset->set keys1) (keyset->set keys2))
+  #/build-record (fn kw
+                   (expect (keyset-contains? keys1 kw) #t (record-ref rec2 kw)
+                   #/expect (keyset-contains? keys2 kw) #t (record-ref rec1 kw)
+                   #/merge-function (record-ref rec1 kw) (record-ref rec2 kw)))
+                 merged-keys))
 
 (define (sorted-keywords-and-values->record kws vs)
   (keyword-apply record kws vs empty))
 
 (define (record-remove rec kw)
   (define keys (keyset-remove (record-keywords rec) kw))
-  (build-record (λ (kw) (record-ref rec kw)) keys))
+  (build-record (fn kw #/record-ref rec kw) keys))
 
 (define (record-map rec f)
-  (define kws (record-keywords rec))
-  (define vs (record-values rec))
-  (define mapped-vs (immutable-vector-map f vs))
-  (internal-record-constructor kws mapped-vs))
+  (dissect-record rec #/fn kws vs
+  #/w- mapped-vs (immutable-vector-map f vs)
+  #/internal-record-constructor kws mapped-vs))
 
 (define (build-record builder keys)
   (define vs
@@ -140,7 +144,8 @@
   (internal-record-constructor keys vs))
 
 (define (record-contains-key? rec kw)
-  (keyset-contains? (record-keywords rec) kw))
+  (dissect-record rec #/fn kws vs
+  #/keyset-contains? kws kw))
 
 (module+ test
   (test-case "record-merge2"
@@ -160,28 +165,28 @@
     (check-equal? (record-remove (record #:a 1 #:b 2 #:c 3) '#:b)
                   (record #:a 1 #:c 3)))
   (test-case "record-map"
-    (check-equal? (record-map (record #:x 1 #:y -1 #:z 0) (λ (x) (* x 100)))
+    (check-equal? (record-map (record #:x 1 #:y -1 #:z 0) #/fn x #/* x 100)
                   (record #:x 100 #:y -100 #:z 0)))
   (test-case "build-record"
     (check-equal? (build-record keyword->string (keyset #:x #:y #:z))
                   (record #:x "x" #:y "y" #:z "z")))
   (test-case "record-contains-key?"
-    (check-true (record-contains-key? (record #:x 0 #:y 0) '#:x))
-    (check-true (record-contains-key? (record #:x 0 #:y 0) '#:y))
-    (check-false (record-contains-key? (record #:x 0 #:y 0) '#:z))))
+    (check-true #/record-contains-key? (record #:x 0 #:y 0) '#:x)
+    (check-true #/record-contains-key? (record #:x 0 #:y 0) '#:y)
+    (check-false #/record-contains-key? (record #:x 0 #:y 0) '#:z)))
 
 ;@------------------------------------------------------------------------------
 
 (define (make-record-field-properties descriptor)
-  (define type-name (tuple-type-name (tuple-descriptor-type descriptor)))
+  (define type-name (tuple-type-name #/tuple-descriptor-type descriptor))
   (define accessor (tuple-descriptor-accessor descriptor))
   (define equal+hash (make-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
-     (λ (_) type-name)
-     (λ (this)
-       (define name (string-append "#:" (keyword->string (accessor this 0))))
-       (list (unquoted-printing-string name) (accessor this 1)))))
+     (dissectfn _ type-name)
+     (fn this
+       (w- name (string-append "#:" (keyword->string #/accessor this 0))
+       #/list (unquoted-printing-string name) (accessor this 1)))))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
@@ -190,14 +195,15 @@
   #:property-maker make-record-field-properties)
 
 (define (record-field-keyword-function kws kw-args)
-  (when (> (length kws) 1)
+  (expect kws (cons kw kws-rest)
+    (raise-arguments-error 'record-field "no arguments given")
+  #/expect kws-rest (list)
     (raise-arguments-error 'record-field
                            "multiple keyword arguments"
                            "keywords" kws
-                           "values" kw-args))
-  (when (< (length kws) 1)
-    (raise-arguments-error 'record-field "no arguments given"))
-  (constructor:record-field (first kws) (first kw-args)))
+                           "values" kw-args)
+  #/dissect kw-args (list kw-arg)
+  #/constructor:record-field kw kw-arg))
 
 (define record-field
   (procedure-reduce-keyword-arity
