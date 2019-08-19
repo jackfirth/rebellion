@@ -7,11 +7,6 @@
 
 (require (for-syntax racket/base
                      racket/syntax)
-         racket/struct
-         rebellion/base/generative-token
-         rebellion/base/symbol
-         rebellion/type/record
-         rebellion/type/tuple
          rebellion/type/wrapper/base
          rebellion/type/wrapper/descriptor
          syntax/parse/define)
