@@ -5,23 +5,12 @@
 (provide
  define-wrapper-type
  (contract-out
-  [wrapper-type? predicate/c]
-  [wrapper-type
-   (->* (interned-symbol?)
-        (#:predicate-name (or/c interned-symbol? #f)
-         #:constructor-name (or/c interned-symbol? #f)
-         #:accessor-name (or/c interned-symbol? #f))
-        wrapper-type?)]
   [make-wrapper-implementation
    (->* (wrapper-type?)
         (#:property-maker (-> uninitialized-wrapper-descriptor?
                               (listof (cons/c struct-type-property? any/c)))
          #:inspector inspector?)
         initialized-wrapper-descriptor?)]
-  [wrapper-type-name (-> wrapper-type? interned-symbol?)]
-  [wrapper-type-constructor-name (-> wrapper-type? interned-symbol?)]
-  [wrapper-type-predicate-name (-> wrapper-type? interned-symbol?)]
-  [wrapper-type-accessor-name (-> wrapper-type? interned-symbol?)]
   [wrapper-descriptor? predicate/c]
   [uninitialized-wrapper-descriptor? predicate/c]
   [initialized-wrapper-descriptor? predicate/c]
@@ -39,6 +28,7 @@
          rebellion/base/symbol
          rebellion/type/record
          rebellion/type/tuple
+         rebellion/type/wrapper/base
          syntax/parse/define)
 
 (module+ test
@@ -47,26 +37,6 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
-
-(define (format-symbol template . vs)
-  (string->symbol (apply format template vs)))
-
-;@------------------------------------------------------------------------------
-
-(define-record-type wrapper-type
-  (name predicate-name constructor-name accessor-name)
-  #:constructor-name constructor:wrapper-type)
-
-(define (wrapper-type
-         name
-         #:predicate-name [predicate-name #f]
-         #:constructor-name [constructor-name #f]
-         #:accessor-name [accessor-name #f])
-  (constructor:wrapper-type
-   #:name name
-   #:predicate-name (or predicate-name (format-symbol "~a?" name))
-   #:constructor-name (or constructor-name name)
-   #:accessor-name (or accessor-name (format-symbol "~a-value" name))))
 
 (define-record-type initialized-wrapper-descriptor
   (type predicate constructor accessor))
