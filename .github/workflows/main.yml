@@ -7,6 +7,6 @@ jobs:
     runs-on: ubuntu-latest    
     steps:
     - uses: actions/checkout@v1
-    - uses: jackfirth/racket-package-ci-action@master
+    - uses: jackfirth/racket-package-ci-action@v0.1.1
       with:
         name: rebellion
