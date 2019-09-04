@@ -5,6 +5,7 @@
                      racket/sequence
                      racket/vector
                      rebellion/base/immutable-string
+                     rebellion/base/option
                      rebellion/base/symbol
                      rebellion/base/variant
                      rebellion/streaming/reducer
@@ -96,6 +97,28 @@ fully consumed.
    (reduce-all (into-nth 8) "hello world")
    (reduce-all (into-nth 20) "hello world")
    (reduce-all (into-nth 0) "hello world"))}
+
+@defproc[(into-index-of [v any/c]) reducer?]{
+ Constructs a @tech{reducer} that searches the reduced sequence for @racket[v]
+ and returns an @tech{option} wrapping the position of @racket[v] in the
+ sequence. If the reduced sequence does not contain @racket[v], then the reducer
+ returns @racket[absent].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-index-of #\e) "battery")
+   (reduce-all (into-index-of #\o) "cat"))}
+
+@defproc[(into-index-where [pred predicate/c]) reducer?]{
+ Constructs a @tech{reducer} that searches the reduced sequence for the first
+ value for which @racket[pred] returns true, then returns an @tech{option}
+ wrapping the position of that value. If the reduced sequence does not contain
+ any values satisfying @racket[pred], then the reducer returns @racket[absent].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-index-where char-whitespace?) "hello world")
+   (reduce-all (into-index-where char-numeric?) "goodbye world"))}
 
 @defthing[into-string reducer?]{
  A @tech{reducer} that collects a sequence of individual characters into an
