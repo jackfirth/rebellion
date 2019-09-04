@@ -13,14 +13,7 @@
   [taking (-> natural? transducer?)]
   [taking-while (-> predicate/c transducer?)]
   [dropping (-> natural? transducer?)]
-  [dropping-while (-> predicate/c transducer?)]
-  [inserting
-   (->* ()
-        (#:between sequence?
-         #:before sequence?
-         #:before-last sequence?
-         #:after sequence?)
-        transducer?)]))
+  [dropping-while (-> predicate/c transducer?)]))
 
 (require racket/bool
          racket/contract/region
@@ -443,31 +436,3 @@
                              (dropping-while number?)
                              #:into into-list)
                   empty-list)))
-
-(define-record-type insertion-state (before-first?))
-
-(define (inserting #:between [between empty-list]
-                   #:before [before empty-list]
-                   #:before-last [before-last between]
-                   #:after [after empty-list])
-  (mapping values))
-
-(module+ test
-  (test-case "inserting"
-    (test-case "between"
-      (check-equal? (transduce (in-range 4)
-                               (inserting #:between (list 'a 'b))
-                               #:into into-list)
-                    (list 0 'a 'b 1 'a 'b 2 'a 'b 3))
-      (check-equal? (transduce empty-list
-                               (inserting #:between (list 'a 'b))
-                               #:into into-list)
-                    empty-list)
-      (check-equal? (transduce (list 1)
-                               (inserting #:between (list 'a 'b))
-                               #:into into-list)
-                    (list 1))
-      (check-equal? (transduce "hello"
-                               (inserting #:between " + ")
-                               #:into into-string)
-                    "h + e + l + l + o"))))
