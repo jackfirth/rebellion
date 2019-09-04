@@ -28,6 +28,8 @@
   [into-product reducer?]
   [into-count reducer?]
   [into-nth (-> natural? reducer?)]
+  [into-index-of (-> any/c reducer?)]
+  [into-index-where (-> predicate/c reducer?)]
   [into-string reducer?]
   [join-into-string
    (->* (immutable-string?)
@@ -283,9 +285,33 @@
    #:early-finisher values
    #:name 'into-nth))
 
+(define (into-index-of v)
+  (into-index-where (λ (elem) (equal? elem v)) #:name 'into-index-of))
+
+(define (into-index-where pred #:name [name 'into-index-where])
+  (make-reducer
+   #:starter (λ () (variant #:consume 0))
+   #:consumer
+   (λ (index-counter elem)
+     (if (pred elem)
+         (variant #:early-finish index-counter)
+         (variant #:consume (add1 index-counter))))
+   #:finisher (λ (_) absent)
+   #:early-finisher (λ (index-counter) (present index-counter))
+   #:name name))   
+
 (module+ test
   (test-case "into-nth"
     (check-equal? (reduce-all (into-nth 3) "magic") (present #\i))
     (check-equal? (reduce-all (into-nth 10) "magic") absent)
     (check-equal? (reduce-all (into-nth 0) (in-naturals)) (present 0))
-    (check-equal? (reduce-all (into-nth 0) "") absent)))
+    (check-equal? (reduce-all (into-nth 0) "") absent))
+  (test-case "into-index-of"
+    (check-equal? (reduce-all (into-index-of #\f) "food") (present 0))
+    (check-equal? (reduce-all (into-index-of #\f) "hoof") (present 3))
+    (check-equal? (reduce-all (into-index-of #\f) "cat") absent))
+  (test-case "into-index-where"
+    (check-equal? (reduce-all (into-index-where char-whitespace?) "hello world")
+                  (present 5))
+    (check-equal? (reduce-all (into-index-where char-numeric?) "goodbye world")
+                  absent)))
