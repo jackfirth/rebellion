@@ -5,3 +5,4 @@
 @local-table-of-contents[]
 
 @include-section[(lib "rebellion/private/reducer.scrbl")]
+@include-section[(lib "rebellion/private/transducer.scrbl")]
