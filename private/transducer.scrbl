@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/math
                      racket/sequence
                      racket/set
                      rebellion/base/immutable-string
@@ -104,6 +105,49 @@ early, before the input sequence is fully consumed.
    (transduce (in-range 1 10)
               (folding + 0)
               #:into into-list))}
+
+@defproc[(taking [amount natural?]) transducer?]{
+ Constructs a @tech{transducer} that limits the upstream sequence to its first
+ @racket[amount] elements. There is no buffering; each element is consumed and
+ emitted downstream before the next one is consumed.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "hello world"
+              (taking 5)
+              #:into into-string))}
+
+@defproc[(taking-while [pred predicate/c]) transducer?]{
+ Constructs a @tech{transducer} that terminates the upstream sequence as soon as
+ @racket[pred] returns false for an element. Each element for which @racket[
+ pred] returns true is passed downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "The quick brown fox"
+              (taking-while char-alphabetic?)
+              #:into into-string))}
+
+@defproc[(dropping [amount natural?]) transducer?]{
+ Constructs a @tech{transducer} that removes the first @racket[amount] elements
+ from the transduced sequence, then passes all remaining elements downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "hello world"
+              (dropping 5)
+              #:into into-string))}
+
+@defproc[(dropping-while [pred predicate/c]) transducer?]{
+ Constructs a @tech{transducer} that removes elements from the transduced
+ sequence until @racket[pred] returns false for an element, then passes all
+ remaining elements downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "The quick brown fox"
+              (dropping-while char-alphabetic?)
+              #:into into-string))}
 
 @defproc[(make-transducer
           [#:starter starter (-> transduction-state/c)]
