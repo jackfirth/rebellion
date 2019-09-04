@@ -1,0 +1,144 @@
+#lang scribble/manual
+
+@(require (for-label racket/base
+                     racket/contract/base
+                     racket/sequence
+                     racket/set
+                     rebellion/base/immutable-string
+                     rebellion/base/symbol
+                     rebellion/base/variant
+                     rebellion/collection/list
+                     rebellion/streaming/reducer
+                     rebellion/streaming/transducer)
+          (submod rebellion/private/scribble-evaluator-factory doc)
+          scribble/example)
+
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'racket/set
+                   'rebellion/base/immutable-string
+                   'rebellion/collection/list
+                   'rebellion/streaming/reducer
+                   'rebellion/streaming/transducer)
+    #:private (list 'racket/base)))
+
+@title{Transducers}
+@defmodule[rebellion/streaming/transducer]
+
+A @deftech{transducer} is an object that can incrementally transform one
+(potentially infinite) sequence of elements into another sequence. Transducers
+are state machines; performing a transduction involves @emph{starting} the
+transducer to get an initial state, then repeatedly updating that state by
+either @emph{consuming} an element from the input sequence or by @emph{emitting}
+an element to the output sequence. When the input sequence is exhausted, the
+transducer enters a @emph{half closed} state where it may emit more output
+elements but it will never consume more input elements. When the transducer
+stops emitting elements, its @emph{finisher} is called to clean up any resources
+held in the final transduction state. Optionally, a transducer may half close
+early, before the input sequence is fully consumed.
+
+@defproc[(transducer? [v any/c]) boolean?]{
+ A predicate for @tech{transducers}.}
+
+@defproc[(transduce [seq sequence?]
+                    [trans transducer?] ...
+                    [#:into red reducer?])
+         any/c]{
+ Executes a @deftech{transduction pipeline}, alternatively called a
+ @deftech{stream pipeline}, which transforms the source @racket[seq] with a
+ series of intermediate operations --- represented by the @racket[trans]
+ arguments --- then reduces the transformed sequence with @racket[red].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 20)
+              (filtering even?)
+              (mapping number->immutable-string)
+              #:into (join-into-string ", ")))}
+
+@defproc[(in-transducing [seq sequence?] [trans transducer?]) sequence?]{
+ Lazily transduces @racket[seq] with @racket[trans], returning a @tech{sequence}
+ that, when iterated, passes the elements of @racket[seq] to @racket[trans] as
+ inputs and uses the emitted outputs of @racket[trans] as the wrapper sequence's
+ elements.}
+
+@defproc[(filtering [pred predicate/c]) transducer?]{
+ Constructs a @tech{transducer} that passes input elements downstream only when
+ they satisfy @racket[pred].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 10)
+              (filtering even?)
+              #:into into-list))}
+
+@defproc[(mapping [f (-> any/c any/c)]) transducer?]{
+ Constructs a @tech{transducer} that applies @racket[f] to input elements and
+ emits the returned result downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 10)
+              (mapping (λ (x) (* x x)))
+              #:into into-list))}
+
+@defproc[(append-mapping [f (-> any/c sequence?)]) transducer?]{
+ Constructs a @tech{transducer} that applies @racket[f] to input elements and
+ emits each element in the returned sequence downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (set 'red 'green 'blue)
+              (append-mapping symbol->immutable-string)
+              #:into into-string))}
+
+@defproc[(folding [f (-> any/c any/c any/c)] [init any/c]) transducer?]{
+ Constructs a @tech{transducer} that folds over the input elements and emits the
+ current fold state after each element. Specifically, the transducer starts with
+ @racket[init] as its state and, for each input element, applies @racket[f] to
+ its current state and the input element returning the next state, which is also
+ sent downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 10)
+              (folding + 0)
+              #:into into-list))}
+
+@defproc[(make-transducer
+          [#:starter starter (-> transduction-state/c)]
+          [#:consumer consumer (-> any/c transduction-state/c)]
+          [#:emitter emitter (-> emission?)]
+          [#:half-closer half-closer
+           (-> any/c half-closed-transduction-state/c)]
+          [#:half-closed-emitter half-closed-emitter
+           (-> any/c half-closed-emission?)]
+          [#:finisher finisher (-> any/c void?)]
+          [#:name name (or/c interned-symbol? #f) #f])
+         transducer?]
+
+@defthing[transduction-state/c flat-contract?
+          #:value (variant/c #:consume any/c
+                             #:emit any/c
+                             #:half-closed-emit any/c
+                             #:finish any/c)]
+
+@defthing[half-closed-transduction-state/c flat-contract?
+          #:value (variant/c #:half-closed-emit any/c
+                             #:finish any/c)]
+
+@defproc[(emission? [v any/c]) boolean?]
+@defproc[(emission [state transduction-state/c] [value any/c]) emission?]
+@defproc[(emission-state [em emission?]) transduction-state/c]
+@defproc[(emission-value [em emission?]) any/c]
+
+@defproc[(half-closed-emission? [v any/c]) boolean?]
+
+@defproc[(half-closed-emission [state half-closed-transduction-state/c]
+                               [value any/c])
+         half-closed-emission?]
+
+@defproc[(half-closed-emission-state [em half-closed-emission?])
+         half-closed-transduction-state/c]
+
+@defproc[(half-closed-emission-value [em half-closed-emission?]) any/c]
