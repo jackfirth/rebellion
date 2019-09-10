@@ -28,7 +28,7 @@ useful when the same kind of data is used in many different ways that need to be
 distinguished.
 
 @(examples
-  #:eval (make-evaluator) #:label #f
+  #:eval (make-evaluator) #:once #:label #f
   (eval:no-prompt
    (define-wrapper-type celsius)
    (define-wrapper-type fahrenheit)
@@ -36,7 +36,7 @@ distinguished.
    (define/contract (celsius->fahrenheit c)
      (-> celsius? fahrenheit?)
      (fahrenheit (+ (* (celsius-value c) 9/5) 32))))
-  
+
   (celsius->fahrenheit (celsius 0))
   (celsius->fahrenheit (celsius 100))
   (eval:error (celsius->fahrenheit (fahrenheit 100))))
@@ -121,8 +121,33 @@ distinguished.
 @defproc[(make-default-wrapper-properties [descriptor wrapper-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
 
-@defproc[(make-wrapper-equal+hash [descriptor wrapper-descriptor?])
+@defproc[(make-default-wrapper-equal+hash [descriptor wrapper-descriptor?])
          equal+hash/c]
 
-@defproc[(make-wrapper-custom-write [descriptor wrapper-descriptor?])
+@defproc[(make-default-wrapper-custom-write [descriptor wrapper-descriptor?])
          custom-write-function/c]
+
+@section{Static Wrapper Bindings}
+
+@defproc[(wrapper-binding? [v any/c]) boolean?]
+
+@defproc[(wrapper-binding [#:type type wrapper-type?]
+                          [#:descriptor-id descriptor identifier?]
+                          [#:predicate-id predicate identifier?]
+                          [#:constructor-id constructor identifier?])
+         wrapper-binding?]
+
+@defproc[(wrapper-binding-type [binding wrapper-binding?]) wrapper-type?]
+
+@defproc[(wrapper-binding-descriptor-id [binding wrapper-binding?]) identifier?]
+
+@defproc[(wrapper-binding-predicate-id [binding wrapper-binding?]) identifier?]
+
+@defproc[(wrapper-binding-constructor-id [binding wrapper-binding?])
+         identifier?]
+
+@defproc[(wrapper-binding-accessor-id [binding wrapper-binding?]) identifier?]
+
+@defidform[#:kind "syntax class" wrapper-type-id]{
+ A syntax class that matches an identifier bound with @racket[define-syntax] to
+ a @racket[wrapper-binding?] value.}
