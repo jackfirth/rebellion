@@ -1,113 +1,17 @@
 #lang racket/base
 
-(require racket/contract/base)
-
-(provide
- define-singleton-type
- (contract-out
-  [singleton-descriptor? (-> any/c boolean?)]
-  [make-singleton-implementation
-   (->* (singleton-type?)
-        (#:inspector inspector?
-         #:property-maker (-> uninitialized-singleton-descriptor?
-                              (listof (cons/c struct-type-property? any/c))))
-        initialized-singleton-descriptor?)]
-  [initialized-singleton-descriptor? (-> any/c boolean?)]
-  [uninitialized-singleton-descriptor? (-> any/c boolean?)]
-  [singleton-descriptor-instance (-> initialized-singleton-descriptor? any/c)]
-  [singleton-descriptor-predicate
-   (-> singleton-descriptor? (-> any/c boolean?))]
-  [make-default-singleton-properties
-   (-> uninitialized-singleton-descriptor?
-       (listof (cons/c struct-type-property? any/c)))]))
+(provide define-singleton-type)
 
 (require (for-syntax racket/base
                      racket/syntax)
-         rebellion/custom-write
-         rebellion/custom-write/tuple
-         rebellion/equal+hash
          rebellion/type/singleton/base
-         rebellion/type/tuple
+         rebellion/type/singleton/descriptor
          syntax/parse/define)
 
-;@------------------------------------------------------------------------------
-
-(define (make-singleton-properties descriptor)
-  (define accessor (tuple-descriptor-accessor descriptor))
-  (list (cons prop:object-name
-              (λ (this) (singleton-type-name (accessor this 0))))
-        (cons prop:custom-write
-              (make-tuple-named-object-custom-write descriptor))))
-
-(define-tuple-type initialized-singleton-descriptor
-  (type instance predicate)
-  #:constructor-name constructor:initialized-singleton-descriptor
-  #:property-maker make-singleton-properties)
-
-(define (initialized-singleton-descriptor #:type type
-                                          #:instance instance
-                                          #:predicate predicate)
-  (constructor:initialized-singleton-descriptor type instance predicate))
-
-(define-tuple-type uninitialized-singleton-descriptor
-  (type predicate)
-  #:constructor-name constructor:uninitialized-singleton-descriptor
-  #:property-maker make-singleton-properties)
-
-(define (uninitialized-singleton-descriptor #:type type #:predicate predicate)
-  (constructor:uninitialized-singleton-descriptor type predicate))
-
-(define (singleton-descriptor? v)
-  (or (initialized-singleton-descriptor? v)
-      (uninitialized-singleton-descriptor? v)))
-
-(define (make-singleton-implementation
-         type
-         #:inspector [inspector (current-inspector)]
-         #:property-maker [prop-maker make-default-singleton-properties])
-  (define (make-tuple-props tuple-descriptor)
-    (define predicate (tuple-descriptor-predicate tuple-descriptor))
-    (prop-maker
-     (uninitialized-singleton-descriptor #:type type #:predicate predicate)))
-  (define type/tuple
-    (tuple-type (singleton-type-name type) 0
-                #:predicate-name (singleton-type-predicate-name type)))
-  (define descriptor
-    (make-tuple-implementation type/tuple
-                               #:property-maker make-tuple-props))
-  (define instance ((tuple-descriptor-constructor descriptor)))
-  (define pred (tuple-descriptor-predicate descriptor))
-  (initialized-singleton-descriptor #:type type
-                                    #:instance instance
-                                    #:predicate pred))
-
-(define (make-default-singleton-properties descriptor)
-  (define name (singleton-type-name (singleton-descriptor-type descriptor)))
-  (list (cons prop:object-name (λ (_) name))
-        (cons prop:equal+hash (make-singleton-equal+hash))
-        (cons prop:custom-write (make-singleton-custom-write name))))
-
-;@------------------------------------------------------------------------------
-
-(define (singleton-descriptor-case descriptor #:initialized f #:uninitialized g)
-  (if (initialized-singleton-descriptor? descriptor)
-      (f descriptor)
-      (g descriptor)))
-
-(define (singleton-descriptor-type descriptor)
-  (singleton-descriptor-case
-   descriptor
-   #:initialized initialized-singleton-descriptor-type
-   #:uninitialized uninitialized-singleton-descriptor-type))
-
-(define (singleton-descriptor-predicate descriptor)
-  (singleton-descriptor-case
-   descriptor
-   #:initialized initialized-singleton-descriptor-predicate
-   #:uninitialized uninitialized-singleton-descriptor-predicate))
-
-(define (singleton-descriptor-instance descriptor)
-  (initialized-singleton-descriptor-instance descriptor))
+(module+ test
+  (require (submod "..")
+           racket/format
+           rackunit))
 
 ;@------------------------------------------------------------------------------
 
@@ -159,3 +63,13 @@
        type #:inspector inspector #:property-maker prop-maker))
     (define name (singleton-descriptor-instance descriptor))
     (define predicate (singleton-descriptor-predicate descriptor))))
+
+(module+ test
+  (test-case "define-singleton-type"
+    (define-singleton-type foo)
+    (check-pred foo? foo)
+    (check-false (foo? 'foo))
+    (check-equal? (object-name foo) 'foo)
+    (check-equal? (~a foo) "#<foo>")
+    (check-equal? (~v foo) "#<foo>")
+    (check-equal? (~s foo) "#<foo>")))
