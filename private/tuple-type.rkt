@@ -24,15 +24,6 @@
   [tuple-descriptor-predicate (-> tuple-descriptor? (-> any/c boolean?))]
   [tuple-descriptor-struct-type (-> initialized-tuple-descriptor? struct-type?)]
   [tuple-descriptor-type (-> tuple-descriptor? tuple-type?)]
-  [tuple-type
-   (->* (symbol? natural?)
-        (#:predicate-name (or/c symbol? #f)
-         #:constructor-name (or/c symbol? #f)
-         #:accessor-name (or/c symbol? #f))
-        tuple-type?)]
-  [tuple-type? (-> any/c boolean?)]
-  [tuple-type-accessor-name (-> tuple-type? symbol?)]
-  [tuple-type-constructor-name (-> tuple-type? symbol?)]
   [make-tuple-implementation
    (->* (tuple-type?)
         (#:guard (or/c procedure? #f)
@@ -41,21 +32,18 @@
          (-> uninitialized-tuple-descriptor?
              (listof (cons/c struct-type-property? any/c))))
         initialized-tuple-descriptor?)]
-  [tuple-type-name (-> tuple-type? symbol?)]
-  [tuple-type-predicate-name (-> tuple-type? symbol?)]
-  [tuple-type-size (-> tuple-type? natural?)]
   [uninitialized-tuple-descriptor? (-> any/c boolean?)]))
 
 (require (for-syntax racket/base
                      racket/syntax)
          racket/math
          racket/struct
+         rebellion/collection/keyset/low-dependency
          rebellion/custom-write
-         rebellion/custom-write/struct
          rebellion/equal+hash
          rebellion/equal+hash/struct
-         rebellion/collection/keyset/low-dependency
          rebellion/private/struct-definition-util
+         rebellion/type/tuple/base
          rebellion/type/struct
          syntax/parse/define)
 
@@ -65,12 +53,6 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
-
-(define (make-transparent-style-properties descriptor)
-  (define equal+hash (make-struct-equal+hash descriptor))
-  (define custom-write (make-struct-constructor-style-custom-write descriptor))
-  (list (cons prop:equal+hash equal+hash)
-        (cons prop:custom-write custom-write)))
 
 (define (make-descriptor-style-properties descriptor)
   (define accessor (struct-descriptor-accessor descriptor))
@@ -105,25 +87,11 @@
 
 ;@------------------------------------------------------------------------------
 
-(define fields:tuple-type
-  (keyset #:name
-          #:size
-          #:predicate-name
-          #:constructor-name
-          #:accessor-name))
-
 (define fields:uninitialized-tuple-descriptor
   (keyset #:type #:predicate #:constructor #:accessor))
 
 (define fields:initialized-tuple-descriptor
   (keyset #:type #:predicate #:constructor #:accessor #:struct-type))
-
-(define descriptor:tuple-type
-  (make-struct-implementation
-   #:name 'tuple-type
-   #:immutable-fields (keyset-size fields:tuple-type)
-   #:constructor-name 'constructor:tuple-type
-   #:property-maker make-transparent-style-properties))
 
 (define descriptor:uninitialized-tuple-descriptor
   (make-struct-implementation
@@ -138,28 +106,6 @@
    #:immutable-fields (keyset-size fields:initialized-tuple-descriptor)
    #:constructor-name 'constructor:initialized-tuple-descriptor
    #:property-maker make-descriptor-style-properties))
-
-(define tuple-type? (struct-descriptor-predicate descriptor:tuple-type))
-
-(define constructor:tuple-type
-  (struct-descriptor-constructor descriptor:tuple-type))
-
-(define (tuple-type
-         name
-         size
-         #:predicate-name [predicate-name* #f]
-         #:constructor-name [constructor-name* #f]
-         #:accessor-name [accessor-name* #f])
-  (define predicate-name
-    (or predicate-name* (default-tuple-predicate-name name)))
-  (define constructor-name (or constructor-name* name))
-  (define accessor-name (or accessor-name* (default-tuple-accessor-name name)))
-  (constructor:tuple-type
-   name size predicate-name constructor-name accessor-name))
-
-(define-struct-field-accessors tuple-type
-  (name size predicate-name constructor-name accessor-name)
-  #:descriptor descriptor:tuple-type)
 
 (define uninitialized-tuple-descriptor?
   (struct-descriptor-predicate descriptor:uninitialized-tuple-descriptor))
@@ -270,12 +216,6 @@
    #:predicate (get-predicate descriptor)
    #:constructor (get-constructor descriptor)
    #:accessor (get-accessor descriptor)))
-
-(define (default-tuple-predicate-name name)
-  (string->symbol (format "~a?" name)))
-
-(define (default-tuple-accessor-name name)
-  (string->symbol (format "~a-ref" name)))
 
 (define (make-tuple-field-accessor descriptor pos [field-name* #f])
   (define type (tuple-descriptor-type descriptor))
