@@ -5,12 +5,6 @@
 (provide
  define-singleton-type
  (contract-out
-  [singleton-type
-   (->* (interned-symbol?) (#:predicate-name (or/c interned-symbol? #f))
-        singleton-type?)]
-  [singleton-type? (-> any/c boolean?)]
-  [singleton-type-name (-> singleton-type? interned-symbol?)]
-  [singleton-type-predicate-name (-> singleton-type? interned-symbol?)]
   [singleton-descriptor? (-> any/c boolean?)]
   [make-singleton-implementation
    (->* (singleton-type?)
@@ -32,17 +26,11 @@
          rebellion/custom-write
          rebellion/custom-write/tuple
          rebellion/equal+hash
-         rebellion/base/symbol
+         rebellion/type/singleton/base
          rebellion/type/tuple
          syntax/parse/define)
 
 ;@------------------------------------------------------------------------------
-
-(define-tuple-type singleton-type (name predicate-name)
-  #:constructor-name constructor:singleton-type)
-
-(define (singleton-type name #:predicate-name [pred-name #f])
-  (constructor:singleton-type name pred-name))
 
 (define (make-singleton-properties descriptor)
   (define accessor (tuple-descriptor-accessor descriptor))
