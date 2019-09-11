@@ -5,17 +5,6 @@
 (provide
  define-record-type
  (contract-out
-  [record-type (->* (symbol? keyset?)
-                    (#:predicate-name (or/c symbol? #f)
-                     #:constructor-name (or/c symbol? #f)
-                     #:accessor-name (or/c symbol? #f))
-                    record-type?)]
-  [record-type? predicate/c]
-  [record-type-name (-> record-type? symbol?)]
-  [record-type-fields (-> record-type? keyset?)]
-  [record-type-predicate-name (-> record-type? (or/c symbol? #f))]
-  [record-type-constructor-name (-> record-type? (or/c symbol? #f))]
-  [record-type-accessor-name (-> record-type? (or/c symbol? #f))]
   [make-record-implementation
    (->* (record-type?)
         (#:inspector inspector?
@@ -41,6 +30,7 @@
          rebellion/custom-write
          rebellion/equal+hash
          rebellion/private/spliced-printing-entry
+         rebellion/type/record/base
          rebellion/type/tuple
          syntax/parse/define)
 
@@ -51,20 +41,6 @@
 ;@------------------------------------------------------------------------------
 
 (define properties/c (listof (cons/c struct-type-property? any/c)))
-
-(define-tuple-type record-type
-  (name fields predicate-name constructor-name accessor-name)
-  #:constructor-name constructor:record-type)
-
-(define (record-type name fields
-                     #:predicate-name [predicate-name #f]
-                     #:constructor-name [constructor-name #f]
-                     #:accessor-name [accessor-name #f])
-  (constructor:record-type name
-                           fields
-                           predicate-name
-                           constructor-name
-                           accessor-name))
 
 (define-tuple-type initialized-record-descriptor
   (type predicate constructor accessor))
