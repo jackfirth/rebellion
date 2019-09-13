@@ -11,3 +11,4 @@
 @include-section[(lib "rebellion/private/result.scrbl")]
 @include-section[(lib "rebellion/private/symbol.scrbl")]
 @include-section[(lib "rebellion/private/variant.scrbl")]
+@include-section[(lib "rebellion/private/comparator.scrbl")]
