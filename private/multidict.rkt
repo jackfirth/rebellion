@@ -22,6 +22,7 @@
   [multidict->hash
    (-> multidict?
        (hash/c any/c nonempty-immutable-set? #:immutable #t #:flat? #t))]
+  [multidict-inverse (-> multidict? multidict?)]
   [empty-multidict empty-multidict?]
   [empty-multidict? predicate/c]
   [nonempty-multidict? predicate/c]
@@ -75,7 +76,7 @@
   (define (sequence this)
     (define backing-hash (accessor this backing-hash-field))
     (for*/stream ([(k vs) (in-immutable-hash backing-hash)]
-                    [v (in-immutable-set vs)])
+                  [v (in-immutable-set vs)])
       (entry k v)))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:sequence sequence)
@@ -128,6 +129,10 @@
 
 (define (multidict->hash dict) (multidict-backing-hash dict))
 
+(define (multidict-inverse dict)
+  (for/multidict ([e (in-multidict-entries dict)])
+    (entry (entry-value e) (entry-key e))))
+
 (define (multidict-ref dict k) (hash-ref (multidict-backing-hash dict) k (set)))
 
 (define (multidict-contains-key? dict k)
@@ -178,6 +183,15 @@
                   (hash 'a (set 1 2)
                         'b (set 3)
                         'c (set 1 4))))
+  (test-case "multidict-inverse"
+    (check-equal? (multidict-inverse dict)
+                  (multidict 1 'a
+                             2 'a
+                             3 'b
+                             4 'c
+                             2 'a
+                             1 'c))
+    (check-equal? (multidict-inverse (multidict-inverse dict)) dict))
   (test-case "multidict-contains-key?"
     (check-true (multidict-contains-key? dict 'a))
     (check-true (multidict-contains-key? dict 'b))
