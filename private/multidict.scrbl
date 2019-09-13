@@ -154,6 +154,22 @@ interface is based on a flattened collection of key-value pairs.
                'vegetable 'carrot
                'vegetable 'celery)))}
 
+@defproc[(multidict-inverse [dict multidict?]) multidict?]{
+ Inverts @racket[dict], returning a multidict with all the same entries as
+ @racket[dict] except keys and values are swapped.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict-inverse
+    (multidict 'a 1
+               'a 2
+               'a 3
+               'b 2
+               'b 4
+               'c 4
+               'c 1
+               'd 3)))}
+
 @defproc[(multidict-contains-key? [dict multidict?] [k any/c]) boolean?]{
  Returns @racket[#t] if @racket[dict] contains any mappings for the key
  @racket[k], returns @racket[#f] otherwise.
