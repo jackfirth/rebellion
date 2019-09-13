@@ -17,22 +17,53 @@
 
 ;@------------------------------------------------------------------------------
 
+(begin-for-syntax
+  (define-syntax-class reference-id
+    #:attributes (default-name
+                  default-predicate-name
+                  default-constructor-name)
+    (pattern id:id
+      #:do [(define (derived-id fmt)
+              (format-id #'id fmt #'id #:source #'id #:props #'id))]
+      #:with default-name #'id
+      #:with default-predicate-name (derived-id "~a?")
+      #:with default-constructor-name (derived-id "make-~a"))))
+
 (define-simple-macro
-  (define-reference-type id:id (field:id ...))
+  (define-reference-type id:reference-id (field:id ...)
+    (~alt (~optional (~seq #:constructor-name constructor:id)
+                     #:name "#:constructor-name option"
+                     #:defaults ([constructor #'id.default-constructor-name]))
+
+          (~optional (~seq #:predicate-name predicate:id)
+                     #:name "#:predicate-name option"
+                     #:defaults ([predicate #'id.default-predicate-name]))
+
+          (~optional (~seq #:inspector inspector:expr)
+                     #:name "#:inspector option"
+                     #:defaults ([inspector #'(current-inspector)]))
+
+          (~optional (~seq #:property-maker prop-maker:expr)
+                     #:name "#:property-maker option"
+                     #:defaults
+                     ([prop-maker #'make-default-reference-properties])))
+    ...)
+  
   #:with (field* ...) (cons (syntax-local-introduce #'name)
                             (syntax->list #'(field ...)))
   #:with (field-kw ...)
   (for/list ([field-stx (in-syntax #'(field* ...))])
     (string->keyword (symbol->string (syntax-e field-stx))))
   #:with fields #'(keyset field-kw ...)
-  #:with constructor (format-id #'id "make-~a" #'id)
-  #:with predicate (format-id #'id "~a?" #'id)
   #:with (field-accessor ...)
   (for/list ([field-stx (in-syntax #'(field* ...))])
-    (format-id field-stx "~a-~a" #'id field-stx))
+    (format-id field-stx "~a-~a" #'id.default-name field-stx))
   (begin
-    (define type (reference-type 'id fields))
-    (define descriptor (make-reference-implementation type))
+    (define type (reference-type 'id.default-name fields))
+    (define descriptor
+      (make-reference-implementation type
+                                     #:property-maker prop-maker
+                                     #:inspector inspector))
     (define constructor (reference-descriptor-constructor descriptor))
     (define predicate (reference-descriptor-predicate descriptor))
     (define field-accessor (make-reference-field-accessor descriptor 'field-kw))
