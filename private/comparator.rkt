@@ -10,6 +10,10 @@
    (->* ((-> any/c any/c comparison?))
         (#:name (or/c interned-symbol? #f))
         comparator?)]
+  [comparator-map
+   (->* (comparator? (-> any/c any/c))
+        (#:name (or/c interned-symbol? #f))
+        comparator?)]
   [comparison? predicate/c]
   [lesser comparison?]
   [greater comparison?]
