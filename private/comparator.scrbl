@@ -52,8 +52,21 @@ which (if either) is greater.
                           [#:name name (or/c interned-symbol? #f) #f])
          comparator?]{
  Constructs a @tech{comparator} named @racket[name] that compares values by
- calling @racket[function]. Most users should use @racket[comparison-map] to
- wrap an existing comparator instead of constructing one directly.}
+ calling @racket[function]. Most users should use @racket[comparator-map] to
+ wrap an existing comparator instead of constructing one directly.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define symbol<=>
+      (make-comparator
+       (λ (left right)
+         (cond [(symbol<? left right) lesser]
+               [(equal? left right) equivalent]
+               [else greater]))
+       #:name 'symbol<=>)))
+   (compare symbol<=> 'apple 'banana)
+   (compare symbol<=> 'apple 'aardvark))}
 
 @section{Predefined Comparators}
 
