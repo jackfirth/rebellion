@@ -128,29 +128,15 @@
   (test-case
     "byte-and"
     (for ([x (in-range 256)])
-      (check-equal? (byte-ref (byte-and x (byte 0 1 1 1 1 1 1 1)) 0) 0)
-      (check-equal? (byte-ref (byte-and (byte 0 1 1 1 1 1 1 1) x) 0) 0)
-
-      (check-equal? (byte-ref (byte-and x (byte 1 0 1 1 1 1 1 1)) 1) 0)
-      (check-equal? (byte-ref (byte-and (byte 1 0 1 1 1 1 1 1) x) 1) 0)
-
-      (check-equal? (byte-ref (byte-and x (byte 1 1 0 1 1 1 1 1)) 2) 0)
-      (check-equal? (byte-ref (byte-and (byte 1 1 0 1 1 1 1 1) x) 2) 0)
-
-      (check-equal? (byte-ref (byte-and x (byte 1 1 1 0 1 1 1 1)) 3) 0)
-      (check-equal? (byte-ref (byte-and (byte 1 1 1 0 1 1 1 1) x) 3) 0)
-
-      (check-equal? (byte-ref (byte-and x (byte 1 1 1 1 0 1 1 1)) 4) 0)
-      (check-equal? (byte-ref (byte-and (byte 1 1 1 1 0 1 1 1) x) 4) 0)
-
-      (check-equal? (byte-ref (byte-and x (byte 1 1 1 1 1 0 1 1)) 5) 0)
-      (check-equal? (byte-ref (byte-and (byte 1 1 1 1 1 0 1 1) x) 5) 0)
-      
-      (check-equal? (byte-ref (byte-and x (byte 1 1 1 1 1 1 0 1)) 6) 0)
-      (check-equal? (byte-ref (byte-and (byte 1 1 1 1 1 1 0 1) x) 6) 0)
-
-      (check-equal? (byte-ref (byte-and x (byte 1 1 1 1 1 1 1 0)) 7) 0)
-      (check-equal? (byte-ref (byte-and (byte 1 1 1 1 1 1 1 0) x) 7) 0))))
+      (for ([test-pattern (in-list (list (byte 0 1 1 1 1 1 1 1) (byte 1 0 1 1 1 1 1 1)
+                                         (byte 1 1 0 1 1 1 1 1) (byte 1 1 1 0 1 1 1 1)
+                                         (byte 1 1 1 1 0 1 1 1) (byte 1 1 1 1 1 0 1 1)
+                                         (byte 1 1 1 1 1 1 0 1) (byte 1 1 1 1 1 1 1 0)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-and x test-pattern) i) 0)))
+    (for* ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-and x y)
+                    (byte-and y x)))))
 
 (define (byte-or left right)
   (apply byte
@@ -161,30 +147,16 @@
 (module+ test
   (test-case
     "byte-or"
-    (for ([x (in-range 256)])
-      (check-equal? (byte-ref (byte-or x (byte 1 0 0 0 0 0 0 0)) 0) 1)
-      (check-equal? (byte-ref (byte-or (byte 1 0 0 0 0 0 0 0) x) 0) 1)
-
-      (check-equal? (byte-ref (byte-or x (byte 0 1 0 0 0 0 0 0)) 1) 1)
-      (check-equal? (byte-ref (byte-or (byte 0 1 0 0 0 0 0 0) x) 1) 1)
-
-      (check-equal? (byte-ref (byte-or x (byte 0 0 1 0 0 0 0 0)) 2) 1)
-      (check-equal? (byte-ref (byte-or (byte 0 0 1 0 0 0 0 0) x) 2) 1)
-
-      (check-equal? (byte-ref (byte-or x (byte 0 0 0 1 0 0 0 0)) 3) 1)
-      (check-equal? (byte-ref (byte-or (byte 0 0 0 1 0 0 0 0) x) 3) 1)
-
-      (check-equal? (byte-ref (byte-or x (byte 0 0 0 0 1 0 0 0)) 4) 1)
-      (check-equal? (byte-ref (byte-or (byte 0 0 0 0 1 0 0 0) x) 4) 1)
-
-      (check-equal? (byte-ref (byte-or x (byte 0 0 0 0 0 1 0 0)) 5) 1)
-      (check-equal? (byte-ref (byte-or (byte 0 0 0 0 0 1 0 0) x) 5) 1)
-      
-      (check-equal? (byte-ref (byte-or x (byte 0 0 0 0 0 0 1 0)) 6) 1)
-      (check-equal? (byte-ref (byte-or (byte 0 0 0 0 0 0 1 0) x) 6) 1)
-
-      (check-equal? (byte-ref (byte-or x (byte 0 0 0 0 0 0 0 1)) 7) 1)
-      (check-equal? (byte-ref (byte-or (byte 0 0 0 0 0 0 0 1) x) 7) 1))))
+    (for ([x (in-range 256)] [y (in-range 256)])
+      (for ([test-pattern (in-list (list (byte 1 0 0 0 0 0 0 0) (byte 0 1 0 0 0 0 0 0)
+                                         (byte 0 0 1 0 0 0 0 0) (byte 0 0 0 1 0 0 0 0)
+                                         (byte 0 0 0 0 1 0 0 0) (byte 0 0 0 0 0 1 0 0)
+                                         (byte 0 0 0 0 0 0 1 0) (byte 0 0 0 0 0 0 0 1)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-or x test-pattern) i) 1)))
+    (for ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-or x y)
+                    (byte-or y x)))))
 
 (define (byte-not b)
   (apply byte
@@ -202,56 +174,23 @@
       (check-equal? (byte-ref (byte-not x) 4) (bitwise-xor (byte-ref x 4) 1))
       (check-equal? (byte-ref (byte-not x) 5) (bitwise-xor (byte-ref x 5) 1))
       (check-equal? (byte-ref (byte-not x) 6) (bitwise-xor (byte-ref x 6) 1))
-      (check-equal? (byte-ref (byte-not x) 7) (bitwise-xor (byte-ref x 7) 1)))))
+      (check-equal? (byte-ref (byte-not x) 7) (bitwise-xor (byte-ref x 7) 1))
+      
+      (check-equal? (+ x (byte-not x)) 255))))
 
 (define (byte-xor left right)
   (apply byte
          (for/list ([i (in-range 8)])
            (bitwise-xor (byte-ref left i)
                         (byte-ref right i))))) 
+
 (module+ test
   (test-case
     "byte-xor"
     (for ([x (in-range 256)])
-      (check-equal? (byte-ref (byte-xor x 0) 0)
-                    (byte-ref x 0))
-      (check-equal? (byte-ref (byte-xor x 255) 0)
-                    (byte-ref (byte-not x) 0))
-
-      (check-equal? (byte-ref (byte-xor x 0) 1)
-                    (byte-ref x 1))
-      (check-equal? (byte-ref (byte-xor x 255) 1)
-                    (byte-ref (byte-not x) 1))
-
-      (check-equal? (byte-ref (byte-xor x 0) 2)
-                    (byte-ref x 2))
-      (check-equal? (byte-ref (byte-xor x 255) 2)
-                    (byte-ref (byte-not x) 2))
-
-      (check-equal? (byte-ref (byte-xor x 0) 3)
-                    (byte-ref x 3))
-      (check-equal? (byte-ref (byte-xor x 255) 3)
-                    (byte-ref (byte-not x) 3))
-
-      (check-equal? (byte-ref (byte-xor x 0) 4)
-                    (byte-ref x 4))
-      (check-equal? (byte-ref (byte-xor x 255) 4)
-                    (byte-ref (byte-not x) 4))
-
-      (check-equal? (byte-ref (byte-xor x 0) 5)
-                    (byte-ref x 5))
-      (check-equal? (byte-ref (byte-xor x 255) 5)
-                    (byte-ref (byte-not x) 5))
-
-      (check-equal? (byte-ref (byte-xor x 0) 6)
-                    (byte-ref x 6))
-      (check-equal? (byte-ref (byte-xor x 255) 6)
-                    (byte-ref (byte-not x) 6))
-
-      (check-equal? (byte-ref (byte-xor x 0) 7)
-                    (byte-ref x 7))
-      (check-equal? (byte-ref (byte-xor x 255) 7)
-                    (byte-ref (byte-not x) 7)))))
+      (check-equal? (byte-xor x 0) x)
+      (check-equal? (byte-xor x 255) (byte-not x))
+      (check-equal? (byte-xor x x) 0))))
 
 
 (define (byte-nand left right)
@@ -265,29 +204,15 @@
   (test-case
     "byte-nand"
     (for ([x (in-range 256)])
-      (check-equal? (byte-ref (byte-nand x (byte 0 1 1 1 1 1 1 1)) 0) 1)
-      (check-equal? (byte-ref (byte-nand (byte 0 1 1 1 1 1 1 1) x) 0) 1)
-
-      (check-equal? (byte-ref (byte-nand x (byte 1 0 1 1 1 1 1 1)) 1) 1)
-      (check-equal? (byte-ref (byte-nand (byte 1 0 1 1 1 1 1 1) x) 1) 1)
-
-      (check-equal? (byte-ref (byte-nand x (byte 1 1 0 1 1 1 1 1)) 2) 1)
-      (check-equal? (byte-ref (byte-nand (byte 1 1 0 1 1 1 1 1) x) 2) 1)
-
-      (check-equal? (byte-ref (byte-nand x (byte 1 1 1 0 1 1 1 1)) 3) 1)
-      (check-equal? (byte-ref (byte-nand (byte 1 1 1 0 1 1 1 1) x) 3) 1)
-
-      (check-equal? (byte-ref (byte-nand x (byte 1 1 1 1 0 1 1 1)) 4) 1)
-      (check-equal? (byte-ref (byte-nand (byte 1 1 1 1 0 1 1 1) x) 4) 1)
-
-      (check-equal? (byte-ref (byte-nand x (byte 1 1 1 1 1 0 1 1)) 5) 1)
-      (check-equal? (byte-ref (byte-nand (byte 1 1 1 1 1 0 1 1) x) 5) 1)
-      
-      (check-equal? (byte-ref (byte-nand x (byte 1 1 1 1 1 1 0 1)) 6) 1)
-      (check-equal? (byte-ref (byte-nand (byte 1 1 1 1 1 1 0 1) x) 6) 1)
-
-      (check-equal? (byte-ref (byte-nand x (byte 1 1 1 1 1 1 1 0)) 7) 1)
-      (check-equal? (byte-ref (byte-nand (byte 1 1 1 1 1 1 1 0) x) 7) 1))))
+      (for ([test-pattern (in-list (list (byte 0 1 1 1 1 1 1 1) (byte 1 0 1 1 1 1 1 1)
+                                         (byte 1 1 0 1 1 1 1 1) (byte 1 1 1 0 1 1 1 1)
+                                         (byte 1 1 1 1 0 1 1 1) (byte 1 1 1 1 1 0 1 1)
+                                         (byte 1 1 1 1 1 1 0 1) (byte 1 1 1 1 1 1 1 0)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-nand x test-pattern) i) 1)))
+    (for* ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-nand x y)
+                    (byte-nand y x)))))
 
 (define (byte-nor left right)
   (apply byte
@@ -298,31 +223,17 @@
 
 (module+ test
   (test-case
-    "byte-nor"
-    (for ([x (in-range 256)])
-      (check-equal? (byte-ref (byte-nor x (byte 1 0 0 0 0 0 0 0)) 0) 0)
-      (check-equal? (byte-ref (byte-nor (byte 1 0 0 0 0 0 0 0) x) 0) 0)
-
-      (check-equal? (byte-ref (byte-nor x (byte 0 1 0 0 0 0 0 0)) 1) 0)
-      (check-equal? (byte-ref (byte-nor (byte 0 1 0 0 0 0 0 0) x) 1) 0)
-
-      (check-equal? (byte-ref (byte-nor x (byte 0 0 1 0 0 0 0 0)) 2) 0)
-      (check-equal? (byte-ref (byte-nor (byte 0 0 1 0 0 0 0 0) x) 2) 0)
-
-      (check-equal? (byte-ref (byte-nor x (byte 0 0 0 1 0 0 0 0)) 3) 0)
-      (check-equal? (byte-ref (byte-nor (byte 0 0 0 1 0 0 0 0) x) 3) 0)
-
-      (check-equal? (byte-ref (byte-nor x (byte 0 0 0 0 1 0 0 0)) 4) 0)
-      (check-equal? (byte-ref (byte-nor (byte 0 0 0 0 1 0 0 0) x) 4) 0)
-
-      (check-equal? (byte-ref (byte-nor x (byte 0 0 0 0 0 1 0 0)) 5) 0)
-      (check-equal? (byte-ref (byte-nor (byte 0 0 0 0 0 1 0 0) x) 5) 0)
-      
-      (check-equal? (byte-ref (byte-nor x (byte 0 0 0 0 0 0 1 0)) 6) 0)
-      (check-equal? (byte-ref (byte-nor (byte 0 0 0 0 0 0 1 0) x) 6) 0)
-
-      (check-equal? (byte-ref (byte-nor x (byte 0 0 0 0 0 0 0 1)) 7) 0)
-      (check-equal? (byte-ref (byte-nor (byte 0 0 0 0 0 0 0 1) x) 7) 0))))
+    "byte-or"
+    (for ([x (in-range 256)] [y (in-range 256)])
+      (for ([test-pattern (in-list (list (byte 1 0 0 0 0 0 0 0) (byte 0 1 0 0 0 0 0 0)
+                                         (byte 0 0 1 0 0 0 0 0) (byte 0 0 0 1 0 0 0 0)
+                                         (byte 0 0 0 0 1 0 0 0) (byte 0 0 0 0 0 1 0 0)
+                                         (byte 0 0 0 0 0 0 1 0) (byte 0 0 0 0 0 0 0 1)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-nor x test-pattern) i) 0)))
+    (for ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-nor x y)
+                    (byte-nor y x)))))
 
 (define (byte-xnor left right)
   (apply byte
@@ -333,47 +244,11 @@
 
 (module+ test
   (test-case
-    "byte-xor"
+    "byte-xnor"
     (for ([x (in-range 256)])
-      (check-equal? (byte-ref (byte-xnor x 0) 0)
-                    (byte-ref (byte-not x) 0))
-      (check-equal? (byte-ref (byte-xnor x 255) 0)
-                    (byte-ref x 0))
-
-      (check-equal? (byte-ref (byte-xnor x 0) 1)
-                    (byte-ref (byte-not x) 1))
-      (check-equal? (byte-ref (byte-xnor x 255) 1)
-                    (byte-ref x 1))
-
-      (check-equal? (byte-ref (byte-xnor x 0) 2)
-                    (byte-ref (byte-not x) 2))
-      (check-equal? (byte-ref (byte-xnor x 255) 2)
-                    (byte-ref x 2))
-
-      (check-equal? (byte-ref (byte-xnor x 0) 3)
-                    (byte-ref (byte-not x) 3))
-      (check-equal? (byte-ref (byte-xnor x 255) 3)
-                    (byte-ref x 3))
-
-      (check-equal? (byte-ref (byte-xnor x 0) 4)
-                    (byte-ref (byte-not x) 4))
-      (check-equal? (byte-ref (byte-xnor x 255) 4)
-                    (byte-ref x 4))
-
-      (check-equal? (byte-ref (byte-xnor x 0) 5)
-                    (byte-ref (byte-not x) 5))
-      (check-equal? (byte-ref (byte-xnor x 255) 5)
-                    (byte-ref x 5))
-
-      (check-equal? (byte-ref (byte-xnor x 0) 6)
-                    (byte-ref (byte-not x) 6))
-      (check-equal? (byte-ref (byte-xnor x 255) 6)
-                    (byte-ref x 6))
-
-      (check-equal? (byte-ref (byte-xnor x 0) 7)
-                    (byte-ref (byte-not x) 7))
-      (check-equal? (byte-ref (byte-xnor x 255) 7)
-                    (byte-ref x 7)))))
+      (check-equal? (byte-xnor x 0) (byte-not x))
+      (check-equal? (byte-xnor x 255) x)
+      (check-equal? (byte-xnor x x) 255))))
                     
 (define (in-byte b)
   (list (byte-ref b 0) (byte-ref b 1) (byte-ref b 2) (byte-ref b 3)
