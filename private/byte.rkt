@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/contract/base)
+(require racket/contract/base
+         (only-in racket/sequence sequence/c))
 
 (provide
  (contract-out
@@ -15,7 +16,7 @@
   [byte-xor (-> byte? byte? byte?)]
   [byte-nand (-> byte? byte? byte?)]
   [byte-nor (-> byte? byte? byte?)]
-  [in-byte (-> byte? sequence?)]))
+  [in-byte (-> byte? (sequence/c #:min-count 8 bit?))]))
 
 (require rebellion/binary/bit)
 
@@ -375,15 +376,8 @@
                     (byte-ref x 7)))))
                     
 (define (in-byte b)
-  (make-do-sequence
-   (λ ()
-     (values car
-             cdr
-             (list (byte-ref b 0) (byte-ref b 1) (byte-ref b 2) (byte-ref b 3)
-                   (byte-ref b 4) (byte-ref b 5) (byte-ref b 6) (byte-ref b 7))
-             (λ (bs) (not (null? bs)))
-             #false
-             #false))))
+  (list (byte-ref b 0) (byte-ref b 1) (byte-ref b 2) (byte-ref b 3)
+        (byte-ref b 4) (byte-ref b 5) (byte-ref b 6) (byte-ref b 7)))
 
 (module+ test
   (test-case
