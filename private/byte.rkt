@@ -14,7 +14,8 @@
   [byte-not (-> byte? byte?)]
   [byte-xor (-> byte? byte? byte?)]
   [byte-nand (-> byte? byte? byte?)]
-  [byte-nor (-> byte? byte? byte?)]))))
+  [byte-nor (-> byte? byte? byte?)]
+  [in-byte (-> byte? sequence?)]))
 
 (require rebellion/binary/bit)
 
@@ -372,3 +373,22 @@
                     (byte-ref (byte-not x) 7))
       (check-equal? (byte-ref (byte-xnor x 255) 7)
                     (byte-ref x 7)))))
+                    
+(define (in-byte b)
+  (make-do-sequence
+   (λ ()
+     (values car
+             cdr
+             (list (byte-ref b 0) (byte-ref b 1) (byte-ref b 2) (byte-ref b 3)
+                   (byte-ref b 4) (byte-ref b 5) (byte-ref b 6) (byte-ref b 7))
+             (λ (bs) (not (null? bs)))
+             #false
+             #false))))
+
+(module+ test
+  (test-case
+    "in-byte sequence"
+    (for ([x (in-range 256)])
+      (for ([b (in-byte x)]
+            [i (in-range 8)])
+        (check-equal? b (byte-ref x i))))))
