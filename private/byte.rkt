@@ -147,7 +147,7 @@
 (module+ test
   (test-case
     "byte-or"
-    (for ([x (in-range 256)] [y (in-range 256)])
+    (for ([x (in-range 256)])
       (for ([test-pattern (in-list (list (byte 1 0 0 0 0 0 0 0) (byte 0 1 0 0 0 0 0 0)
                                          (byte 0 0 1 0 0 0 0 0) (byte 0 0 0 1 0 0 0 0)
                                          (byte 0 0 0 0 1 0 0 0) (byte 0 0 0 0 0 1 0 0)
