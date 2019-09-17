@@ -41,7 +41,8 @@
    (->* (reducer?)
         (#:domain (-> any/c any/c) #:range (-> any/c any/c))
         reducer?)]
-  [reducer-filter (-> reducer? predicate/c reducer?)]))
+  [reducer-filter (-> reducer? predicate/c reducer?)]
+  [reducer-limit (-> reducer? natural? reducer?)]))
 
 (require (for-syntax racket/base
                      racket/contract/base
@@ -53,7 +54,9 @@
          rebellion/base/option
          rebellion/base/symbol
          rebellion/base/variant
+         rebellion/type/record
          rebellion/type/reference
+         rebellion/type/wrapper
          syntax/parse/define)
 
 (begin-for-syntax
@@ -162,6 +165,58 @@
                 #:finisher (reducer-finisher red)
                 #:early-finisher (reducer-early-finisher red)))
 
+(define (reducer-limit red amount)
+  (define-record-type limited-state (amount-left original-state))
+  (define-wrapper-type original-result)
+  (define-wrapper-type limited-result)
+
+  (define original-consumer (reducer-consumer red))
+  (define original-starter (reducer-starter red))
+  (define original-finisher (reducer-finisher red))
+  (define original-early-finisher (reducer-early-finisher red))
+
+  (define (start)
+    (define original (original-starter))
+    (cond
+      [(zero? amount)
+       (variant #:early-finish
+                (limited-result (variant-value original)))]
+      [(variant-tagged-as? original '#:consume)
+       (define state
+         (limited-state #:amount-left amount
+                        #:original-state (variant-value original)))
+       (variant #:consume state)]
+      [else
+       (variant #:early-finsih (original-result (variant-value original)))]))
+
+  (define (consume state element)
+    (define next-state
+      (original-consumer (limited-state-original-state state) element))
+    (define next-amount (sub1 (limited-state-amount-left state)))
+    (cond
+      [(variant-tagged-as? next-state '#:early-finish)
+       (variant #:early-finish (original-result (variant-value next-state)))]
+      [(zero? next-amount)
+       (variant #:early-finish (limited-result (variant-value next-state)))]
+      [else
+       (variant #:consume
+                (limited-state #:amount-left next-amount
+                               #:original-state (variant-value next-state)))]))
+
+  (define (finish state)
+    (original-finisher (limited-state-original-state state)))
+
+  (define (early-finish state)
+    (if (original-result? state)
+        (original-early-finisher (original-result-value state))
+        (original-finisher (limited-result-value state))))
+
+  (make-reducer #:starter start
+                #:consumer consume
+                #:finisher finish
+                #:early-finisher early-finish
+                #:name 'limited))
+
 (module+ test
   (test-case "reducer-map"
     (define into-sum/string
@@ -169,7 +224,19 @@
     (check-equal? (reduce into-sum/string "1" "2" "3" "4" "5") "15"))
   (test-case "reducer-filter"
     (define numbers-into-sum (reducer-filter into-sum number?))
-    (check-equal? (reduce numbers-into-sum 1 'a 'b 2 3 4 'c 5 'd) 15)))
+    (check-equal? (reduce numbers-into-sum 1 'a 'b 2 3 4 'c 5 'd) 15))
+  (test-case "reducer-limit"
+    (check-equal? (reduce-all (reducer-limit into-string 3) "hello") "hel")
+    (check-equal? (reduce-all (reducer-limit into-string 9) "hello") "hello")
+    (check-equal? (reduce-all (reducer-limit into-string 0) "hello") "")
+    (check-equal? (reduce-all (reducer-limit (into-nth 2) 4) "hello")
+                  (present #\l))
+    (check-equal? (reduce-all (reducer-limit (into-nth 2) 1) "hello") absent)
+    (check-equal? (reduce-all (reducer-limit (into-nth 2) 4) "he") absent)
+    (check-equal? (reduce-all (reducer-limit (into-nth 2) 4) "hel")
+                  (present #\l))
+    (check-equal? (reduce-all (reducer-limit into-list 5) (in-naturals))
+                  (list 0 1 2 3 4))))
 
 (define-simple-macro
   (for/reducer/derived original reducer-expr:expr (for-clause ...)
@@ -220,15 +287,15 @@
 (module+ test
   (test-case "for/reducer"
     (check-equal? (for/reducer into-list
-                    ([n (in-naturals)]
-                     [char (in-string "ab1c23d4ef")])
+                               ([n (in-naturals)]
+                                [char (in-string "ab1c23d4ef")])
                     (if (char-alphabetic? char) n 'digit))
                   (list 0 1 'digit 3 'digit 'digit 6 'digit 8 9)))
   (test-case "for*/reducer"
     (check-equal? (for*/reducer into-string
-                    ([str (in-list (list "foo1" "bar2" "baz3"))]
-                     [char (in-string str)]
-                     #:when (char-alphabetic? char))
+                                ([str (in-list (list "foo1" "bar2" "baz3"))]
+                                 [char (in-string str)]
+                                 #:when (char-alphabetic? char))
                     char)
                   "foobarbaz")))
 

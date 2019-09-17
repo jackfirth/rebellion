@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/math
                      racket/sequence
                      racket/vector
                      rebellion/base/immutable-string
@@ -294,6 +295,14 @@ reducers with increasing power and complexity:
    #:eval (make-evaluator) #:once
    (define numbers-into-sum (reducer-filter into-sum number?))
    (reduce numbers-into-sum 1 'a 2 3 'b 'c 'd 4 'e 5))}
+
+@defproc[(reducer-limit [red reducer?] [amount natural?]) reducer?]{
+ Wraps @racket[red] to only accept at most @racket[amount] elements before
+ terminating the reduction.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (reducer-limit into-string 5) "hello world"))}
 
 @section{Iteration and Comprehension with Reducers}
 
