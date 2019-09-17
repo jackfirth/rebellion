@@ -111,3 +111,14 @@ function, and absent values are represented by the @racket[absent] constant.
    #:eval (make-evaluator) #:once
    (option-get (present 42) 0)
    (option-get absent 0))}
+
+@section{Contracts for Option Values}
+
+@defproc[(option/c [contract chaperone-contract?]) chaperone-contract?]{
+ Constructs a contract for @tech{option} values that accepts either the @tech{
+  absent} value or a @tech{present} value that satisfies @racket[contract].
+ Equivalent to @racket[(or/c absent? (present/c contract))].}
+
+@defproc[(present/c [contract chaperone-contract?]) chaperone-contract?]{
+ Constructs a contract for @tech{present} values that satisfy @racket[
+ contract].}

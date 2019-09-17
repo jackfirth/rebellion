@@ -15,9 +15,13 @@
   [present? predicate/c]
   [present-value (-> present? any/c)]
   [absent absent?]
-  [absent? predicate/c]))
+  [absent? predicate/c]
+  [option/c (-> chaperone-contract? chaperone-contract?)]
+  [present/c (-> chaperone-contract? chaperone-contract?)]))
 
-(require rebellion/type/singleton
+(require racket/contract/combinator
+         rebellion/private/contract-projection
+         rebellion/type/singleton
          rebellion/type/wrapper)
 
 (module+ test
@@ -68,3 +72,30 @@
     (check-equal? (option-case (present 2) #:present add1 #:absent kaboom) 3)
     (check-exn exn:kaboom?
                (λ () (option-case absent #:present add1 #:absent kaboom)))))
+
+(define (option/c contract*)
+  (define contract (coerce-contract 'option/c contract*))
+  (define name (build-compound-type-name 'option/c contract))
+  (define (late-neg blame)
+    (define present-projection (contract-present-projection contract blame))
+    (projection-and (contract-get-projection option? blame)
+                    (projection-filter present-projection present?)))
+  (define maker
+    (if (flat-contract? contract) make-flat-contract make-chaperone-contract))
+  (maker #:name name #:late-neg-projection late-neg))
+
+(define (present/c contract*)
+  (define contract (coerce-contract 'present/c contract*))
+  (define name (build-compound-type-name 'present/c contract))
+  (define (late-neg blame)
+    (projection-and (contract-get-projection present? blame)
+                    (contract-present-projection contract blame)))
+  (define maker
+    (if (flat-contract? contract) make-flat-contract make-chaperone-contract))
+  (maker #:name name #:late-neg-projection late-neg))
+
+(define (contract-present-projection contract blame)
+  (define underlying-projection
+    (contract-get-projection contract
+                             (blame-add-context blame "the present option in")))
+  (projection-convert underlying-projection present-value present))
