@@ -16,6 +16,7 @@
   [byte-xor (-> byte? byte? byte?)]
   [byte-nand (-> byte? byte? byte?)]
   [byte-nor (-> byte? byte? byte?)]
+  [byte-xnor (-> byte? byte? byte?)]
   [in-byte (-> byte? (sequence/c #:min-count 8 bit?))]))
 
 (require rebellion/binary/bit)
