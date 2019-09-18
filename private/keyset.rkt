@@ -6,7 +6,7 @@
  keyset
  (contract-out
   [empty-keyset keyset?]
-  [keyset? predicate?]
+  [keyset? predicate/c]
   [keyset-contains? (-> keyset? keyword? boolean?)]
   [keyset-index-of
    (->i ([keys keyset?] [kw keyword?])
@@ -27,15 +27,11 @@
 (require (for-syntax racket/base
                      racket/list)
          racket/list
+         racket/math
          racket/sequence
          racket/set
          rebellion/base/generative-token
          rebellion/collection/immutable-vector
-         rebellion/name
-         (except-in rebellion/predicate predicate/c)
-         rebellion/private/boolean
-         rebellion/private/keyword
-         rebellion/private/natural
          syntax/parse/define)
 
 (module+ test
@@ -54,8 +50,7 @@
 
 (define keyset-datatype-token (make-generative-token))
 
-(struct keyset-impl (sorted-vector index-hash)
-  #:reflection-name 'keyset
+(struct keyset (sorted-vector index-hash)
   #:constructor-name plain-make-keyset
   #:omit-define-syntaxes
 
@@ -69,10 +64,6 @@
    (define hash2-proc hash-proc)]
   
   #:methods gen:custom-write [(define write-proc write-keyset)])
-
-(define keyset? (make-predicate keyset-impl? #:name (symbolic-name 'keyset?)))
-(define keyset-sorted-vector keyset-impl-sorted-vector)
-(define keyset-index-hash keyset-impl-index-hash)
 
 (define (keyset-size keys)
   (vector-length (keyset-sorted-vector keys)))
