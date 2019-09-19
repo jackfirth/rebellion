@@ -5,7 +5,6 @@
                      rebellion/binary/bit
                      rebellion/binary/byte)
           (submod rebellion/private/scribble-evaluator-factory doc)
-          (only-in racket/base for/vector)
           scribble/example)
 
 @(define make-evaluator
@@ -96,7 +95,7 @@ integer between @racket[0] and @racket[255].
 
 @defproc[(byte-not [b byte?])
          byte?]{
- Performs a bitwise or operation on @racket[b], inverting all bits.
+ Performs a bitwise not operation on @racket[b], inverting all bits.
   
  @(examples
    #:eval (make-evaluator) #:once
