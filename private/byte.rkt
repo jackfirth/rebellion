@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/contract/base)
+(require racket/contract/base
+         (only-in racket/sequence sequence/c))
 
 (provide
  (contract-out
@@ -8,7 +9,15 @@
   [byte-clear-leftmost-bits (-> byte? (integer-in 0 8) byte?)]
   [byte-clear-rightmost-bits (-> byte? (integer-in 0 8) byte?)]
   [byte-drop-rightmost-bits (-> byte? (integer-in 0 8) byte?)]
-  [byte-ref (-> byte? (integer-in 0 7) bit?)]))
+  [byte-ref (-> byte? (integer-in 0 7) bit?)]
+  [byte-and (-> byte? byte? byte?)]
+  [byte-or (-> byte? byte? byte?)]
+  [byte-not (-> byte? byte?)]
+  [byte-xor (-> byte? byte? byte?)]
+  [byte-nand (-> byte? byte? byte?)]
+  [byte-nor (-> byte? byte? byte?)]
+  [byte-xnor (-> byte? byte? byte?)]
+  [in-byte (-> byte? (sequence/c #:min-count 8 bit?))]))
 
 (require rebellion/binary/bit)
 
@@ -109,3 +118,147 @@
           (check-equal? (byte-ref abcdefgh 5) f)
           (check-equal? (byte-ref abcdefgh 6) g)
           (check-equal? (byte-ref abcdefgh 7) h))))))
+
+(define (byte-and left right)
+  (apply byte
+         (for/list ([i (in-range 8)])
+           (bitwise-and (byte-ref left i)
+                        (byte-ref right i))))) 
+
+(module+ test
+  (test-case
+    "byte-and"
+    (for ([x (in-range 256)])
+      (for ([test-pattern (in-list (list (byte 0 1 1 1 1 1 1 1) (byte 1 0 1 1 1 1 1 1)
+                                         (byte 1 1 0 1 1 1 1 1) (byte 1 1 1 0 1 1 1 1)
+                                         (byte 1 1 1 1 0 1 1 1) (byte 1 1 1 1 1 0 1 1)
+                                         (byte 1 1 1 1 1 1 0 1) (byte 1 1 1 1 1 1 1 0)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-and x test-pattern) i) 0)))
+    (for* ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-and x y)
+                    (byte-and y x)))))
+
+(define (byte-or left right)
+  (apply byte
+         (for/list ([i (in-range 8)])
+           (bitwise-ior (byte-ref left i)
+                       (byte-ref right i))))) 
+
+(module+ test
+  (test-case
+    "byte-or"
+    (for ([x (in-range 256)])
+      (for ([test-pattern (in-list (list (byte 1 0 0 0 0 0 0 0) (byte 0 1 0 0 0 0 0 0)
+                                         (byte 0 0 1 0 0 0 0 0) (byte 0 0 0 1 0 0 0 0)
+                                         (byte 0 0 0 0 1 0 0 0) (byte 0 0 0 0 0 1 0 0)
+                                         (byte 0 0 0 0 0 0 1 0) (byte 0 0 0 0 0 0 0 1)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-or x test-pattern) i) 1)))
+    (for ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-or x y)
+                    (byte-or y x)))))
+
+(define (byte-not b)
+  (apply byte
+         (for/list ([i (in-range 8)])
+           (bitwise-xor (byte-ref b i) 1)))) 
+
+(module+ test
+  (test-case
+    "byte-not"
+    (for ([x (in-range 256)])
+      (check-equal? (byte-ref (byte-not x) 0) (bitwise-xor (byte-ref x 0) 1))
+      (check-equal? (byte-ref (byte-not x) 1) (bitwise-xor (byte-ref x 1) 1))
+      (check-equal? (byte-ref (byte-not x) 2) (bitwise-xor (byte-ref x 2) 1))
+      (check-equal? (byte-ref (byte-not x) 3) (bitwise-xor (byte-ref x 3) 1))
+      (check-equal? (byte-ref (byte-not x) 4) (bitwise-xor (byte-ref x 4) 1))
+      (check-equal? (byte-ref (byte-not x) 5) (bitwise-xor (byte-ref x 5) 1))
+      (check-equal? (byte-ref (byte-not x) 6) (bitwise-xor (byte-ref x 6) 1))
+      (check-equal? (byte-ref (byte-not x) 7) (bitwise-xor (byte-ref x 7) 1))
+      
+      (check-equal? (+ x (byte-not x)) 255))))
+
+(define (byte-xor left right)
+  (apply byte
+         (for/list ([i (in-range 8)])
+           (bitwise-xor (byte-ref left i)
+                        (byte-ref right i))))) 
+
+(module+ test
+  (test-case
+    "byte-xor"
+    (for ([x (in-range 256)])
+      (check-equal? (byte-xor x 0) x)
+      (check-equal? (byte-xor x 255) (byte-not x))
+      (check-equal? (byte-xor x x) 0))))
+
+
+(define (byte-nand left right)
+  (apply byte
+         (for/list ([i (in-range 8)])
+           (bitwise-xor (bitwise-and (byte-ref left i)
+                                     (byte-ref right i))
+                        1)))) 
+
+(module+ test
+  (test-case
+    "byte-nand"
+    (for ([x (in-range 256)])
+      (for ([test-pattern (in-list (list (byte 0 1 1 1 1 1 1 1) (byte 1 0 1 1 1 1 1 1)
+                                         (byte 1 1 0 1 1 1 1 1) (byte 1 1 1 0 1 1 1 1)
+                                         (byte 1 1 1 1 0 1 1 1) (byte 1 1 1 1 1 0 1 1)
+                                         (byte 1 1 1 1 1 1 0 1) (byte 1 1 1 1 1 1 1 0)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-nand x test-pattern) i) 1)))
+    (for* ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-nand x y)
+                    (byte-nand y x)))))
+
+(define (byte-nor left right)
+  (apply byte
+         (for/list ([i (in-range 8)])
+           (bitwise-xor (bitwise-ior (byte-ref left i)
+                                     (byte-ref right i))
+                        1)))) 
+
+(module+ test
+  (test-case
+    "byte-nor"
+    (for ([x (in-range 256)] [y (in-range 256)])
+      (for ([test-pattern (in-list (list (byte 1 0 0 0 0 0 0 0) (byte 0 1 0 0 0 0 0 0)
+                                         (byte 0 0 1 0 0 0 0 0) (byte 0 0 0 1 0 0 0 0)
+                                         (byte 0 0 0 0 1 0 0 0) (byte 0 0 0 0 0 1 0 0)
+                                         (byte 0 0 0 0 0 0 1 0) (byte 0 0 0 0 0 0 0 1)))]
+            [i (in-range 8)])
+        (check-equal? (byte-ref (byte-nor x test-pattern) i) 0)))
+    (for ([x (in-range 256)] [y (in-range 256)])
+      (check-equal? (byte-nor x y)
+                    (byte-nor y x)))))
+
+(define (byte-xnor left right)
+  (apply byte
+         (for/list ([i (in-range 8)])
+           (bitwise-xor (bitwise-xor (byte-ref left i)
+                                     (byte-ref right i))
+                        1)))) 
+
+(module+ test
+  (test-case
+    "byte-xnor"
+    (for ([x (in-range 256)])
+      (check-equal? (byte-xnor x 0) (byte-not x))
+      (check-equal? (byte-xnor x 255) x)
+      (check-equal? (byte-xnor x x) 255))))
+                    
+(define (in-byte b)
+  (list (byte-ref b 0) (byte-ref b 1) (byte-ref b 2) (byte-ref b 3)
+        (byte-ref b 4) (byte-ref b 5) (byte-ref b 6) (byte-ref b 7)))
+
+(module+ test
+  (test-case
+    "in-byte sequence"
+    (for ([x (in-range 256)])
+      (for ([b (in-byte x)]
+            [i (in-range 8)])
+        (check-equal? b (byte-ref x i))))))
