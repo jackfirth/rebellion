@@ -28,24 +28,6 @@ value.
 @defproc[(result? [v any/c]) boolean?]{
  A predicate for @tech{result} values.}
 
-@defproc[(success? [v any/c]) boolean?]{
- A predicate for successful @tech{result} values. Implies @racket[result?].}
-
-@defproc[(success [v any/c]) success?]{
- Constructs a successful @tech{result}.}
-
-@defproc[(success-value [succ success?]) any/c]{
- Returns the value wrapped by @racket[succ].}
-
-@defproc[(failure? [v any/c]) boolean?]{
- A predicate for failed @tech{result} values. Implies @racket[result?].}
-
-@defproc[(failure [err any/c]) failure?]{
- Constructs a failed @tech{result}.}
-
-@defproc[(failure-error [fail failure?]) any/c]{
- Returns the error value wrapped by @racket[fail].}
-
 @defproc[(result-case [result result?]
                       [#:success success-handler (-> any/c any/c)]
                       [#:failure failure-handler (-> any/c any/c)])
@@ -58,3 +40,40 @@ value.
    #:eval (make-evaluator) #:once
    (result-case (success 42) #:success add1 #:failure displayln)
    (result-case (failure "oh no!") #:success add1 #:failure displayln))}
+
+@defproc[(result/c [success-contract chaperone-contract?]
+                   [failure-contract chaperone-contract?]) chaperone-contract?]{
+ Constructs a contract that accepts successful @tech{result} values matching
+ @racket[success-contract] and failed result values matching @racket[
+ failure-contract]. Equivalent to @racket[
+ (or/c (success/c success-contract) (failure/c failure-contract))].}
+
+@section{Successful Results}
+
+@defproc[(success? [v any/c]) boolean?]{
+ A predicate for successful @tech{result} values. Implies @racket[result?].}
+
+@defproc[(success [v any/c]) success?]{
+ Constructs a successful @tech{result}.}
+
+@defproc[(success-value [succ success?]) any/c]{
+ Returns the value wrapped by @racket[succ].}
+
+@defproc[(success/c [contract chaperone-contract?]) chaperone-contract?]{
+ Constructs a contract that accepts successful @tech{result} values matching
+ @racket[contract].}
+
+@section{Failed Results}
+
+@defproc[(failure? [v any/c]) boolean?]{
+ A predicate for failed @tech{result} values. Implies @racket[result?].}
+
+@defproc[(failure [err any/c]) failure?]{
+ Constructs a failed @tech{result}.}
+
+@defproc[(failure-error [fail failure?]) any/c]{
+ Returns the error value wrapped by @racket[fail].}
+
+@defproc[(failure/c [contract chaperone-contract?]) chaperone-contract?]{
+ Constructs a contract that accepts failed @tech{result} values matching
+ @racket[contract].}
