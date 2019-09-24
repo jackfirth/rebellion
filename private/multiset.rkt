@@ -9,6 +9,7 @@
   [multiset (-> any/c ... multiset?)]
   [multiset? (-> any/c boolean?)]
   [multiset-add (-> multiset? any/c multiset?)]
+  [multiset-add-all (-> multiset? sequence? multiset?)]
   [multiset-remove-once (-> multiset? any/c multiset?)]
   [multiset-contains? (-> multiset? any/c boolean?)]
   [multiset-frequency (-> multiset? any/c natural?)]
@@ -90,6 +91,22 @@
      (constructor:multiset (sub1 (multiset-size set))
                            (hash-update (multiset-frequencies set) v sub1))]))
 
+(define (multiset-union a b)
+  (define a-freqs (multiset-frequencies a))
+  (define b-freqs (multiset-frequencies b))
+  (define vals (set-union (list->set (hash-keys a-freqs))
+                          (list->set (hash-keys b-freqs))))
+  (define union-freqs
+    (for/hash ([v (in-set vals)])
+      (values v (+ (hash-ref a-freqs v 0) (hash-ref b-freqs v 0)))))
+  (constructor:multiset (+ (multiset-size a) (multiset-size b)) union-freqs))
+
+(define (multiset-add-all set seq)
+  (multiset-union set
+                  (if (multiset? seq)
+                      seq
+                      (sequence->multiset seq))))
+
 (define into-multiset
   (make-fold-reducer multiset-add empty-multiset #:name 'into-multiset))
 
@@ -139,6 +156,11 @@
                   (multiset #\h #\e #\l #\l #\o))
     (check-equal? (for/set ([letter (in-multiset letters)]) letter)
                   (set 'a 'b 'c 'd)))
+  (test-case "add-all"
+    (check-equal? (multiset-add-all (multiset 1 1 2 3) (in-range 0 5))
+                  (multiset 0 1 1 1 2 2 3 3 4))
+    (check-equal? (multiset-add-all (multiset 1 2 3) (multiset 1 2 3))
+                  (multiset 1 1 2 2 3 3)))
   (test-case "removal"
     (let ([set (multiset-remove-once letters 'b)])
       (check-equal? (multiset-frequency set 'b) 2)
