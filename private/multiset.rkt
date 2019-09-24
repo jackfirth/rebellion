@@ -28,7 +28,7 @@
          racket/stream
          racket/struct
          rebellion/streaming/reducer
-         rebellion/type/tuple)
+         rebellion/type/record)
 
 (module+ test
   (require (submod "..")
@@ -51,18 +51,18 @@
     v))
 
 (define (make-multiset-props descriptor)
-  (define name (tuple-type-name (tuple-descriptor-type descriptor)))
-  (define accessor (tuple-descriptor-accessor descriptor))
-  (define equal+hash (make-tuple-equal+hash descriptor))
+  (define name (record-type-name (record-descriptor-type descriptor)))
+  (define accessor (record-descriptor-accessor descriptor))
+  (define equal+hash (make-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)
-     (λ (this) (frequency-hash->list (accessor this 1)))))
+     (λ (this) (in-multiset this))))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)
         (cons prop:sequence in-multiset)))
 
-(define-tuple-type multiset (size frequencies)
+(define-record-type multiset (size frequencies)
   #:property-maker make-multiset-props
   #:constructor-name constructor:multiset)
 
@@ -72,22 +72,25 @@
   (for/multiset ([v (in-list vs)])
     v))
 
-(define empty-multiset (constructor:multiset 0 empty-hash))
+(define empty-multiset (constructor:multiset #:size 0 #:frequencies empty-hash))
 
 (define (multiset-add set v)
-  (constructor:multiset (add1 (multiset-size set))
-                        (hash-update (multiset-frequencies set) v add1 0)))
+  (constructor:multiset
+   #:size (add1 (multiset-size set))
+   #:frequencies (hash-update (multiset-frequencies set) v add1 0)))
 
 (define (multiset-remove-once set v)
   (define freq (multiset-frequency set v))
   (cond
     [(zero? freq) set]
     [(= 1 freq)
-     (constructor:multiset (sub1 (multiset-size set))
-                           (hash-remove (multiset-frequencies set) v))]
+     (constructor:multiset
+      #:size (sub1 (multiset-size set))
+      #:frequencies (hash-remove (multiset-frequencies set) v))]
     [else
-     (constructor:multiset (sub1 (multiset-size set))
-                           (hash-update (multiset-frequencies set) v sub1))]))
+     (constructor:multiset
+      #:size (sub1 (multiset-size set))
+      #:frequencies (hash-update (multiset-frequencies set) v sub1))]))
 
 (define into-multiset
   (make-fold-reducer multiset-add empty-multiset #:name 'into-multiset))
