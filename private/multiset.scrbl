@@ -33,6 +33,8 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset 'apple 'orange 'orange 'banana)
    (multiset))}
 
+@section{Querying Multisets}
+
 @defproc[(multiset-size [set multiset?]) natural?]{
  Returns the total number of elements in @racket[set], including duplicates.
 
@@ -40,35 +42,6 @@ can contain duplicate elements. Elements are always compared with @racket[
    #:eval (make-evaluator) #:once
    (define set (multiset 5 8 8 8))
    (multiset-size set))}
-
-@defproc[(multiset-add [set multiset?] [v any/c]) multiset?]{
- Adds @racket[v] to @racket[set], returning an updated @tech{multiset}. The
- original @racket[set] is not mutated.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (multiset-add (multiset 'apple 'orange 'banana) 'grape)
-   (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
-
-@defproc[(multiset-remove-once [set multiset?] [v any/c]) multiset?]{
- Removes a single @racket[v] from @racket[set], returning an updated
- @tech{multiset}. The original @racket[set] is not mutated.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (multiset-remove-once (multiset 'apple 'orange 'banana) 'grape)
-   (multiset-remove-once (multiset 'apple 'orange 'banana) 'orange)
-   (multiset-remove-once (multiset 'apple 'apple 'orange 'banana) 'apple))}
-
-@defproc[(multiset-contains? [set multiset?] [v any/c]) boolean?]{
- Returns @racket[#t] if @racket[set] contains @racket[v], @racket[#f] otherwise.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (define set (multiset 'apple 'orange 'orange))
-   (multiset-contains? set 'apple)
-   (multiset-contains? set 'orange)
-   (multiset-contains? set 42))}
 
 @defproc[(multiset-frequency [set multiset?] [v any/c]) natural?]{
  Returns the number of times that @racket[set] contains @racket[v].
@@ -90,12 +63,51 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset-frequencies
     (multiset 'red 'red 'red 'blue 'green 'green 'green 'green)))}
 
+@defproc[(multiset-contains? [set multiset?] [v any/c]) boolean?]{
+ Returns @racket[#t] if @racket[set] contains @racket[v], @racket[#f] otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define set (multiset 'apple 'orange 'orange))
+   (multiset-contains? set 'apple)
+   (multiset-contains? set 'orange)
+   (multiset-contains? set 42))}
+
 @defproc[(multiset-unique-elements [set multiset?]) immutable-set?]{
  Removes all duplicate elements from @racket[set], returning the resulting set.
 
  @(examples
    #:eval (make-evaluator) #:once
    (multiset-unique-elements (multiset 5 8 8 8 13 13)))}
+
+@section{Persistently Updating Multisets}
+
+Multisets are always immutable. The following update operations return new
+multisets and leave the input multiset unchanged. However, multisets are
+implemented with an efficient persistent data structure that allows the modified
+multisets to share their structure with the input multiset. The precise
+performance characteristics of these operations are not specified at this time,
+but their running times are all sublinear in the number of distinct elements in
+the modified multiset.
+
+@defproc[(multiset-add [set multiset?] [v any/c]) multiset?]{
+ Adds @racket[v] to @racket[set], returning an updated @tech{multiset}. The
+ original @racket[set] is not mutated.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-add (multiset 'apple 'orange 'banana) 'grape)
+   (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
+
+@defproc[(multiset-remove-once [set multiset?] [v any/c]) multiset?]{
+ Removes a single @racket[v] from @racket[set], returning an updated
+ @tech{multiset}. The original @racket[set] is not mutated.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-remove-once (multiset 'apple 'orange 'banana) 'grape)
+   (multiset-remove-once (multiset 'apple 'orange 'banana) 'orange)
+   (multiset-remove-once (multiset 'apple 'apple 'orange 'banana) 'apple))}
 
 @section{Multiset Iteration and Comprehension}
 
