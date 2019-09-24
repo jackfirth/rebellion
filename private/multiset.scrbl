@@ -90,24 +90,38 @@ performance characteristics of these operations are not specified at this time,
 but their running times are all sublinear in the number of distinct elements in
 the modified multiset.
 
-@defproc[(multiset-add [set multiset?] [v any/c]) multiset?]{
- Adds @racket[v] to @racket[set], returning an updated @tech{multiset}. The
- original @racket[set] is not mutated.
+@defproc[(multiset-add [set multiset?] [element any/c]) multiset?]{
+ Adds @racket[element] to @racket[set], returning an updated @tech{multiset}.
 
  @(examples
    #:eval (make-evaluator) #:once
    (multiset-add (multiset 'apple 'orange 'banana) 'grape)
    (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
 
-@defproc[(multiset-remove-once [set multiset?] [v any/c]) multiset?]{
- Removes a single @racket[v] from @racket[set], returning an updated
- @tech{multiset}. The original @racket[set] is not mutated.
+@defproc[(multiset-remove-once [set multiset?] [element any/c]) multiset?]{
+ Removes a single @racket[element] from @racket[set], returning an updated
+ @tech{multiset}. If @racket[set] does not contain @racket[element] then it is
+ returned unchanged.
 
  @(examples
    #:eval (make-evaluator) #:once
    (multiset-remove-once (multiset 'apple 'orange 'banana) 'grape)
    (multiset-remove-once (multiset 'apple 'orange 'banana) 'orange)
    (multiset-remove-once (multiset 'apple 'apple 'orange 'banana) 'apple))}
+
+@defproc[(multiset-set-frequency [set multiset?]
+                                 [element any/c]
+                                 [frequency natural?])
+         multiset?]{
+ Adds or removes copies of @racket[element] to or from @racket[set] until it
+ occurs exactly @racket[frequency] times in @racket[set]. If @racket[frequency]
+ is zero, this is equivalent to removing all copies of @racket[element] from
+ @racket[set].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-set-frequency (multiset 'red 'red 'blue 'green) 'blue 4)
+   (multiset-set-frequency (multiset 'red 'red 'blue 'green) 'blue 0))}
 
 @section{Multiset Iteration and Comprehension}
 
