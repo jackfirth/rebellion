@@ -52,7 +52,6 @@
 
 (define (make-multiset-props descriptor)
   (define name (record-type-name (record-descriptor-type descriptor)))
-  (define accessor (record-descriptor-accessor descriptor))
   (define equal+hash (make-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
