@@ -60,6 +60,16 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset-remove-once (multiset 'apple 'orange 'banana) 'orange)
    (multiset-remove-once (multiset 'apple 'apple 'orange 'banana) 'apple))}
 
+@defproc[(multiset-remove-every [set multiset?] [v any/c]) multiset?]{
+ Removes every @racket[v] from @racket[set], returning an updated
+ @tech{multiset}. The original @racket[set] is not mutated.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-remove-every (multiset 'apple 'orange 'banana) 'grape)
+   (multiset-remove-every (multiset 'apple 'orange 'banana) 'orange)
+   (multiset-remove-every (multiset 'apple 'apple 'orange 'banana) 'apple))}
+
 @defproc[(multiset-contains? [set multiset?] [v any/c]) boolean?]{
  Returns @racket[#t] if @racket[set] contains @racket[v], @racket[#f] otherwise.
 

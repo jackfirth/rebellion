@@ -10,6 +10,7 @@
   [multiset? (-> any/c boolean?)]
   [multiset-add (-> multiset? any/c multiset?)]
   [multiset-remove-once (-> multiset? any/c multiset?)]
+  [multiset-remove-every (-> multiset? any/c multiset?)]
   [multiset-contains? (-> multiset? any/c boolean?)]
   [multiset-frequency (-> multiset? any/c natural?)]
   [multiset-frequencies
@@ -89,6 +90,13 @@
      (constructor:multiset (sub1 (multiset-size set))
                            (hash-update (multiset-frequencies set) v sub1))]))
 
+(define (multiset-remove-every set v)
+  (define freq (multiset-frequency set v))
+  (if (zero? freq)
+      set
+      (constructor:multiset (- (multiset-size set) freq)
+                            (hash-remove (multiset-frequencies set) v))))
+
 (define into-multiset
   (make-fold-reducer multiset-add empty-multiset #:name 'into-multiset))
 
@@ -144,5 +152,17 @@
       (check-equal? (multiset-frequency set 'foo) 0)
       (check-equal? (multiset-size set) 7))
     (let ([set (multiset-remove-once (multiset) 'a)])
+      (check-equal? (multiset-frequency set 'a) 0)
+      (check-equal? (multiset-size set) 0))
+    (let ([set (multiset-remove-every letters 'b)])
+      (check-equal? (multiset-frequency set 'b) 0)
+      (check-equal? (multiset-size set) 4))
+    (let ([set (multiset-remove-every letters 'a)])
+      (check-equal? (multiset-frequency set 'a) 0)
+      (check-equal? (multiset-size set) 6))
+    (let ([set (multiset-remove-every letters 'foo)])
+      (check-equal? (multiset-frequency set 'foo) 0)
+      (check-equal? (multiset-size set) 7))
+    (let ([set (multiset-remove-every (multiset) 'a)])
       (check-equal? (multiset-frequency set 'a) 0)
       (check-equal? (multiset-size set) 0))))
