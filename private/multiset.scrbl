@@ -33,6 +33,9 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset 'apple 'orange 'orange 'banana)
    (multiset))}
 
+@defthing[empty-multiset multiset? #:value (multiset)]{
+ The empty @tech{multiset}, which contains no elements.}
+
 @section{Querying Multisets}
 
 @defproc[(multiset-size [set multiset?]) natural?]{
@@ -90,24 +93,39 @@ performance characteristics of these operations are not specified at this time,
 but their running times are all sublinear in the number of distinct elements in
 the modified multiset.
 
-@defproc[(multiset-add [set multiset?] [element any/c]) multiset?]{
- Adds @racket[element] to @racket[set], returning an updated @tech{multiset}.
+@defproc[(multiset-add [set multiset?]
+                       [element any/c]
+                       [#:copies num-copies natural? 1])
+         multiset?]{
+ Adds @racket[element] to @racket[set], returning an updated @tech{multiset}. If
+ @racket[copies] is specified, then @racket[element] is added @racket[
+ num-copies] times instead of only once.
 
  @(examples
    #:eval (make-evaluator) #:once
    (multiset-add (multiset 'apple 'orange 'banana) 'grape)
-   (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
+   (multiset-add (multiset 'apple 'orange 'banana) 'orange)
+   (multiset-add (multiset 'apple 'orange 'banana) 'orange #:copies 5))}
 
-@defproc[(multiset-remove-once [set multiset?] [element any/c]) multiset?]{
+@defproc[(multiset-remove [set multiset?]
+                          [element any/c]
+                          [#:copies num-copies (or/c natural? +inf.0) 1])
+         multiset?]{
  Removes a single @racket[element] from @racket[set], returning an updated
- @tech{multiset}. If @racket[set] does not contain @racket[element] then it is
- returned unchanged.
+ @tech{multiset}. If @racket[num-copies] is specified then instead that many
+ copies of @racket[element] are removed from @racket[set], removing all
+ occurrences if @racket[num-copies] is @racket[+inf.0] or if @racket[set]
+ contains fewer occurrences of @racket[element] than @racket[num-copies].
 
  @(examples
    #:eval (make-evaluator) #:once
-   (multiset-remove-once (multiset 'apple 'orange 'banana) 'grape)
-   (multiset-remove-once (multiset 'apple 'orange 'banana) 'orange)
-   (multiset-remove-once (multiset 'apple 'apple 'orange 'banana) 'apple))}
+   (eval:no-prompt
+    (define set (multiset 'blue 'blue 'red 'red 'red 'green)))
+   (multiset-remove set 'red)
+   (multiset-remove set 'red #:copies 2)
+   (multiset-remove set 'red #:copies 5)
+   (multiset-remove set 'blue #:copies +inf.0)
+   (multiset-remove set 'orange))}
 
 @defproc[(multiset-set-frequency [set multiset?]
                                  [element any/c]
@@ -179,6 +197,3 @@ the modified multiset.
  @(examples
    #:eval (make-evaluator) #:once
    (list->multiset (list 'a 'a 'b 'c 'c 'c 'd)))}
-
-@defthing[empty-multiset multiset? #:value (multiset)]{
- The empty @tech{multiset}, which contains no elements.}
