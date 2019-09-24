@@ -154,5 +154,13 @@ can contain duplicate elements. Elements are always compared with @racket[
    #:eval (make-evaluator) #:once
    (list->multiset (list 'a 'a 'b 'c 'c 'c 'd)))}
 
+@defproc[(sequence->multiset [seq sequence?]) multiset?]{
+ Returns a @tech{multiset} containing the elements of @racket[seq], including
+ duplicates.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sequence->multiset (in-range 5)))}
+
 @defthing[empty-multiset multiset? #:value (multiset)]{
  The empty @tech{multiset}, which contains no elements.}
