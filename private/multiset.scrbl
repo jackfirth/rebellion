@@ -50,14 +50,15 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset-add (multiset 'apple 'orange 'banana) 'grape)
    (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
 
-@defproc[(multiset-remove [set multiset?] [v any/c]) multiset?]{
- Removes @racket[v] from @racket[set], returning an updated @tech{multiset}. The
- original @racket[set] is not mutated.
+@defproc[(multiset-remove-once [set multiset?] [v any/c]) multiset?]{
+ Removes a single @racket[v] from @racket[set], returning an updated
+ @tech{multiset}. The original @racket[set] is not mutated.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (multiset-remove (multiset 'apple 'orange 'banana) 'grape)
-   (multiset-remove (multiset 'apple 'orange 'banana) 'orange))}
+   (multiset-remove-once (multiset 'apple 'orange 'banana) 'grape)
+   (multiset-remove-once (multiset 'apple 'orange 'banana) 'orange)
+   (multiset-remove-once (multiset 'apple 'apple 'orange 'banana) 'apple))}
 
 @defproc[(multiset-contains? [set multiset?] [v any/c]) boolean?]{
  Returns @racket[#t] if @racket[set] contains @racket[v], @racket[#f] otherwise.

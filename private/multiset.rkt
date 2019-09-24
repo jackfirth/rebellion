@@ -9,7 +9,7 @@
   [multiset (-> any/c ... multiset?)]
   [multiset? (-> any/c boolean?)]
   [multiset-add (-> multiset? any/c multiset?)]
-  [multiset-remove (-> multiset? any/c multiset?)]
+  [multiset-remove-once (-> multiset? any/c multiset?)]
   [multiset-contains? (-> multiset? any/c boolean?)]
   [multiset-frequency (-> multiset? any/c natural?)]
   [multiset-frequencies
@@ -78,7 +78,7 @@
   (constructor:multiset (add1 (multiset-size set))
                         (hash-update (multiset-frequencies set) v add1 0)))
 
-(define (multiset-remove set v)
+(define (multiset-remove-once set v)
   (define freq (multiset-frequency set v))
   (cond
     [(zero? freq) set]
@@ -134,15 +134,15 @@
     (check-equal? (for/set ([letter (in-multiset letters)]) letter)
                   (set 'a 'b 'c 'd)))
   (test-case "removal"
-    (let ([set (multiset-remove letters 'b)])
+    (let ([set (multiset-remove-once letters 'b)])
       (check-equal? (multiset-frequency set 'b) 2)
       (check-equal? (multiset-size set) 6))
-    (let ([set (multiset-remove letters 'a)])
+    (let ([set (multiset-remove-once letters 'a)])
       (check-equal? (multiset-frequency set 'a) 0)
       (check-equal? (multiset-size set) 6))
-    (let ([set (multiset-remove letters 'foo)])
+    (let ([set (multiset-remove-once letters 'foo)])
       (check-equal? (multiset-frequency set 'foo) 0)
       (check-equal? (multiset-size set) 7))
-    (let ([set (multiset-remove (multiset) 'a)])
+    (let ([set (multiset-remove-once (multiset) 'a)])
       (check-equal? (multiset-frequency set 'a) 0)
       (check-equal? (multiset-size set) 0))))
