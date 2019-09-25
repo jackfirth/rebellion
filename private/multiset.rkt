@@ -9,7 +9,8 @@
   [multiset (-> any/c ... multiset?)]
   [multiset? (-> any/c boolean?)]
   [multiset-add (-> multiset? any/c multiset?)]
-  [multiset-add-all (-> multiset? sequence? multiset?)]
+  [multiset-add-all (-> multiset? (or/c multiset? (sequence/c any/c))
+                        multiset?)]
   [multiset-remove-once (-> multiset? any/c multiset?)]
   [multiset-contains? (-> multiset? any/c boolean?)]
   [multiset-frequency (-> multiset? any/c natural?)]
@@ -19,7 +20,7 @@
   [multiset-unique-elements (-> multiset? immutable-set?)]
   [multiset->list (-> multiset? list?)]
   [list->multiset (-> list? multiset?)]
-  [sequence->multiset (-> sequence? multiset?)]
+  [sequence->multiset (-> (sequence/c any/c) multiset?)]
   [empty-multiset multiset?]
   [in-multiset (-> multiset? sequence?)]
   [into-multiset reducer?]))
@@ -27,6 +28,7 @@
 (require (for-syntax racket/base)
          racket/math
          racket/set
+         racket/sequence
          racket/stream
          racket/struct
          rebellion/streaming/reducer
@@ -122,7 +124,7 @@
 (define (list->multiset lst) (apply multiset lst))
 
 (define (sequence->multiset seq)
-  (for/multiset ([v seq]) v))
+  (reduce-all into-multiset seq))
 
 (define (multiset-unique-elements set)
   (list->set (hash-keys (multiset-frequencies set))))

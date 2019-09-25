@@ -50,7 +50,7 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset-add (multiset 'apple 'orange 'banana) 'grape)
    (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
 
-@defproc[(multiset-add-all [set multiset?] [seq sequence?]) multiset?]{
+@defproc[(multiset-add-all [set multiset?] [seq (sequence/c any/c)]) multiset?]{
  Adds @racket[seq] elements into @racket[set], returning an updated
  @tech{multiset}. The original @racket[set] is not mutated.
 
