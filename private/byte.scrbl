@@ -172,6 +172,6 @@ integer between @racket[0] and @racket[255].
    #:eval (make-evaluator) #:once
    (code:comment "count the number of 1's in the byte")
    (byte-hamming-weight (byte 1 1 1 1 0 0 0 1))
-   (byte-hamming-weight (byte 0 0 0 0 0 0 0 0)
-   (byte-hamming-weight (byte 1 1 1 1 1 1 1 1))))
+   (byte-hamming-weight (byte 0 0 0 0 0 0 0 0))
+   (byte-hamming-weight (byte 1 1 1 1 1 1 1 1)))
 }
