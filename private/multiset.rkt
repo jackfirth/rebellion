@@ -26,6 +26,7 @@
   [into-multiset reducer?]))
 
 (require (for-syntax racket/base)
+         racket/hash
          racket/math
          racket/set
          racket/sequence
@@ -94,14 +95,10 @@
                            (hash-update (multiset-frequencies set) v sub1))]))
 
 (define (multiset-union a b)
-  (define a-freqs (multiset-frequencies a))
-  (define b-freqs (multiset-frequencies b))
-  (define vals (set-union (list->set (hash-keys a-freqs))
-                          (list->set (hash-keys b-freqs))))
-  (define union-freqs
-    (for/hash ([v (in-set vals)])
-      (values v (+ (hash-ref a-freqs v 0) (hash-ref b-freqs v 0)))))
-  (constructor:multiset (+ (multiset-size a) (multiset-size b)) union-freqs))
+  (constructor:multiset (+ (multiset-size a) (multiset-size b))
+                        (hash-union (multiset-frequencies a)
+                                    (multiset-frequencies b)
+                                    #:combine +)))
 
 (define (multiset-add-all set seq)
   (multiset-union set
