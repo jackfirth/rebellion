@@ -107,6 +107,15 @@ the modified multiset.
    (multiset-add (multiset 'apple 'orange 'banana) 'orange)
    (multiset-add (multiset 'apple 'orange 'banana) 'orange #:copies 5))}
 
+@defproc[(multiset-add-all [set multiset?] [seq (sequence/c any/c)]) multiset?]{
+ Adds @racket[seq] elements into @racket[set], returning an updated
+ @tech{multiset}. The original @racket[set] is not mutated.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-add-all (multiset 1 1 2 3) (in-range 0 5))
+   (multiset-add-all (multiset 1 2 3) (multiset 1 2 3)))}
+
 @defproc[(multiset-remove [set multiset?]
                           [element any/c]
                           [#:copies num-copies (or/c natural? +inf.0) 1])
@@ -197,3 +206,11 @@ the modified multiset.
  @(examples
    #:eval (make-evaluator) #:once
    (list->multiset (list 'a 'a 'b 'c 'c 'c 'd)))}
+
+@defproc[(sequence->multiset [seq sequence?]) multiset?]{
+ Returns a @tech{multiset} containing the elements of @racket[seq], including
+ duplicates.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sequence->multiset (in-range 5)))}
