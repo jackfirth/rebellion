@@ -9,6 +9,8 @@
   [multiset (-> any/c ... multiset?)]
   [multiset? (-> any/c boolean?)]
   [multiset-add (-> multiset? any/c multiset?)]
+  [multiset-add-all (-> multiset? (or/c multiset? (sequence/c any/c))
+                        multiset?)]
   [multiset-remove-once (-> multiset? any/c multiset?)]
   [multiset-contains? (-> multiset? any/c boolean?)]
   [multiset-frequency (-> multiset? any/c natural?)]
@@ -18,13 +20,16 @@
   [multiset-unique-elements (-> multiset? immutable-set?)]
   [multiset->list (-> multiset? list?)]
   [list->multiset (-> list? multiset?)]
+  [sequence->multiset (-> (sequence/c any/c) multiset?)]
   [empty-multiset multiset?]
   [in-multiset (-> multiset? sequence?)]
   [into-multiset reducer?]))
 
 (require (for-syntax racket/base)
+         racket/hash
          racket/math
          racket/set
+         racket/sequence
          racket/stream
          racket/struct
          rebellion/streaming/reducer
@@ -89,6 +94,18 @@
      (constructor:multiset (sub1 (multiset-size set))
                            (hash-update (multiset-frequencies set) v sub1))]))
 
+(define (multiset-union a b)
+  (constructor:multiset (+ (multiset-size a) (multiset-size b))
+                        (hash-union (multiset-frequencies a)
+                                    (multiset-frequencies b)
+                                    #:combine +)))
+
+(define (multiset-add-all set seq)
+  (multiset-union set
+                  (if (multiset? seq)
+                      seq
+                      (sequence->multiset seq))))
+
 (define into-multiset
   (make-fold-reducer multiset-add empty-multiset #:name 'into-multiset))
 
@@ -102,6 +119,9 @@
   (frequency-hash->list (multiset-frequencies set)))
 
 (define (list->multiset lst) (apply multiset lst))
+
+(define (sequence->multiset seq)
+  (reduce-all into-multiset seq))
 
 (define (multiset-unique-elements set)
   (list->set (hash-keys (multiset-frequencies set))))
@@ -127,12 +147,19 @@
     (check-false (multiset-contains? letters 'foo)))
   (test-case "conversion"
     (check-equal? (list->multiset (multiset->list letters)) letters)
-    (check-equal? (length (multiset->list letters)) 7))
+    (check-equal? (length (multiset->list letters)) 7)
+    (check-equal? (sequence->multiset "hello")
+                  (multiset #\h #\e #\l #\l #\o)))
   (test-case "iteration"
     (check-equal? (for/multiset ([char (in-string "hello")]) char)
                   (multiset #\h #\e #\l #\l #\o))
     (check-equal? (for/set ([letter (in-multiset letters)]) letter)
                   (set 'a 'b 'c 'd)))
+  (test-case "add-all"
+    (check-equal? (multiset-add-all (multiset 1 1 2 3) (in-range 0 5))
+                  (multiset 0 1 1 1 2 2 3 3 4))
+    (check-equal? (multiset-add-all (multiset 1 2 3) (multiset 1 2 3))
+                  (multiset 1 1 2 2 3 3)))
   (test-case "removal"
     (let ([set (multiset-remove-once letters 'b)])
       (check-equal? (multiset-frequency set 'b) 2)

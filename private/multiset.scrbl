@@ -50,6 +50,15 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset-add (multiset 'apple 'orange 'banana) 'grape)
    (multiset-add (multiset 'apple 'orange 'banana) 'orange))}
 
+@defproc[(multiset-add-all [set multiset?] [seq (sequence/c any/c)]) multiset?]{
+ Adds @racket[seq] elements into @racket[set], returning an updated
+ @tech{multiset}. The original @racket[set] is not mutated.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-add-all (multiset 1 1 2 3) (in-range 0 5))
+   (multiset-add-all (multiset 1 2 3) (multiset 1 2 3)))}
+
 @defproc[(multiset-remove-once [set multiset?] [v any/c]) multiset?]{
  Removes a single @racket[v] from @racket[set], returning an updated
  @tech{multiset}. The original @racket[set] is not mutated.
@@ -153,6 +162,14 @@ can contain duplicate elements. Elements are always compared with @racket[
  @(examples
    #:eval (make-evaluator) #:once
    (list->multiset (list 'a 'a 'b 'c 'c 'c 'd)))}
+
+@defproc[(sequence->multiset [seq sequence?]) multiset?]{
+ Returns a @tech{multiset} containing the elements of @racket[seq], including
+ duplicates.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sequence->multiset (in-range 5)))}
 
 @defthing[empty-multiset multiset? #:value (multiset)]{
  The empty @tech{multiset}, which contains no elements.}
