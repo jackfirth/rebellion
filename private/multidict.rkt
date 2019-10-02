@@ -12,6 +12,7 @@
   [multidict-add-entry (-> multidict? entry? multidict?)]
   [multidict-remove (-> multidict? any/c any/c multidict?)]
   [multidict-remove-entry (-> multidict? entry? multidict?)]
+  [multidict-replace-values (-> multidict? any/c set-coercible/c multidict?)]
   [multidict-size (-> multidict? natural?)]
   [multidict-ref (-> multidict? any/c immutable-set?)]
   [multidict-keys (-> multidict? multiset?)]
@@ -62,6 +63,15 @@
 (define (nonempty-immutable-set? v)
   (and (immutable-set? v) (not (zero? (set-count v)))))
 
+(define set-coercible/c
+  (or/c immutable-set? multiset? (sequence/c any/c)))
+
+(define (sequence->set seq)
+  (cond
+    [(immutable-set? seq) seq]
+    [(multiset? seq) (multiset-unique-elements seq)]
+    [else (for/set ([v seq]) v)]))
+
 (define (make-multidict-properties descriptor)
   (define type (record-descriptor-type descriptor))
   (define type-name (record-type-name type))
@@ -92,38 +102,48 @@
 
 (define empty-multidict (constructor:multidict #:backing-hash (hash) #:size 0))
 
+(define (multidict-replace-values dict k seq)
+  (define vs (sequence->set seq))
+  (define old-vs (multidict-ref dict k))
+  (define size
+    (+ (multidict-size dict) (set-count vs) (- (set-count old-vs))))
+  (define old-backing-hash (multidict-backing-hash dict))
+  (define backing-hash
+    (if (set-empty? vs)
+        (hash-remove old-backing-hash k)
+        (hash-set old-backing-hash k vs)))
+  (constructor:multidict #:size size #:backing-hash backing-hash))
+
 (define (multidict-add dict k v)
-  (define backing-hash (multidict-backing-hash dict))
-  (define size (multidict-size dict))
-  (define k-vs (hash-ref backing-hash k (set)))
-  (if (set-member? k-vs v)
-      dict
-      (constructor:multidict
-       #:backing-hash (hash-set backing-hash k (set-add k-vs v))
-       #:size (add1 size))))
+  (define new-vs (set-add (multidict-ref dict k) v))
+  (multidict-replace-values dict k new-vs))
 
 (define (multidict-add-entry dict e)
   (multidict-add dict (entry-key e) (entry-value e)))
 
 (define (multidict-remove dict k v)
-  (define backing-hash (multidict-backing-hash dict))
-  (define size (multidict-size dict))
-  (define k-vs (hash-ref backing-hash k (set)))
-  (cond
-    [(not (set-member? k-vs v)) dict]
-    [(equal? (set-count k-vs) 1)
-     (constructor:multidict #:backing-hash (hash-remove backing-hash k)
-                            #:size (sub1 size))]
-    [else
-     (constructor:multidict
-      #:backing-hash (hash-set backing-hash k (set-remove k-vs v))
-      #:size (sub1 size))]))
+  (define new-vs (set-remove (multidict-ref dict k) v))
+  (multidict-replace-values dict k new-vs))
 
 (define (multidict-remove-entry dict e)
   (multidict-remove dict (entry-key e) (entry-value e)))
 
 (module+ test
 
+  (test-case "multidict-replace-values"
+    (check-equal? (multidict-replace-values empty-multidict 'a (list 1 2 2 3))
+                  (multidict 'a 1 'a 2 'a 3))
+    (check-equal? (multidict-replace-values (multidict 'a 1) 'a (list 1 2 2 3))
+                  (multidict 'a 1 'a 2 'a 3))
+    (check-equal? (multidict-replace-values (multidict 'b 2) 'a (list 1 2 2 3))
+                  (multidict 'a 1 'a 2 'a 3 'b 2))
+    (check-equal?
+     (multidict-replace-values (multidict 'a 1 'b 2) 'a (list 1 2 2 3))
+     (multidict 'a 1 'a 2 'a 3 'b 2))
+    (check-equal?
+     (multidict-replace-values (multidict 'a 4 'b 2) 'a (list 1 2 2 3))
+     (multidict 'a 1 'a 2 'a 3 'b 2)))
+  
   (test-case "multidict-add"
     (check-equal? (multidict-add empty-multidict 'a 1) (multidict 'a 1))
     (check-equal? (multidict-add (multidict 'a 1) 'b 2) (multidict 'a 1 'b 2))
