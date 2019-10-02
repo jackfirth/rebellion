@@ -55,7 +55,7 @@ interface is based on a flattened collection of key-value pairs.
 @defproc[(multidict-add [dict multidict?] [k any/c] [v any/c]) multidict?]{
  Adds a mapping from @racket[k] to @racket[v] in @racket[dict], returning a new
  updated @tech{multidict}. If @racket[dict] already contains an entry for
- @racket[k] and @racket[v], the dict is returned unchanged.
+ @racket[k] and @racket[v], then @racket[dict] is returned unchanged.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -72,6 +72,25 @@ interface is based on a flattened collection of key-value pairs.
    (multidict-add-entry (multidict 'a 1) (entry 'b 2))
    (multidict-add-entry (multidict 'a 1) (entry 'a 2))
    (multidict-add-entry (multidict 'a 1) (entry 'a 1)))}
+
+@defproc[(multidict-remove [dict multidict?] [k any/c] [v any/c]) multidict?]{
+ Removes the mapping from @racket[k] to @racket[v] from @racket[dict], returning
+ an updated @tech{multidict}. If @racket[dict] does not contain an entry for
+ @racket[k] and @racket[v], then @racket[dict] is returned unchanged.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict-remove (multidict 'a 1 'a 2) 'a 1)
+   (multidict-remove (multidict 'a 1 'a 2) 'b 1))}
+
+@defproc[(multidict-remove-entry [dict multidict?] [e entry?]) multidict?]{
+ Like @racket[multidict-remove], but with the key and value wrapped in the
+ @tech{entry} @racket[e].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict-remove-entry (multidict 'a 1 'a 2) (entry 'a 1))
+   (multidict-remove-entry (multidict 'a 1 'a 2) (entry 'b 1)))}
 
 @section{Querying Multidicts}
 

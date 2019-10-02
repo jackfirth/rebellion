@@ -10,6 +10,8 @@
   [multidict? predicate/c]
   [multidict-add (-> multidict? any/c any/c multidict?)]
   [multidict-add-entry (-> multidict? entry? multidict?)]
+  [multidict-remove (-> multidict? any/c any/c multidict?)]
+  [multidict-remove-entry (-> multidict? entry? multidict?)]
   [multidict-size (-> multidict? natural?)]
   [multidict-ref (-> multidict? any/c immutable-set?)]
   [multidict-keys (-> multidict? multiset?)]
@@ -102,6 +104,60 @@
 
 (define (multidict-add-entry dict e)
   (multidict-add dict (entry-key e) (entry-value e)))
+
+(define (multidict-remove dict k v)
+  (define backing-hash (multidict-backing-hash dict))
+  (define size (multidict-size dict))
+  (define k-vs (hash-ref backing-hash k (set)))
+  (cond
+    [(not (set-member? k-vs v)) dict]
+    [(equal? (set-count k-vs) 1)
+     (constructor:multidict #:backing-hash (hash-remove backing-hash k)
+                            #:size (sub1 size))]
+    [else
+     (constructor:multidict
+      #:backing-hash (hash-set backing-hash k (set-remove k-vs v))
+      #:size (sub1 size))]))
+
+(define (multidict-remove-entry dict e)
+  (multidict-remove dict (entry-key e) (entry-value e)))
+
+(module+ test
+
+  (test-case "multidict-add"
+    (check-equal? (multidict-add empty-multidict 'a 1) (multidict 'a 1))
+    (check-equal? (multidict-add (multidict 'a 1) 'b 2) (multidict 'a 1 'b 2))
+    (check-equal? (multidict-add (multidict 'a 1) 'a 2) (multidict 'a 1 'a 2))
+    (check-equal? (multidict-add (multidict 'a 1) 'a 1) (multidict 'a 1)))
+  
+  (test-case "multidict-add-entry"
+    (check-equal? (multidict-add-entry empty-multidict (entry 'a 1))
+                  (multidict 'a 1))
+    (check-equal? (multidict-add-entry (multidict 'a 1) (entry 'b 2))
+                  (multidict 'a 1 'b 2))
+    (check-equal? (multidict-add-entry (multidict 'a 1) (entry 'a 2))
+                  (multidict 'a 1 'a 2))
+    (check-equal? (multidict-add-entry (multidict 'a 1) (entry 'a 1))
+                  (multidict 'a 1)))
+  
+  (test-case "multidict-remove"
+    (check-equal? (multidict-remove (multidict 'a 1 'b 2) 'a 1)
+                  (multidict 'b 2))
+    (check-equal? (multidict-remove (multidict 'a 1 'a 2) 'a 1)
+                  (multidict 'a 2))
+    (check-equal? (multidict-remove (multidict 'a 1) 'a 1) empty-multidict)
+    (check-equal? (multidict-remove (multidict 'a 1 'b 2) 'c 3)
+                  (multidict 'a 1 'b 2)))
+  
+  (test-case "multidict-remove-entry"
+    (check-equal? (multidict-remove-entry (multidict 'a 1 'b 2) (entry 'a 1))
+                  (multidict 'b 2))
+    (check-equal? (multidict-remove-entry (multidict 'a 1 'a 2) (entry 'a 1))
+                  (multidict 'a 2))
+    (check-equal? (multidict-remove-entry (multidict 'a 1) (entry 'a 1))
+                  empty-multidict)
+    (check-equal? (multidict-remove-entry (multidict 'a 1 'b 2) (entry 'c 3))
+                  (multidict 'a 1 'b 2))))
 
 (define into-multidict
   (make-fold-reducer multidict-add-entry
