@@ -41,20 +41,16 @@ interface is based on a flattened collection of key-value pairs.
    (multidict 'a 1 'a 2 'a 3)
    (multidict 'a 1 'a 1 'b 1))}
 
-@defproc[(multidict-ref [dict multidict?] [k any/c]) immutable-set?]{
- Returns the set of values mapped by @racket[k] in @racket[dict].
-                                                                     
- @(examples
-   #:eval (make-evaluator) #:once
-   (define dict
-     (multidict 'fruit 'apple
-                'fruit 'orange
-                'fruit 'banana
-                'vegetable 'carrot
-                'vegetable 'celery))
-   (multidict-ref dict 'fruit)
-   (multidict-ref dict 'vegetable)
-   (multidict-ref dict 'dessert))}
+@defthing[empty-multidict empty-multidict?]{
+ The empty @tech{multidict}, which contains nothing.}
+
+@defproc[(empty-multidict? [v any/c]) boolean?]{
+ A predicate for empty @tech{multidicts}. Implies @racket[multidict?].}
+
+@defproc[(nonempty-multidict? [v any/c]) boolean?]{
+ A predicate for nonempty @tech{multidicts}. Implies @racket[multidict?].}
+
+@section{Persistently Updating Multidicts}
 
 @defproc[(multidict-add [dict multidict?] [k any/c] [v any/c]) multidict?]{
  Adds a mapping from @racket[k] to @racket[v] in @racket[dict], returning a new
@@ -77,6 +73,8 @@ interface is based on a flattened collection of key-value pairs.
    (multidict-add-entry (multidict 'a 1) (entry 'a 2))
    (multidict-add-entry (multidict 'a 1) (entry 'a 1)))}
 
+@section{Querying Multidicts}
+
 @defproc[(multidict-size [dict multidict?]) natural?]{
  Returns the number of key-value mappings in @racket[dict]. Note that this does
  @bold{not} return the number of keys in @racket[dict] --- all values mapped by
@@ -87,6 +85,21 @@ interface is based on a flattened collection of key-value pairs.
    (multidict-size (multidict 'a 1 'b 2 'c 3))
    (multidict-size (multidict 'a 1 'b 2 'b 3))
    (multidict-size (multidict 'a 1 'a 1 'a 1)))}
+
+@defproc[(multidict-ref [dict multidict?] [k any/c]) immutable-set?]{
+ Returns the set of values mapped by @racket[k] in @racket[dict].
+                                                                     
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define dict
+     (multidict 'fruit 'apple
+                'fruit 'orange
+                'fruit 'banana
+                'vegetable 'carrot
+                'vegetable 'celery))
+   (multidict-ref dict 'fruit)
+   (multidict-ref dict 'vegetable)
+   (multidict-ref dict 'dessert))}
 
 @defproc[(multidict-keys [dict multidict?]) multiset?]{
  Returns a @tech{multiset} of the keys in @racket[dict], with a copy of each
@@ -140,20 +153,6 @@ interface is based on a flattened collection of key-value pairs.
                'vegetable 'carrot
                'vegetable 'celery)))}
 
-@defproc[(multidict->hash [dict multidict?])
-         (hash/c any/c nonempty-immutable-set? #:immutable? #t)]{
- Converts @racket[dict] into a hash table from keys to (nonempty) sets of
- values.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (multidict->hash
-    (multidict 'fruit 'apple
-               'fruit 'orange
-               'fruit 'banana
-               'vegetable 'carrot
-               'vegetable 'celery)))}
-
 @defproc[(multidict-inverse [dict multidict?]) multidict?]{
  Inverts @racket[dict], returning a multidict with all the same entries as
  @racket[dict] except keys and values are swapped.
@@ -200,14 +199,21 @@ interface is based on a flattened collection of key-value pairs.
    (multidict-contains-entry? dict (entry 'even 4))
    (multidict-contains-entry? dict (entry 'odd 4)))}
 
-@defthing[empty-multidict empty-multidict?]{
- The empty @tech{multidict}, which contains nothing.}
+@section{Multidict Conversions}
 
-@defproc[(empty-multidict? [v any/c]) boolean?]{
- A predicate for empty @tech{multidicts}. Implies @racket[multidict?].}
+@defproc[(multidict->hash [dict multidict?])
+         (hash/c any/c nonempty-immutable-set? #:immutable? #t)]{
+ Converts @racket[dict] into a hash table from keys to (nonempty) sets of
+ values.
 
-@defproc[(nonempty-multidict? [v any/c]) boolean?]{
- A predicate for nonempty @tech{multidicts}. Implies @racket[multidict?].}
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multidict->hash
+    (multidict 'fruit 'apple
+               'fruit 'orange
+               'fruit 'banana
+               'vegetable 'carrot
+               'vegetable 'celery)))}
 
 @section{Multidict Iterations and Comprehensions}
 
