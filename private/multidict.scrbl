@@ -4,6 +4,7 @@
                      racket/contract/base
                      racket/math
                      rebellion/collection/entry
+                     rebellion/collection/list
                      rebellion/collection/multidict
                      rebellion/collection/multiset
                      rebellion/streaming/reducer)
@@ -13,6 +14,7 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/collection/entry
+                   'rebellion/collection/list
                    'rebellion/collection/multidict
                    'rebellion/collection/multiset
                    'rebellion/streaming/reducer)
@@ -91,6 +93,20 @@ interface is based on a flattened collection of key-value pairs.
    #:eval (make-evaluator) #:once
    (multidict-remove-entry (multidict 'a 1 'a 2) (entry 'a 1))
    (multidict-remove-entry (multidict 'a 1 'a 2) (entry 'b 1)))}
+
+@defproc[(multidict-replace-values [dict multidict?]
+                                   [k any/c]
+                                   [vs (sequence/c any/c)])
+         multidict?]{
+ Removes all mappings for @racket[k] from @racket[dict] and adds a mapping from
+ @racket[k] to each element of @racket[vs].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define dict (multidict 'a 1 'b 2 'b 3))
+   (multidict-replace-values dict 'a (in-range 1 5))
+   (multidict-replace-values dict 'b empty-list)
+   (multidict-replace-values dict 'c "hello"))}
 
 @section{Querying Multidicts}
 
