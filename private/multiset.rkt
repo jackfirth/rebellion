@@ -199,10 +199,11 @@
       (check-equal? (multiset-remove set 'd #:copies +inf.0) set))))
 
 (define (multiset-union a b)
-  (constructor:multiset (+ (multiset-size a) (multiset-size b))
-                        (hash-union (multiset-frequencies a)
-                                    (multiset-frequencies b)
-                                    #:combine +)))
+  (constructor:multiset
+   #:size (+ (multiset-size a) (multiset-size b))
+   #:frequencies (hash-union (multiset-frequencies a)
+                             (multiset-frequencies b)
+                             #:combine +)))
 
 (define (multiset-add-all set seq)
   (multiset-union set
