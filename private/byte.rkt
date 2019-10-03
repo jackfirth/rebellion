@@ -265,11 +265,11 @@
         (check-equal? b (byte-ref x i))))))
 
 (define (byte-hamming-weight b)
-  (apply + (in-byte b)))
+  (for/sum ([bit (in-byte b)]) bit))
 
 (module+ test
   (test-case
-      ""
+      "byte-hamming-weight"
     (for ([x (in-range 256)])
       (check-equal? (byte-hamming-weight x) (- 8 (byte-hamming-weight (byte-xor x 255)))))
     (for ([x (in-range 8)])

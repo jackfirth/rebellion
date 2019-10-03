@@ -166,7 +166,10 @@ integer between @racket[0] and @racket[255].
 
 @defproc[(byte-hamming-weight [b byte?])
          (integer-in 0 8)]{
- Returns the Hamming weight of the byte. This is the same as  how many 1's are in the byte.
+@(define hamming-link "https://en.wikipedia.org/wiki/Hamming_weight")
+
+Returns the Hamming weight of the byte. This is the same as how many 1's are in the byte. See the
+@hyperlink[hamming-link]{Wikipedia page} for more informating on Hamming weight.
   
  @(examples
    #:eval (make-evaluator) #:once
