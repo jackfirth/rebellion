@@ -17,7 +17,8 @@
   [byte-nand (-> byte? byte? byte?)]
   [byte-nor (-> byte? byte? byte?)]
   [byte-xnor (-> byte? byte? byte?)]
-  [in-byte (-> byte? (sequence/c #:min-count 8 bit?))]))
+  [in-byte (-> byte? (sequence/c #:min-count 8 bit?))]
+  [byte-hamming-weight (-> byte? (integer-in 0 8))]))
 
 (require rebellion/binary/bit)
 
@@ -262,3 +263,17 @@
       (for ([b (in-byte x)]
             [i (in-range 8)])
         (check-equal? b (byte-ref x i))))))
+
+(define (byte-hamming-weight b)
+  (for/sum ([bit (in-byte b)]) bit))
+
+(module+ test
+  (test-case
+      "byte-hamming-weight"
+    (for ([x (in-range 256)])
+      (check-equal? (byte-hamming-weight x) (- 8 (byte-hamming-weight (byte-xor x 255)))))
+    (for ([x (in-range 8)])
+      (check-equal? (byte-hamming-weight (arithmetic-shift 1 x)) 1))
+    (check-equal? (byte-hamming-weight 0) 0)
+    (check-equal? (byte-hamming-weight 255) 8)
+    (check-equal? (byte-hamming-weight (byte 1 0 1 0 1 1 1 0)) 5)))

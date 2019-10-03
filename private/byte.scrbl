@@ -6,7 +6,7 @@
                      rebellion/binary/byte)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
-
+@(define hamming-link "https://en.wikipedia.org/wiki/Hamming_weight")
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/binary/byte)
@@ -163,3 +163,18 @@ integer between @racket[0] and @racket[255].
    (code:comment "convert byte to a vector of bits")
    (for/vector ([b (in-byte (byte 0 0 1 0 1 0 1 0))])
     b))}
+
+@defproc[(byte-hamming-weight [b byte?])
+         (integer-in 0 8)]{
+
+
+Returns the Hamming weight of the byte. This is the same as how many 1's are in the byte. See the
+@hyperlink[hamming-link]{Wikipedia page} for more informating on Hamming weight.
+  
+ @(examples
+   #:eval (make-evaluator) #:once
+   (code:comment "count the number of 1's in the byte")
+   (byte-hamming-weight (byte 1 1 1 1 0 0 0 1))
+   (byte-hamming-weight (byte 0 0 0 0 0 0 0 0))
+   (byte-hamming-weight (byte 1 1 1 1 1 1 1 1)))
+}
