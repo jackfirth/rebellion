@@ -6,7 +6,7 @@
                      rebellion/binary/byte)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
-
+@(define hamming-link "https://en.wikipedia.org/wiki/Hamming_weight")
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/binary/byte)
@@ -166,7 +166,7 @@ integer between @racket[0] and @racket[255].
 
 @defproc[(byte-hamming-weight [b byte?])
          (integer-in 0 8)]{
-@(define hamming-link "https://en.wikipedia.org/wiki/Hamming_weight")
+
 
 Returns the Hamming weight of the byte. This is the same as how many 1's are in the byte. See the
 @hyperlink[hamming-link]{Wikipedia page} for more informating on Hamming weight.
