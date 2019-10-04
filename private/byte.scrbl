@@ -156,7 +156,7 @@ integer between @racket[0] and @racket[255].
 
 @defproc[(in-byte [b byte?])
          sequence?]{
- Returns a sequence whose elements are equivalent to the list of bytes that comprise @racket[b].
+ Returns a sequence whose elements are equivalent to the list of bits that comprise @racket[b].
   
  @(examples
    #:eval (make-evaluator) #:once
