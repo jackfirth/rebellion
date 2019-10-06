@@ -264,7 +264,7 @@ interface is based on a flattened collection of key-value pairs.
                 'fruit 'banana
                 'vegetable 'celery))
    (for ([e (in-multidict-entries food-classifications)])
-     (printf "key: ~a    value: ~a"
+     (printf "key: ~a  value: ~a\n"
              (entry-key e)
              (entry-value e))))}
 
