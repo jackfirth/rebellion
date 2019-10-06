@@ -8,6 +8,7 @@
                      rebellion/collection/keyset
                      rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-util doc)
           scribble/example)
 
 @(define make-evaluator
@@ -99,7 +100,7 @@ at compile-time.
    (keyset-remove fruits '#:banana))}
 
 @defproc[(in-keyset [keys keyset?]) (sequence/c keyword?)]{
- Returns a @tech{sequence} of the keywords in @racket[keys], in ascending order.
+ Returns a @tech/reference{sequence} of the keywords in @racket[keys], in ascending order.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -150,7 +151,7 @@ at compile-time.
    (list->keyset (list '#:banana '#:orange '#:orange '#:apple '#:grape)))}
 
 @defproc[(keyset->set [keys keyset?]) (immutable-set/c keyword?)]{
- Converts @racket[keys] into a plain @tech{set} of keywords.
+ Converts @racket[keys] into a plain @tech/reference{set} of keywords.
 
  @(examples
    #:eval (make-evaluator) #:once

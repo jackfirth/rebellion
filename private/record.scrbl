@@ -6,6 +6,7 @@
                      rebellion/collection/keyset
                      rebellion/collection/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-util doc)
           scribble/example)
 
 @(define make-evaluator
@@ -17,7 +18,7 @@
 @defmodule[rebellion/collection/record]
 
 A @deftech{record} is a collection of name-value mappings, each which is called
-a @deftech{record field}. The name of a field is a @tech{keyword}. Records
+a @deftech{record field}. The name of a field is a @tech/reference{keyword}. Records
 support constant-time lookup of field values by name.
 
 Records are similar to hash tables, except keys @emph{must} be keywords. Records
