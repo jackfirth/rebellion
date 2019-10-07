@@ -6,7 +6,7 @@
                      rebellion/type/tuple
                      rebellion/type/wrapper)
           (submod rebellion/private/scribble-evaluator-factory doc)
-          (submod rebellion/private/scribble-util doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -66,7 +66,7 @@ exactly the same fields.
 
 @subsection{Struct-Based Types and Struct Type Properties}
 
-All types are created using Racket @racket{struct}s, and the created struct types
+All types are created using Racket @tech/reference{structure types}, and the created struct types
 can have @tech/reference{structure type properties} attached to them. Each module
 typically provides default structure type properties for the types it creates,
 based on how its types are typically used. These defaults can be freely

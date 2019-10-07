@@ -8,7 +8,7 @@
                      rebellion/collection/keyset
                      rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
-          (submod rebellion/private/scribble-util doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator

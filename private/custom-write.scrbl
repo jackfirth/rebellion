@@ -11,7 +11,7 @@
                      rebellion/type/struct
                      rebellion/type/tuple)
           (submod rebellion/private/scribble-evaluator-factory doc)
-          (submod rebellion/private/scribble-util doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -33,12 +33,12 @@ must satisfy the @racket[custom-write-function/c] contract.
 
 @defthing[custom-write-function/c chaperone-contract?
           #:value (-> any/c output-port? custom-write-mode/c void?)]{
- A @tech/reference[#:key "Contract"]{contract} describing functions suitable for use with @racket[
+ A @tech/reference{contract} describing functions suitable for use with @racket[
  prop:custom-write].}
 
 @defthing[custom-write-mode/c flat-contract?
           #:value (or/c boolean? 0 1)]{
- A @tech/reference[#:key "Contract"]{contract} describing the @racket[_mode] argument to functions matching
+ A @tech/reference{contract} describing the @racket[_mode] argument to functions matching
  @racket[custom-write-function/c]. See @racket[gen:custom-write] for details.}
 
 @defproc[(make-named-object-custom-write
