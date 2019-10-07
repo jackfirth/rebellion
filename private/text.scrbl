@@ -5,6 +5,7 @@
                      rebellion/binary/immutable-bytes
                      rebellion/media/text/plain)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -19,12 +20,12 @@
    "https://www.iana.org/assignments/character-sets/character-sets.xhtml")
 
 @deftech{Text} is a type of @tech{media} that represents a sequence of
-@tech{characters} encoded in a bytestring according to a standardized set of
+@tech/guide{characters} encoded in a bytestring according to a standardized set of
 rules called a @deftech{character set}, or @deftech{charset} for short. Charsets
 must be registered with the IANA and their names are assigned in the @hyperlink[
  charset-registry-url]{IANA Character Set Registry}.
 
-Text values are very similar to @tech{strings}. The primary difference between
+Text values are very similar to @tech/guide{strings}. The primary difference between
 the two is in how character encoding and decoding are handled:
 
 @itemlist[

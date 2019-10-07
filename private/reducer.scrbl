@@ -12,6 +12,7 @@
                      rebellion/streaming/reducer
                      rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -327,7 +328,7 @@ reducers with increasing power and complexity:
 @defproc[(make-reducer-based-for-comprehensions [reducer-expression syntax?])
          (values (-> syntax? syntax?)
                  (-> syntax? syntax?))]{
- Returns two @tech{syntax transformers} suitable for use with @racket[
+ Returns two @tech/reference{syntax transformers} suitable for use with @racket[
  define-syntaxes] that implement two @racket[for]-like macros. The returned
  macros use @racket[reducer-expression] to iterate like @racket[for/reducer]
  and @racket[for*/reducer], respectively. Provided at phase 1.

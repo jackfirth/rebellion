@@ -12,6 +12,7 @@
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -58,7 +59,7 @@ early, before the input sequence is fully consumed.
               #:into (join-into-string ", ")))}
 
 @defproc[(in-transducing [seq sequence?] [trans transducer?]) sequence?]{
- Lazily transduces @racket[seq] with @racket[trans], returning a @tech{sequence}
+ Lazily transduces @racket[seq] with @racket[trans], returning a @tech/reference{sequence}
  that, when iterated, passes the elements of @racket[seq] to @racket[trans] as
  inputs and uses the emitted outputs of @racket[trans] as the wrapper sequence's
  elements.}

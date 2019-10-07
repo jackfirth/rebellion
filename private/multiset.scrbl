@@ -6,6 +6,7 @@
                      rebellion/collection/multiset
                      rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -17,7 +18,7 @@
 @title{Multisets}
 @defmodule[rebellion/collection/multiset]
 
-A @deftech{multiset} is an unordered collection, like a @tech{set}, except it
+A @deftech{multiset} is an unordered collection, like a @tech/reference{set}, except it
 can contain duplicate elements. Elements are always compared with @racket[
  equal?].
 
@@ -153,7 +154,7 @@ the modified multiset.
 @section{Multiset Iteration and Comprehension}
 
 @defproc[(in-multiset [set multiset?]) sequence?]{
- Returns a @tech{sequence} that iterates over the elements of @racket[set],
+ Returns a @tech/reference{sequence} that iterates over the elements of @racket[set],
  including duplicates.
 
  @(examples

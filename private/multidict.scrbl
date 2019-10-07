@@ -9,6 +9,7 @@
                      rebellion/collection/multiset
                      rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -253,7 +254,7 @@ interface is based on a flattened collection of key-value pairs.
 @section{Multidict Iterations and Comprehensions}
 
 @defproc[(in-multidict-entries [dict multidict?]) (sequence/c entry?)]{
- Returns a @tech{sequence} of the @tech{entries} in @racket[dict].
+ Returns a @tech/reference{sequence} of the @tech{entries} in @racket[dict].
 
  @(examples
    #:eval (make-evaluator) #:once

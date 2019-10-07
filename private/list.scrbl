@@ -7,6 +7,7 @@
                      rebellion/collection/list
                      rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -24,7 +25,7 @@ lists. Additionally, it provides a few utilities for integrating lists with some
 of Rebellion's standard abstractions, such as @tech{reducers}. No attempt is
 made to wrap every possible list-related function or rename every export of
 @racketmodname[racket/list], as many of these operations are better expressed in
-terms of generic @tech{sequences}, @racket[for] loops, and @tech{reducers}
+terms of generic @tech/reference{sequences}, @racket[for] loops, and @tech{reducers}
 rather than lists specifically.
 
 For the purposes of this library, "list" means "proper list". Improper lists
@@ -94,7 +95,7 @@ list-related tasks and should be avoided in favor of other data structures.
  Returns @racket[#t] if @racket[lst] contains @racket[v], returns @racket[#f]
  otherwise. This operation takes time linear in the length of the list. Lists
  are not designed for efficient membership queries, so if you find yourself
- using this function consider whether you could use a @tech{set} or @tech{
+ using this function consider whether you could use a @tech/reference{set} or @tech{
   multiset} instead.
 
  @(examples
@@ -136,7 +137,7 @@ list-related tasks and should be avoided in favor of other data structures.
  A @tech{reducer} that collects elements into a list, in reverse order. This can
  be more efficient than @racket[into-list]. This function should be preferred
  over @racket[in-list] when the order of the returned list doesn't matter, but
- in these cases strongly consider using @tech{sets} or @tech{multisets} instead
+ in these cases strongly consider using @tech/reference{sets} or @tech{multisets} instead
  of lists to make the lack of order explicit.
 
  @(examples

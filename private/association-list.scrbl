@@ -8,6 +8,7 @@
                      rebellion/collection/immutable-vector
                      rebellion/collection/multiset)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
 
 @(define make-evaluator
@@ -89,7 +90,7 @@ key-value pairs.
 
 @defproc[(association-list-unique-keys [assoc association-list?])
          immutable-set?]{
- Returns a @tech{set} containing the keys in @racket[assoc], without duplicates.
+ Returns a @tech/reference{set} containing the keys in @racket[assoc], without duplicates.
 
  @(examples
    #:eval (make-evaluator) #:once
