@@ -21,7 +21,6 @@
   [multiset-size (-> multiset? natural?)]
   [multiset-unique-elements (-> multiset? immutable-set?)]
   [multiset->list (-> multiset? list?)]
-  [list->multiset (-> list? multiset?)]
   [sequence->multiset (-> (sequence/c any/c) multiset?)]
   [empty-multiset multiset?]
   [in-multiset (-> multiset? sequence?)]
@@ -223,8 +222,6 @@
 (define (multiset->list set)
   (frequency-hash->list (multiset-frequencies set)))
 
-(define (list->multiset lst) (apply multiset lst))
-
 (define (sequence->multiset seq)
   (reduce-all into-multiset seq))
 
@@ -251,8 +248,6 @@
     (check-true (multiset-contains? letters 'b))
     (check-false (multiset-contains? letters 'foo)))
   (test-case "conversion"
-    (check-equal? (list->multiset (multiset->list letters)) letters)
-    (check-equal? (length (multiset->list letters)) 7)
     (check-equal? (sequence->multiset "hello")
                   (multiset #\h #\e #\l #\l #\o)))
   (test-case "iteration"

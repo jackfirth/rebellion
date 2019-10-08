@@ -200,14 +200,6 @@ the modified multiset.
    #:eval (make-evaluator) #:once
    (multiset->list (multiset 'a 'a 'b 'c 'c 'c 'd)))}
 
-@defproc[(list->multiset [lst list?]) multiset?]{
- Returns a @tech{multiset} containing the elements of @racket[lst], including
- duplicates.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (list->multiset (list 'a 'a 'b 'c 'c 'c 'd)))}
-
 @defproc[(sequence->multiset [seq sequence?]) multiset?]{
  Returns a @tech{multiset} containing the elements of @racket[seq], including
  duplicates.
