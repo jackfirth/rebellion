@@ -97,10 +97,9 @@
   (hash-ref (association-list-backing-hash assoc) k empty-immutable-vector))
 
 (define (association-list-keys assoc)
-  (list->multiset
-    (for*/list ([(k vec) (in-hash (association-list-backing-hash assoc))]
-                [_ (in-range (immutable-vector-length vec))])
-      k)))
+  (for*/multiset ([(k vec) (in-hash (association-list-backing-hash assoc))]
+                  [_ (in-range (immutable-vector-length vec))])
+    k))
 
 (define (association-list-unique-keys assoc)
   (multiset-unique-elements (association-list-keys assoc)))
