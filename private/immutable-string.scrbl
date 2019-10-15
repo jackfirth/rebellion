@@ -149,3 +149,10 @@ always accept and return immutable strings.
           [#:before-last before-last immutable-string? sep]
           [#:after-last after-last immutable-string? ""])
          immutable-string?]
+
+@defproc[(immutable-string-split
+          [str immutable-string?]
+          [sep (or/c immutable-string? regexp?) #px"\\s+"]
+          [#:trim? trim? boolean? #t]
+          [#:repeat? repeat? boolean? #f])
+         (listof immutable-string?)]

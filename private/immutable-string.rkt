@@ -59,6 +59,12 @@
          #:before-last immutable-string?
          #:after-last immutable-string?)
         immutable-string?)]
+  [immutable-string-split
+   (->* (immutable-string?)
+        ((or/c immutable-string? regexp?)
+         #:trim? boolean?
+         #:repeat? boolean?)
+        (listof immutable-string?))]
   [number->immutable-string
    (->* (number?) ((or/c 2 8 10 16)) immutable-string?)]))
 
@@ -163,3 +169,10 @@
                 #:before-first before-first
                 #:before-last before-last
                 #:after-last after-last)))
+
+(define (immutable-string-split str
+                                [sep #px"\\s+"]
+                                #:trim? [trim? #t]
+                                #:repeat? [repeat? #f])
+  (define split-pieces (string-split str sep #:trim? trim? #:repeat? repeat?))
+  (for/list ([piece (in-list split-pieces)]) (string->immutable-string piece)))
