@@ -4,6 +4,7 @@
                      racket/contract/base
                      racket/math
                      rebellion/binary/bitstring)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
@@ -17,7 +18,8 @@
 
 A @deftech{bitstring} is an immutable, contiguous sequence of @tech{bits}.
 Bitstrings are represented compactly; a bitstring of 8N bits consumes N bytes of
-memory, plus some constant overhead.
+memory, plus some constant overhead. Bitstrings implement the @tech/reference{
+ sequence} interface.
 
 @defproc[(bitstring? [v any/c]) boolean?]{
  A predicate for @tech{bitstrings}.}
@@ -59,6 +61,19 @@ memory, plus some constant overhead.
    (bitstring-size (bitstring))
    (bitstring-size (bitstring 1 1 1 1 0 0 0 0))
    (bitstring-size (bitstring 1 1 1 1 0 0 0 0 1)))}
+
+@defproc[(in-bitstring [bits bitstring?]) (sequence/c bit?)]{
+ Returns a @tech/reference{sequence} that traverses each bit in @racket[bits].
+ Note that bitstrings already implement the sequence interface, but using this
+ function in a @racket[for] comprehension may improve performance and error
+ messages over using @racket[bits] directly.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for ([position (in-naturals)]
+         [bit (in-bitstring (bitstring 1 1 0 0 1 0 1 0 0 1))]
+         #:unless (zero? bit))
+     (printf "Bit ~a is set\n" position)))}
 
 @defproc[(bitstring->padded-bytes [bits bitstring?]) immutable-bytes?]{
  Returns an immutable byte string where each byte corresponds to eight bits of
