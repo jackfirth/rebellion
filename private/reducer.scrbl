@@ -5,10 +5,12 @@
                      racket/math
                      racket/sequence
                      racket/vector
+                     rebellion/base/comparator
                      rebellion/base/immutable-string
                      rebellion/base/option
                      rebellion/base/symbol
                      rebellion/base/variant
+                     rebellion/collection/list
                      rebellion/streaming/reducer
                      rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -19,8 +21,10 @@
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/sequence
                    'racket/vector
+                   'rebellion/base/comparator
                    'rebellion/base/immutable-string
                    'rebellion/base/variant
+                   'rebellion/collection/list
                    'rebellion/streaming/reducer
                    'rebellion/type/record)
     #:private (list 'racket/base)))
@@ -121,6 +125,37 @@ fully consumed.
    #:eval (make-evaluator) #:once
    (reduce-all (into-index-where char-whitespace?) "hello world")
    (reduce-all (into-index-where char-numeric?) "goodbye world"))}
+
+@deftogether[[
+ @defproc[(into-max [comparator comparator? real<=>]
+                    [#:key key-function (-> any/c any/c) values])
+          reducer?]
+ @defproc[(into-min [comparator comparator? real<=>]
+                    [#:key key-function (-> any/c any/c) values])
+          reducer?]]]{
+ Constructs a @tech{reducer} that searches the reduced sequence for either the
+ greatest element or the least element, respectively. If @racket[key-function]
+ is provided, it is used to extract the compared value from each element.
+ Comparisons are performed with @racket[comparator] (which defaults to a
+ numeric comparison). If the reduced sequence contains no values, @racket[
+ absent] is returned by the constructed reducer. When the sequence contains
+ equivalent but distinct maximum or minimum elements, the first of them is
+ returned.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-max) (in-range 1 10))
+   (reduce-all (into-min) (in-range 1 10))
+   (reduce-all (into-max) empty-list)
+   
+   (reduce (into-min string<=>) "goodbye" "cruel" "world")
+
+   (define-record-type gemstone (color weight))
+   (reduce (into-max #:key gemstone-weight)
+           (gemstone #:color 'red #:weight 5)
+           (gemstone #:color 'blue #:weight 7)
+           (gemstone #:color 'green #:weight 3)
+           (gemstone #:color 'yellow #:weight 7)))}
 
 @defthing[into-string reducer?]{
  A @tech{reducer} that collects a sequence of individual characters into an
