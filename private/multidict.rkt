@@ -18,6 +18,7 @@
   [multidict-keys (-> multidict? multiset?)]
   [multidict-values (-> multidict? multiset?)]
   [multidict-unique-keys (-> multidict? immutable-set?)]
+  [multidict-unique-values (-> multidict? immutable-set?)]
   [multidict-entries (-> multidict? (set/c entry? #:cmp 'equal))]
   [multidict-contains-key? (-> multidict? any/c boolean?)]
   [multidict-contains-value? (-> multidict? any/c boolean?)]
@@ -94,36 +95,108 @@
         (cons prop:sequence sequence)
         (cons prop:custom-write custom-write)))
 
-(define-record-type multidict (backing-hash size)
+(define-record-type set-delta (extra-elements missing-elements))
+
+(define (set-compute-differences set other-set)
+  (set-delta #:extra-elements (set-subtract set other-set)
+             #:missing-elements (set-subtract other-set set)))
+
+(define (set-delta-size-change delta)
+  (define extra (set-delta-extra-elements delta))
+  (define missing (set-delta-missing-elements delta))
+  (- (set-count missing) (set-count extra)))
+
+;@------------------------------------------------------------------------------
+(define-record-type multidict (size backing-hash inverted-hash keys values)
   #:constructor-name constructor:multidict
   #:property-maker make-multidict-properties)
 
 (define (in-multidict-entries dict) dict)
 
-(define empty-multidict (constructor:multidict #:backing-hash (hash) #:size 0))
+(define empty-multidict
+  (constructor:multidict #:size 0
+                         #:backing-hash (hash)
+                         #:inverted-hash (hash)
+                         #:keys empty-multiset
+                         #:values empty-multiset))
 
-(define (multidict-replace-values dict k seq)
+(define (multidict-replace-values
+         dict k seq
+         ;; The precomputed delta argument is used by the multidict-add and
+         ;; multidict-remove functions to avoid possible O(n) costs in computing
+         ;; the delta. Both of those functions already know the delta: it will
+         ;; either be empty, a single extra element, or a single missing
+         ;; element. If we didn't precompute, then repeatedly calling add or
+         ;; remove on a multidict with the same key would result in quadratic
+         ;; performance.
+         #:precomputed-value-set-delta [precomputed-delta #f])
   (define vs (sequence->set seq))
   (define old-vs (multidict-ref dict k))
-  (define size
-    (+ (multidict-size dict) (set-count vs) (- (set-count old-vs))))
+  (define delta (or precomputed-delta (set-compute-differences old-vs vs)))
+  (define size-delta (set-delta-size-change delta))
+  (define size (+ (multidict-size dict) size-delta))
   (define old-backing-hash (multidict-backing-hash dict))
   (define backing-hash
     (if (set-empty? vs)
         (hash-remove old-backing-hash k)
         (hash-set old-backing-hash k vs)))
-  (constructor:multidict #:size size #:backing-hash backing-hash))
+  (define inverted-hash
+    (update-inverted-hash-from-value-mappings-delta
+     (multidict-inverted-hash dict)
+     k
+     delta))
+  (define old-keys (multidict-keys dict))
+  (define new-key-freq (+ (multiset-frequency old-keys k) size-delta))
+  (define keys (multiset-set-frequency old-keys k new-key-freq))
+  (define old-all-values (multidict-values dict))
+  (define all-values
+    (for/fold ([set (multiset-add-all old-all-values
+                                      (set-delta-missing-elements delta))])
+              ([v (in-immutable-set (set-delta-extra-elements delta))])
+      (multiset-remove set v)))
+  (constructor:multidict
+   #:size size
+   #:backing-hash backing-hash
+   #:inverted-hash inverted-hash
+   #:keys keys
+   #:values all-values))
+
+(define (update-inverted-hash-from-value-mappings-delta old-inverted-hash
+                                                        k
+                                                        delta)
+  (define inverted-hash/removals-applied
+    (for/fold ([h old-inverted-hash])
+              ([v (in-immutable-set (set-delta-extra-elements delta))])
+      (define new-ks (set-remove (hash-ref h v (set)) k))
+      (if (set-empty? new-ks)
+          (hash-remove h v)
+          (hash-set h v new-ks))))
+  (for/fold ([h inverted-hash/removals-applied])
+            ([v (in-immutable-set (set-delta-missing-elements delta))])
+    (hash-set h v (set-add (hash-ref h v (set)) k))))
 
 (define (multidict-add dict k v)
-  (define new-vs (set-add (multidict-ref dict k) v))
-  (multidict-replace-values dict k new-vs))
+  (define old-vs (multidict-ref dict k))
+  (cond
+    [(set-member? old-vs v) dict]
+    [else
+     (define delta
+       (set-delta #:extra-elements (set) #:missing-elements (set v)))
+     (multidict-replace-values dict k (set-add old-vs v)
+                               #:precomputed-value-set-delta delta)]))
 
 (define (multidict-add-entry dict e)
   (multidict-add dict (entry-key e) (entry-value e)))
 
 (define (multidict-remove dict k v)
-  (define new-vs (set-remove (multidict-ref dict k) v))
-  (multidict-replace-values dict k new-vs))
+  (define old-vs (multidict-ref dict k))
+  (cond
+    [(set-member? old-vs v)
+     (define delta
+       (set-delta #:extra-elements (set v) #:missing-elements (set)))
+     (multidict-replace-values dict k (set-remove old-vs v)
+                               #:precomputed-value-set-delta delta)]
+    [else dict]))
 
 (define (multidict-remove-entry dict e)
   (multidict-remove dict (entry-key e) (entry-value e)))
@@ -191,14 +264,11 @@
   (for/multidict ([entry-pair (in-slice 2 entries)])
     (entry (first entry-pair) (second entry-pair))))
 
-(define (multidict-keys dict)
-  (for/multiset ([e (in-multidict-entries dict)]) (entry-key e)))
-
 (define (multidict-unique-keys dict)
-  (for/set ([k (in-hash-keys (multidict-backing-hash dict))]) k))
+  (multiset-unique-elements (multidict-keys dict)))
 
-(define (multidict-values dict)
-  (for/multiset ([e (in-multidict-entries dict)]) (entry-value e)))
+(define (multidict-unique-values dict)
+  (multiset-unique-elements (multidict-values dict)))
 
 (define (multidict-entries dict)
   (for/set ([e (in-multidict-entries dict)]) e))
@@ -206,9 +276,13 @@
 (define (multidict->hash dict) (multidict-backing-hash dict))
 
 (define (multidict-inverse dict)
-  (for/multidict ([e (in-multidict-entries dict)])
-    (entry (entry-value e) (entry-key e))))
-
+  (constructor:multidict
+   #:size (multidict-size dict)
+   #:backing-hash (multidict-inverted-hash dict)
+   #:inverted-hash (multidict-backing-hash dict)
+   #:keys (multidict-values dict)
+   #:values (multidict-keys dict)))
+  
 (define (multidict-ref dict k) (hash-ref (multidict-backing-hash dict) k (set)))
 
 (define (multidict-contains-key? dict k)
@@ -245,6 +319,8 @@
     (check-equal? (multidict-values dict) (multiset 1 2 3 4 1)))
   (test-case "multidict-unique-keys"
     (check-equal? (multidict-unique-keys dict) (set 'a 'b 'c)))
+  (test-case "multidict-unique-values"
+    (check-equal? (multidict-unique-values dict) (set 1 2 3 4)))
   (test-case "multidict-entries"
     (check-equal? (multidict-entries dict)
                   (set (entry 'a 1)

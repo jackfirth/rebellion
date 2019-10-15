@@ -175,6 +175,19 @@ interface is based on a flattened collection of key-value pairs.
                'vegetable 'carrot
                'vegetable 'celery)))}
 
+@defproc[(multidict-unique-values [dict multidict?]) immutable-set?]{
+ Returns the set of values in @racket[dict], ignoring duplicates.
+                                                                   
+  @(examples
+   #:eval (make-evaluator) #:once
+   (multidict-unique-values
+    (multidict "Iron Man" 'marvel
+               "Superman" 'dc
+               "The Black Panther" 'marvel
+               "Wonder Woman" 'dc
+               "The Hulk" 'marvel
+               "Captain Marvel" 'marvel)))}
+
 @defproc[(multidict-entries [dict multidict?]) (immutable-set/c entry?)]{
  Returns the set of @tech{entries} in @racket[dict]. Note that this is
  @bold{not} a @tech{multiset}, because for each key the collection of values
