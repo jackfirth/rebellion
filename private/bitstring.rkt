@@ -11,6 +11,7 @@
    (->i ([bits () bitstring?]
          [pos (bits) (integer-in 0 (bitstring-size bits))])
         [_ bit?])]
+  [in-bitstring (-> bitstring? (sequence/c bit?))]
   [bitstring->padded-bytes (-> bitstring? immutable-bytes?)]
   [bytes->bitstring
    (->* (immutable-bytes?) (#:padding (integer-in 0 7)) bitstring?)]
@@ -19,6 +20,8 @@
 (require racket/format
          racket/list
          racket/math
+         racket/sequence
+         racket/stream
          racket/struct
          rebellion/binary/bit
          rebellion/binary/byte
@@ -54,8 +57,10 @@
                       (- 8 padding)
                       8))])
          (byte-ref byte bit)))))
+  (define (sequence-impl bits) (in-bitstring bits))
   (list (cons prop:custom-write custom-write)
-        (cons prop:equal+hash equal+hash)))
+        (cons prop:equal+hash equal+hash)
+        (cons prop:sequence sequence-impl)))
 
 (define-tuple-type bitstring (bytes padding)
   #:constructor-name plain-bitstring
@@ -89,10 +94,15 @@
   ;; Unfortunately Racket bytestrings do not support a freeze operation, which
   ;; would let us make a mutable bytestring immutable without allocating a copy.
   ;; This means we use double the necessary memory when constructing large
-  ;; bitstrings.
+  ;; bitstrings. However, half of that can be immediately reclaimed by GC so it
+  ;; merely contributes to memory pressure.
   (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
 
   (plain-bitstring padded-bytes padding-size))
+
+(define (in-bitstring bits)
+  (for/stream ([i (in-range (bitstring-size bits))])
+    (bitstring-ref bits i)))
 
 (define empty-bitstring (bitstring))
 
