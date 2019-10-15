@@ -14,6 +14,8 @@
    (->* (comparator? (-> any/c any/c))
         (#:name (or/c interned-symbol? #f))
         comparator?)]
+  [comparator-reverse
+   (-> comparator? comparator?)]
   [comparison? predicate/c]
   [lesser comparison?]
   [greater comparison?]
@@ -52,6 +54,11 @@
   (define (wrapped-func left right) (func (mapper left) (mapper right)))
   (make-comparator wrapped-func #:name name))
 
+(define (comparator-reverse comparator)
+  (define func (comparator-function comparator))
+  (define (wrapped-func left right) (func right left))
+  (make-comparator wrapped-func))
+
 (define real<=>
   (make-comparator
    (λ (x y) (cond [(< x y) lesser] [(= x y) equivalent] [else greater]))
@@ -72,4 +79,9 @@
   (test-case "string<=>"
     (check-equal? (compare string<=> "apple" "banana") lesser)
     (check-equal? (compare string<=> "apple" "aardvark") greater)
-    (check-equal? (compare string<=> "apple" "apple") equivalent)))
+    (check-equal? (compare string<=> "apple" "apple") equivalent))
+  (test-case "comparator-reverse"
+    (define reversed (comparator-reverse real<=>))
+    (check-equal? (compare reversed 1 2) greater)
+    (check-equal? (compare reversed 2 1) lesser)
+    (check-equal? (compare reversed 1 1) equivalent)))

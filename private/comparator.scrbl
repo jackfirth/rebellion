@@ -33,6 +33,8 @@ which (if either) is greater.
    (compare real<=> 5 8)
    (compare string<=> "foo" "bar"))}
 
+@section{Constructing Comparators}
+
 @defproc[(comparator-map [comparator comparator?]
                          [f (-> any/c any/c)]
                          [#:name name (or/c interned-symbol? #f) #f])
@@ -67,6 +69,16 @@ which (if either) is greater.
        #:name 'symbol<=>)))
    (compare symbol<=> 'apple 'banana)
    (compare symbol<=> 'apple 'aardvark))}
+
+@defproc[(comparator-reverse [comparator comparator?]) comparator?]{
+ Reverses @racket[comparator], returning a comparator that considers one value
+ greater than another when @racket[comparator] would consider it lesser and
+ vice-versa.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare real<=> 2 5)
+   (compare (comparator-reverse real<=>) 2 5))}
 
 @section{Predefined Comparators}
 
