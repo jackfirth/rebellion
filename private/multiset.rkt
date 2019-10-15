@@ -9,8 +9,7 @@
   [multiset (-> any/c ... multiset?)]
   [multiset? (-> any/c boolean?)]
   [multiset-add (->* (multiset? any/c) (#:copies natural?) multiset?)]
-  [multiset-add-all (-> multiset? (or/c multiset? (sequence/c any/c))
-                        multiset?)]
+  [multiset-add-all (-> multiset? multiset-coercible-sequence/c multiset?)]
   [multiset-remove
    (->* (multiset? any/c) (#:copies (or/c natural? +inf.0)) multiset?)]
   [multiset-set-frequency (-> multiset? any/c natural? multiset?)]
@@ -21,7 +20,7 @@
   [multiset-size (-> multiset? natural?)]
   [multiset-unique-elements (-> multiset? immutable-set?)]
   [multiset->list (-> multiset? list?)]
-  [sequence->multiset (-> (sequence/c any/c) multiset?)]
+  [sequence->multiset (-> multiset-coercible-sequence/c multiset?)]
   [empty-multiset multiset?]
   [in-multiset (-> multiset? sequence?)]
   [into-multiset reducer?]))
@@ -67,27 +66,40 @@
         (cons prop:custom-write custom-write)
         (cons prop:sequence in-multiset)))
 
-(define-record-type multiset (size frequencies)
+(define-record-type multiset (size frequencies unique-elements)
   #:property-maker make-multiset-props
   #:constructor-name constructor:multiset)
 
 (define empty-hash (hash))
+(define empty-set (set))
 
 (define (multiset . vs)
   (for/multiset ([v (in-list vs)])
     v))
 
-(define empty-multiset (constructor:multiset #:size 0 #:frequencies empty-hash))
+(define empty-multiset
+  (constructor:multiset #:size 0
+                        #:frequencies empty-hash
+                        #:unique-elements empty-set))
 
 (define (multiset-set-frequency set element frequency)
   (define old-frequency (multiset-frequency set element))
+  (define old-unique-elements (multiset-unique-elements set))
   (define frequencies
     (if (zero? frequency)
         (hash-remove (multiset-frequencies set) element)
         (hash-set (multiset-frequencies set) element frequency)))
+  (define unique-elements
+    (cond
+      [(and (zero? old-frequency) (not (zero? frequency)))
+       (set-add old-unique-elements element)]
+      [(and (not (zero? old-frequency)) (zero? frequency))
+       (set-remove old-unique-elements element)]
+      [else old-unique-elements]))
   (constructor:multiset
    #:size (+ (multiset-size set) frequency (- old-frequency))
-   #:frequencies frequencies))
+   #:frequencies frequencies
+   #:unique-elements unique-elements))
 
 (define (multiset-add set element #:copies [copies 1])
   (define frequency (+ (multiset-frequency set element) copies))
@@ -202,7 +214,9 @@
    #:size (+ (multiset-size a) (multiset-size b))
    #:frequencies (hash-union (multiset-frequencies a)
                              (multiset-frequencies b)
-                             #:combine +)))
+                             #:combine +)
+   #:unique-elements (set-union (multiset-unique-elements a)
+                                (multiset-unique-elements b))))
 
 (define (multiset-add-all set seq)
   (multiset-union set
@@ -222,11 +236,10 @@
 (define (multiset->list set)
   (frequency-hash->list (multiset-frequencies set)))
 
-(define (sequence->multiset seq)
-  (reduce-all into-multiset seq))
+(define multiset-coercible-sequence/c (or/c multiset? (sequence/c any/c)))
 
-(define (multiset-unique-elements set)
-  (list->set (hash-keys (multiset-frequencies set))))
+(define (sequence->multiset seq)
+  (if (multiset? seq) seq (reduce-all into-multiset seq)))
 
 (define (multiset-contains? set v)
   (hash-has-key? (multiset-frequencies set) v))
