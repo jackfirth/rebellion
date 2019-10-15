@@ -30,6 +30,8 @@
   [into-nth (-> natural? reducer?)]
   [into-index-of (-> any/c reducer?)]
   [into-index-where (-> predicate/c reducer?)]
+  [into-max (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
+  [into-min (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
   [into-string reducer?]
   [join-into-string
    (->* (immutable-string?)
@@ -50,6 +52,7 @@
          racket/bool
          racket/list
          racket/math
+         rebellion/base/comparator
          rebellion/base/immutable-string
          rebellion/base/option
          rebellion/base/symbol
@@ -382,3 +385,47 @@
                   (present 5))
     (check-equal? (reduce-all (into-index-where char-numeric?) "goodbye world")
                   absent)))
+
+(define-record-type candidate (element key))
+
+(define (compute-candidate elem key-function)
+  (candidate #:element elem #:key (key-function elem)))
+
+(define (into-max [comparator real<=>] #:key [key-function values])
+  (make-reducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer
+   (λ (best-candidate elem)
+     (define key (key-function elem))
+     (cond
+       [(absent? best-candidate)
+        (variant #:consume (present (candidate #:element elem #:key key)))]
+       [else
+        (define best-key
+          (candidate-key (present-value best-candidate)))
+        (cond
+          [(equal? (compare comparator best-key key) lesser)
+           (variant #:consume (present (candidate #:element elem #:key key)))]
+          [else (variant #:consume best-candidate)])]))
+   #:finisher (λ (best) (option-map best candidate-element))
+   #:early-finisher values
+   #:name 'into-max))
+
+(define (into-min [comparator real<=>] #:key [key-function values])
+  (into-max (comparator-reverse comparator) #:key key-function))
+
+(module+ test
+  (test-case "into-max"
+    (check-equal? (reduce (into-max)) absent)
+    (check-equal? (reduce (into-max) 2) (present 2))
+    (check-equal? (reduce (into-max) 2 7 5 3) (present 7))
+    (test-case "key-function"
+      (define max (into-max #:key string-length))
+      (check-equal? (reduce max "goodbye" "cruel" "world") (present "goodbye"))
+      (check-equal? (reduce max "the" "quick" "brown" "fox") (present "quick")))
+    (test-case "custom-comparator"
+      (define max (into-max string<=>))
+      (check-equal? (reduce max "a" "c" "b") (present "c"))
+      (check-equal? (reduce max "abc" "aaa") (present "abc"))))
+  (test-case "into-min"
+    (check-equal? (reduce (into-min) 4 8 2 16) (present 2))))
