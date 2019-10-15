@@ -89,7 +89,8 @@
   ;; Unfortunately Racket bytestrings do not support a freeze operation, which
   ;; would let us make a mutable bytestring immutable without allocating a copy.
   ;; This means we use double the necessary memory when constructing large
-  ;; bitstrings.
+  ;; bitstrings. However, half of that can be immediately reclaimed by GC so it
+  ;; merely contributes to memory pressure.
   (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
 
   (plain-bitstring padded-bytes padding-size))
