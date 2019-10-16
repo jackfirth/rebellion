@@ -153,7 +153,7 @@ early, before the input sequence is fully consumed.
 @defproc[(make-transducer
           [#:starter starter (-> transduction-state/c)]
           [#:consumer consumer (-> any/c transduction-state/c)]
-          [#:emitter emitter (-> emission?)]
+          [#:emitter emitter (-> any/c emission?)]
           [#:half-closer half-closer
            (-> any/c half-closed-transduction-state/c)]
           [#:half-closed-emitter half-closed-emitter
