@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     rebellion/base/immutable-string
                      rebellion/collection/entry
                      rebellion/collection/hash
                      rebellion/streaming/reducer
@@ -11,9 +12,10 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/entry
+    #:public (list 'rebellion/base/immutable-string
+                   'rebellion/collection/entry
                    'rebellion/collection/hash
-                   'rebellion/streaming/transducer
+                   'rebellion/streaming/reducer
                    'rebellion/type/record)
     #:private (list 'racket/base)))
 
