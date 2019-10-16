@@ -2,13 +2,19 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/collection/entry)
+                     rebellion/collection/entry
+                     rebellion/collection/hash
+                     rebellion/streaming/transducer
+                     rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/entry)
+    #:public (list 'rebellion/collection/entry
+                   'rebellion/collection/hash
+                   'rebellion/streaming/transducer
+                   'rebellion/type/record)
     #:private (list 'racket/base)))
 
 @title{Entries}
@@ -45,3 +51,56 @@ than a collection of @racket[pair?] values.
  @(examples
    #:eval (make-evaluator) #:once
    (entry-value (entry "banana" 'yellow)))}
+
+@defproc[(bisecting [key-function (-> any/c any/c)]
+                    [value-function (-> any/c any/c)])
+         transducer?]{
+ Constructs a @tech{transducer} that transforms each element of a sequence into
+ an @tech{entry}, by applying @racket[key-function] and @racket[value-function]
+ to the element to extract the key and value of the entry.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-record-type book (title author))
+    (define library
+      (list (book #:title "War and Peace" #:author "Leo Tolstoy")
+            (book #:title "To the Lighthouse" #:author "Virginia Woolf")
+            (book #:title "Frankenstein" #:author "Mary Shelley"))))
+   
+   (transduce library
+              (bisecting book-author book-title)
+              #:into into-hash))}
+
+@defproc[(indexing [key-function (-> any/c any/c)]) transducer?]{
+ Constructs a @tech{transducer} that transforms a sequence of elements into a
+ sequence of @tech{entries} keyed by @racket[key-function].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-record-type book (title author))
+    (define library
+      (list (book #:title "War and Peace" #:author "Leo Tolstoy")
+            (book #:title "To the Lighthouse" #:author "Virginia Woolf")
+            (book #:title "Frankenstein" #:author "Mary Shelley"))))
+
+   (transduce library
+              (indexing book-title)
+              #:into into-hash))}
+
+@defproc[(mapping-keys [key-function (-> any/c any/c)]) transducer?]{
+ Like @racket[mapping], but the sequence must be made of @tech{entries} and
+ @racket[key-function] is applied to the key of each entry.}
+
+@defproc[(mapping-values [value-function (-> any/c any/c)]) transducer?]{
+ Like @racket[mapping], but the sequence must be made of @tech{entries} and
+ @racket[value-function] is applied to the key of each entry.}
+
+@defproc[(filtering-keys [key-predicate predicate/c]) transducer?]{
+ Like @racket[filtering], but the sequence must be made of @tech{entries} and
+ the key of each entry must satisfy @racket[key-predicate].}
+
+@defproc[(filtering-values [value-predicate predicate/c]) transducer?]{
+ Like @racket[filtering], but the sequence must be made of @tech{entries} and
+ the value of each entry must satisfy @racket[value-predicate].}
