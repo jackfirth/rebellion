@@ -5,6 +5,7 @@
                      rebellion/base/immutable-string
                      rebellion/collection/entry
                      rebellion/collection/hash
+                     rebellion/collection/multidict
                      rebellion/streaming/reducer
                      rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -15,6 +16,7 @@
     #:public (list 'rebellion/base/immutable-string
                    'rebellion/collection/entry
                    'rebellion/collection/hash
+                   'rebellion/collection/multidict
                    'rebellion/streaming/reducer
                    'rebellion/type/record)
     #:private (list 'racket/base)))
@@ -32,7 +34,9 @@
  @defthing[into-hash reducer?]
  @defthing[into-mutable-hash reducer?]]]{
  A pair of @tech{reducers} that build either an immutable hash table or a
- mutable hash table from a sequence of @tech{entries}.
+ mutable hash table from a sequence of @tech{entries}. Duplicate keys are not
+ allowed, and attempting to reduce a sequence containing duplicate keys will
+ raise @racket[exn:fail:contract].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -40,6 +44,22 @@
                 ([str (immutable-string-split "The quick brown fox")])
      (entry (string-downcase str)
             (immutable-string-length str))))}
+
+@deftogether[[
+ @defproc[(combine-into-hash [value-combiner (-> any/c any/c any/c)]) reducer?]
+ @defproc[(combine-into-mutable-hash [value-combiner (-> any/c any/c any/c)])
+          reducer?]]]{
+ Constructs a @tech{reducer} that combines a sequence of @tech{entries} into
+ either an immutable hash table or a mutable hash table, respectively. Values
+ for duplicate keys are combined using @racket[value-combiner].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (combine-into-hash immutable-string-append)
+               (multidict 1 "apple"
+                          1 "banana"
+                          2 "orange"
+                          2 "grape")))}
 
 @defthing[empty-hash immutable-hash? #:value (hash)]{
  The empty (immutable) hash table.}
@@ -51,3 +71,9 @@
 @defproc[(hash-set-entry! [h mutable-hash?] [e entry?]) void?]{
  Like @racket[hash-set!], but accepting a single @tech{entry} argument instead
  of separate key and value arguments.}
+
+@defproc[(in-hash-entries [h immutable-hash?]) (sequence/c entry?)]{
+ Returns a sequence of the @tech{entries} in @racket[h].}
+
+@defproc[(in-mutable-hash-entries [h mutable-hash?]) (sequence/c entry?)]{
+ Returns a sequence of the @tech{entries} in @racket[h].}
