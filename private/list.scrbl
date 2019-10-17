@@ -144,13 +144,13 @@ list-related tasks and should be avoided in favor of other data structures.
    #:eval (make-evaluator) #:once
    (reduce into-reversed-list 1 2 3 4 5))}
 
-@defthing[appending-into-list reducer?]{
+@defthing[append-into-list reducer?]{
  A @tech{reducer} that collects a sequence of lists into a single list, in the
  same manner as @racket[list-append].
 
  @(examples
    #:eval (make-evaluator) #:once
-   (reduce appending-into-list
+   (reduce append-into-list
            (list 1 2 3)
            (list 'a 'b)
            empty-list
