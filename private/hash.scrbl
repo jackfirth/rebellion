@@ -32,7 +32,9 @@
  @defthing[into-hash reducer?]
  @defthing[into-mutable-hash reducer?]]]{
  A pair of @tech{reducers} that build either an immutable hash table or a
- mutable hash table from a sequence of @tech{entries}.
+ mutable hash table from a sequence of @tech{entries}. Duplicate keys are not
+ allowed, and attempting to reduce a sequence containing duplicate keys will
+ raise @racket[exn:fail:contract].
 
  @(examples
    #:eval (make-evaluator) #:once
