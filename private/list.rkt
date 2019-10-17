@@ -17,7 +17,7 @@
   [list-reverse (-> list? list?)]
   [into-list reducer?]
   [into-reversed-list reducer?]
-  [appending-into-list reducer?]))
+  [append-into-list reducer?]))
 
 (require racket/math
          rebellion/base/option
@@ -57,7 +57,7 @@
 (define into-reversed-list
   (make-fold-reducer list-insert empty-list #:name 'into-reversed-list))
 
-(define appending-into-list
+(define append-into-list
   (reducer-map into-list #:range (λ (lst) (apply list-append lst))))
 
 (module+ test
@@ -84,8 +84,8 @@
   (test-case "into-reversed-list"
     (check-equal? (reduce into-reversed-list 1 2 3 4 5) (list 5 4 3 2 1))
     (check-equal? (reduce into-reversed-list) empty-list))
-  (test-case "appending-into-list"
-    (check-equal? (reduce appending-into-list
+  (test-case "append-into-list"
+    (check-equal? (reduce append-into-list
                           (list 1 2 3)
                           (list 'a 'b)
                           empty-list
