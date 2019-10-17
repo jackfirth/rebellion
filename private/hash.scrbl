@@ -5,7 +5,6 @@
                      rebellion/base/immutable-string
                      rebellion/collection/entry
                      rebellion/collection/hash
-                     rebellion/collection/multidict
                      rebellion/streaming/reducer
                      rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -16,7 +15,6 @@
     #:public (list 'rebellion/base/immutable-string
                    'rebellion/collection/entry
                    'rebellion/collection/hash
-                   'rebellion/collection/multidict
                    'rebellion/streaming/reducer
                    'rebellion/type/record)
     #:private (list 'racket/base)))
@@ -55,11 +53,13 @@
 
  @(examples
    #:eval (make-evaluator) #:once
-   (reduce-all (combine-into-hash immutable-string-append)
-               (multidict 1 "apple"
-                          1 "banana"
-                          2 "orange"
-                          2 "grape")))}
+   (reduce (combine-into-hash immutable-string-append)
+           (entry 1 "apple")
+           (entry 1 ".")
+           (entry 1 "banana")
+           (entry 2 "orange")
+           (entry 2 ".")
+           (entry 2 "grape"))))}
 
 @defthing[empty-hash immutable-hash? #:value (hash)]{
  The empty (immutable) hash table.}
