@@ -59,10 +59,10 @@ early, before the input sequence is fully consumed.
               #:into (join-into-string ", ")))}
 
 @defproc[(in-transducing [seq sequence?] [trans transducer?]) sequence?]{
- Lazily transduces @racket[seq] with @racket[trans], returning a @tech/reference{sequence}
- that, when iterated, passes the elements of @racket[seq] to @racket[trans] as
- inputs and uses the emitted outputs of @racket[trans] as the wrapper sequence's
- elements.}
+ Lazily transduces @racket[seq] with @racket[trans], returning a
+ @tech/reference{sequence} that, when iterated, passes the elements of @racket[
+ seq] to @racket[trans] as inputs and uses the emitted outputs of @racket[trans]
+ as the wrapper sequence's elements.}
 
 @defproc[(filtering [pred predicate/c]) transducer?]{
  Constructs a @tech{transducer} that passes input elements downstream only when
