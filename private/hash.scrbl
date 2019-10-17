@@ -53,3 +53,9 @@
 @defproc[(hash-set-entry! [h mutable-hash?] [e entry?]) void?]{
  Like @racket[hash-set!], but accepting a single @tech{entry} argument instead
  of separate key and value arguments.}
+
+@defproc[(in-hash-entries [h immutable-hash?]) (sequence/c entry?)]{
+ Returns a sequence of the @tech{entries} in @racket[h].}
+
+@defproc[(in-mutable-hash-entries [h mutable-hash?]) (sequence/c entry?)]{
+ Returns a sequence of the @tech{entries} in @racket[h].}
