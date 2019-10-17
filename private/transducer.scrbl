@@ -150,6 +150,24 @@ early, before the input sequence is fully consumed.
               (dropping-while char-alphabetic?)
               #:into into-string))}
 
+@defproc[(batching [batch-reducer reducer?]) transducer?]{
+ Constructs a @tech{transducer} that collects elements of the transduced
+ sequence into batches using @racket[batch-reducer]. Elements are fed into
+ @racket[batch-reducer] until it terminates the reduction, then the reducer's
+ result is emitted downstream and the reducer is restarted to prepare the next
+ batch. When the transduced sequence has no more elements, the batch reducer's
+ finisher is called to produce the last batch.
+
+ If @racket[batch-reducer] refuses to consume any elements and immediately
+ terminates the reduction every time it's started, then the returned transducer
+ raises @racket[exn:fail:contract].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 10)
+              (batching (reducer-limit into-list 4))
+              #:into into-list))}
+
 @defproc[(make-transducer
           [#:starter starter (-> transduction-state/c)]
           [#:consumer consumer (-> any/c transduction-state/c)]
