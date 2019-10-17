@@ -300,6 +300,16 @@ reducers with increasing power and complexity:
    (reduce into-small-immutable-vector 1 2 3)
    (reduce-all into-small-immutable-vector (in-naturals)))}
 
+@deftogether[[
+ @defproc[(reducer-starter [red reducer?])
+          (-> (variant/c #:consume any/c #:early-finish any/c))]
+ @defproc[(reducer-consumer [red reducer?])
+          (-> any/c any/c (variant/c #:consume any/c #:early-finish any/c))]
+ @defproc[(reducer-finisher [red reducer?]) (-> any/c any/c)]
+ @defproc[(reducer-early-finisher [red reducer?]) (-> any/c any/c)]]]{
+ Accessors for the functions that implement a @tech{reducer}. Each accessor
+ corresponds to one of the functions given to @racket[make-reducer].}
+
 @section{Reducer Operators}
 
 @defproc[(reducer-map [red reducer?]

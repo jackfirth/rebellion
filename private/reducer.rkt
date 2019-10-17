@@ -22,6 +22,10 @@
          #:early-finisher (-> any/c any/c))
         (#:name (or/c interned-symbol? #f))
         reducer?)]
+  [reducer-starter (-> reducer? (-> variant?))]
+  [reducer-consumer (-> reducer? (-> any/c any/c variant?))]
+  [reducer-finisher (-> reducer? (-> any/c any/c))]
+  [reducer-early-finisher (-> reducer? (-> any/c any/c))]
   [reduce (-> reducer? any/c ... any/c)]
   [reduce-all (-> reducer? sequence? any/c)]
   [into-sum reducer?]
