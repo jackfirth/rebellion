@@ -59,10 +59,10 @@ early, before the input sequence is fully consumed.
               #:into (join-into-string ", ")))}
 
 @defproc[(in-transducing [seq sequence?] [trans transducer?]) sequence?]{
- Lazily transduces @racket[seq] with @racket[trans], returning a @tech/reference{sequence}
- that, when iterated, passes the elements of @racket[seq] to @racket[trans] as
- inputs and uses the emitted outputs of @racket[trans] as the wrapper sequence's
- elements.}
+ Lazily transduces @racket[seq] with @racket[trans], returning a
+ @tech/reference{sequence} that, when iterated, passes the elements of @racket[
+ seq] to @racket[trans] as inputs and uses the emitted outputs of @racket[trans]
+ as the wrapper sequence's elements.}
 
 @defproc[(filtering [pred predicate/c]) transducer?]{
  Constructs a @tech{transducer} that passes input elements downstream only when
@@ -149,6 +149,26 @@ early, before the input sequence is fully consumed.
    (transduce "The quick brown fox"
               (dropping-while char-alphabetic?)
               #:into into-string))}
+
+@defproc[(batching [batch-reducer reducer?]) transducer?]{
+ Constructs a @tech{transducer} that collects elements of the transduced
+ sequence into batches using @racket[batch-reducer]. Elements are fed into
+ @racket[batch-reducer] until it terminates the reduction, then the reduction
+ result is emitted downstream. If there are more elements remaining, then the
+ @racket[batch-reducer] is restarted to prepare the next batch. When the
+ transduced sequence has no more elements, if the last batch is only partially
+ complete, then the @racket[batch-reducer]'s finisher is called to produce the
+ last batch.
+
+ If @racket[batch-reducer] refuses to consume any elements and immediately
+ terminates the reduction every time it's started, then the returned transducer
+ raises @racket[exn:fail:contract].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 10)
+              (batching (reducer-limit into-list 4))
+              #:into into-list))}
 
 @defproc[(make-transducer
           [#:starter starter (-> transduction-state/c)]
