@@ -93,6 +93,20 @@ is significant and duplicate rows are allowed.
             (row "Japan" 126400000 "Tokyo")))
    (table-columns-ref countries '#:capital-city))}
 
+@defproc[(table-size [tab table?]) natural?]{
+ Returns the number of rows in @racket[tab].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define countries
+      (table (columns #:name #:population #:capital-city)
+             (row "Argentina" 43800000 "Buenos Aires")
+             (row "Greece" 10800000 "Athens")
+             (row "Nigeria" 198600000 "Abuja")
+             (row "Japan" 126400000 "Tokyo"))))
+   (table-size countries))}
+
 @section{Table Comprehensions}
 
 @defform[(for/table (for-clause ...) body-or-break ... body)
