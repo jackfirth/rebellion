@@ -75,11 +75,21 @@
                                     #:instance instance
                                     #:predicate pred))
 
-(define (default-singleton-properties descriptor)
+(define (default-singleton-custom-write descriptor)
   (define name (singleton-type-name (singleton-descriptor-type descriptor)))
-  (list (cons prop:object-name (λ (_) name))
+  (define str (string-append "#<" (symbol->string name) ">"))
+  (λ (this out mode)
+    (write-string str out)
+    (void)))
+
+(define (default-singleton-object-name descriptor)
+  (define name (singleton-type-name (singleton-descriptor-type descriptor)))
+  (λ (_) name))
+
+(define (default-singleton-properties descriptor)
+  (list (cons prop:object-name (default-singleton-object-name descriptor))
         (cons prop:equal+hash (make-singleton-equal+hash))
-        (cons prop:custom-write (make-singleton-custom-write name))))
+        (cons prop:custom-write (default-singleton-custom-write descriptor))))
 
 ;@------------------------------------------------------------------------------
 

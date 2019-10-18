@@ -56,18 +56,6 @@ must satisfy the @racket[custom-write-function/c] contract.
    (person 'jared)
    (person #f))}
 
-@defproc[(make-constant-custom-write [name symbol?]) custom-write-function/c]{
- Constructs a @tech{custom write implementation} that prints all values as the
- same opaque constant value named @racket[name], similar to the way @racket[eof]
- prints.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (struct widget ()
-     #:property prop:custom-write (make-constant-custom-write 'widget))
-
-   (widget))}
-
 @section{Struct Custom Write Implementations}
 @defmodule[rebellion/custom-write/struct]
 
