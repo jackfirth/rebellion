@@ -74,7 +74,7 @@
 (define (make-table-properties descriptor)
   (list (cons prop:custom-write write-table)
         (cons prop:sequence in-table)
-        (cons prop:equal+hash (make-record-equal+hash descriptor))))
+        (cons prop:equal+hash (default-record-equal+hash descriptor))))
 
 (define-record-type table (backing-column-vectors size)
   #:constructor-name constructor:table

@@ -52,7 +52,7 @@
                    [v (in-vector values)])
           (define kw-str (unquoted-printing-string (format "~s" kw)))
           (spliced-printing-entry kw-str v)))))
-  (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
+  (list (cons prop:equal+hash (default-tuple-equal+hash descriptor))
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type record (keywords values)
@@ -175,7 +175,7 @@
 (define (make-record-field-properties descriptor)
   (define type-name (tuple-type-name (tuple-descriptor-type descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
-  (define equal+hash (make-tuple-equal+hash descriptor))
+  (define equal+hash (default-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) type-name)

@@ -46,7 +46,7 @@
           (~optional (~seq #:property-maker prop-maker:expr)
                      #:name "#:property-maker option"
                      #:defaults
-                     ([prop-maker #'make-default-reference-properties])))
+                     ([prop-maker #'default-reference-properties])))
     ...)
   
   #:with (field* ...) (cons (syntax-local-introduce #'name)

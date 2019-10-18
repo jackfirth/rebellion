@@ -5,11 +5,11 @@
 (provide
  (contract-out
   [initialized-tuple-descriptor? (-> any/c boolean?)]
-  [make-default-tuple-properties
+  [default-tuple-properties
    (-> uninitialized-tuple-descriptor?
        (listof (cons/c struct-type-property? any/c)))]
-  [make-tuple-equal+hash (-> tuple-descriptor? equal+hash/c)]
-  [make-tuple-custom-write (-> tuple-descriptor? custom-write-function/c)]
+  [default-tuple-equal+hash (-> tuple-descriptor? equal+hash/c)]
+  [default-tuple-custom-write (-> tuple-descriptor? custom-write-function/c)]
   [make-tuple-field-accessor
    (->i ([desc () tuple-descriptor?]
          [pos (desc)
@@ -63,12 +63,12 @@
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
-(define (make-tuple-equal+hash descriptor)
+(define (default-tuple-equal+hash descriptor)
   (define accessor (tuple-descriptor-accessor descriptor))
   (define size (tuple-type-size (tuple-descriptor-type descriptor)))
   (make-accessor-based-equal+hash accessor size))
 
-(define (make-tuple-custom-write descriptor)
+(define (default-tuple-custom-write descriptor)
   (define type (tuple-descriptor-type descriptor))
   (define type-name (tuple-type-name type))
   (define size (tuple-type-size type))
@@ -77,9 +77,9 @@
    (λ (_) type-name)
    (λ (this) (build-list size (λ (pos) (accessor this pos))))))
 
-(define (make-default-tuple-properties descriptor)
-  (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
-        (cons prop:custom-write (make-tuple-custom-write descriptor))))
+(define (default-tuple-properties descriptor)
+  (list (cons prop:equal+hash (default-tuple-equal+hash descriptor))
+        (cons prop:custom-write (default-tuple-custom-write descriptor))))
 
 ;@------------------------------------------------------------------------------
 
@@ -181,7 +181,7 @@
          type
          #:guard [guard #f]
          #:inspector [inspector (current-inspector)]
-         #:property-maker [prop-maker make-default-tuple-properties])
+         #:property-maker [prop-maker default-tuple-properties])
   (define (get-predicate descriptor)
     (procedure-rename (struct-descriptor-predicate descriptor)
                       (tuple-type-predicate-name type)))

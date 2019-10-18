@@ -16,9 +16,9 @@
   [record-descriptor-predicate (-> record-descriptor? predicate/c)]
   [record-descriptor-constructor (-> record-descriptor? procedure?)]
   [record-descriptor-accessor (-> record-descriptor? procedure?)]
-  [make-default-record-properties (-> record-descriptor? properties/c)]
-  [make-record-equal+hash (-> record-descriptor? equal+hash/c)]
-  [make-record-custom-write (-> record-descriptor? custom-write-function/c)]
+  [default-record-properties (-> record-descriptor? properties/c)]
+  [default-record-equal+hash (-> record-descriptor? equal+hash/c)]
+  [default-record-custom-write (-> record-descriptor? custom-write-function/c)]
   [make-record-field-accessor (-> record-descriptor? natural? procedure?)]))
 
 (require racket/math
@@ -67,7 +67,7 @@
 (define (make-record-implementation
          type
          #:inspector [inspector (current-inspector)]
-         #:property-maker [prop-maker make-default-record-properties])
+         #:property-maker [prop-maker default-record-properties])
   (define (tuple-prop-maker descriptor)
     (prop-maker (tuple-descriptor->record-descriptor descriptor type)))
   (define descriptor
@@ -101,13 +101,13 @@
   (define accessor (tuple-descriptor-accessor descriptor))
   (maker type predicate constructor accessor))
 
-(define (make-default-record-properties descriptor)
-  (define equal+hash (make-record-equal+hash descriptor))
-  (define custom-write (make-record-custom-write descriptor))
+(define (default-record-properties descriptor)
+  (define equal+hash (default-record-equal+hash descriptor))
+  (define custom-write (default-record-custom-write descriptor))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
-(define (make-record-equal+hash descriptor)
+(define (default-record-equal+hash descriptor)
   (define accessor (record-descriptor-accessor descriptor))
   (define size
     (keyset-size (record-type-fields (record-descriptor-type descriptor))))
@@ -116,7 +116,7 @@
 (define (unquoted-printing-keyword kw)
   (unquoted-printing-string (string-append "#:" (keyword->string kw))))
 
-(define (make-record-custom-write descriptor)
+(define (default-record-custom-write descriptor)
   (define type (record-descriptor-type descriptor))
   (define type-name (record-type-name type))
   (define accessor (record-descriptor-accessor descriptor))

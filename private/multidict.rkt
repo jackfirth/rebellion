@@ -79,7 +79,7 @@
   (define backing-hash-field
     (keyset-index-of (record-type-fields type) '#:backing-hash))
   (define accessor (record-descriptor-accessor descriptor))
-  (define equal+hash (make-record-equal+hash descriptor))
+  (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) type-name)

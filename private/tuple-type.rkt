@@ -19,7 +19,7 @@
                                   (format-id #'id "~a?" (syntax-e #'id))]))
           (~optional (~seq #:property-maker property-maker:expr)
                      #:defaults ([property-maker
-                                  #'make-default-tuple-properties])))
+                                  #'default-tuple-properties])))
     ...)
   #:do [(define size (length (syntax->list #'(field ...))))]
   #:with quoted-size #`(quote #,size)

@@ -95,7 +95,7 @@ obvious order to those pieces.
           [#:property-maker prop-maker
            (-> uninitialized-record-descriptor?
                (listof (cons/c struct-type-property? any/c)))
-           make-default-record-properties])
+           default-record-properties])
          initialized-record-descriptor?]
 
 @defproc[(record-descriptor? [v any/c]) boolean?]
@@ -117,10 +117,10 @@ obvious order to those pieces.
                                      [field natural?])
          (-> (record-descriptor-predicate descriptor) any/c)]
 
-@defproc[(make-default-record-properties [descriptor record-descriptor?])
+@defproc[(default-record-properties [descriptor record-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
 
-@defproc[(make-record-equal+hash [descriptor record-descriptor?]) equal+hash/c]
+@defproc[(default-record-equal+hash [descriptor record-descriptor?]) equal+hash/c]
 
-@defproc[(make-record-custom-write [descriptor record-descriptor?])
+@defproc[(default-record-custom-write [descriptor record-descriptor?])
          custom-write-function/c]

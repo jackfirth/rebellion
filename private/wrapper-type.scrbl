@@ -100,7 +100,7 @@ distinguished.
           [#:property-maker prop-maker
            (-> uninitialized-wrapper-descriptor?
                (listof (cons/c struct-type-property? any/c)))
-           make-default-wrapper-properties]
+           default-wrapper-properties]
           [#:inspector inspector inspector? (current-inspector)])
          initialized-wrapper-descriptor?]
 
@@ -118,11 +118,11 @@ distinguished.
 
 @section{Wrapper Type Properties}
 
-@defproc[(make-default-wrapper-properties [descriptor wrapper-descriptor?])
+@defproc[(default-wrapper-properties [descriptor wrapper-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
 
-@defproc[(make-wrapper-equal+hash [descriptor wrapper-descriptor?])
+@defproc[(default-wrapper-equal+hash [descriptor wrapper-descriptor?])
          equal+hash/c]
 
-@defproc[(make-wrapper-custom-write [descriptor wrapper-descriptor?])
+@defproc[(default-wrapper-custom-write [descriptor wrapper-descriptor?])
          custom-write-function/c]

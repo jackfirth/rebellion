@@ -57,7 +57,7 @@
 
 (define (make-multiset-props descriptor)
   (define name (record-type-name (record-descriptor-type descriptor)))
-  (define equal+hash (make-record-equal+hash descriptor))
+  (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)

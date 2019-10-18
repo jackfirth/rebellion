@@ -42,7 +42,7 @@
     (make-constructor-style-printer
      (λ (_) type-name)
      (λ (this) (accessor this 0))))
-  (list (cons prop:equal+hash (make-tuple-equal+hash descriptor))
+  (list (cons prop:equal+hash (default-tuple-equal+hash descriptor))
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type permutation (vector)

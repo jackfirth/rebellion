@@ -84,7 +84,7 @@ of the constant causes a compile error rather than a silent bug at runtime.
           [#:property-maker prop-maker
            (-> uninitialized-singleton-descriptor?
                (listof (cons/c struct-type-property? any/c)))
-           make-default-singleton-properties])
+           default-singleton-properties])
          initialized-singleton-descriptor?]
 
 @defproc[(singleton-descriptor? [v any/c]) boolean?]
@@ -100,5 +100,5 @@ of the constant causes a compile error rather than a silent bug at runtime.
           [descriptor initialized-singleton-descriptor?])
          (singleton-descriptor-predicate descriptor)]
 
-@defproc[(make-default-singleton-properties [descriptor singleton-descriptor?])
+@defproc[(default-singleton-properties [descriptor singleton-descriptor?])
          (listof (cons/c struct-type-property? any/c))]

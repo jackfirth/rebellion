@@ -54,7 +54,7 @@
           (~optional (~seq #:property-maker prop-maker:expr)
                      #:name "#:property-maker option"
                      #:defaults
-                     ([prop-maker #'make-default-singleton-properties])))
+                     ([prop-maker #'default-singleton-properties])))
     ...)
   (begin
     (define type (singleton-type 'name #:predicate-name 'predicate))
