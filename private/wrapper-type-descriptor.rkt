@@ -18,10 +18,15 @@
   [wrapper-descriptor-accessor (-> wrapper-descriptor? (-> any/c any/c))]
   [make-default-wrapper-properties
    (-> uninitialized-wrapper-descriptor?
-       (listof (cons/c struct-type-property? any/c)))]))
+       (listof (cons/c struct-type-property? any/c)))]
+  [default-wrapper-equal+hash (-> wrapper-descriptor? equal+hash/c)]
+  [default-wrapper-custom-write
+   (-> wrapper-descriptor? custom-write-function/c)]))
 
 (require racket/struct
          rebellion/base/generative-token
+         rebellion/custom-write
+         rebellion/equal+hash
          rebellion/type/record
          rebellion/type/tuple
          rebellion/type/wrapper/base)
@@ -97,10 +102,10 @@
   (define hash2-proc hash-proc)
   (list equal-proc hash-proc hash2-proc))
 
-(define (make-wrapper-equal+hash descriptor)
+(define (default-wrapper-equal+hash descriptor)
   (make-delegating-equal+hash (wrapper-descriptor-accessor descriptor)))
 
-(define (make-wrapper-custom-write descriptor)
+(define (default-wrapper-custom-write descriptor)
   (define type-name (wrapper-type-name (wrapper-descriptor-type descriptor)))
   (define accessor (wrapper-descriptor-accessor descriptor))
   (make-constructor-style-printer
@@ -108,5 +113,5 @@
      (λ (this) (list (accessor this)))))
 
 (define (make-default-wrapper-properties descriptor)
-  (list (cons prop:equal+hash (make-wrapper-equal+hash descriptor))
-        (cons prop:custom-write (make-wrapper-custom-write descriptor))))
+  (list (cons prop:equal+hash (default-wrapper-equal+hash descriptor))
+        (cons prop:custom-write (default-wrapper-custom-write descriptor))))
