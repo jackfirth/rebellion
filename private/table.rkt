@@ -15,11 +15,13 @@
   [table-ref (-> table? natural? keyword? any/c)]
   [table-rows-ref (-> table? natural? record?)]
   [table-size (-> table? natural?)]
+  [in-table (-> table? (sequence/c record?))]
   [into-table reducer?]))
 
 (require (for-syntax racket/base)
          racket/math
-         rebellion/base/generative-token
+         racket/sequence
+         racket/stream
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
@@ -65,8 +67,13 @@
   (write-string ")" out)
   (void))
 
+(define (in-table table)
+  (for/stream ([row (in-range (table-size table))])
+    (table-rows-ref table row)))
+
 (define (make-table-properties descriptor)
   (list (cons prop:custom-write write-table)
+        (cons prop:sequence in-table)
         (cons prop:equal+hash (make-record-equal+hash descriptor))))
 
 (define-record-type table (backing-column-vectors size)

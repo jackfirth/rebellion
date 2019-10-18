@@ -3,10 +3,12 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     racket/sequence
                      rebellion/base/symbol
                      rebellion/collection/record
                      rebellion/collection/table
                      rebellion/streaming/reducer)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
@@ -25,7 +27,8 @@ contain a list of column names --- represented by keywords --- and each row has
 a value for each column in the row's table. This makes rows similar to @tech{
  records}, with the constraint that all the row records in a table have the same
 keys. Tables maintain rows as lists, not sets, so the order of rows in a table
-is significant and duplicate rows are allowed.
+is significant and duplicate rows are allowed. Tables implement the
+@tech/reference{sequence} interface, and can be iterated as a sequence of rows.
 
 @defproc[(table? [v any/c]) boolean?]{
  A predicate for @tech{tables}.}
@@ -107,7 +110,7 @@ is significant and duplicate rows are allowed.
              (row "Japan" 126400000 "Tokyo"))))
    (table-size countries))}
 
-@section{Table Comprehensions}
+@section{Table Iteration and Comprehensions}
 
 @defform[(for/table (for-clause ...) body-or-break ... body)
          #:contracts ([body record?])]{
@@ -128,6 +131,11 @@ is significant and duplicate rows are allowed.
 @defform[(for*/table (for-clause ...) body-or-break ... body)
          #:contracts ([body record?])]{
  Like @racket[for/table], but iterates like @racket[for*].}
+
+@defproc[(in-table [tab table?]) (sequence/c record?)]{
+ Returns a @tech/reference{sequence} that iterates through each row of @racket[
+ tab]. Tables already implement the sequence interface, but using this function
+ in a @racket[for] form may perform better and give clearer error messages.}
 
 @defthing[into-table reducer?]{
  A @tech{reducer} that reduces @tech{records} into a @tech{table}, in the same
