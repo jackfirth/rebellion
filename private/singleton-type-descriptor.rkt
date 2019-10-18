@@ -20,7 +20,6 @@
        (listof (cons/c struct-type-property? any/c)))]))
 
 (require rebellion/custom-write
-         rebellion/custom-write/tuple
          rebellion/equal+hash
          rebellion/type/singleton/base
          rebellion/type/tuple)
@@ -29,10 +28,10 @@
 
 (define (make-singleton-properties descriptor)
   (define accessor (tuple-descriptor-accessor descriptor))
-  (list (cons prop:object-name
-              (λ (this) (singleton-type-name (accessor this 0))))
-        (cons prop:custom-write
-              (make-tuple-named-object-custom-write descriptor))))
+  (define type-name (tuple-type-name (tuple-descriptor-type descriptor)))
+  (define (object-name this) (singleton-type-name (accessor this 0)))
+  (list (cons prop:object-name object-name)
+        (cons prop:custom-write (make-named-object-custom-write type-name))))
 
 (define-tuple-type initialized-singleton-descriptor
   (type instance predicate)

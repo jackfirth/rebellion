@@ -7,7 +7,6 @@
                      racket/struct
                      rebellion/custom-write
                      rebellion/custom-write/struct
-                     rebellion/custom-write/tuple
                      rebellion/type/struct
                      rebellion/type/tuple)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -19,7 +18,6 @@
     #:public (list 'racket/pretty
                    'rebellion/custom-write
                    'rebellion/custom-write/struct
-                   'rebellion/custom-write/tuple
                    'rebellion/type/struct
                    'rebellion/type/tuple)
     #:private (list 'racket/base)))
@@ -96,30 +94,3 @@ must satisfy the @racket[custom-write-function/c] contract.
    (point 1 2)
    (parameterize ([pretty-print-columns 10])
      (pretty-print (point 100000000000000 200000000000000))))}
-
-@section{Tuple Custom Write Implementations}
-@defmodule[rebellion/custom-write/tuple]
-
-@defproc[(make-tuple-named-object-custom-write
-          [descriptor tuple-descriptor?]
-          [#:name-field name-field (or/c natural? #f) #f])
-         custom-write-function/c]{
- Constructs a @tech{custom write implementation} that prints instances of the
- @tech{tuple type} described by @racket[descriptor] in a manner similar to the
- way that @racket[make-named-object-custom-write] prints values. If @racket[
- name-field] is provided, it must refer to a field in the tuple type that will
- contain each instance's name. Otherwise, @racket[object-name] is used to
- extract the name of each instance.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (define-tuple-type person (name)
-     #:property-maker
-     (λ (descriptor)
-       (list (cons prop:object-name 0)
-             (cons prop:custom-write
-                   (make-tuple-named-object-custom-write descriptor)))))
-
-   (person 'alyssa)
-   (person 'jared)
-   (person #f))}
