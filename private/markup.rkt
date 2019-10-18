@@ -46,7 +46,7 @@
      (λ (this) (accessor this type-name-field))
      (λ (this) (accessor this subexpressions-field))))
   (list (cons prop:custom-write custom-write)
-        (cons prop:equal+hash (make-record-equal+hash descriptor))))
+        (cons prop:equal+hash (default-record-equal+hash descriptor))))
 
 (define (make-keyword-markup-properties descriptor)
   (define accessor (wrapper-descriptor-accessor descriptor))
