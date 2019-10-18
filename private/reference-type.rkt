@@ -48,7 +48,7 @@
                      #:defaults
                      ([prop-maker #'default-reference-properties])))
     ...)
-  
+
   #:with (field* ...) (cons (syntax-local-introduce #'name)
                             (syntax->list #'(field ...)))
   #:with (field-kw ...)

@@ -67,7 +67,7 @@ than a collection of @racket[pair?] values.
       (list (book #:title "War and Peace" #:author "Leo Tolstoy")
             (book #:title "To the Lighthouse" #:author "Virginia Woolf")
             (book #:title "Frankenstein" #:author "Mary Shelley"))))
-   
+
    (transduce library
               (bisecting book-author book-title)
               #:into into-hash))}

@@ -36,7 +36,7 @@ distinguished.
    (define/contract (celsius->fahrenheit c)
      (-> celsius? fahrenheit?)
      (fahrenheit (+ (* (celsius-value c) 9/5) 32))))
-  
+
   (celsius->fahrenheit (celsius 0))
   (celsius->fahrenheit (celsius 100))
   (eval:error (celsius->fahrenheit (fahrenheit 100))))

@@ -123,7 +123,7 @@ provided. As a result various related features, such as integration with
 @racket[match] are not provided by any @racketmodname[rebellion/type] modules.
 However, both a basic represention of compile-time type information and
 integration with @racket[match] are intended to happen eventually. More advanced
-functionality such as a full static type system and compile-time type checker 
+functionality such as a full static type system and compile-time type checker
 are out of scope for now, but it is hoped that such an effort can either build
 on or integrate with this library.
 

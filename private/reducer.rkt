@@ -372,7 +372,7 @@
          (variant #:consume (add1 index-counter))))
    #:finisher (λ (_) absent)
    #:early-finisher (λ (index-counter) (present index-counter))
-   #:name name))   
+   #:name name))
 
 (module+ test
   (test-case "into-nth"

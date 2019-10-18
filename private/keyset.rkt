@@ -55,14 +55,14 @@
   #:omit-define-syntaxes
 
   #:property prop:sequence (λ (this) (in-keyset this))
-  
+
   #:methods gen:equal+hash
   [(define (equal-proc this other recur)
      (recur (keyset-sorted-vector this) (keyset-sorted-vector other)))
    (define (hash-proc this recur)
      (recur (list keyset-datatype-token (keyset-sorted-vector this))))
    (define hash2-proc hash-proc)]
-  
+
   #:methods gen:custom-write [(define write-proc write-keyset)])
 
 (define (keyset-size keys)

@@ -100,18 +100,18 @@
   (define-syntax-class positional-argument
     (pattern id:id)
     (pattern [id:id default:expr]))
-  
+
   (define-syntax-class bytes-function-header
     #:attributes (id lambda-argument-binders function-call-expression)
-    
+
     (pattern (id:id arg:positional-argument ...)
       #:with lambda-argument-binders #'(arg ...)
       #:with function-call-expression #'(id arg.id ...))
-    
+
     (pattern (id:id . rest-arg:id)
       #:with lambda-argument-binders #'rest-arg
       #:with function-call-expression #'(apply id rest-arg))
-    
+
     (pattern (id:id arg:positional-argument ...+ . rest-arg:id)
       #:with lambda-argument-binders #'(arg ... . rest-arg)
       #:with function-call-expression #'(apply id arg.id ... rest-arg))))

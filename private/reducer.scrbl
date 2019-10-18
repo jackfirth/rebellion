@@ -147,7 +147,7 @@ fully consumed.
    (reduce-all (into-max) (in-range 1 10))
    (reduce-all (into-min) (in-range 1 10))
    (reduce-all (into-max) empty-list)
-   
+
    (reduce (into-min string<=>) "goodbye" "cruel" "world")
 
    (define-record-type gemstone (color weight))
@@ -325,7 +325,7 @@ reducers with increasing power and complexity:
    (define into-total-letters
      (reducer-map into-sum #:domain string-length))
    (reduce into-total-letters "the" "quick" "brown" "fox")
-   
+
    (define stringly-typed-into-sum
      (reducer-map into-sum
                   #:domain string->number

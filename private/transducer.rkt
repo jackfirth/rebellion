@@ -49,7 +49,7 @@
 ;; types. The function statements are listed in order of when they're called for
 ;; each output element of the sequence (i.e. the pos->element function is called
 ;; before early-next-pos and after continue-with-pos?).
-;; 
+;;
 ;; init-pos : P (I think? might be Q? seems like P is the only sensible choice)
 ;;
 ;; P -> continue-with-pos?
