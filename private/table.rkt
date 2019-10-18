@@ -22,9 +22,11 @@
          racket/math
          racket/sequence
          racket/stream
+         racket/struct
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
+         rebellion/private/markup
          rebellion/streaming/reducer
          rebellion/type/record
          syntax/parse/define)
@@ -36,43 +38,38 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (write-table tab out mode)
-  (define default-custom-write
-    (case mode
-      [(#t) write]
-      [(#f) display]
-      [(0) (λ (v out) (print v out 0))]
-      [(1) (λ (v out) (print v out 1))]))
-  (define tab-rec (table-backing-column-vectors tab))
-  (define size (table-size tab))
-  (define columns (record-keywords tab-rec))
-  (define-values (ignored-out-line start-out-column ignored-out-position)
-    (port-next-location out))
-  (write-string "(table (columns" out)
-  (for ([column (in-keyset columns)])
-    (write-string " #:" out)
-    (write-string (keyword->string column) out))
-  (write-string ")" out)
-  (for ([row (in-range size)])
-    (write-char #\newline out)
-    (write-string (make-string (+ (or start-out-column 0) 7) #\space) out)
-    (write-string "(row" out)
-    (for ([col-kw (in-keyset columns)])
-      (write-string " " out)
-      (define v (immutable-vector-ref (record-ref tab-rec col-kw) row))
-      (if (custom-write? v)
-          ((custom-write-accessor v) v out mode)
-          (default-custom-write v out)))
-    (write-string ")" out))
-  (write-string ")" out)
-  (void))
-
 (define (in-table table)
   (for/stream ([row (in-range (table-size table))])
     (table-rows-ref table row)))
 
 (define (make-table-properties descriptor)
-  (list (cons prop:custom-write write-table)
+  (define accessor (record-descriptor-accessor descriptor))
+  (define fields (record-type-fields (record-descriptor-type descriptor)))
+  (define backing-column-vectors-field
+    (keyset-index-of fields '#:backing-column-vectors))
+  (define size-field (keyset-index-of fields '#:size))
+  (define custom-write
+    (make-constructor-style-printer
+     (λ (_) 'table)
+     (λ (this)
+       (define vectors (accessor this backing-column-vectors-field))
+       (define size (accessor this size-field))
+       (define column-names (record-keywords vectors))
+       (define columns-markup
+         (constructor-call-markup
+          #:type-name 'columns
+          #:subexpressions
+          (for/list ([k (in-keyset column-names)]) (keyword-markup k))))
+       (define rows-markup
+         (for/stream ([pos (in-range size)])
+           (define row-values
+             (for/list ([k (in-keyset column-names)])
+               (table-ref this pos k)))
+           (constructor-call-markup
+            #:type-name 'row
+            #:subexpressions row-values)))
+       (stream-cons columns-markup rows-markup))))
+  (list (cons prop:custom-write custom-write)
         (cons prop:sequence in-table)
         (cons prop:equal+hash (default-record-equal+hash descriptor))))
 
@@ -132,27 +129,16 @@
 
 (module+ test
   (define countries
-      (table (columns #:name #:population #:capital-city)
-             (row "Argentina" 43800000 "Buenos Aires")
-             (row "Greece" 10800000 "Athens")
-             (row "Nigeria" 198600000 "Abuja")
-             (row "Japan" 126400000 "Tokyo")))
+    (table (columns #:name #:population #:capital-city)
+           (row "Argentina" 43800000 "Buenos Aires")
+           (row "Greece" 10800000 "Athens")
+           (row "Nigeria" 198600000 "Abuja")
+           (row "Japan" 126400000 "Tokyo")))
 
   (test-case "table-ref"
     (check-equal? (table-ref countries 0 '#:name) "Argentina")
     (check-equal? (table-ref countries 2 '#:population) 198600000)
-    (check-equal? (table-ref countries 3 '#:capital-city) "Tokyo"))
-
-  (test-case "write-table"
-    (check-equal? (~v countries)
-                  #<<END
-(table (columns #:capital-city #:name #:population)
-       (row "Buenos Aires" "Argentina" 43800000)
-       (row "Athens" "Greece" 10800000)
-       (row "Abuja" "Nigeria" 198600000)
-       (row "Tokyo" "Japan" 126400000))
-END
-                  )))
+    (check-equal? (table-ref countries 3 '#:capital-city) "Tokyo")))
 
 ;@------------------------------------------------------------------------------
 

@@ -18,10 +18,15 @@
   [wrapper-descriptor-accessor (-> wrapper-descriptor? (-> any/c any/c))]
   [default-wrapper-properties
    (-> uninitialized-wrapper-descriptor?
-       (listof (cons/c struct-type-property? any/c)))]))
+       (listof (cons/c struct-type-property? any/c)))]
+  [default-wrapper-equal+hash (-> wrapper-descriptor? equal+hash/c)]
+  [default-wrapper-custom-write
+   (-> wrapper-descriptor? custom-write-function/c)]))
 
 (require racket/struct
          rebellion/base/generative-token
+         rebellion/custom-write
+         rebellion/equal+hash
          rebellion/type/record
          rebellion/type/tuple
          rebellion/type/wrapper/base)
