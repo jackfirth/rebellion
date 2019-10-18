@@ -15,13 +15,13 @@
   [table-ref (-> table? natural? keyword? any/c)]
   [table-rows-ref (-> table? natural? record?)]
   [table-size (-> table? natural?)]
+  [in-table (-> table? (sequence/c record?))]
   [into-table reducer?]))
 
 (require (for-syntax racket/base)
-         racket/list
          racket/math
-         racket/pretty
-         rebellion/base/generative-token
+         racket/sequence
+         racket/stream
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
@@ -36,22 +36,49 @@
 
 ;@------------------------------------------------------------------------------
 
-(define table-datatype-token (make-generative-token))
+(define (write-table tab out mode)
+  (define default-custom-write
+    (case mode
+      [(#t) write]
+      [(#f) display]
+      [(0) (λ (v out) (print v out 0))]
+      [(1) (λ (v out) (print v out 1))]))
+  (define tab-rec (table-backing-column-vectors tab))
+  (define size (table-size tab))
+  (define columns (record-keywords tab-rec))
+  (define-values (ignored-out-line start-out-column ignored-out-position)
+    (port-next-location out))
+  (write-string "(table (columns" out)
+  (for ([column (in-keyset columns)])
+    (write-string " #:" out)
+    (write-string (keyword->string column) out))
+  (write-string ")" out)
+  (for ([row (in-range size)])
+    (write-char #\newline out)
+    (write-string (make-string (+ (or start-out-column 0) 7) #\space) out)
+    (write-string "(row" out)
+    (for ([col-kw (in-keyset columns)])
+      (write-string " " out)
+      (define v (immutable-vector-ref (record-ref tab-rec col-kw) row))
+      (if (custom-write? v)
+          ((custom-write-accessor v) v out mode)
+          (default-custom-write v out)))
+    (write-string ")" out))
+  (write-string ")" out)
+  (void))
 
-(struct table (record size)
-  #:constructor-name plain-table
-  #:omit-define-syntaxes
+(define (in-table table)
+  (for/stream ([row (in-range (table-size table))])
+    (table-rows-ref table row)))
 
-  #:methods gen:custom-write
-  [(define (write-proc this out mode) (write-table this out mode))]
+(define (make-table-properties descriptor)
+  (list (cons prop:custom-write write-table)
+        (cons prop:sequence in-table)
+        (cons prop:equal+hash (make-record-equal+hash descriptor))))
 
-  #:methods gen:equal+hash
-  [(define (equal-proc this other recur)
-     (and (recur (table-size this) (table-size other))
-          (recur (table-record this) (table-record other))))
-   (define (hash-proc this recur)
-     (recur (list table-datatype-token (table-record this))))
-   (define hash2-proc hash-proc)])
+(define-record-type table (backing-column-vectors size)
+  #:constructor-name constructor:table
+  #:property-maker make-table-properties)
 
 (define-syntax (columns stx)
   (define msg "cannot be used outside a table expression")
@@ -87,51 +114,21 @@
          (map syntax->list (syntax->list #'((row-value ...) ...))))
   #:with ((column-kw-arg ...) ...)
   #'((column-kw (immutable-vector column-value ...)) ...)
-  (plain-table (record column-kw-arg ... ...) 'size))
+  (constructor:table #:backing-column-vectors (record column-kw-arg ... ...)
+                     #:size 'size))
 
 (define (table-columns-ref tab column)
-  (record-ref (table-record tab) column))
+  (record-ref (table-backing-column-vectors tab) column))
 
 (define (table-ref tab pos column)
   (immutable-vector-ref (table-columns-ref tab column) pos))
 
 (define (table-rows-ref tab pos)
-  (record-map (table-record tab)
+  (record-map (table-backing-column-vectors tab)
               (λ (column-values) (immutable-vector-ref column-values pos))))
 
 (define (table-columns tab)
-  (record-keywords (table-record tab)))
-
-(define (write-table tab out mode)
-  (define default-custom-write
-    (case mode
-      [(#t) write]
-      [(#f) display]
-      [(0) (λ (v out) (print v out 0))]
-      [(1) (λ (v out) (print v out 1))]))
-  (define tab-rec (table-record tab))
-  (define size (table-size tab))
-  (define columns (record-keywords tab-rec))
-  (define-values (ignored-out-line start-out-column ignored-out-position)
-    (port-next-location out))
-  (write-string "(table (columns" out)
-  (for ([column (in-keyset columns)])
-    (write-string " #:" out)
-    (write-string (keyword->string column) out))
-  (write-string ")" out)
-  (for ([row (in-range size)])
-    (write-char #\newline out)
-    (write-string (make-string (+ (or start-out-column 0) 7) #\space) out)
-    (write-string "(row" out)
-    (for ([col-kw (in-keyset columns)])
-      (write-string " " out)
-      (define v (immutable-vector-ref (record-ref tab-rec col-kw) row))
-      (if (custom-write? v)
-          ((custom-write-accessor v) v out mode)
-          (default-custom-write v out)))
-    (write-string ")" out))
-  (write-string ")" out)
-  (void))
+  (record-keywords (table-backing-column-vectors tab)))
 
 (module+ test
   (define countries
@@ -204,7 +201,7 @@ END
       (vector-set! mut-vec reverse-i v))
     (vector->immutable-vector mut-vec))
   (define columns-record (build-record build columns))
-  (plain-table columns-record size))
+  (constructor:table #:backing-column-vectors columns-record #:size size))
 
 (define into-table
   (make-effectful-fold-reducer table-builder-add
