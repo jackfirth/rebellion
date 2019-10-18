@@ -89,7 +89,7 @@ key-value pairs.
    (association-list-keys (association-list 'a 1 'a 1 'b 2 'b 2 'c 3)))}
 
 @defproc[(association-list-unique-keys [assoc association-list?])
-         immutable-set?]{
+         set?]{
  Returns a @tech/reference{set} containing the keys in @racket[assoc], without duplicates.
 
  @(examples

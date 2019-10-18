@@ -14,18 +14,18 @@
   [multidict-remove-entry (-> multidict? entry? multidict?)]
   [multidict-replace-values (-> multidict? any/c set-coercible/c multidict?)]
   [multidict-size (-> multidict? natural?)]
-  [multidict-ref (-> multidict? any/c immutable-set?)]
+  [multidict-ref (-> multidict? any/c set?)]
   [multidict-keys (-> multidict? multiset?)]
   [multidict-values (-> multidict? multiset?)]
-  [multidict-unique-keys (-> multidict? immutable-set?)]
-  [multidict-unique-values (-> multidict? immutable-set?)]
+  [multidict-unique-keys (-> multidict? set?)]
+  [multidict-unique-values (-> multidict? set?)]
   [multidict-entries (-> multidict? (set/c entry? #:cmp 'equal))]
   [multidict-contains-key? (-> multidict? any/c boolean?)]
   [multidict-contains-value? (-> multidict? any/c boolean?)]
   [multidict-contains-entry? (-> multidict? entry? boolean?)]
   [multidict->hash
    (-> multidict?
-       (hash/c any/c nonempty-immutable-set? #:immutable #t #:flat? #t))]
+       (hash/c any/c nonempty-set? #:immutable #t #:flat? #t))]
   [multidict-inverse (-> multidict? multidict?)]
   [empty-multidict empty-multidict?]
   [empty-multidict? predicate/c]
@@ -59,17 +59,15 @@
                 (cons/c any/c
                         (recursive-contract key-value-list/c #:flat)))))
 
-(define (immutable-set? v) (and (set? v) (not (set-mutable? v))))
-
-(define (nonempty-immutable-set? v)
-  (and (immutable-set? v) (not (zero? (set-count v)))))
+(define (nonempty-set? v)
+  (and (set? v) (not (zero? (set-count v)))))
 
 (define set-coercible/c
-  (or/c immutable-set? multiset? (sequence/c any/c)))
+  (or/c set? multiset? (sequence/c any/c)))
 
 (define (sequence->set seq)
   (cond
-    [(immutable-set? seq) seq]
+    [(set? seq) seq]
     [(multiset? seq) (multiset-unique-elements seq)]
     [else (for/set ([v seq]) v)]))
 
@@ -216,13 +214,13 @@
     (check-equal?
      (multidict-replace-values (multidict 'a 4 'b 2) 'a (list 1 2 2 3))
      (multidict 'a 1 'a 2 'a 3 'b 2)))
-  
+
   (test-case "multidict-add"
     (check-equal? (multidict-add empty-multidict 'a 1) (multidict 'a 1))
     (check-equal? (multidict-add (multidict 'a 1) 'b 2) (multidict 'a 1 'b 2))
     (check-equal? (multidict-add (multidict 'a 1) 'a 2) (multidict 'a 1 'a 2))
     (check-equal? (multidict-add (multidict 'a 1) 'a 1) (multidict 'a 1)))
-  
+
   (test-case "multidict-add-entry"
     (check-equal? (multidict-add-entry empty-multidict (entry 'a 1))
                   (multidict 'a 1))
@@ -232,7 +230,7 @@
                   (multidict 'a 1 'a 2))
     (check-equal? (multidict-add-entry (multidict 'a 1) (entry 'a 1))
                   (multidict 'a 1)))
-  
+
   (test-case "multidict-remove"
     (check-equal? (multidict-remove (multidict 'a 1 'b 2) 'a 1)
                   (multidict 'b 2))
@@ -241,7 +239,7 @@
     (check-equal? (multidict-remove (multidict 'a 1) 'a 1) empty-multidict)
     (check-equal? (multidict-remove (multidict 'a 1 'b 2) 'c 3)
                   (multidict 'a 1 'b 2)))
-  
+
   (test-case "multidict-remove-entry"
     (check-equal? (multidict-remove-entry (multidict 'a 1 'b 2) (entry 'a 1))
                   (multidict 'b 2))
@@ -282,7 +280,7 @@
    #:inverted-hash (multidict-backing-hash dict)
    #:keys (multidict-values dict)
    #:values (multidict-keys dict)))
-  
+
 (define (multidict-ref dict k) (hash-ref (multidict-backing-hash dict) k (set)))
 
 (define (multidict-contains-key? dict k)

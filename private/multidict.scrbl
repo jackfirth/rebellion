@@ -122,7 +122,7 @@ interface is based on a flattened collection of key-value pairs.
    (multidict-size (multidict 'a 1 'b 2 'b 3))
    (multidict-size (multidict 'a 1 'a 1 'a 1)))}
 
-@defproc[(multidict-ref [dict multidict?] [k any/c]) immutable-set?]{
+@defproc[(multidict-ref [dict multidict?] [k any/c]) set?]{
  Returns the set of values mapped by @racket[k] in @racket[dict].
                                                                      
  @(examples
@@ -163,7 +163,7 @@ interface is based on a flattened collection of key-value pairs.
                "The Hulk" 'marvel
                "Captain Marvel" 'marvel)))}
 
-@defproc[(multidict-unique-keys [dict multidict?]) immutable-set?]{
+@defproc[(multidict-unique-keys [dict multidict?]) set?]{
  Returns the set of keys in @racket[dict], ignoring duplicates.
                                                                    
  @(examples
@@ -175,7 +175,7 @@ interface is based on a flattened collection of key-value pairs.
                'vegetable 'carrot
                'vegetable 'celery)))}
 
-@defproc[(multidict-unique-values [dict multidict?]) immutable-set?]{
+@defproc[(multidict-unique-values [dict multidict?]) set?]{
  Returns the set of values in @racket[dict], ignoring duplicates.
                                                                    
   @(examples
@@ -251,7 +251,7 @@ interface is based on a flattened collection of key-value pairs.
 @section{Multidict Conversions}
 
 @defproc[(multidict->hash [dict multidict?])
-         (hash/c any/c nonempty-immutable-set? #:immutable? #t)]{
+         (hash/c any/c nonempty-set? #:immutable? #t)]{
  Converts @racket[dict] into a hash table from keys to (nonempty) sets of
  values.
 

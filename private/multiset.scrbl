@@ -77,7 +77,7 @@ can contain duplicate elements. Elements are always compared with @racket[
    (multiset-contains? set 'orange)
    (multiset-contains? set 42))}
 
-@defproc[(multiset-unique-elements [set multiset?]) immutable-set?]{
+@defproc[(multiset-unique-elements [set multiset?]) set?]{
  Removes all duplicate elements from @racket[set], returning the resulting set.
 
  @(examples

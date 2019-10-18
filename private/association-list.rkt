@@ -9,7 +9,7 @@
   [association-list-ref (-> association-list? any/c immutable-vector?)]
   [association-list-size (-> association-list? natural?)]
   [association-list-keys (-> association-list? multiset?)]
-  [association-list-unique-keys (-> association-list? immutable-set?)]
+  [association-list-unique-keys (-> association-list? set?)]
   [association-list-values (-> association-list? immutable-vector?)]
   [association-list-entries
    (-> association-list? (vectorof entry? #:immutable #t #:flat? #t))]
@@ -48,8 +48,6 @@
         (cons/c any/c
                 (cons/c any/c
                         (recursive-contract key-value-list/c #:flat)))))
-
-(define (immutable-set? v) (and (set? v) (not (set-mutable? v))))
 
 (define (immutable-vector-contains? vec v)
   (not (not (immutable-vector-member v vec))))
@@ -150,16 +148,16 @@
     (check-equal? (association-list-ref assoc 'd) empty-immutable-vector)
     (check-not-equal? (association-list-ref assoc 'a)
                       (association-list-ref alt-assoc 'a)))
-  
+
   (test-case "association-list-size"
     (check-equal? (association-list-size assoc) 4))
-  
+
   (test-case "association-list-keys"
     (check-equal? (association-list-keys assoc) (multiset 'a 'a 'b 'c)))
-  
+
   (test-case "association-list-unique-keys"
     (check-equal? (association-list-unique-keys assoc) (set 'a 'b 'c)))
-  
+
   (test-case "association-list-values"
     (define vs (association-list-values assoc))
     (check-equal? (immutable-vector-length vs) 4)
@@ -170,7 +168,7 @@
     (check-true (< (immutable-vector-index-of vs 1)
                    (immutable-vector-index-of vs 3)))
     (check-not-equal? vs (association-list-values alt-assoc)))
-  
+
   (test-case "association-list-entries"
     (define entries (association-list-entries assoc))
     (check-equal? (immutable-vector-length entries) 4)
@@ -181,7 +179,7 @@
     (check-true (< (immutable-vector-index-of entries (entry 'a 1))
                    (immutable-vector-index-of entries (entry 'a 3))))
     (check-not-equal? entries (association-list-entries alt-assoc)))
-  
+
   (test-case "association-list->hash"
     (check-equal? (association-list->hash assoc)
                   (hash 'a (immutable-vector 1 3)

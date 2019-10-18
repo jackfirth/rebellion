@@ -18,7 +18,7 @@
   [multiset-frequencies
    (-> multiset? (immutable-hash/c any/c exact-positive-integer?))]
   [multiset-size (-> multiset? natural?)]
-  [multiset-unique-elements (-> multiset? immutable-set?)]
+  [multiset-unique-elements (-> multiset? set?)]
   [multiset->list (-> multiset? list?)]
   [sequence->multiset (-> multiset-coercible-sequence/c multiset?)]
   [empty-multiset multiset?]
@@ -46,7 +46,7 @@
     (and (flat-contract? key-contract) (flat-contract? value-contract)))
   (hash/c key-contract value-contract #:immutable #t #:flat? both-flat?))
 
-(define (immutable-set? v) (and (set? v) (not (set-mutable? v))))
+(define (set? v) (and (set? v) (not (set-mutable? v))))
 
 ;@------------------------------------------------------------------------------
 
