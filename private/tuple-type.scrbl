@@ -96,7 +96,7 @@ distinct implementations of that type.
   [#:property-maker prop-maker
    (-> uninitialized-tuple-descriptor?
        (listof (cons/c struct-type-property? any/c)))
-   make-default-tuple-properties])
+   default-tuple-properties])
  initialized-tuple-descriptor?]{
  Implements @racket[type] and returns a @tech{tuple type descriptor} for the
  new implementation. The @racket[guard] and @racket[inspector] arguments behave
@@ -105,7 +105,7 @@ distinct implementations of that type.
  argument is similar to the corresponding argument of @racket[
  make-struct-implementation]. By default, tuple types are created with
  properties that make them print and compare in a manner similar to transparent
- structure types --- see @racket[make-default-tuple-properties] for details.
+ structure types --- see @racket[default-tuple-properties] for details.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -131,14 +131,14 @@ distinct implementations of that type.
  examples.}
 
 @defproc[
- (make-default-tuple-properties [descriptor uninitialized-tuple-descriptor?])
+ (default-tuple-properties [descriptor uninitialized-tuple-descriptor?])
  (listof (cons/c struct-type-property? any/c))]{
  Returns implementations of @racket[prop:equal+hash] and @racket[
  prop:custom-write] suitable for most @tech{tuple types}. This function is
  called by @racket[make-tuple-implementation] when no @racket[_prop-maker]
  argument is supplied.}
 
-@defproc[(make-tuple-equal+hash [descriptor tuple-descriptor?])
+@defproc[(default-tuple-equal+hash [descriptor tuple-descriptor?])
          equal+hash/c]{
  Builds an equality-checking function, a hashing function, and a secondary
  hashing function suitable for use with @racket[prop:equal+hash], each of which
@@ -151,11 +151,11 @@ distinct implementations of that type.
    (define-tuple-type point (x y)
      #:property-maker
      (λ (descriptor)
-       (list (cons prop:equal+hash (make-tuple-equal+hash descriptor)))))
+       (list (cons prop:equal+hash (default-tuple-equal+hash descriptor)))))
    (equal? (point 1 2) (point 1 2))
    (equal? (point 1 2) (point 2 1)))}
 
-@defproc[(make-tuple-custom-write [descriptor tuple-descriptor?])
+@defproc[(default-tuple-custom-write [descriptor tuple-descriptor?])
          custom-write-function/c]{
  Constructs a @tech{custom write implementation} that prints instances of the
  @tech{tuple type} described by @racket[descriptor] in a manner similar to the
@@ -166,7 +166,7 @@ distinct implementations of that type.
    (define-tuple-type point (x y)
      #:property-maker
      (λ (descriptor)
-       (define custom-write (make-tuple-custom-write descriptor))
+       (define custom-write (default-tuple-custom-write descriptor))
        (list (cons prop:custom-write custom-write))))
 
    (point 1 2)

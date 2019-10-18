@@ -28,7 +28,7 @@
                                   (format-id #'id "~a-value" #'id)])
                      #:name "#:accessor-name option")
           (~optional (~seq #:property-maker prop-maker:expr)
-                     #:defaults ([prop-maker #'make-default-wrapper-properties])
+                     #:defaults ([prop-maker #'default-wrapper-properties])
                      #:name "#:property-maker option"))
     ...)
   (begin

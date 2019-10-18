@@ -16,7 +16,7 @@
   [wrapper-descriptor-constructor (-> wrapper-descriptor? (-> any/c any/c))]
   [wrapper-descriptor-predicate (-> wrapper-descriptor? predicate/c)]
   [wrapper-descriptor-accessor (-> wrapper-descriptor? (-> any/c any/c))]
-  [make-default-wrapper-properties
+  [default-wrapper-properties
    (-> uninitialized-wrapper-descriptor?
        (listof (cons/c struct-type-property? any/c)))]
   [default-wrapper-equal+hash (-> wrapper-descriptor? equal+hash/c)]
@@ -65,7 +65,7 @@
 
 (define (make-wrapper-implementation
          type
-         #:property-maker [prop-maker make-default-wrapper-properties]
+         #:property-maker [prop-maker default-wrapper-properties]
          #:inspector [inspector (current-inspector)])
   (define tuple-impl-type
     (tuple-type (wrapper-type-name type) 1
@@ -112,6 +112,6 @@
      (λ (_) type-name)
      (λ (this) (list (accessor this)))))
 
-(define (make-default-wrapper-properties descriptor)
+(define (default-wrapper-properties descriptor)
   (list (cons prop:equal+hash (default-wrapper-equal+hash descriptor))
         (cons prop:custom-write (default-wrapper-custom-write descriptor))))

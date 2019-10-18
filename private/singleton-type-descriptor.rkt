@@ -15,7 +15,7 @@
   [uninitialized-singleton-descriptor? predicate/c]
   [singleton-descriptor-instance (-> initialized-singleton-descriptor? any/c)]
   [singleton-descriptor-predicate (-> singleton-descriptor? predicate/c)]
-  [make-default-singleton-properties
+  [default-singleton-properties
    (-> uninitialized-singleton-descriptor?
        (listof (cons/c struct-type-property? any/c)))]))
 
@@ -59,7 +59,7 @@
 (define (make-singleton-implementation
          type
          #:inspector [inspector (current-inspector)]
-         #:property-maker [prop-maker make-default-singleton-properties])
+         #:property-maker [prop-maker default-singleton-properties])
   (define (make-tuple-props tuple-descriptor)
     (define predicate (tuple-descriptor-predicate tuple-descriptor))
     (prop-maker
@@ -76,7 +76,7 @@
                                     #:instance instance
                                     #:predicate pred))
 
-(define (make-default-singleton-properties descriptor)
+(define (default-singleton-properties descriptor)
   (define name (singleton-type-name (singleton-descriptor-type descriptor)))
   (list (cons prop:object-name (λ (_) name))
         (cons prop:equal+hash (make-singleton-equal+hash))

@@ -79,7 +79,7 @@
   (define backing-hash-field
     (keyset-index-of (record-type-fields type) '#:backing-hash))
   (define accessor (record-descriptor-accessor descriptor))
-  (define equal+hash (make-record-equal+hash descriptor))
+  (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) type-name)
@@ -216,13 +216,13 @@
     (check-equal?
      (multidict-replace-values (multidict 'a 4 'b 2) 'a (list 1 2 2 3))
      (multidict 'a 1 'a 2 'a 3 'b 2)))
-  
+
   (test-case "multidict-add"
     (check-equal? (multidict-add empty-multidict 'a 1) (multidict 'a 1))
     (check-equal? (multidict-add (multidict 'a 1) 'b 2) (multidict 'a 1 'b 2))
     (check-equal? (multidict-add (multidict 'a 1) 'a 2) (multidict 'a 1 'a 2))
     (check-equal? (multidict-add (multidict 'a 1) 'a 1) (multidict 'a 1)))
-  
+
   (test-case "multidict-add-entry"
     (check-equal? (multidict-add-entry empty-multidict (entry 'a 1))
                   (multidict 'a 1))
@@ -232,7 +232,7 @@
                   (multidict 'a 1 'a 2))
     (check-equal? (multidict-add-entry (multidict 'a 1) (entry 'a 1))
                   (multidict 'a 1)))
-  
+
   (test-case "multidict-remove"
     (check-equal? (multidict-remove (multidict 'a 1 'b 2) 'a 1)
                   (multidict 'b 2))
@@ -241,7 +241,7 @@
     (check-equal? (multidict-remove (multidict 'a 1) 'a 1) empty-multidict)
     (check-equal? (multidict-remove (multidict 'a 1 'b 2) 'c 3)
                   (multidict 'a 1 'b 2)))
-  
+
   (test-case "multidict-remove-entry"
     (check-equal? (multidict-remove-entry (multidict 'a 1 'b 2) (entry 'a 1))
                   (multidict 'b 2))
@@ -282,7 +282,7 @@
    #:inverted-hash (multidict-backing-hash dict)
    #:keys (multidict-values dict)
    #:values (multidict-keys dict)))
-  
+
 (define (multidict-ref dict k) (hash-ref (multidict-backing-hash dict) k (set)))
 
 (define (multidict-contains-key? dict k)

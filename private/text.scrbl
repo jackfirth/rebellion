@@ -32,7 +32,7 @@ the two is in how character encoding and decoding are handled:
  @item{Strings are all encoded with the same charset, which is a Unicode
   encoding internal to Racket. Conversion between strings and bytes requires
   explicitly reencoding the string.}
-  
+
  @item{Text values specify their charset directly, and different text values can
   have different charsets. Constructing a text value from bytes doesn't require
   performing any decoding --- that's only needed when changing the text's

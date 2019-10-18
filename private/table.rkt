@@ -71,7 +71,7 @@
        (stream-cons columns-markup rows-markup))))
   (list (cons prop:custom-write custom-write)
         (cons prop:sequence in-table)
-        (cons prop:equal+hash (make-record-equal+hash descriptor))))
+        (cons prop:equal+hash (default-record-equal+hash descriptor))))
 
 (define-record-type table (backing-column-vectors size)
   #:constructor-name constructor:table
@@ -134,7 +134,7 @@
            (row "Greece" 10800000 "Athens")
            (row "Nigeria" 198600000 "Abuja")
            (row "Japan" 126400000 "Tokyo")))
-  
+
   (test-case "table-ref"
     (check-equal? (table-ref countries 0 '#:name) "Argentina")
     (check-equal? (table-ref countries 2 '#:population) 198600000)

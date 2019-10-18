@@ -33,7 +33,7 @@ integer between @racket[0] and @racket[255].
 @defproc[(byte-ref [b byte?] [pos (integer-in 0 7)]) bit?]{
  Returns the @tech{bit} at index @racket[pos] in @racket[b]. Indices are
  numbered from left to right and start at zero.
-                                                           
+
  @(examples
    #:eval (make-evaluator) #:once
    (byte-ref (byte 0 0 1 1 0 1 0 1) 0)
@@ -43,7 +43,7 @@ integer between @racket[0] and @racket[255].
 @defproc[(byte-clear-leftmost-bits [b byte?] [num-bits (integer-in 0 8)])
          byte?]{
  Sets the left @racket[num-bits] bits of @racket[b] to zero.
-                
+
  @(examples
    #:eval (make-evaluator) #:once
    (byte-clear-leftmost-bits (byte 1 1 1 0 1 0 1 0) 2)
@@ -53,7 +53,7 @@ integer between @racket[0] and @racket[255].
 @defproc[(byte-clear-rightmost-bits [b byte?] [num-bits (integer-in 0 8)])
          byte?]{
  Sets the right @racket[num-bits] bits of @racket[b] to zero.
-                
+
  @(examples
    #:eval (make-evaluator) #:once
    (byte-clear-rightmost-bits (byte 1 1 1 0 1 0 1 0) 2)
@@ -64,7 +64,7 @@ integer between @racket[0] and @racket[255].
          byte?]{
  Deletes the rightmost @racket[num-bits] of @racket[b], shifting all remaining
  bits to the right and inserting zeros to the left.
-                
+
  @(examples
    #:eval (make-evaluator) #:once
    (byte-drop-rightmost-bits (byte 1 1 1 0 1 0 1 0) 2)
@@ -74,18 +74,18 @@ integer between @racket[0] and @racket[255].
 @defproc[(byte-and [left byte?] [right byte?])
          byte?]{
  Performs a bitwise and operation on @racket[left] using @racket[right] as the mask. Can be used to zero out specific bits of a byte.
-  
+
  @(examples
    #:eval (make-evaluator) #:once
    (code:comment "extract the least-significant bit.")
-   (byte-and (byte 1 1 1 1 1 1 1 1) (byte 0 0 0 0 0 0 0 1)) 
+   (byte-and (byte 1 1 1 1 1 1 1 1) (byte 0 0 0 0 0 0 0 1))
    (code:comment "extract bits 7, 5, and 0.")
    (byte-and (byte 1 1 1 1 1 1 1 1) (byte 1 0 1 0 0 0 0 1)))}
 
 @defproc[(byte-or [left byte?] [right byte?])
          byte?]{
  Performs a bitwise or operation on @racket[left] using @racket[right] as the mask. Can be used to set specific bits of a byte without affecting others.
-  
+
  @(examples
    #:eval (make-evaluator) #:once
    (code:comment "set the least-significant bit")
@@ -96,7 +96,7 @@ integer between @racket[0] and @racket[255].
 @defproc[(byte-not [b byte?])
          byte?]{
  Performs a bitwise not operation on @racket[b], inverting all bits.
-  
+
  @(examples
    #:eval (make-evaluator) #:once
    (byte-not (byte 1 1 1 1 1 1 1 1))
@@ -105,7 +105,7 @@ integer between @racket[0] and @racket[255].
 @defproc[(byte-xor [left byte?] [right byte?])
          byte?]{
  Performs a bitwise xor (exclusive or, also known as eor) operation on @racket[left] using @racket[right] as the mask.
-  
+
  @(examples
    #:eval (make-evaluator) #:once
    (byte-xor (byte 0 0 0 1 0 1 0 1) (byte 0 0 1 1 1 1 1 1))
@@ -120,10 +120,10 @@ integer between @racket[0] and @racket[255].
          byte?]{
  Performs a bitwise nand operation on @racket[left] using @racket[right] as the mask.
  Equivalent to (byte-not (byte-and left right)).
-  
+
  @(examples
    #:eval (make-evaluator) #:once
-   (byte-nand (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1)) 
+   (byte-nand (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1))
    (byte-not (byte-and (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1)))
    (byte-nand (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0))
    (byte-not (byte-and (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0)))
@@ -133,10 +133,10 @@ integer between @racket[0] and @racket[255].
          byte?]{
  Performs a bitwise nor operation on @racket[left] using @racket[right] as the mask.
  Equivalent to (byte-not (byte-or left right)).
-  
+
  @(examples
    #:eval (make-evaluator) #:once
-   (byte-nor (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1)) 
+   (byte-nor (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1))
    (byte-not (byte-or (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1)))
    (byte-nor (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0))
    (byte-not (byte-or (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0)))
@@ -146,10 +146,10 @@ integer between @racket[0] and @racket[255].
          byte?]{
  Performs a bitwise xnor operation on @racket[left] using @racket[right] as the mask.
  Equivalent to (byte-not (byte-xor left right)).
-  
+
  @(examples
    #:eval (make-evaluator) #:once
-   (byte-xnor (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1)) 
+   (byte-xnor (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1))
    (byte-not (byte-xor (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1)))
    (byte-xnor (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0))
    (byte-not (byte-xor (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0))))}
@@ -157,7 +157,7 @@ integer between @racket[0] and @racket[255].
 @defproc[(in-byte [b byte?])
          sequence?]{
  Returns a sequence whose elements are equivalent to the list of bits that comprise @racket[b].
-  
+
  @(examples
    #:eval (make-evaluator) #:once
    (code:comment "convert byte to a vector of bits")
@@ -170,7 +170,7 @@ integer between @racket[0] and @racket[255].
 
 Returns the Hamming weight of the byte. This is the same as how many 1's are in the byte. See the
 @hyperlink[hamming-link]{Wikipedia page} for more informating on Hamming weight.
-  
+
  @(examples
    #:eval (make-evaluator) #:once
    (code:comment "count the number of 1's in the byte")

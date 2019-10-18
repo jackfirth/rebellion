@@ -57,7 +57,7 @@
 
 (define (make-multiset-props descriptor)
   (define name (record-type-name (record-descriptor-type descriptor)))
-  (define equal+hash (make-record-equal+hash descriptor))
+  (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)
@@ -141,7 +141,7 @@
                   (multiset 1 1 2 2 3 3)))
 
   (test-case "multiset-set-frequency"
-    
+
     (test-case "clearing-already-empty"
       (define set (multiset-set-frequency empty-multiset 'a 0))
       (check-equal? (multiset-size set) 0))
@@ -153,7 +153,7 @@
     (test-case "setting-empty-to-many"
       (define set (multiset-set-frequency empty-multiset 'a 5))
       (check-equal? (multiset-size set) 5))
-      
+
     (test-case "one-unique-element"
       (define set (multiset 'a 'a 'a))
       (check-equal? (multiset-size (multiset-set-frequency set 'a 0)) 0)
@@ -169,7 +169,7 @@
       (check-equal? (multiset-size (set-to-zero 'b)) 3)
       (check-equal? (multiset-size (set-to-zero 'c)) 5)
       (check-equal? (multiset-size (set-to-zero 'd)) 6))
-    
+
     (test-case "equality"
       (define set (multiset 'a 'b 'c))
       (check-equal? (multiset-size (multiset-set-frequency set 'a 3)) 5)
@@ -178,7 +178,7 @@
       (check-equal? (multiset-set-frequency set 'a 0) (multiset 'b 'c))
       (check-equal? (multiset-set-frequency set 'd 2) (multiset 'a 'b 'c 'd 'd))
       (check-equal? (multiset-set-frequency set 'd 0) set)))
-  
+
   (test-case "multiset-remove"
 
     (test-case "single-copy"
@@ -186,7 +186,7 @@
       (check-equal? (multiset-remove set 'a) (multiset 'b 'b 'c))
       (check-equal? (multiset-remove set 'b) (multiset 'a 'b 'c))
       (check-equal? (multiset-remove set 'd) set))
-    
+
     (test-case "multiple-copies"
       (define set (multiset 'a 'a 'b 'b 'b 'c))
       (check-equal? (multiset-remove set 'a #:copies 2) (multiset 'b 'b 'b 'c))
@@ -195,13 +195,13 @@
                     (multiset 'a 'a 'b 'b 'b))
       (check-equal? (multiset-remove set 'b #:copies 3) (multiset 'a 'a 'c))
       (check-equal? (multiset-remove set 'd #:copies 5) set))
-    
+
     (test-case "zero-copies"
       (define set (multiset 'a 'b 'b 'c))
       (check-equal? (multiset-remove set 'a #:copies 0) set)
       (check-equal? (multiset-remove set 'b #:copies 0) set)
       (check-equal? (multiset-remove set 'd #:copies 0) set))
-    
+
     (test-case "all-copies"
       (define set (multiset 'a 'b 'b 'c))
       (check-equal? (multiset-remove set 'a #:copies +inf.0)

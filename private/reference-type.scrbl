@@ -46,7 +46,7 @@
           [#:property-maker prop-maker
            (-> uninitialized-reference-descriptor?
                (listof (cons/c struct-type-property? any/c)))
-           make-default-reference-properties]
+           default-reference-properties]
           [#:inspector inspector inspector? (current-inspector)])
          initialized-reference-descriptor?]
 
@@ -84,15 +84,15 @@
 
 @section{Reference Type Properties}
 
-@defproc[(make-default-reference-properties [descriptor reference-descriptor?])
+@defproc[(default-reference-properties [descriptor reference-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
 
-@defproc[(make-default-reference-equal+hash [descriptor reference-descriptor?])
+@defproc[(default-reference-equal+hash [descriptor reference-descriptor?])
          equal+hash/c]
 
-@defproc[(make-default-reference-custom-write
+@defproc[(default-reference-custom-write
           [descriptor reference-descriptor?])
          custom-write-function/c]
 
-@defproc[(make-default-reference-object-name [descriptor reference-descriptor?])
+@defproc[(default-reference-object-name [descriptor reference-descriptor?])
          natural?]

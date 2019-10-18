@@ -48,7 +48,7 @@ is @racket[application/octet-stream].
 
 @defproc[(octet-stream->bitstring [octets octet-stream?]) bitstring?]{
  Converts @racket[octets] into a @tech{bitstring}.
-          
+
  @(examples
    #:eval (make-evaluator) #:once
    (octet-stream->bitstring (octet-stream #"Apple"))

@@ -26,7 +26,7 @@
                      #:defaults ([constructor-name #'id])
                      #:name "#:constructor-name option")
           (~optional (~seq #:property-maker prop-maker:expr)
-                     #:defaults ([prop-maker #'make-default-record-properties])
+                     #:defaults ([prop-maker #'default-record-properties])
                      #:name "#:property-maker option"))
     ...)
   #:with fields

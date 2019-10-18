@@ -37,7 +37,7 @@ interface is based on a flattened collection of key-value pairs.
  @racket[v]. Multiple values are allowed for the same key, but duplicate values
  for a key are removed. The order of key-value pairs is insignificant. Two
  multidicts are equal if they contain the same mappings.
-                                                             
+
  @(examples
    #:eval (make-evaluator) #:once
    (multidict 'a 1 'b 2 'c 3)
@@ -115,7 +115,7 @@ interface is based on a flattened collection of key-value pairs.
  Returns the number of key-value mappings in @racket[dict]. Note that this does
  @bold{not} return the number of keys in @racket[dict] --- all values mapped by
  a key contribute to the returned size.
-                                                      
+
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-size (multidict 'a 1 'b 2 'c 3))
@@ -124,7 +124,7 @@ interface is based on a flattened collection of key-value pairs.
 
 @defproc[(multidict-ref [dict multidict?] [k any/c]) immutable-set?]{
  Returns the set of values mapped by @racket[k] in @racket[dict].
-                                                                     
+
  @(examples
    #:eval (make-evaluator) #:once
    (define dict
@@ -140,7 +140,7 @@ interface is based on a flattened collection of key-value pairs.
 @defproc[(multidict-keys [dict multidict?]) multiset?]{
  Returns a @tech{multiset} of the keys in @racket[dict], with a copy of each
  key for each value mapped by that key.
-                                                       
+
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-keys
@@ -152,7 +152,7 @@ interface is based on a flattened collection of key-value pairs.
 
 @defproc[(multidict-values [dict multidict?]) multiset?]{
  Returns a @tech{multiset} of all values in @racket[dict].
-                                                         
+
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-values
@@ -165,7 +165,7 @@ interface is based on a flattened collection of key-value pairs.
 
 @defproc[(multidict-unique-keys [dict multidict?]) immutable-set?]{
  Returns the set of keys in @racket[dict], ignoring duplicates.
-                                                                   
+
  @(examples
    #:eval (make-evaluator) #:once
    (multidict-unique-keys
@@ -177,7 +177,7 @@ interface is based on a flattened collection of key-value pairs.
 
 @defproc[(multidict-unique-values [dict multidict?]) immutable-set?]{
  Returns the set of values in @racket[dict], ignoring duplicates.
-                                                                   
+
   @(examples
    #:eval (make-evaluator) #:once
    (multidict-unique-values

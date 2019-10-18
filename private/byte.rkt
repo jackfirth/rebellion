@@ -124,7 +124,7 @@
   (apply byte
          (for/list ([i (in-range 8)])
            (bitwise-and (byte-ref left i)
-                        (byte-ref right i))))) 
+                        (byte-ref right i)))))
 
 (module+ test
   (test-case
@@ -144,7 +144,7 @@
   (apply byte
          (for/list ([i (in-range 8)])
            (bitwise-ior (byte-ref left i)
-                       (byte-ref right i))))) 
+                       (byte-ref right i)))))
 
 (module+ test
   (test-case
@@ -163,7 +163,7 @@
 (define (byte-not b)
   (apply byte
          (for/list ([i (in-range 8)])
-           (bitwise-xor (byte-ref b i) 1)))) 
+           (bitwise-xor (byte-ref b i) 1))))
 
 (module+ test
   (test-case
@@ -177,14 +177,14 @@
       (check-equal? (byte-ref (byte-not x) 5) (bitwise-xor (byte-ref x 5) 1))
       (check-equal? (byte-ref (byte-not x) 6) (bitwise-xor (byte-ref x 6) 1))
       (check-equal? (byte-ref (byte-not x) 7) (bitwise-xor (byte-ref x 7) 1))
-      
+
       (check-equal? (+ x (byte-not x)) 255))))
 
 (define (byte-xor left right)
   (apply byte
          (for/list ([i (in-range 8)])
            (bitwise-xor (byte-ref left i)
-                        (byte-ref right i))))) 
+                        (byte-ref right i)))))
 
 (module+ test
   (test-case
@@ -200,7 +200,7 @@
          (for/list ([i (in-range 8)])
            (bitwise-xor (bitwise-and (byte-ref left i)
                                      (byte-ref right i))
-                        1)))) 
+                        1))))
 
 (module+ test
   (test-case
@@ -221,7 +221,7 @@
          (for/list ([i (in-range 8)])
            (bitwise-xor (bitwise-ior (byte-ref left i)
                                      (byte-ref right i))
-                        1)))) 
+                        1))))
 
 (module+ test
   (test-case
@@ -242,7 +242,7 @@
          (for/list ([i (in-range 8)])
            (bitwise-xor (bitwise-xor (byte-ref left i)
                                      (byte-ref right i))
-                        1)))) 
+                        1))))
 
 (module+ test
   (test-case
@@ -251,7 +251,7 @@
       (check-equal? (byte-xnor x 0) (byte-not x))
       (check-equal? (byte-xnor x 255) x)
       (check-equal? (byte-xnor x x) 255))))
-                    
+
 (define (in-byte b)
   (list (byte-ref b 0) (byte-ref b 1) (byte-ref b 2) (byte-ref b 3)
         (byte-ref b 4) (byte-ref b 5) (byte-ref b 6) (byte-ref b 7)))

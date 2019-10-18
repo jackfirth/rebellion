@@ -29,7 +29,7 @@
  functions extract @racket[size] fields from values using @racket[accessor] and
  recursively compare and hash them. This function is typically not used
  directly; instead clients are expected to use one of @racket[
- make-struct-equal+hash] or @racket[make-tuple-equal+hash].}
+ make-struct-equal+hash] or @racket[default-tuple-equal+hash].}
 
 @defthing[equal+hash/c contract?
           #:value (list/c procedure? procedure? procedure?)]

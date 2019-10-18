@@ -18,12 +18,12 @@
                               (listof (cons/c struct-type-property? any/c)))
          #:inspector inspector?)
         initialized-reference-descriptor?)]
-  [make-default-reference-properties
+  [default-reference-properties
    (-> reference-descriptor? (listof (cons/c struct-type-property? any/c)))]
-  [make-default-reference-equal+hash (-> reference-descriptor? equal+hash/c)]
-  [make-default-reference-custom-write
+  [default-reference-equal+hash (-> reference-descriptor? equal+hash/c)]
+  [default-reference-custom-write
    (-> reference-descriptor? custom-write-function/c)]
-  [make-default-reference-object-name (-> reference-descriptor? natural?)]
+  [default-reference-object-name (-> reference-descriptor? natural?)]
   [make-reference-field-accessor
    (-> reference-descriptor? keyword? procedure?)]))
 
@@ -46,7 +46,7 @@
   (define (name-getter this) (reference-type-name (accessor this type-field)))
   (define custom-write
     (make-named-object-custom-write type-name #:name-getter name-getter))
-  (list (cons prop:equal+hash (make-record-equal+hash descriptor))
+  (list (cons prop:equal+hash (default-record-equal+hash descriptor))
         (cons prop:custom-write custom-write)
         (cons prop:object-name name-getter)))
 
@@ -131,7 +131,7 @@
 
 (define (make-reference-implementation
          type
-         #:property-maker [prop-maker make-default-reference-properties]
+         #:property-maker [prop-maker default-reference-properties]
          #:inspector [inspector (current-inspector)])
   (define (tuple-prop-maker descriptor)
     (prop-maker (tuple-descriptor->reference-descriptor descriptor type)))
@@ -141,24 +141,24 @@
                               #:inspector inspector)
    type))
 
-(define (make-default-reference-properties descriptor)
-  (list (cons prop:equal+hash (make-default-reference-equal+hash descriptor))
+(define (default-reference-properties descriptor)
+  (list (cons prop:equal+hash (default-reference-equal+hash descriptor))
         (cons prop:custom-write
-              (make-default-reference-custom-write descriptor))
+              (default-reference-custom-write descriptor))
         (cons prop:object-name
-              (make-default-reference-object-name descriptor))))
+              (default-reference-object-name descriptor))))
 
-(define (make-default-reference-equal+hash descriptor)
+(define (default-reference-equal+hash descriptor)
   (define accessor (reference-descriptor-accessor descriptor))
   (define size (reference-type-size (reference-descriptor-type descriptor)))
   (make-accessor-based-equal+hash accessor size))
 
-(define (make-default-reference-custom-write descriptor)
+(define (default-reference-custom-write descriptor)
   (define type-name
     (reference-type-name (reference-descriptor-type descriptor)))
   (make-named-object-custom-write type-name))
 
-(define (make-default-reference-object-name descriptor)
+(define (default-reference-object-name descriptor)
   (reference-type-object-name-field (reference-descriptor-type descriptor)))
 
 (define (make-reference-field-accessor descriptor field)

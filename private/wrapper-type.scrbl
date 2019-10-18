@@ -36,7 +36,7 @@ distinguished.
    (define/contract (celsius->fahrenheit c)
      (-> celsius? fahrenheit?)
      (fahrenheit (+ (* (celsius-value c) 9/5) 32))))
-  
+
   (celsius->fahrenheit (celsius 0))
   (celsius->fahrenheit (celsius 100))
   (eval:error (celsius->fahrenheit (fahrenheit 100))))
@@ -100,7 +100,7 @@ distinguished.
           [#:property-maker prop-maker
            (-> uninitialized-wrapper-descriptor?
                (listof (cons/c struct-type-property? any/c)))
-           make-default-wrapper-properties]
+           default-wrapper-properties]
           [#:inspector inspector inspector? (current-inspector)])
          initialized-wrapper-descriptor?]
 
@@ -118,7 +118,7 @@ distinguished.
 
 @section{Wrapper Type Properties}
 
-@defproc[(make-default-wrapper-properties [descriptor wrapper-descriptor?])
+@defproc[(default-wrapper-properties [descriptor wrapper-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
 
 @defproc[(default-wrapper-equal+hash [descriptor wrapper-descriptor?])

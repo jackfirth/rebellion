@@ -39,7 +39,7 @@
 ;@------------------------------------------------------------------------------
 
 (define (make-bitstring-properties descriptor)
-  (define equal+hash (make-tuple-equal+hash descriptor))
+  (define equal+hash (default-tuple-equal+hash descriptor))
   (define accessor (tuple-descriptor-accessor descriptor))
   (define custom-write
     (make-constructor-style-printer

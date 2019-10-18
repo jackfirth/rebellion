@@ -19,7 +19,7 @@
 
 (define (contract-get-projection predicate blame)
   ((contract-late-neg-projection predicate) blame))
-  
+
 (define ((projection-and . projections) v missing-party)
   (for/fold ([v v]) ([p (in-list projections)])
     (p v missing-party)))

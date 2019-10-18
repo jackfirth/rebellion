@@ -24,7 +24,7 @@
 (define (property-maker descriptor)
   (define name (tuple-type-name (tuple-descriptor-type descriptor)))
   (define accessor (tuple-descriptor-accessor descriptor))
-  (define equal+hash (make-tuple-equal+hash descriptor))
+  (define equal+hash (default-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
      (λ (_) name)
