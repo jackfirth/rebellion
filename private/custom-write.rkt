@@ -8,10 +8,7 @@
   [custom-write-function/c chaperone-contract?]
   [make-named-object-custom-write
    (->* (symbol?) (#:name-getter (-> any/c (or/c symbol? #f)))
-        custom-write-function/c)]
-  [make-singleton-custom-write (-> symbol? custom-write-function/c)]
-  [rename make-singleton-custom-write make-constant-custom-write
-          (-> symbol? custom-write-function/c)]))
+        custom-write-function/c)]))
 
 ;@------------------------------------------------------------------------------
 
@@ -31,11 +28,4 @@
         (write-string ":")
         (write-string (symbol->string name)))
       (write-string ">"))
-    (void)))
-
-(define (make-singleton-custom-write name)
-  (define str (string-append "#<" (symbol->string name) ">"))
-  (λ (this out mode)
-    (parameterize ([current-output-port out])
-      (write-string str))
     (void)))

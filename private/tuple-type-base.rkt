@@ -18,15 +18,26 @@
   [tuple-type-size (-> tuple-type? natural?)]))
 
 (require racket/math
+         racket/struct
          racket/syntax
          rebellion/base/symbol
          rebellion/collection/keyset/low-dependency
-         rebellion/custom-write/struct
          rebellion/equal+hash/struct
          rebellion/private/struct-definition-util
          rebellion/type/struct)
 
 ;@------------------------------------------------------------------------------
+
+(define (make-struct-constructor-style-custom-write descriptor)
+  (define type-name (struct-descriptor-name descriptor))
+  (define size
+    (+ (struct-descriptor-mutable-fields descriptor)
+       (struct-descriptor-immutable-fields descriptor)
+       (struct-descriptor-auto-fields descriptor)))
+  (define accessor (struct-descriptor-accessor descriptor))
+  (make-constructor-style-printer
+   (λ (this) type-name)
+   (λ (this) (build-list size (λ (pos) (accessor this pos))))))
 
 (define (make-transparent-style-properties descriptor)
   (define equal+hash (make-struct-equal+hash descriptor))
