@@ -9,7 +9,7 @@
   [association-list-ref (-> association-list? any/c immutable-vector?)]
   [association-list-size (-> association-list? natural?)]
   [association-list-keys (-> association-list? multiset?)]
-  [association-list-unique-keys (-> association-list? immutable-set?)]
+  [association-list-unique-keys (-> association-list? set?)]
   [association-list-values (-> association-list? immutable-vector?)]
   [association-list-entries
    (-> association-list? (vectorof entry? #:immutable #t #:flat? #t))]
@@ -48,8 +48,6 @@
         (cons/c any/c
                 (cons/c any/c
                         (recursive-contract key-value-list/c #:flat)))))
-
-(define (immutable-set? v) (and (set? v) (not (set-mutable? v))))
 
 (define (immutable-vector-contains? vec v)
   (not (not (immutable-vector-member v vec))))
