@@ -23,6 +23,7 @@
          rebellion/base/pair
          rebellion/base/variant
          rebellion/collection/list
+         rebellion/private/impossible
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
          rebellion/type/record)
@@ -253,10 +254,6 @@
 
 ;@------------------------------------------------------------------------------
 ;; Everything else
-
-(define/contract (impossible _)
-  (-> none/c any/c)
-  #f)
 
 (define (mapping f)
   (make-transducer

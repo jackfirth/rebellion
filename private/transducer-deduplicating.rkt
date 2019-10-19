@@ -9,14 +9,11 @@
 (require racket/contract/region
          racket/set
          rebellion/base/variant
+         rebellion/private/impossible
          rebellion/streaming/transducer/base
          rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
-
-(define/contract (impossible _)
-  (-> none/c any/c)
-  #f)
 
 (define-tuple-type emit-state (previously-encountered novelty))
 
