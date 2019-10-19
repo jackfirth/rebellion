@@ -14,18 +14,18 @@
   [multidict-remove-entry (-> multidict? entry? multidict?)]
   [multidict-replace-values (-> multidict? any/c set-coercible/c multidict?)]
   [multidict-size (-> multidict? natural?)]
-  [multidict-ref (-> multidict? any/c immutable-set?)]
+  [multidict-ref (-> multidict? any/c set?)]
   [multidict-keys (-> multidict? multiset?)]
   [multidict-values (-> multidict? multiset?)]
-  [multidict-unique-keys (-> multidict? immutable-set?)]
-  [multidict-unique-values (-> multidict? immutable-set?)]
+  [multidict-unique-keys (-> multidict? set?)]
+  [multidict-unique-values (-> multidict? set?)]
   [multidict-entries (-> multidict? (set/c entry? #:cmp 'equal))]
   [multidict-contains-key? (-> multidict? any/c boolean?)]
   [multidict-contains-value? (-> multidict? any/c boolean?)]
   [multidict-contains-entry? (-> multidict? entry? boolean?)]
   [multidict->hash
    (-> multidict?
-       (hash/c any/c nonempty-immutable-set? #:immutable #t #:flat? #t))]
+       (hash/c any/c nonempty-set? #:immutable #t #:flat? #t))]
   [multidict-inverse (-> multidict? multidict?)]
   [empty-multidict empty-multidict?]
   [empty-multidict? predicate/c]
@@ -59,17 +59,15 @@
                 (cons/c any/c
                         (recursive-contract key-value-list/c #:flat)))))
 
-(define (immutable-set? v) (and (set? v) (not (set-mutable? v))))
-
-(define (nonempty-immutable-set? v)
-  (and (immutable-set? v) (not (zero? (set-count v)))))
+(define (nonempty-set? v)
+  (and (set? v) (not (zero? (set-count v)))))
 
 (define set-coercible/c
-  (or/c immutable-set? multiset? (sequence/c any/c)))
+  (or/c set? multiset? (sequence/c any/c)))
 
 (define (sequence->set seq)
   (cond
-    [(immutable-set? seq) seq]
+    [(set? seq) seq]
     [(multiset? seq) (multiset-unique-elements seq)]
     [else (for/set ([v seq]) v)]))
 
