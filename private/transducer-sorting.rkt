@@ -88,7 +88,7 @@
   ;; TODO(https://github.com/jackfirth/): handle key function more efficiently
   ;;   by caching keys, and avoid computing them altogether when possible (e.g.
   ;;   singleton sequence).
-  (define keyed-comparator (comparator-map real<=> key-function))
+  (define keyed-comparator (comparator-map comparator key-function))
   
   (define (start)
     (variant #:consume empty-tree))
