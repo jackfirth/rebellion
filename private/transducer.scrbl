@@ -5,12 +5,14 @@
                      racket/math
                      racket/sequence
                      racket/set
+                     rebellion/base/comparator
                      rebellion/base/immutable-string
                      rebellion/base/symbol
                      rebellion/base/variant
                      rebellion/collection/list
                      rebellion/streaming/reducer
-                     rebellion/streaming/transducer)
+                     rebellion/streaming/transducer
+                     rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
           (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
@@ -18,10 +20,12 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/set
+                   'rebellion/base/comparator
                    'rebellion/base/immutable-string
                    'rebellion/collection/list
                    'rebellion/streaming/reducer
-                   'rebellion/streaming/transducer)
+                   'rebellion/streaming/transducer
+                   'rebellion/type/record)
     #:private (list 'racket/base)))
 
 @title{Transducers}
@@ -149,6 +153,39 @@ early, before the input sequence is fully consumed.
    (transduce "The quick brown fox"
               (dropping-while char-alphabetic?)
               #:into into-string))}
+
+@defproc[(sorting [comparator comparator? real<=>]
+                  [#:key key-function (-> any/c any/c) values])
+         transducer?]{
+ Constructs a @tech{transducer} that sorts elements in ascending order according
+ to @racket[comparator]. The sort is @emph{stable}; the relative order of
+ equivalent elements is preserved.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 4 1 2 5 3)
+              (sorting)
+              #:into into-list)
+   (transduce (list "the" "quick" "brown" "fox")
+              (sorting string<=>)
+              #:into into-list))
+
+ If @racket[key-function] is provided, it is applied to each element and the
+ result is tested with @racket[comparator] rather than the element itself.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-record-type gem (kind weight))
+    (define gems
+      (list (gem #:kind 'ruby #:weight 17)
+            (gem #:kind 'sapphire #:weight 9)
+            (gem #:kind 'emerald #:weight 13)
+            (gem #:kind 'topaz #:weight 17))))
+   
+    (transduce gems
+               (sorting #:key gem-weight)
+               #:into into-list))}
 
 @defthing[deduplicating transducer?]{
  A @tech{transducer} that removes duplicate elements from the transduced
