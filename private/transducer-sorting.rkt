@@ -7,7 +7,6 @@
   [sorting (->* () (comparator? #:key (-> any/c any/c)) transducer?)]))
 
 (require racket/bool
-         racket/contract/region
          racket/sequence
          rebellion/base/comparator
          rebellion/base/option
@@ -67,9 +66,7 @@
 
 (define-record-type tree-trimming (minimum-leaves leftover-tree))
 
-(define/contract (tree-trim-minimum possibly-unbuilt-tree comparator)
-  (-> (or/c partially-sorted-tree? unsorted-stack?) comparator?
-      tree-trimming?)
+(define (tree-trim-minimum possibly-unbuilt-tree comparator)
   (define tree
     (cond
       [(partially-sorted-tree? possibly-unbuilt-tree) possibly-unbuilt-tree]
@@ -81,8 +78,7 @@
          (tree-insert built-tree element #:comparator comparator))]))
   (partially-sorted-tree-trim-minimum tree comparator))
 
-(define/contract (partially-sorted-tree-trim-minimum tree comparator)
-  (-> partially-sorted-tree? comparator? tree-trimming?)
+(define (partially-sorted-tree-trim-minimum tree comparator)
   (define pivot-element (partially-sorted-tree-pivot-element tree))
   (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
   (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
@@ -109,17 +105,14 @@
      (tree-trimming #:minimum-leaves leaves
                     #:leftover-tree leftovers)]))
 
-(define/contract (singleton-tree element)
-  (-> any/c partially-sorted-tree?)
+(define (singleton-tree element)
   (partially-sorted-tree
    #:pivot-element element
    #:lesser-subtree empty-tree
    #:equivalent-stack empty-list
    #:greater-stack empty-list))
 
-(define/contract (tree-insert tree element #:comparator comparator)
-  (-> (or/c empty-tree? partially-sorted-tree?) any/c #:comparator comparator?
-      partially-sorted-tree?)
+(define (tree-insert tree element #:comparator comparator)
   (cond
     [(empty-tree? tree) (singleton-tree element)]
     [else
@@ -151,9 +144,8 @@
          #:greater-stack greater-stack)])]))
 
 (define (sorting [comparator real<=>] #:key [key-function values])
-  ;; TODO(https://github.com/jackfirth/): handle key function more efficiently
-  ;;   by caching keys, and avoid computing them altogether when possible (e.g.
-  ;;   singleton sequence).
+  ;; TODO(https://github.com/jackfirth/rebellion/issues/301): consider handling
+  ;;   key function more efficiently by caching keys.
   (define keyed-comparator (comparator-map comparator key-function))
   
   (define (start)
@@ -206,23 +198,3 @@
    #:half-closed-emitter half-closed-emit
    #:finisher void
    #:name 'sorting))
-
-;@------------------------------------------------------------------------------
-;; Utilities
-
-(define (sequence-only-element sequence)
-  (define (fold-function previous element)
-    (option-case
-     previous
-     #:present (λ (previous)
-                 (raise-arguments-error 'sequence-only-element
-                                        "sequence has too many elements"
-                                        "sequence" sequence))
-     #:absent (λ () (present element))))
-  (define first-element (sequence-fold fold-function absent sequence))
-  (option-case
-   first-element
-   #:present values
-   #:absent (λ () (raise-arguments-error 'sequence-only-element
-                                         "sequence is empty"
-                                         "sequence" sequence))))
