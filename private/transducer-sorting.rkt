@@ -98,16 +98,19 @@
                     #:leftover-tree leftovers)]
     [else #f]))
 
+(define/contract (singleton-tree element)
+  (-> any/c partially-sorted-tree)
+  (partially-sorted-tree
+   #:pivot-element element
+   #:lesser-subtree empty-tree
+   #:equivalent-stack empty-list
+   #:greater-stack empty-list))
+
 (define/contract (tree-insert tree element #:comparator comparator)
   (-> (or/c empty-tree? partially-sorted-tree?) any/c #:comparator comparator?
       partially-sorted-tree?)
   (cond
-    [(empty-tree? tree)
-     (partially-sorted-tree
-      #:pivot-element element
-      #:lesser-subtree empty-tree
-      #:equivalent-stack empty-list
-      #:greater-stack empty-list)]
+    [(empty-tree? tree) (singleton-tree element)]
     [else
      (define pivot (partially-sorted-tree-pivot-element tree))
      (define comparison-to-pivot (compare comparator element pivot))
