@@ -96,7 +96,18 @@
            (unsorted-stack greater-stack)))
      (tree-trimming #:minimum-leaves leaves
                     #:leftover-tree leftovers)]
-    [else #f]))
+    [else
+     (define subtree-trimming
+       (tree-trim-minimum lesser-subtree comparator))
+     (define leaves (tree-trimming-minimum-leaves subtree-trimming))
+     (define leftovers
+       (partially-sorted-tree
+        #:pivot-element pivot-element
+        #:lesser-subtree (tree-trimming-leftover-tree subtree-trimming)
+        #:equivalent-stack equivalent-stack
+        #:greater-stack greater-stack))
+     (tree-trimming #:minimum-leaves leaves
+                    #:leftover-tree leftovers)]))
 
 (define/contract (singleton-tree element)
   (-> any/c partially-sorted-tree?)
@@ -113,24 +124,31 @@
     [(empty-tree? tree) (singleton-tree element)]
     [else
      (define pivot (partially-sorted-tree-pivot-element tree))
+     (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
+     (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
+     (define greater-stack (partially-sorted-tree-greater-stack tree))
      (define comparison-to-pivot (compare comparator element pivot))
      (cond
        [(equal? comparison-to-pivot equivalent)
         (partially-sorted-tree
          #:pivot-element pivot
-         #:lesser-subtree (partially-sorted-tree-lesser-subtree tree)
-         #:equivalent-stack
-         (list-insert (partially-sorted-tree-equivalent-stack tree) element)
-         #:greater-stack (partially-sorted-tree-greater-stack tree))]
+         #:lesser-subtree lesser-subtree
+         #:equivalent-stack (list-insert equivalent-stack element)
+         #:greater-stack greater-stack)]
        [(equal? comparison-to-pivot greater)
         (partially-sorted-tree
          #:pivot-element pivot
-         #:lesser-subtree (partially-sorted-tree-lesser-subtree tree)
-         #:equivalent-stack (partially-sorted-tree-equivalent-stack tree)
-         #:greater-stack
-         (list-insert (partially-sorted-tree-greater-stack tree) element))]
+         #:lesser-subtree lesser-subtree
+         #:equivalent-stack equivalent-stack
+         #:greater-stack (list-insert greater-stack element))]
        [(equal? comparison-to-pivot lesser)
-        #f])]))
+        (define new-subtree
+          (tree-insert lesser-subtree element #:comparator comparator))
+        (partially-sorted-tree
+         #:pivot-element pivot
+         #:lesser-subtree new-subtree
+         #:equivalent-stack equivalent-stack
+         #:greater-stack greater-stack)])]))
 
 (define (sorting [comparator real<=>] #:key [key-function values])
   ;; TODO(https://github.com/jackfirth/): handle key function more efficiently
