@@ -81,8 +81,38 @@
      (tree-trimming #:minimum-leaves leaves
                     #:leftover-tree leftovers)]
     [else #f]))
-     
-     
+
+(define (tree-insert tree element #:comparator comparator)
+  (cond
+    [(empty-tree? tree)
+     (partially-sorted-tree
+      #:pivot-element element
+      #:lesser-subtree empty-tree
+      #:equivalent-stack empty-list
+      #:greater-stack empty-list)]
+    [(partially-sorted-tree? tree)
+     (define pivot (partially-sorted-tree-pivot-element tree))
+     (define comparison-to-pivot (compare comparator element pivot))
+     (cond
+       [(equal? comparison-to-pivot equivalent)
+        (partially-sorted-tree
+         #:pivot-element pivot
+         #:lesser-subtree (partially-sorted-tree-lesser-subtree tree)
+         #:equivalent-stack
+         (list-insert (partially-sorted-tree-equivalent-stack tree) element)
+         #:greater-stack (partially-sorted-tree-greater-stack tree))]
+       [(equal? comparison-to-pivot greater)
+        (partially-sorted-tree
+         #:pivot-element pivot
+         #:lesser-subtree (partially-sorted-tree-lesser-subtree tree)
+         #:equivalent-stack (partially-sorted-tree-equivalent-stack tree)
+         #:greater-stack
+         (list-insert (partially-sorted-tree-greater-stack tree) element))]
+       [(equal? comparison-to-pivot lesser)
+        #f])]
+    [else
+     (raise-arguments-error 'tree-insert "expected a tree"
+                            "actual previous state" tree)]))
 
 (define (sorting [comparator real<=>] #:key [key-function values])
   ;; TODO(https://github.com/jackfirth/): handle key function more efficiently
@@ -101,25 +131,36 @@
           #:lesser-subtree empty-tree
           #:equivalent-stack empty-list
           #:greater-stack empty-list)]
-        [else #f]))
+        [(partially-sorted-tree? state)
+         (tree-insert state element #:comparator keyed-comparator)]
+        [else
+         (raise-arguments-error 'sorting "expected a tree"
+                                "actual previous state" state)]))
     (variant #:consume next-state))
   (define (half-close tree)
     (cond
       [(empty-tree? tree) (variant #:finish #f)]
       [else (variant #:half-closed-emit tree)]))
-  (define (half-closed-emit tree)
+  (define (half-closed-emit state)
     (define trimming
-      (partially-sorted-tree-trim-minimum tree keyed-comparator))
-    (define minimum
-      (sequence-only-element (tree-trimming-minimum-leaves trimming)))
-    (define next-tree (tree-trimming-leftover-tree trimming))
+      (if (tree-trimming? state)
+          state
+          (partially-sorted-tree-trim-minimum state keyed-comparator)))
+    (define minimum (list-first (tree-trimming-minimum-leaves trimming)))
+    (define remaining-leaves
+      (list-rest (tree-trimming-minimum-leaves trimming)))
+    (define tree (tree-trimming-leftover-tree trimming))
     (define next-state
       (cond
-        [(empty-tree? next-tree) (variant #:finish #f)]
-        [(partially-sorted-tree? next-tree)
-         (variant #:half-closed-emit next-tree)]
+        [(not (empty-list? remaining-leaves))
+         (variant #:half-closed-emit
+                  (tree-trimming #:minimum-leaves remaining-leaves
+                                 #:leftover-tree tree))]
+        [(empty-tree? tree) (variant #:finish #f)]
+        [(partially-sorted-tree? tree)
+         (variant #:half-closed-emit tree)]
         [else (raise-arguments-error 'sorting "expected a tree"
-                                     "actual" next-tree)]))
+                                     "actual" tree)]))
     (half-closed-emission next-state minimum))
   (make-transducer
    #:starter start
