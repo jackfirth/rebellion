@@ -99,7 +99,7 @@
     [else #f]))
 
 (define/contract (singleton-tree element)
-  (-> any/c partially-sorted-tree)
+  (-> any/c partially-sorted-tree?)
   (partially-sorted-tree
    #:pivot-element element
    #:lesser-subtree empty-tree
