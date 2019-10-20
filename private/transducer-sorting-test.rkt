@@ -10,4 +10,6 @@
 (module+ test
   (test-case "sorting"
     (check-equal? (transduce empty-list (sorting) #:into into-list)
-                  empty-list)))
+                  empty-list)
+    (check-equal? (transduce (list 1) (sorting) #:into into-list)
+                  (list 1))))

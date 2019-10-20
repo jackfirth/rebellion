@@ -7,6 +7,7 @@
   [sorting (->* () (comparator? #:key (-> any/c any/c)) transducer?)]))
 
 (require racket/bool
+         racket/sequence
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/variant
@@ -14,7 +15,8 @@
          rebellion/private/impossible
          rebellion/streaming/transducer/base
          rebellion/type/record
-         rebellion/type/singleton)
+         rebellion/type/singleton
+         rebellion/type/wrapper)
 
 ;@------------------------------------------------------------------------------
 
@@ -37,9 +39,13 @@
   ;; The tree's pivot element, used to partition other elements
   (pivot-element
 
-   ;; (or/c (partially-sorted-tree/c E) empty-tree?)
+   ;; (or/c (partially-sorted-tree/c E) empty-tree? unsorted-stack?)
    ;; A subtree containing all elements that are smaller than this tree's pivot,
-   ;; or the empty tree if there are no such elements.
+   ;; or the empty tree if there are no such elements. Additionally, the subtree
+   ;; may be an unsorted stack. This occurs when the minimum values are trimmed
+   ;; from the subtree until the subtree's greater-stack is all that remains. We
+   ;; allow the greater-stack to be stored here so we can delay reversing and
+   ;; partially sorting it until elements from it are actually needed.
    lesser-subtree
 
    ;; (listof E)
@@ -54,12 +60,29 @@
    ;; the same reasons as for equivalent-stack.
    greater-stack))
 
+(define-wrapper-type unsorted-stack)
+
 (define-singleton-type empty-tree)
 
-(define-record-type tree-trimming (minimum-leaf leftover-tree))
+(define-record-type tree-trimming (minimum-leaves leftover-tree))
 
-(define (partially-sorted-tree-trim-minimum tree comparator key-function)
-  #f)
+(define (partially-sorted-tree-trim-minimum tree comparator)
+  (define pivot-element (partially-sorted-tree-pivot-element tree))
+  (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
+  (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
+  (define greater-stack (partially-sorted-tree-greater-stack tree))
+  (cond
+    [(empty-tree? lesser-subtree)
+     (define leaves (list-insert (list-reverse equivalent-stack) pivot-element))
+     (define leftovers
+       (if (empty-list? greater-stack)
+           empty-tree
+           (unsorted-stack greater-stack)))
+     (tree-trimming #:minimum-leaves leaves
+                    #:leftover-tree leftovers)]
+    [else #f]))
+     
+     
 
 (define (sorting [comparator real<=>] #:key [key-function values])
   ;; TODO(https://github.com/jackfirth/): handle key function more efficiently
@@ -87,13 +110,17 @@
   (define (half-closed-emit tree)
     (define trimming
       (partially-sorted-tree-trim-minimum tree keyed-comparator))
-    (define minimum (tree-trimming-minimum-leaf trimming))
+    (define minimum
+      (sequence-only-element (tree-trimming-minimum-leaves trimming)))
     (define next-tree (tree-trimming-leftover-tree trimming))
     (define next-state
       (cond
         [(empty-tree? next-tree) (variant #:finish #f)]
-        [else (variant #:half-closed-emit next-tree)]))
-    (emission minimum next-state))
+        [(partially-sorted-tree? next-tree)
+         (variant #:half-closed-emit next-tree)]
+        [else (raise-arguments-error 'sorting "expected a tree"
+                                     "actual" next-tree)]))
+    (half-closed-emission next-state minimum))
   (make-transducer
    #:starter start
    #:consumer consume
@@ -102,3 +129,23 @@
    #:half-closed-emitter half-closed-emit
    #:finisher void
    #:name 'sorting))
+
+;@------------------------------------------------------------------------------
+;; Utilities
+
+(define (sequence-only-element sequence)
+  (define (fold-function previous element)
+    (option-case
+     previous
+     #:present (λ (previous)
+                 (raise-arguments-error 'sequence-only-element
+                                        "sequence has too many elements"
+                                        "sequence" sequence))
+     #:absent (λ () (present element))))
+  (define first-element (sequence-fold fold-function absent sequence))
+  (option-case
+   first-element
+   #:present values
+   #:absent (λ () (raise-arguments-error 'sequence-only-element
+                                         "sequence is empty"
+                                         "sequence" sequence))))
