@@ -76,9 +76,9 @@
       [else
        (define elements
          (list-reverse (unsorted-stack-value possibly-unbuilt-tree)))
-        (for/fold ([built-tree empty-tree])
-                  ([element (in-list elements)])
-          (tree-insert built-tree element #:comparator comparator))]))
+       (for/fold ([built-tree empty-tree])
+                 ([element (in-list elements)])
+         (tree-insert built-tree element #:comparator comparator))]))
   (partially-sorted-tree-trim-minimum tree comparator))
 
 (define/contract (partially-sorted-tree-trim-minimum tree comparator)
