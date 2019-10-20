@@ -7,6 +7,7 @@
   [sorting (->* () (comparator? #:key (-> any/c any/c)) transducer?)]))
 
 (require racket/bool
+         racket/contract/region
          racket/sequence
          rebellion/base/comparator
          rebellion/base/option
@@ -66,7 +67,22 @@
 
 (define-record-type tree-trimming (minimum-leaves leftover-tree))
 
-(define (partially-sorted-tree-trim-minimum tree comparator)
+(define/contract (tree-trim-minimum possibly-unbuilt-tree comparator)
+  (-> (or/c partially-sorted-tree? unsorted-stack?) comparator?
+      tree-trimming?)
+  (define tree
+    (cond
+      [(partially-sorted-tree? possibly-unbuilt-tree) possibly-unbuilt-tree]
+      [else
+       (define elements
+         (list-reverse (unsorted-stack-value possibly-unbuilt-tree)))
+        (for/fold ([built-tree empty-tree])
+                  ([element (in-list elements)])
+          (tree-insert built-tree element #:comparator comparator))]))
+  (partially-sorted-tree-trim-minimum tree comparator))
+
+(define/contract (partially-sorted-tree-trim-minimum tree comparator)
+  (-> partially-sorted-tree? comparator? tree-trimming?)
   (define pivot-element (partially-sorted-tree-pivot-element tree))
   (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
   (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
@@ -82,7 +98,9 @@
                     #:leftover-tree leftovers)]
     [else #f]))
 
-(define (tree-insert tree element #:comparator comparator)
+(define/contract (tree-insert tree element #:comparator comparator)
+  (-> (or/c empty-tree? partially-sorted-tree?) any/c #:comparator comparator?
+      partially-sorted-tree?)
   (cond
     [(empty-tree? tree)
      (partially-sorted-tree
@@ -90,7 +108,7 @@
       #:lesser-subtree empty-tree
       #:equivalent-stack empty-list
       #:greater-stack empty-list)]
-    [(partially-sorted-tree? tree)
+    [else
      (define pivot (partially-sorted-tree-pivot-element tree))
      (define comparison-to-pivot (compare comparator element pivot))
      (cond
@@ -109,10 +127,7 @@
          #:greater-stack
          (list-insert (partially-sorted-tree-greater-stack tree) element))]
        [(equal? comparison-to-pivot lesser)
-        #f])]
-    [else
-     (raise-arguments-error 'tree-insert "expected a tree"
-                            "actual previous state" tree)]))
+        #f])]))
 
 (define (sorting [comparator real<=>] #:key [key-function values])
   ;; TODO(https://github.com/jackfirth/): handle key function more efficiently
@@ -145,7 +160,7 @@
     (define trimming
       (if (tree-trimming? state)
           state
-          (partially-sorted-tree-trim-minimum state keyed-comparator)))
+          (tree-trim-minimum state keyed-comparator)))
     (define minimum (list-first (tree-trimming-minimum-leaves trimming)))
     (define remaining-leaves
       (list-rest (tree-trimming-minimum-leaves trimming)))
@@ -157,7 +172,7 @@
                   (tree-trimming #:minimum-leaves remaining-leaves
                                  #:leftover-tree tree))]
         [(empty-tree? tree) (variant #:finish #f)]
-        [(partially-sorted-tree? tree)
+        [(or (partially-sorted-tree? tree) (unsorted-stack? tree))
          (variant #:half-closed-emit tree)]
         [else (raise-arguments-error 'sorting "expected a tree"
                                      "actual" tree)]))
