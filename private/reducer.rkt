@@ -31,6 +31,8 @@
   [into-sum reducer?]
   [into-product reducer?]
   [into-count reducer?]
+  [into-first reducer?]
+  [into-last reducer?]
   [into-nth (-> natural? reducer?)]
   [into-index-of (-> any/c reducer?)]
   [into-index-where (-> predicate/c reducer?)]
@@ -359,6 +361,13 @@
    #:early-finisher values
    #:name 'into-nth))
 
+;; TODO(https://github.com/jackfirth/rebellion/issues/187): this reducer should
+;;   be named into-first but there's no reducer-rename operation yet.
+(define into-first (into-nth 0))
+
+(define into-last
+  (make-fold-reducer (λ (_ v) (present v)) absent #:name 'into-last))
+
 (define (into-index-of v)
   (into-index-where (λ (elem) (equal? elem v)) #:name 'into-index-of))
 
@@ -380,6 +389,12 @@
     (check-equal? (reduce-all (into-nth 10) "magic") absent)
     (check-equal? (reduce-all (into-nth 0) (in-naturals)) (present 0))
     (check-equal? (reduce-all (into-nth 0) "") absent))
+  (test-case "into-first"
+    (check-equal? (reduce-all into-first "horse") (present #\h))
+    (check-equal? (reduce-all into-first "") absent))
+  (test-case "into-last"
+    (check-equal? (reduce-all into-last "horse") (present #\e))
+    (check-equal? (reduce-all into-last "") absent))
   (test-case "into-index-of"
     (check-equal? (reduce-all (into-index-of #\f) "food") (present 0))
     (check-equal? (reduce-all (into-index-of #\f) "hoof") (present 3))

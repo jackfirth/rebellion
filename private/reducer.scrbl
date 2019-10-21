@@ -93,6 +93,22 @@ fully consumed.
    (reduce into-count 'a 'b 'c)
    (reduce-all into-count "hello world"))}
 
+@defthing[into-first reducer?]{
+ A @tech{reducer} that returns an @tech{option} of the first element it reduces,
+ or @racket[absent] if the reduced sequence is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all into-first "hello world"))}
+
+@defthing[into-last reducer?]{
+ A @tech{reducer} that returns an @tech{option} of the last element it reduces,
+ or @racket[absent] if the reduced sequence is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all into-last "hello world"))}
+
 @defproc[(into-nth [n natural?]) reducer?]{
  Constructs a @tech{reducer} that returns the @racket[n]th element it reduces,
  wrapped in an @tech{option} value. If the reduced sequence has fewer than
