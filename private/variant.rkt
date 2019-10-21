@@ -10,7 +10,8 @@
   [variant-tag (-> variant? keyword?)]
   [variant-tagged-as? (-> variant? keyword? boolean?)]))
 
-(require racket/list
+(require racket/contract/combinator
+         racket/list
          racket/struct
          rebellion/base/generative-token
          rebellion/type/tuple)
@@ -69,3 +70,18 @@
   (test-case "variant-tagged-as?"
     (check-true (variant-tagged-as? (variant #:success 42) '#:success))
     (check-false (variant-tagged-as? (variant #:failure "oh no") '#:success))))
+
+(define variant/c
+  (make-keyword-procedure
+   (λ (keywords uncoerced-contracts)
+     (define contracts
+       (for/list ([c (in-list uncoerced-contracts)])
+         (coerce-contract 'variant/c c)))
+     (define name
+       (cons 'variant/c
+             (for/list ([kw (in-list keywords)]
+                        [c (in-list contracts)]
+                        #:when #t
+                        [part (in-list (list kw (contract-name c)))])
+               part)))
+     #f)))
