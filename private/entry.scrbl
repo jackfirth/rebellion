@@ -4,6 +4,8 @@
                      racket/contract/base
                      rebellion/collection/entry
                      rebellion/collection/hash
+                     rebellion/collection/multidict
+                     rebellion/streaming/reducer
                      rebellion/streaming/transducer
                      rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -13,6 +15,8 @@
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/collection/entry
                    'rebellion/collection/hash
+                   'rebellion/collection/multidict
+                   'rebellion/streaming/reducer
                    'rebellion/streaming/transducer
                    'rebellion/type/record)
     #:private (list 'racket/base)))
@@ -104,3 +108,16 @@ than a collection of @racket[pair?] values.
 @defproc[(filtering-values [value-predicate predicate/c]) transducer?]{
  Like @racket[filtering], but the sequence must be made of @tech{entries} and
  the value of each entry must satisfy @racket[value-predicate].}
+
+@defproc[(grouping [value-reducer reducer?]) transducer?]{
+ Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by
+ merging entries with equal keys. For each key, the values of all entries with
+ that key are combined using @racket[value-reducer]. If @racket[value-reducer]
+ finishes early, its result is emitted and any remaining values for that key are
+ discarded.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (multidict 'a 1 'b 2 'a 3 'b 4 'a 5)
+              (grouping into-sum)
+              #:into into-hash))}
