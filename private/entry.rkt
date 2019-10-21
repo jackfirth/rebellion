@@ -13,15 +13,22 @@
   [mapping-values (-> (-> any/c any/c) transducer?)]
   [indexing (-> (-> any/c any/c) transducer?)]
   [filtering-keys (-> predicate/c transducer?)]
-  [filtering-values (-> predicate/c transducer?)]))
+  [filtering-values (-> predicate/c transducer?)]
+  [grouping (-> reducer? transducer?)]))
 
-(require rebellion/collection/list
+(require racket/contract/region
+         racket/set
+         rebellion/base/variant
+         rebellion/collection/list
+         rebellion/streaming/reducer
          rebellion/streaming/transducer
+         rebellion/type/record
          rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")
-           rackunit))
+           rackunit
+           rebellion/base/option))
 
 ;@------------------------------------------------------------------------------
 
@@ -82,3 +89,137 @@
                              (filtering-values odd?)
                              #:into into-list)
                   (list (entry 'foo 1) (entry 'baz 3)))))
+
+(define-record-type groups (reducer-states reverse-ordered-keys finished-keys))
+(define-record-type closing-groups (reducer-states encounter-ordered-keys size))
+(define-record-type group-emission (key value state))
+
+(define (make-empty-groups)
+  (groups #:reducer-states (make-hash)
+          #:reverse-ordered-keys (list)
+          #:finished-keys (set)))
+
+(define/contract (groups-insert g k v #:reducer value-reducer)
+  (-> groups? any/c any/c #:reducer reducer?
+      (or/c groups? group-emission?))
+  (define starter (reducer-starter value-reducer))
+  (define consumer (reducer-consumer value-reducer))
+  (define early-finisher (reducer-early-finisher value-reducer))
+  (define states (groups-reducer-states g))
+  (define keys (groups-reverse-ordered-keys g))
+  (define finished (groups-finished-keys g))
+  (cond
+    [(set-member? finished k) g]
+    [(hash-has-key? states k)
+     (define value-state (consumer (hash-ref states k) v))
+     (cond
+       [(variant-tagged-as? value-state '#:consume)
+        (hash-set! states k (variant-value value-state))
+        g]
+       [else
+        (hash-remove! states k)
+        (define next-g
+          (groups #:reducer-states states
+                  #:reverse-ordered-keys (remove k keys)
+                  #:finished-keys (set-add finished k)))
+        (group-emission #:key k
+                        #:value (early-finisher (variant-value value-state))
+                        #:state next-g)])]
+    [else
+     (define value-state (starter))
+     (cond
+       [(variant-tagged-as? value-state '#:early-finish)
+        (define next-g
+          (groups #:reducer-states states
+                  #:reverse-ordered-keys keys
+                  #:finished-keys (set-add finished k)))
+        (group-emission #:key k
+                        #:value (early-finisher (variant-value value-state))
+                        #:state next-g)]
+       [else
+        (hash-set! states k (variant-value value-state))
+        (define intermediate-g
+          (groups #:reducer-states states
+                  #:reverse-ordered-keys (list-insert keys k)
+                  #:finished-keys finished))
+        (groups-insert intermediate-g k v #:reducer value-reducer)])]))
+
+(define/contract (half-close-groups g)
+  (-> groups? closing-groups?)
+  (define keys (reverse (groups-reverse-ordered-keys g)))
+  (closing-groups #:reducer-states (groups-reducer-states g)
+                  #:encounter-ordered-keys keys
+                  #:size (list-size keys)))
+
+(define (grouping value-reducer)
+  (define start-value (reducer-starter value-reducer))
+  (define consume-value (reducer-consumer value-reducer))
+  (define finish-value (reducer-finisher value-reducer))
+  (define finish-value-early (reducer-early-finisher value-reducer))
+  (make-transducer
+   #:starter (λ () (variant #:consume (make-empty-groups)))
+   #:consumer
+   (λ (g e)
+     (define next
+       (groups-insert g (entry-key e) (entry-value e) #:reducer value-reducer))
+     (cond
+       [(groups? next) (variant #:consume next)]
+       [else (variant #:emit next)]))
+   #:emitter
+   (λ (state)
+     (emission (variant #:consume (group-emission-state state))
+               (entry (group-emission-key state)
+                      (group-emission-value state))))
+   #:half-closer
+   (λ (g*)
+     (define g (half-close-groups g*))
+     (cond
+       [(zero? (closing-groups-size g)) (variant #:finish #f)]
+       [else (variant #:half-closed-emit g)]))
+   #:half-closed-emitter
+   (λ (g)
+     (define reducer-states (closing-groups-reducer-states g))
+     (define keys (closing-groups-encounter-ordered-keys g))
+     (define next-key (list-first keys))
+     (define next-value (finish-value (hash-ref reducer-states next-key)))
+     (hash-remove! reducer-states next-key)
+     (define next-g
+       (closing-groups
+        #:reducer-states reducer-states
+        #:encounter-ordered-keys (list-rest keys)
+        #:size (sub1 (closing-groups-size g))))
+     (define next-state
+       (cond
+         [(zero? (closing-groups-size next-g)) (variant #:finish #f)]
+         [else (variant #:half-closed-emit next-g)]))
+     (half-closed-emission next-state (entry next-key next-value)))
+   #:finisher void))
+
+(module+ test
+  (test-case "grouping"
+    (check-equal? (transduce (list (entry 'a 1)
+                                   (entry 'a 2)
+                                   (entry 'a 3)
+                                   (entry 'b 4)
+                                   (entry 'b 5))
+                             (grouping into-sum)
+                             #:into into-list)
+                  (list (entry 'a 6) (entry 'b 9)))
+    (check-equal? (transduce (list (entry 'a 1)
+                                   (entry 'a 2)
+                                   (entry 'a 3)
+                                   (entry 'b 4)
+                                   (entry 'b 5))
+                             (grouping (into-nth 0))
+                             #:into into-list)
+                  (list (entry 'a (present 1))
+                        (entry 'b (present 4))))
+    (check-equal? (transduce (list (entry 'a 1)
+                                   (entry 'b 5)
+                                   (entry 'a 3)
+                                   (entry 'b 4)
+                                   (entry 'a 2))
+                             (grouping (into-max))
+                             #:into into-list)
+                  (list (entry 'a (present 3))
+                        (entry 'b (present 5))))))
