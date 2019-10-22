@@ -182,6 +182,17 @@ fully consumed.
    (reduce into-string #\h #\e #\l #\l #\o)
    (reduce-all into-string (list #\a #\b #\c)))}
 
+@defthing[into-line reducer?]{
+ Like @racket[into-string], but stops the reduction as soon as the @racket[
+ #\newline] character is encountered.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all into-line
+               "Haikus are easy
+But sometimes they don't make sense
+Refrigerator"))}
+
 @defproc[(join-into-string
           [sep immutable-string?]
           [#:before-first before-first immutable-string? ""]
