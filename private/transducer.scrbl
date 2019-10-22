@@ -111,6 +111,23 @@ early, before the input sequence is fully consumed.
               (folding + 0)
               #:into into-list))}
 
+@defthing[enumerating transducer?]{
+ A transducer that emits each element along with its position in the sequence,
+ as an @racket[enumerated?] value.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "cat" enumerating #:into into-list))}
+
+@deftogether[[
+ @defproc[(enumerated? [v any/c]) boolean?]
+ @defproc[(enumerated [#:element element any/c] [#:position position natural?])
+          enumerated?]
+ @defproc[(enumerated-element [enum enumerated?]) any/c]
+ @defproc[(enumerated-position [enum enumerated?]) natural?]]]{
+ Predicate, constructor, and accessors for the enumerated values emitted by the
+ @racket[enumerating] transducer.}
+
 @defproc[(taking [amount natural?]) transducer?]{
  Constructs a @tech{transducer} that limits the upstream sequence to its first
  @racket[amount] elements. There is no buffering; each element is consumed and
