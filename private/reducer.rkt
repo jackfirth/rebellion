@@ -39,6 +39,7 @@
   [into-max (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
   [into-min (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
   [into-string reducer?]
+  [into-line reducer?]
   [join-into-string
    (->* (immutable-string?)
         (#:before-first immutable-string?
@@ -337,6 +338,18 @@
                            #:after-last after-last))
   (reducer-map into-list #:range join))
 
+(define into-line
+  (make-reducer
+   #:starter (λ () (variant #:consume '()))
+   #:consumer
+   (λ (chars next-char)
+     (if (equal? next-char #\newline)
+         (variant #:early-finish chars)
+         (variant #:consume (cons next-char chars))))
+   #:finisher (λ (chars) (list->immutable-string (reverse chars)))
+   #:early-finisher (λ (chars) (list->immutable-string (reverse chars)))
+   #:name 'into-line))
+
 (module+ test
   (test-case "into-string"
     (check-equal? (reduce-all into-string "hello world") "hello world"))
@@ -347,7 +360,9 @@
                           "foo"
                           "bar"
                           "baz")
-                  "[foo, bar, baz]")))
+                  "[foo, bar, baz]"))
+  (test-case "into-line"
+    (check-equal? (reduce-all into-line "hello \n world") "hello ")))
 
 (define (into-nth n)
   (make-reducer
