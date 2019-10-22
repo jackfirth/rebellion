@@ -25,7 +25,7 @@
 
 @defproc[(module-binding-path [binding module-binding?]) module-path?]
 @defproc[(module-binding-phase [binding module-binding?]) phase?]
-@defproc[(module-binding-name [binding module-binding?]) symbol?]
+@defproc[(module-binding-source [binding module-binding?]) symbol?]
 
 @defproc[(module-bindings [mod module-path?]) (set/c module-binding?)]{
  Returns the set of bindings currently defined by @racket[mod], including both
