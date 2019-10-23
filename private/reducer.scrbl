@@ -142,6 +142,15 @@ fully consumed.
    (reduce-all (into-index-where char-whitespace?) "hello world")
    (reduce-all (into-index-where char-numeric?) "goodbye world"))}
 
+@defproc[(into-for-each [handler (-> any/c void?)]) reducer?]{
+ Constructs a @tech{reducer} that calls @racket[handler] on each element for its
+ side effects. The reduction result of the returned reducer is always @racket[
+ (void)].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-for-each displayln) (in-range 5)))}
+
 @deftogether[[
  @defproc[(into-max [comparator comparator? real<=>]
                     [#:key key-function (-> any/c any/c) values])

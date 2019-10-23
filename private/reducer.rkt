@@ -46,6 +46,7 @@
          #:before-last immutable-string?
          #:after-last immutable-string?)
         reducer?)]
+  [into-for-each (-> (-> any/c void?) reducer?)]
   [reducer-map
    (->* (reducer?)
         (#:domain (-> any/c any/c) #:range (-> any/c any/c))
@@ -77,6 +78,7 @@
 
 (module+ test
   (require (submod "..")
+           racket/set
            rackunit))
 
 ;@------------------------------------------------------------------------------
@@ -398,6 +400,17 @@
    #:early-finisher (λ (index-counter) (present index-counter))
    #:name name))
 
+(define (into-for-each handler)
+  (define consume-state (variant #:consume #f))
+  (make-reducer
+   #:starter (λ () consume-state)
+   #:consumer
+   (λ (_ element)
+     (handler element)
+     consume-state)
+   #:finisher void
+   #:early-finisher void))
+
 (module+ test
   (test-case "into-nth"
     (check-equal? (reduce-all (into-nth 3) "magic") (present #\i))
@@ -418,7 +431,12 @@
     (check-equal? (reduce-all (into-index-where char-whitespace?) "hello world")
                   (present 5))
     (check-equal? (reduce-all (into-index-where char-numeric?) "goodbye world")
-                  absent)))
+                  absent))
+  (test-case "into-for-each"
+    (define st (mutable-set))
+    (define add-into-set! (into-for-each (λ (v) (set-add! st v))))
+    (check-pred void? (reduce add-into-set! 1 2 3))
+    (check-equal? st (mutable-set 1 2 3))))
 
 (define-record-type candidate (element key))
 
