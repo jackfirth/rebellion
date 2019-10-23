@@ -204,13 +204,13 @@ early, before the input sequence is fully consumed.
                (sorting #:key gem-weight)
                #:into into-list))}
 
-@defthing[deduplicating transducer?]{
- A @tech{transducer} that removes duplicate elements from the transduced
- sequence. The relative order of unique elements is preserved.
+@defproc[(deduplicating) transducer?]{
+ Constructs a @tech{transducer} that removes duplicate elements from the
+ transduced sequence. The relative order of unique elements is preserved.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (transduce "Hello world!" deduplicating #:into into-string))}
+   (transduce "Hello world!" (deduplicating) #:into into-string))}
 
 @defproc[(batching [batch-reducer reducer?]) transducer?]{
  Constructs a @tech{transducer} that collects elements of the transduced
