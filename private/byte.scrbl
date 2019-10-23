@@ -3,13 +3,15 @@
 @(require (for-label racket/base
                      racket/contract/base
                      rebellion/binary/bit
-                     rebellion/binary/byte)
+                     rebellion/binary/byte
+                     rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
-@(define hamming-link "https://en.wikipedia.org/wiki/Hamming_weight")
+
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/binary/byte)
+    #:public (list 'rebellion/binary/byte
+                   'rebellion/streaming/reducer)
     #:private (list 'racket/base)))
 
 @title{Bytes}
@@ -71,9 +73,9 @@ integer between @racket[0] and @racket[255].
    (byte-drop-rightmost-bits (byte 1 1 1 0 1 0 1 0) 4)
    (byte-drop-rightmost-bits (byte 1 1 1 0 1 0 1 0) 7))}
 
-@defproc[(byte-and [left byte?] [right byte?])
-         byte?]{
- Performs a bitwise and operation on @racket[left] using @racket[right] as the mask. Can be used to zero out specific bits of a byte.
+@defproc[(byte-and [left byte?] [right byte?]) byte?]{
+ Performs a bitwise and operation on @racket[left] using @racket[right] as the
+ mask. Can be used to zero out specific bits of a byte.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -82,9 +84,9 @@ integer between @racket[0] and @racket[255].
    (code:comment "extract bits 7, 5, and 0.")
    (byte-and (byte 1 1 1 1 1 1 1 1) (byte 1 0 1 0 0 0 0 1)))}
 
-@defproc[(byte-or [left byte?] [right byte?])
-         byte?]{
- Performs a bitwise or operation on @racket[left] using @racket[right] as the mask. Can be used to set specific bits of a byte without affecting others.
+@defproc[(byte-or [left byte?] [right byte?]) byte?]{
+ Performs a bitwise or operation on @racket[left] using @racket[right] as the
+ mask. Can be used to set specific bits of a byte without affecting others.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -93,18 +95,17 @@ integer between @racket[0] and @racket[255].
    (code:comment "set bits 5, 2, and 1")
    (byte-or (byte 0 0 1 0 1 0 1 0) (byte 0 0 1 0 0 0 1 1)))
 
-@defproc[(byte-not [b byte?])
-         byte?]{
- Performs a bitwise not operation on @racket[b], inverting all bits.
+ @defproc[(byte-not [b byte?]) byte?]{
+  Performs a bitwise not operation on @racket[b], inverting all bits.
 
- @(examples
-   #:eval (make-evaluator) #:once
-   (byte-not (byte 1 1 1 1 1 1 1 1))
-   (byte-not (byte 0 0 0 0 0 0 0 0)))}}
+  @(examples
+    #:eval (make-evaluator) #:once
+    (byte-not (byte 1 1 1 1 1 1 1 1))
+    (byte-not (byte 0 0 0 0 0 0 0 0)))}}
 
-@defproc[(byte-xor [left byte?] [right byte?])
-         byte?]{
- Performs a bitwise xor (exclusive or, also known as eor) operation on @racket[left] using @racket[right] as the mask.
+@defproc[(byte-xor [left byte?] [right byte?]) byte?]{
+ Performs a bitwise xor (exclusive or, also known as eor) operation on @racket[
+ left] using @racket[right] as the mask.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -116,23 +117,20 @@ integer between @racket[0] and @racket[255].
      (set! x (byte-xor x y))
      (list x y)))}
 
-@defproc[(byte-nand [left byte?] [right byte?])
-         byte?]{
- Performs a bitwise nand operation on @racket[left] using @racket[right] as the mask.
- Equivalent to (byte-not (byte-and left right)).
+@defproc[(byte-nand [left byte?] [right byte?]) byte?]{
+ Performs a bitwise nand operation on @racket[left] using @racket[right] as the
+ mask. Equivalent to @racket[(byte-not (byte-and left right))].
 
  @(examples
    #:eval (make-evaluator) #:once
    (byte-nand (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1))
    (byte-not (byte-and (byte 1 1 1 1 1 1 1 1) (byte 1 1 1 1 1 1 1 1)))
    (byte-nand (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0))
-   (byte-not (byte-and (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0)))
-   )}
+   (byte-not (byte-and (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0))))}
 
-@defproc[(byte-nor [left byte?] [right byte?])
-         byte?]{
- Performs a bitwise nor operation on @racket[left] using @racket[right] as the mask.
- Equivalent to (byte-not (byte-or left right)).
+@defproc[(byte-nor [left byte?] [right byte?]) byte?]{
+ Performs a bitwise nor operation on @racket[left] using @racket[right] as the
+ mask. Equivalent to @racket[(byte-not (byte-or left right))].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -142,10 +140,9 @@ integer between @racket[0] and @racket[255].
    (byte-not (byte-or (byte 0 0 0 0 0 0 0 0) (byte 0 0 0 0 0 0 0 0)))
    )}
 
-@defproc[(byte-xnor [left byte?] [right byte?])
-         byte?]{
- Performs a bitwise xnor operation on @racket[left] using @racket[right] as the mask.
- Equivalent to (byte-not (byte-xor left right)).
+@defproc[(byte-xnor [left byte?] [right byte?]) byte?]{
+ Performs a bitwise xnor operation on @racket[left] using @racket[right] as the
+ mask. Equivalent to @racket[(byte-not (byte-xor left right))].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -156,25 +153,36 @@ integer between @racket[0] and @racket[255].
 
 @defproc[(in-byte [b byte?])
          sequence?]{
- Returns a sequence whose elements are equivalent to the list of bits that comprise @racket[b].
+ Returns a sequence whose elements are equivalent to the list of bits that
+ comprise @racket[b].
 
  @(examples
    #:eval (make-evaluator) #:once
    (code:comment "convert byte to a vector of bits")
-   (for/vector ([b (in-byte (byte 0 0 1 0 1 0 1 0))])
-    b))}
+   (for/vector ([b (in-byte 193)])
+     b))}
 
-@defproc[(byte-hamming-weight [b byte?])
-         (integer-in 0 8)]{
+@defthing[into-byte reducer?]{
+ A @tech{reducer} that combines a sequence of eight bits into a single byte. Any
+ remaining bits are ignored.
 
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce into-byte 0 0 0 0 0 0 0 0)
+   (reduce into-byte 1 1 1 1 1 1 1 1)
+   (reduce into-byte 0 1 1 1 0 1 0 1)
+   (reduce into-byte 0 1 1 1 0 1 0 1 1 1 1 1 1 1))}
 
-Returns the Hamming weight of the byte. This is the same as how many 1's are in the byte. See the
-@hyperlink[hamming-link]{Wikipedia page} for more informating on Hamming weight.
+@(define hamming-link "https://en.wikipedia.org/wiki/Hamming_weight")
+
+@defproc[(byte-hamming-weight [b byte?]) (integer-in 0 8)]{
+ Returns the Hamming weight of the byte. This is the same as how many 1's are in
+ the byte. See the @hyperlink[hamming-link]{Wikipedia page} for more informating
+ on Hamming weights.
 
  @(examples
    #:eval (make-evaluator) #:once
    (code:comment "count the number of 1's in the byte")
    (byte-hamming-weight (byte 1 1 1 1 0 0 0 1))
    (byte-hamming-weight (byte 0 0 0 0 0 0 0 0))
-   (byte-hamming-weight (byte 1 1 1 1 1 1 1 1)))
-}
+   (byte-hamming-weight (byte 1 1 1 1 1 1 1 1)))}
