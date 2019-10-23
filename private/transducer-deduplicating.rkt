@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [deduplicating transducer?]))
+  [deduplicating (-> transducer?)]))
 
 (require racket/contract/region
          racket/set
@@ -17,7 +17,7 @@
 
 (define-tuple-type emit-state (previously-encountered novelty))
 
-(define deduplicating
+(define (deduplicating)
   (make-transducer
    #:starter (λ () (variant #:consume (set)))
    #:consumer

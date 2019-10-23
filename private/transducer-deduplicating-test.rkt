@@ -9,7 +9,7 @@
 
 (module+ test
   (test-case "deduplicating"
-    (check-equal? (transduce "hello world" deduplicating #:into into-string)
+    (check-equal? (transduce "hello world" (deduplicating) #:into into-string)
                   "helo wrd")
-    (check-equal? (transduce "zzzzzzzzzzz" deduplicating #:into into-string)
+    (check-equal? (transduce "zzzzzzzzzzz" (deduplicating) #:into into-string)
                   "z")))
