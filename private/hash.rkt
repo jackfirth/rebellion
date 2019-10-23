@@ -81,10 +81,10 @@
 (define (cons-pair->entry p) (entry (car p) (cdr p)))
 
 (define (in-hash-entries h)
-  (sequence-map (in-immutable-hash-pairs h) cons-pair->entry))
+  (sequence-map cons-pair->entry (in-immutable-hash-pairs h)))
 
 (define (in-mutable-hash-entries h)
-  (sequence-map (in-mutable-hash-pairs h) cons-pair->entry))
+  (sequence-map cons-pair->entry (in-mutable-hash-pairs h)))
 
 (module+ test
   (test-case "into-hash"
@@ -113,4 +113,11 @@
               (entry 'b "bar")
               (entry 'a "baz")
               (entry 'a "blah")))
-    (check-pred mutable-hash? h)))
+    (check-pred mutable-hash? h))
+  (test-case "in-hash-entries"
+    (check-equal? (reduce-all into-hash (in-hash-entries (hash 'a 1 'b 2)))
+                  (hash 'a 1 'b 2)))
+  (test-case "in-mutable-hash-entries"
+    (define h (make-hash (list (cons 'a 1) (cons 'b 2))))
+    (check-equal? (reduce-all into-hash (in-mutable-hash-entries h))
+                  (hash 'a 1 'b 2))))
