@@ -236,7 +236,7 @@ early, before the input sequence is fully consumed.
    #:eval (make-evaluator) #:once
    (transduce "Mississippi" (deduplicating-consecutive) #:into into-string))
 
- If @racket[key-function] is provied, it is applied to each element and
+ If @racket[key-function] is provided, it is applied to each element and
  uniqueness is based on the returned key value.
 
  @(examples
