@@ -222,6 +222,29 @@ early, before the input sequence is fully consumed.
              (deduplicating #:key string-foldcase)
              #:into into-list))}
 
+@defproc[(deduplicating-consecutive
+          [#:key key-function (-> any/c any/c) values])
+         transducer?]{
+ Constructs a @tech{transducer} that removes @emph{consecutive} duplicate
+ elements from the transduced sequence. The relative order of retained elements
+ is preserved. If the input sequence is sorted, or if it merely has all
+ duplicates grouped together, then the constructed transducer behaves
+ equivalently to @racket[deduplicating] except it consumes a constant amount of
+ memory.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "Mississippi" (deduplicating-consecutive) #:into into-string))
+
+ If @racket[key-function] is provied, it is applied to each element and
+ uniqueness is based on the returned key value.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list "cat" "Cat" "CAT" "dog" "HORSE" "horse" "Dog")
+              (deduplicating-consecutive #:key string-foldcase)
+              #:into into-list))}
+
 @defproc[(batching [batch-reducer reducer?]) transducer?]{
  Constructs a @tech{transducer} that collects elements of the transduced
  sequence into batches using @racket[batch-reducer]. Elements are fed into
