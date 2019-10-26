@@ -2,7 +2,10 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/base/option)
+                     racket/sequence
+                     rebellion/base/option
+                     rebellion/streaming/transducer)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
@@ -111,6 +114,14 @@ function, and absent values are represented by the @racket[absent] constant.
    #:eval (make-evaluator) #:once
    (option-get (present 42) 0)
    (option-get absent 0))}
+
+@defproc[(in-option [opt option?]) (sequence/c any/c)]{
+ Returns either a @tech/reference{sequence} that contains the present value of
+ @racket[opt], or an empty sequence if @racket[opt] is @tech{absent}. This
+ function is particularly useful in @racket[transduce] pipelines, as it can be
+ used with @racket[append-mapping] and similar @tech{transducers} in order to
+ safely filter out absent values while simultaneously unwrapping present
+ values.}
 
 @section{Contracts for Option Values}
 
