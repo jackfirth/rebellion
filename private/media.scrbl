@@ -5,6 +5,7 @@
                      rebellion/base/immutable-string
                      rebellion/base/symbol
                      rebellion/binary/immutable-bytes
+                     rebellion/collection/record
                      rebellion/media)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
