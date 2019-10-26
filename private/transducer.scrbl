@@ -204,13 +204,23 @@ early, before the input sequence is fully consumed.
                (sorting #:key gem-weight)
                #:into into-list))}
 
-@defproc[(deduplicating) transducer?]{
+@defproc[(deduplicating [#:key key-function (-> any/c any/c) values])
+         transducer?]{
  Constructs a @tech{transducer} that removes duplicate elements from the
  transduced sequence. The relative order of unique elements is preserved.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (transduce "Hello world!" (deduplicating) #:into into-string))}
+   (transduce "Hello world!" (deduplicating) #:into into-string))
+
+ If @racket[key-function] is provided, is is applied to each element and
+ uniqueness is based on the returned key value.
+
+@(examples
+  #:eval (make-evaluator) #:once
+  (transduce (list "cat" "dog" "CAT" "HORSE" "horse")
+             (deduplicating #:key string-foldcase)
+             #:into into-list))}
 
 @defproc[(batching [batch-reducer reducer?]) transducer?]{
  Constructs a @tech{transducer} that collects elements of the transduced
