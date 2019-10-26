@@ -14,9 +14,11 @@
   [combine-into-hash (-> (-> any/c any/c any/c) reducer?)]
   [combine-into-mutable-hash (-> (-> any/c any/c any/c) reducer?)]
   [hash-set-entry (-> immutable-hash? entry? immutable-hash?)]
-  [hash-set-entry! (-> mutable-hash? entry? void?)]))
+  [hash-set-entry! (-> mutable-hash? entry? void?)]
+  [hash-key-set (-> immutable-hash? set?)]))
 
 (require racket/sequence
+         racket/set
          racket/splicing
          rebellion/streaming/reducer
          rebellion/collection/entry)
@@ -86,6 +88,8 @@
 (define (in-mutable-hash-entries h)
   (sequence-map cons-pair->entry (in-mutable-hash-pairs h)))
 
+(define (hash-key-set h) (for/set ([k (in-immutable-hash-keys h)]) k))
+
 (module+ test
   (test-case "into-hash"
     (check-equal? (reduce into-hash (entry 'a 1) (entry 'b 2) (entry 'c 3))
@@ -93,11 +97,13 @@
     (check-exn exn:fail:contract?
                (λ () (reduce into-hash (entry 'a 1) (entry 'a 2))))
     (check-equal? (reduce into-hash) empty-hash))
+  
   (test-case "into-mutable-hash"
     (define h (reduce into-mutable-hash (entry 'a 1) (entry 'b 2) (entry 'c 3)))
     (check-pred mutable-hash? h)
     (check-exn exn:fail:contract?
                (λ () (reduce into-mutable-hash (entry 'a 1) (entry 'a 2)))))
+  
   (test-case "combine-into-hash"
     (check-equal? (reduce (combine-into-hash string-append)
                           (entry 'a "foo")
@@ -106,6 +112,7 @@
                           (entry 'a "blah"))
                   (hash 'a "foobazblah"
                         'b "bar")))
+  
   (test-case "combine-into-mutable-hash"
     (define h
       (reduce (combine-into-mutable-hash string-append)
@@ -114,10 +121,15 @@
               (entry 'a "baz")
               (entry 'a "blah")))
     (check-pred mutable-hash? h))
+  
   (test-case "in-hash-entries"
     (check-equal? (reduce-all into-hash (in-hash-entries (hash 'a 1 'b 2)))
                   (hash 'a 1 'b 2)))
+  
   (test-case "in-mutable-hash-entries"
     (define h (make-hash (list (cons 'a 1) (cons 'b 2))))
     (check-equal? (reduce-all into-hash (in-mutable-hash-entries h))
-                  (hash 'a 1 'b 2))))
+                  (hash 'a 1 'b 2)))
+  
+  (test-case "hash-key-set"
+    (check-equal? (hash-key-set (hash 'a 1 'b 2)) (set 'a 'b))))
