@@ -2,11 +2,13 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/set
                      rebellion/base/immutable-string
                      rebellion/collection/entry
                      rebellion/collection/hash
                      rebellion/streaming/reducer
                      rebellion/type/record)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
@@ -77,3 +79,10 @@
 
 @defproc[(in-mutable-hash-entries [h mutable-hash?]) (sequence/c entry?)]{
  Returns a sequence of the @tech{entries} in @racket[h].}
+
+@defproc[(hash-key-set [h immutable-hash?]) set?]{
+ Returns a @tech/reference{set} containing the keys of @racket[h].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (hash-key-set (hash 'a 1 'b 2 'c 3 'd 4)))}
