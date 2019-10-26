@@ -2,9 +2,12 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/sequence
+                     racket/set
                      rebellion/collection/entry
                      rebellion/collection/hash
                      rebellion/collection/multidict
+                     rebellion/collection/set
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer
                      rebellion/type/record)
@@ -13,9 +16,11 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/entry
+    #:public (list 'racket/set
+                   'rebellion/collection/entry
                    'rebellion/collection/hash
                    'rebellion/collection/multidict
+                   'rebellion/collection/set
                    'rebellion/streaming/reducer
                    'rebellion/streaming/transducer
                    'rebellion/type/record)
@@ -103,11 +108,51 @@ than a collection of @racket[pair?] values.
 
 @defproc[(filtering-keys [key-predicate predicate/c]) transducer?]{
  Like @racket[filtering], but the sequence must be made of @tech{entries} and
- the key of each entry must satisfy @racket[key-predicate].}
+ the key of each entry must satisfy @racket[key-predicate].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-hash-entries (hash "the" 0 "quick" 1 'brown 2 'fox 3))
+              (filtering-keys symbol?)
+              #:into into-hash))}
 
 @defproc[(filtering-values [value-predicate predicate/c]) transducer?]{
  Like @racket[filtering], but the sequence must be made of @tech{entries} and
- the value of each entry must satisfy @racket[value-predicate].}
+ the value of each entry must satisfy @racket[value-predicate].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-hash-entries (hash 'a 1 'b 2 'c 3 'd 4))
+              (filtering-values even?)
+              #:into into-hash))}
+
+@defproc[(append-mapping-keys
+          [key-sequence-function (-> any/c (sequence/c any/c))])
+         transducer?]{
+ Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by
+ applying @racket[key-sequence-function] to the key of each entry, then emitting
+ one entry per key in the sequence returned by @racket[key-sequence-function].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-hash-entries (hash "hello" 'hello "world" 'world))
+              (append-mapping-keys in-string)
+              (deduplicating #:key entry-key)
+              #:into into-hash))}
+
+@defproc[(append-mapping-values
+          [value-sequence-function (-> any/c (sequence/c any/c))])
+         transducer?]{
+ Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by
+ applying @racket[value-sequence-function] to the value of each entry, then
+ emitting one entry per value in the sequence returned by @racket[
+ value-sequence-function].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-hash-entries (hash 'apple (set 1 2 3) 'banana (set 4 5 6)))
+              (append-mapping-values in-immutable-set)
+              #:into into-set))}
 
 @defproc[(grouping [value-reducer reducer?]) transducer?]{
  Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by

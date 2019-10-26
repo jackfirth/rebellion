@@ -14,9 +14,11 @@
   [indexing (-> (-> any/c any/c) transducer?)]
   [filtering-keys (-> predicate/c transducer?)]
   [filtering-values (-> predicate/c transducer?)]
+  [append-mapping-keys (-> (-> any/c (sequence/c any/c)) transducer?)]
+  [append-mapping-values (-> (-> any/c (sequence/c any/c)) transducer?)]
   [grouping (-> reducer? transducer?)]))
 
-(require racket/contract/region
+(require racket/sequence
          racket/set
          rebellion/base/variant
          rebellion/collection/list
@@ -52,6 +54,19 @@
 (define (filtering-values value-predicate)
   (filtering (λ (e) (value-predicate (entry-value e)))))
 
+(define (append-mapping-keys key-sequence-maker)
+  (append-mapping
+   (λ (e)
+     (define v (entry-value e))
+     (sequence-map (λ (k) (entry k v)) (key-sequence-maker (entry-key e))))))
+
+(define (append-mapping-values value-sequence-maker)
+  (append-mapping
+   (λ (e)
+     (define k (entry-key e))
+     (sequence-map (λ (v) (entry k v))
+                   (value-sequence-maker (entry-value e))))))
+
 (module+ test
   (test-case "bisecting"
     (check-equal? (transduce (list "the" "quick" "brown" "fox")
@@ -61,16 +76,19 @@
                         (entry 'quick 5)
                         (entry 'brown 5)
                         (entry 'fox 3))))
+  
   (test-case "mapping-keys"
     (check-equal? (transduce (list (entry "foo" 1) (entry "bar" 2))
                              (mapping-keys string->symbol)
                              #:into into-list)
                   (list (entry 'foo 1) (entry 'bar 2))))
+  
   (test-case "mapping-values"
     (check-equal? (transduce (list (entry 'foo 1) (entry 'bar 2))
                              (mapping-values (λ (x) (* x 2)))
                              #:into into-list)
                   (list (entry 'foo 2) (entry 'bar 4))))
+  
   (test-case "indexing"
     (check-equal? (transduce (list "the" "quick" "brown" "fox")
                              (indexing string-length)
@@ -79,16 +97,42 @@
                         (entry 5 "quick")
                         (entry 5 "brown")
                         (entry 3 "fox"))))
+  
   (test-case "filtering-keys"
     (check-equal? (transduce (list (entry 1 'foo) (entry 2 'bar) (entry 3 'baz))
                              (filtering-keys even?)
                              #:into into-list)
                   (list (entry 2 'bar))))
+  
   (test-case "filtering-values"
     (check-equal? (transduce (list (entry 'foo 1) (entry 'bar 2) (entry 'baz 3))
                              (filtering-values odd?)
                              #:into into-list)
-                  (list (entry 'foo 1) (entry 'baz 3)))))
+                  (list (entry 'foo 1) (entry 'baz 3))))
+
+  (test-case "append-mapping-keys"
+    (check-equal? (transduce (list (entry (list 1 2 3) 'foo)
+                                   (entry (list 4 5 6) 'bar))
+                             (append-mapping-keys in-list)
+                             #:into into-list)
+                  (list (entry 1 'foo)
+                        (entry 2 'foo)
+                        (entry 3 'foo)
+                        (entry 4 'bar)
+                        (entry 5 'bar)
+                        (entry 6 'bar))))
+
+  (test-case "append-mapping-values"
+    (check-equal? (transduce (list (entry 'foo (list 1 2 3))
+                                   (entry 'bar (list 4 5 6)))
+                             (append-mapping-values in-list)
+                             #:into into-list)
+                  (list (entry 'foo 1)
+                        (entry 'foo 2)
+                        (entry 'foo 3)
+                        (entry 'bar 4)
+                        (entry 'bar 5)
+                        (entry 'bar 6)))))
 
 (define-record-type groups (reducer-states reverse-ordered-keys finished-keys))
 (define-record-type closing-groups (reducer-states encounter-ordered-keys size))
@@ -99,9 +143,7 @@
           #:reverse-ordered-keys (list)
           #:finished-keys (set)))
 
-(define/contract (groups-insert g k v #:reducer value-reducer)
-  (-> groups? any/c any/c #:reducer reducer?
-      (or/c groups? group-emission?))
+(define (groups-insert g k v #:reducer value-reducer)
   (define starter (reducer-starter value-reducer))
   (define consumer (reducer-consumer value-reducer))
   (define early-finisher (reducer-early-finisher value-reducer))
@@ -144,8 +186,7 @@
                   #:finished-keys finished))
         (groups-insert intermediate-g k v #:reducer value-reducer)])]))
 
-(define/contract (half-close-groups g)
-  (-> groups? closing-groups?)
+(define (half-close-groups g)
   (define keys (reverse (groups-reverse-ordered-keys g)))
   (closing-groups #:reducer-states (groups-reducer-states g)
                   #:encounter-ordered-keys keys
