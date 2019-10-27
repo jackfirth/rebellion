@@ -36,6 +36,9 @@
   [into-nth (-> natural? reducer?)]
   [into-index-of (-> any/c reducer?)]
   [into-index-where (-> predicate/c reducer?)]
+  [into-any-match? (-> predicate/c reducer?)]
+  [into-all-match? (-> predicate/c reducer?)]
+  [into-none-match? (-> predicate/c reducer?)]
   [into-max (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
   [into-min (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
   [into-string reducer?]
@@ -400,6 +403,35 @@
    #:early-finisher (λ (index-counter) (present index-counter))
    #:name name))
 
+(define stateless-consume (variant #:consume #f))
+(define stateless-early-finish (variant #:early-finish #f))
+
+(define (stateless-starter) stateless-consume)
+
+  (define (into-any-match? pred)
+  (make-reducer
+   #:starter stateless-starter
+   #:consumer (λ (_ v) (if (pred v) stateless-early-finish stateless-consume))
+   #:finisher (λ (_) #f)
+   #:early-finisher (λ (_) #t)
+   #:name 'into-any-match?))
+
+(define (into-all-match? pred)
+  (make-reducer
+   #:starter stateless-starter
+   #:consumer (λ (_ v) (if (pred v) stateless-consume stateless-early-finish))
+   #:finisher (λ (_) #t)
+   #:early-finisher (λ (_) #f)
+   #:name 'into-all-match?))
+
+(define (into-none-match? pred)
+  (make-reducer
+   #:starter stateless-starter
+   #:consumer (λ (_ v) (if (pred v) stateless-early-finish stateless-consume))
+   #:finisher (λ (_) #t)
+   #:early-finisher (λ (_) #f)
+   #:name 'into-none-match?))
+
 (define (into-for-each handler)
   (define consume-state (variant #:consume #f))
   (make-reducer
@@ -417,21 +449,44 @@
     (check-equal? (reduce-all (into-nth 10) "magic") absent)
     (check-equal? (reduce-all (into-nth 0) (in-naturals)) (present 0))
     (check-equal? (reduce-all (into-nth 0) "") absent))
+  
   (test-case "into-first"
     (check-equal? (reduce-all into-first "horse") (present #\h))
     (check-equal? (reduce-all into-first "") absent))
+  
   (test-case "into-last"
     (check-equal? (reduce-all into-last "horse") (present #\e))
     (check-equal? (reduce-all into-last "") absent))
+  
   (test-case "into-index-of"
     (check-equal? (reduce-all (into-index-of #\f) "food") (present 0))
     (check-equal? (reduce-all (into-index-of #\f) "hoof") (present 3))
     (check-equal? (reduce-all (into-index-of #\f) "cat") absent))
+  
   (test-case "into-index-where"
     (check-equal? (reduce-all (into-index-where char-whitespace?) "hello world")
                   (present 5))
     (check-equal? (reduce-all (into-index-where char-numeric?) "goodbye world")
                   absent))
+
+  (test-case "into-any-match?"
+    (define red (into-any-match? char-whitespace?))
+    (check-true (reduce-all red "hello world"))
+    (check-false (reduce-all red "hello"))
+    (check-false (reduce-all red "")))
+
+  (test-case "into-all-match?"
+    (define red (into-all-match? char-alphabetic?))
+    (check-false (reduce-all red "hello world"))
+    (check-true (reduce-all red "hello"))
+    (check-true (reduce-all red "")))
+  
+  (test-case "into-none-match?"
+    (define red (into-none-match? char-whitespace?))
+    (check-false (reduce-all red "hello world"))
+    (check-true (reduce-all red "hello"))
+    (check-true (reduce-all red "")))
+  
   (test-case "into-for-each"
     (define st (mutable-set))
     (define add-into-set! (into-for-each (λ (v) (set-add! st v))))

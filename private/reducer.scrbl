@@ -142,6 +142,40 @@ fully consumed.
    (reduce-all (into-index-where char-whitespace?) "hello world")
    (reduce-all (into-index-where char-numeric?) "goodbye world"))}
 
+@defproc[(into-any-match? [pred predicate/c]) reducer?]{
+ Constructs a @tech{reducer} that searches the reduced sequence for at least one
+ element that satisfies @racket[pred], returning true if an element is found and
+ returning false otherwise. If the sequence is empty, then the reducer returns
+ false.
+ 
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-any-match? char-whitespace?) "hello world")
+   (reduce-all (into-any-match? char-numeric?) "hello world")
+   (reduce-all (into-any-match? char-whitespace?) ""))}
+
+@defproc[(into-all-match? [pred predicate/c]) reducer?]{
+ Constructs a @tech{reducer} that returns true if every element in the reduced
+ sequence satisfies @racket[pred], otherwise false is returned. If the sequence
+ is empty, then the reducer returns true.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-all-match? char-alphabetic?) "hello")
+   (reduce-all (into-all-match? char-alphabetic?) "hello world")
+   (reduce-all (into-all-match? char-alphabetic?) ""))}
+
+@defproc[(into-none-match? [pred predicate/c]) reducer?]{
+ Constructs a @tech{reducer} that returns true if no element in the reduced
+ sequence satisfies @racket[pred], otherwise false is returned. If the sequence
+ is empty, then the reducer returns true.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (reduce-all (into-none-match? char-whitespace?) "hello")
+   (reduce-all (into-none-match? char-whitespace?) "hello world")
+   (reduce-all (into-none-match? char-whitespace?) ""))}
+
 @defproc[(into-for-each [handler (-> any/c void?)]) reducer?]{
  Constructs a @tech{reducer} that calls @racket[handler] on each element for its
  side effects. The reduction result of the returned reducer is always @racket[
