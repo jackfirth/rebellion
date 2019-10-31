@@ -80,12 +80,19 @@ early, before the input sequence is fully consumed.
 
 @defproc[(peeking [handler (-> any/c void?)]) transducer?]{
  Constructs a @tech{transducer} that calls @racket[handler] on each element for
- its side effects.
+ its side effects. Elements are emitted immediately after @racket[handler] is
+ called on them, so if an element is never consumed downstream then @racket[
+ handler] won't be called on any later elements.
+
+ This function is intended mostly for debugging, as @racket[(peeking displayln)]
+ can be inserted into a transduction pipeline to investigate what elements are
+ consumed in that part of the pipeline.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (transduce (in-range 0 5)
+   (transduce (list 1 2 3 'apple 4 5 6)
               (peeking displayln)
+              (taking-while number?)
               #:into into-sum))}
 
 @defproc[(filtering [pred predicate/c]) transducer?]{
