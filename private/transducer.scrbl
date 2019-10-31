@@ -68,16 +68,6 @@ early, before the input sequence is fully consumed.
  seq] to @racket[trans] as inputs and uses the emitted outputs of @racket[trans]
  as the wrapper sequence's elements.}
 
-@defproc[(filtering [pred predicate/c]) transducer?]{
- Constructs a @tech{transducer} that passes input elements downstream only when
- they satisfy @racket[pred].
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (transduce (in-range 1 10)
-              (filtering even?)
-              #:into into-list))}
-
 @defproc[(mapping [f (-> any/c any/c)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
  emits the returned result downstream.
@@ -86,6 +76,26 @@ early, before the input sequence is fully consumed.
    #:eval (make-evaluator) #:once
    (transduce (in-range 1 10)
               (mapping (λ (x) (* x x)))
+              #:into into-list))}
+
+@defproc[(peeking [handler (-> any/c void?)]) transducer?]{
+ Constructs a @tech{transducer} that calls @racket[handler] on each element for
+ its side effects.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 0 5)
+              (peeking displayln)
+              #:into into-sum))}
+
+@defproc[(filtering [pred predicate/c]) transducer?]{
+ Constructs a @tech{transducer} that passes input elements downstream only when
+ they satisfy @racket[pred].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 10)
+              (filtering even?)
               #:into into-list))}
 
 @defproc[(append-mapping [f (-> any/c sequence?)]) transducer?]{

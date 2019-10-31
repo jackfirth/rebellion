@@ -7,6 +7,7 @@
   [transduce (-> sequence? #:into reducer? transducer? ... any/c)]
   [in-transduced (-> sequence? transducer? sequence?)]
   [mapping (-> (-> any/c any/c) transducer?)]
+  [peeking (-> (-> any/c void?) transducer?)]
   [filtering (-> predicate/c transducer?)]
   [folding (-> (-> any/c any/c any/c) any/c transducer?)]
   [append-mapping (-> (-> any/c sequence?) transducer?)]
@@ -31,6 +32,7 @@
 (module+ test
   (require (submod "..")
            racket/sequence
+           racket/set
            rackunit))
 
 ;@------------------------------------------------------------------------------
@@ -255,15 +257,31 @@
 ;@------------------------------------------------------------------------------
 ;; Everything else
 
+(define stateless-consume (variant #:consume #f))
+(define stateless-finish (variant #:finish #f))
+
+(define (immediately-consuming-stateless-starter) stateless-consume)
+(define (immediately-finishing-half-closer _) stateless-finish)
+
 (define (mapping f)
   (make-transducer
-   #:starter (λ () (variant #:consume #f))
+   #:starter immediately-consuming-stateless-starter
    #:consumer (λ (_ v) (variant #:emit v))
-   #:emitter (λ (v) (emission (variant #:consume #f) (f v)))
-   #:half-closer (λ (_) (variant #:finish #f))
+   #:emitter (λ (v) (emission stateless-consume (f v)))
+   #:half-closer immediately-finishing-half-closer
    #:half-closed-emitter impossible
    #:finisher void
    #:name 'mapping))
+
+(define (peeking handler)
+  (make-transducer
+   #:starter immediately-consuming-stateless-starter
+   #:consumer (λ (_ v) (variant #:emit v))
+   #:emitter (λ (v) (handler v) (emission stateless-consume v))
+   #:half-closer immediately-finishing-half-closer
+   #:half-closed-emitter impossible
+   #:finisher void
+   #:name 'peeking))
 
 (define (filtering pred)
   (define consume-state (variant #:consume #f))
@@ -327,12 +345,28 @@
    #:name 'append-mapping))
 
 (module+ test
+  (test-case "mapping"
+    (check-equal? (transduce (in-range 0 5)
+                             (mapping number->string)
+                             #:into into-list)
+                  (list "0" "1" "2" "3" "4")))
+
+  (test-case "peeking"
+    (define st (mutable-set))
+    (check-equal? (transduce (in-range 0 3)
+                             (peeking (λ (v) (set-add! st v)))
+                             #:into into-list)
+                  (list 0 1 2))
+    (check-equal? st (mutable-set 0 1 2)))
+  
   (test-case "filtering"
     (check-equal? (transduce (in-range 0 10) (filtering even?) #:into into-list)
                   (list 0 2 4 6 8)))
+  
   (test-case "folding"
     (check-equal? (transduce (in-range 0 10) (folding + 0) #:into into-list)
                   (list 0 1 3 6 10 15 21 28 36 45)))
+  
   (test-case "append-mapping"
     (check-equal? (transduce (list (vector 1 2 3)
                                    (vector 1 2 3 4 5)
@@ -408,11 +442,13 @@
                   empty-list)
     (check-equal? (transduce (in-range 10) (taking 25) #:into into-list)
                   (list 0 1 2 3 4 5 6 7 8 9)))
+  
   (test-case "dropping"
     (check-equal? (transduce (in-range 10) (dropping 3) #:into into-list)
                   (list 3 4 5 6 7 8 9))
     (check-equal? (transduce (in-range 10) (dropping 25) #:into into-list)
                   empty-list))
+  
   (test-case "taking-while"
     (define (small? n) (< n 5))
     (define while-small (taking-while small?))
@@ -424,6 +460,7 @@
                              (taking-while number?)
                              #:into into-list)
                   (list 0 1 2)))
+  
   (test-case "dropping-while"
     (check-equal? (transduce (list 0 1 2 'a 'b 3 4 'c 5 6 7)
                              (dropping-while number?)
