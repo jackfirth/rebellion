@@ -24,9 +24,12 @@
          ;; A variable-like macro that is set by define/name.
          enclosing-function-name
 
+         ;; A variable-like macro that is set by define/name.
+         enclosing-variable-name
+
          ;; Like define, but sets enclosing-function-name when used for function
-         ;; definitions. Variable definitions such as (define/name foo 42) are
-         ;; allowed, but they don't change enclosing-function-name.
+         ;; definitions and sets enclosing-variable-name when used for variable
+         ;; definitions.
          ;;
          ;; Example:
          ;;
@@ -48,22 +51,6 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
-
-(begin-for-syntax
-  ;; The function-header syntax class really should provide a .name attribute
-  ;; that recursively traverses into subheaders, but as of Racket 7.4 it
-  ;; doesn't. So we have to make our own version of function-header.
-  (define-syntax-class function-header-with-recursive-name
-    #:attributes (function-name)
-    (pattern (function-name:id . args:formals))
-    (pattern (header:function-header-with-recursive-name . args:formals)
-      #:with function-name #'header.function-name)))
-
-(define-syntax (raise-enclosing-function-name-unbound-error stx)
-  (raise-syntax-error #f "not bound by any enclosing definition forms" stx))
-
-(define-rename-transformer-parameter enclosing-function-name
-  (make-rename-transformer #'raise-enclosing-function-name-unbound-error))
 
 (begin-for-syntax
   (define (check-name-has-binding! id-stx context-stx)
@@ -89,11 +76,37 @@
   #:with context this-syntax
   (#%expression (name-string/derived id #:context context)))
 
+(define-syntax (raise-enclosing-name-unbound-error stx)
+  (define message
+    (string-append "not bound by any enclosing definitions, did you forget to"
+                   " use define/name instead of define?"))
+  (raise-syntax-error #f message stx))
+
+(define-rename-transformer-parameter enclosing-function-name
+  (make-rename-transformer #'raise-enclosing-name-unbound-error))
+
+(define-rename-transformer-parameter enclosing-variable-name
+  (make-rename-transformer #'raise-enclosing-name-unbound-error))
+
+(begin-for-syntax
+  ;; The function-header syntax class really should provide a .name attribute
+  ;; that recursively traverses into subheaders, but as of Racket 7.4 it
+  ;; doesn't. So we have to make our own version of function-header.
+  (define-syntax-class function-header-with-recursive-name
+    #:attributes (function-name)
+    (pattern (function-name:id . args:formals))
+    (pattern (header:function-header-with-recursive-name . args:formals)
+      #:with function-name #'header.function-name)))
+
 (define-simple-macro
   (define/name
     (~or id:id header:function-header-with-recursive-name)
     body ...)
-  (~? (define id body ...)
+  (~? (splicing-let ([variable-name (quote id)])
+        (splicing-syntax-parameterize
+            ([enclosing-variable-name
+              (make-rename-transformer #'variable-name)])
+          (define id body ...)))
       (splicing-let ([function-name (quote header.function-name)])
         (splicing-syntax-parameterize
             ([enclosing-function-name
@@ -102,8 +115,14 @@
 
 (module+ test
   (test-case (name-string define/name)
-    (define/name (check-even n)
-      (unless (even? n)
-        (raise-argument-error enclosing-function-name (name-string even?) n)))
-    (check-exn #rx"check-even:" (λ () (check-even 3)))
-    (check-exn #rx"even\\?" (λ () (check-even 3)))))
+    
+    (test-case (name-string enclosing-function-name)
+      (define/name (check-even n)
+        (unless (even? n)
+          (raise-argument-error enclosing-function-name (name-string even?) n)))
+      (check-exn #rx"check-even:" (λ () (check-even 3)))
+      (check-exn #rx"even\\?" (λ () (check-even 3))))
+    
+    (test-case (name-string enclosing-variable-name)
+      (define/name foo (format "~a-variable" enclosing-variable-name))
+      (check-equal? foo "foo-variable"))))
