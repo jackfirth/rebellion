@@ -68,6 +68,7 @@
          rebellion/base/option
          rebellion/base/symbol
          rebellion/base/variant
+         rebellion/private/static-name
          rebellion/type/record
          rebellion/type/reference
          rebellion/type/wrapper
@@ -99,9 +100,13 @@
                 #:early-finisher values
                 #:name name))
 
-(define into-sum (make-fold-reducer + 0 #:name 'into-sum))
-(define into-product (make-fold-reducer * 1 #:name 'into-product))
-(define into-count (make-fold-reducer (λ (s _) (add1 s)) 0 #:name 'into-count))
+(define/name into-sum (make-fold-reducer + 0 #:name enclosing-variable-name))
+
+(define/name into-product
+  (make-fold-reducer * 1 #:name enclosing-variable-name))
+
+(define/name into-count
+  (make-fold-reducer (λ (s _) (add1 s)) 0 #:name enclosing-variable-name))
 
 (define (reduce red . vs)
   (define starter (reducer-starter red))
@@ -116,7 +121,7 @@
       [(empty? vs) (finisher state)]
       [else (loop (consumer state (first vs)) (rest vs))])))
 
-(define (reduce-all red seq)
+(define/name (reduce-all red seq)
   (define starter (reducer-starter red))
   (define consumer (reducer-consumer red))
   (define finisher (reducer-finisher red))
@@ -134,7 +139,7 @@
        (finisher state)]
       [(not (equal? (length first-vs) 1))
        (apply raise-result-arity-error
-              'reduce-all 1
+              enclosing-function-name 1
               (format "\n  in: sequence elements at position ~a"
                       sequence-position)
               first-vs)]
@@ -146,14 +151,14 @@
              next-generate-rest)])))
 
 (module+ test
-  (test-case "reduce"
+  (test-case (name-string reduce)
     (check-equal? (reduce into-sum 1 2 3 4 5) 15)
     (check-equal? (reduce into-product 2 3 5 7) 210)
     (check-equal? (reduce into-count 'a 'b 'c 'd) 4)
     (check-equal? (reduce into-sum) 0)
     (check-equal? (reduce into-product) 1)
     (check-equal? (reduce into-count) 0))
-  (test-case "reduce-all"
+  (test-case (name-string reduce-all)
     (check-equal? (reduce-all into-sum (in-range 6)) 15)
     (check-equal? (reduce-all into-product
                               (in-hash-values (hash 'a 2 'b 3 'c 5 'd 7)))
@@ -233,14 +238,16 @@
                 #:name 'limited))
 
 (module+ test
-  (test-case "reducer-map"
+  (test-case (name-string reducer-map)
     (define into-sum/string
       (reducer-map into-sum #:domain string->number #:range number->string))
     (check-equal? (reduce into-sum/string "1" "2" "3" "4" "5") "15"))
-  (test-case "reducer-filter"
+
+  (test-case (name-string reducer-filter)
     (define numbers-into-sum (reducer-filter into-sum number?))
     (check-equal? (reduce numbers-into-sum 1 'a 'b 2 3 4 'c 5 'd) 15))
-  (test-case "reducer-limit"
+  
+  (test-case (name-string reducer-limit)
     (check-equal? (reduce-all (reducer-limit into-string 3) "hello") "hel")
     (check-equal? (reduce-all (reducer-limit into-string 9) "hello") "hello")
     (check-equal? (reduce-all (reducer-limit into-string 0) "hello") "")
@@ -300,13 +307,14 @@
                #:range reverse))
 
 (module+ test
-  (test-case "for/reducer"
+  (test-case (name-string for/reducer)
     (check-equal? (for/reducer into-list
                                ([n (in-naturals)]
                                 [char (in-string "ab1c23d4ef")])
                     (if (char-alphabetic? char) n 'digit))
                   (list 0 1 'digit 3 'digit 'digit 6 'digit 8 9)))
-  (test-case "for*/reducer"
+  
+  (test-case (name-string for*/reducer)
     (check-equal? (for*/reducer into-string
                                 ([str (in-list (list "foo1" "bar2" "baz3"))]
                                  [char (in-string str)]
@@ -343,7 +351,7 @@
                            #:after-last after-last))
   (reducer-map into-list #:range join))
 
-(define into-line
+(define/name into-line
   (make-reducer
    #:starter (λ () (variant #:consume '()))
    #:consumer
@@ -353,12 +361,13 @@
          (variant #:consume (cons next-char chars))))
    #:finisher (λ (chars) (list->immutable-string (reverse chars)))
    #:early-finisher (λ (chars) (list->immutable-string (reverse chars)))
-   #:name 'into-line))
+   #:name enclosing-variable-name))
 
 (module+ test
-  (test-case "into-string"
+  (test-case (name-string into-string)
     (check-equal? (reduce-all into-string "hello world") "hello world"))
-  (test-case "join-into-string"
+  
+  (test-case (name-string join-into-string)
     (check-equal? (reduce (join-into-string ", "
                                             #:before-first "["
                                             #:after-last "]")
@@ -366,10 +375,11 @@
                           "bar"
                           "baz")
                   "[foo, bar, baz]"))
-  (test-case "into-line"
+  
+  (test-case (name-string into-line)
     (check-equal? (reduce-all into-line "hello \n world") "hello ")))
 
-(define (into-nth n)
+(define/name (into-nth n)
   (make-reducer
    #:starter (λ () (variant #:consume n))
    #:consumer
@@ -379,19 +389,20 @@
          (variant #:consume (sub1 n))))
    #:finisher (λ (_) absent)
    #:early-finisher values
-   #:name 'into-nth))
+   #:name enclosing-function-name))
 
 ;; TODO(https://github.com/jackfirth/rebellion/issues/187): this reducer should
 ;;   be named into-first but there's no reducer-rename operation yet.
 (define into-first (into-nth 0))
 
-(define into-last
-  (make-fold-reducer (λ (_ v) (present v)) absent #:name 'into-last))
+(define/name into-last
+  (make-fold-reducer (λ (_ v) (present v)) absent
+                     #:name enclosing-variable-name))
 
-(define (into-index-of v)
-  (into-index-where (λ (elem) (equal? elem v)) #:name 'into-index-of))
+(define/name (into-index-of v)
+  (into-index-where (λ (elem) (equal? elem v)) #:name enclosing-function-name))
 
-(define (into-index-where pred #:name [name 'into-index-where])
+(define/name (into-index-where pred #:name [name enclosing-function-name])
   (make-reducer
    #:starter (λ () (variant #:consume 0))
    #:consumer
@@ -408,31 +419,31 @@
 
 (define (stateless-starter) stateless-consume)
 
-  (define (into-any-match? pred)
+(define/name (into-any-match? pred)
   (make-reducer
    #:starter stateless-starter
    #:consumer (λ (_ v) (if (pred v) stateless-early-finish stateless-consume))
    #:finisher (λ (_) #f)
    #:early-finisher (λ (_) #t)
-   #:name 'into-any-match?))
+   #:name enclosing-function-name))
 
-(define (into-all-match? pred)
+(define/name (into-all-match? pred)
   (make-reducer
    #:starter stateless-starter
    #:consumer (λ (_ v) (if (pred v) stateless-consume stateless-early-finish))
    #:finisher (λ (_) #t)
    #:early-finisher (λ (_) #f)
-   #:name 'into-all-match?))
+   #:name enclosing-function-name))
 
-(define (into-none-match? pred)
+(define/name (into-none-match? pred)
   (make-reducer
    #:starter stateless-starter
    #:consumer (λ (_ v) (if (pred v) stateless-early-finish stateless-consume))
    #:finisher (λ (_) #t)
    #:early-finisher (λ (_) #f)
-   #:name 'into-none-match?))
+   #:name enclosing-function-name))
 
-(define (into-for-each handler)
+(define/name (into-for-each handler)
   (define consume-state (variant #:consume #f))
   (make-reducer
    #:starter (λ () consume-state)
@@ -441,53 +452,54 @@
      (handler element)
      consume-state)
    #:finisher void
-   #:early-finisher void))
+   #:early-finisher void
+   #:name enclosing-function-name))
 
 (module+ test
-  (test-case "into-nth"
+  (test-case (name-string into-nth)
     (check-equal? (reduce-all (into-nth 3) "magic") (present #\i))
     (check-equal? (reduce-all (into-nth 10) "magic") absent)
     (check-equal? (reduce-all (into-nth 0) (in-naturals)) (present 0))
     (check-equal? (reduce-all (into-nth 0) "") absent))
   
-  (test-case "into-first"
+  (test-case (name-string into-first)
     (check-equal? (reduce-all into-first "horse") (present #\h))
     (check-equal? (reduce-all into-first "") absent))
   
-  (test-case "into-last"
+  (test-case (name-string into-last)
     (check-equal? (reduce-all into-last "horse") (present #\e))
     (check-equal? (reduce-all into-last "") absent))
   
-  (test-case "into-index-of"
+  (test-case (name-string into-index-of)
     (check-equal? (reduce-all (into-index-of #\f) "food") (present 0))
     (check-equal? (reduce-all (into-index-of #\f) "hoof") (present 3))
     (check-equal? (reduce-all (into-index-of #\f) "cat") absent))
   
-  (test-case "into-index-where"
+  (test-case (name-string into-index-where)
     (check-equal? (reduce-all (into-index-where char-whitespace?) "hello world")
                   (present 5))
     (check-equal? (reduce-all (into-index-where char-numeric?) "goodbye world")
                   absent))
 
-  (test-case "into-any-match?"
+  (test-case (name-string into-any-match?)
     (define red (into-any-match? char-whitespace?))
     (check-true (reduce-all red "hello world"))
     (check-false (reduce-all red "hello"))
     (check-false (reduce-all red "")))
 
-  (test-case "into-all-match?"
+  (test-case (name-string into-all-match?)
     (define red (into-all-match? char-alphabetic?))
     (check-false (reduce-all red "hello world"))
     (check-true (reduce-all red "hello"))
     (check-true (reduce-all red "")))
   
-  (test-case "into-none-match?"
+  (test-case (name-string into-none-match?)
     (define red (into-none-match? char-whitespace?))
     (check-false (reduce-all red "hello world"))
     (check-true (reduce-all red "hello"))
     (check-true (reduce-all red "")))
   
-  (test-case "into-for-each"
+  (test-case (name-string into-for-each)
     (define st (mutable-set))
     (define add-into-set! (into-for-each (λ (v) (set-add! st v))))
     (check-pred void? (reduce add-into-set! 1 2 3))
@@ -498,7 +510,7 @@
 (define (compute-candidate elem key-function)
   (candidate #:element elem #:key (key-function elem)))
 
-(define (into-max [comparator real<=>] #:key [key-function values])
+(define/name (into-max [comparator real<=>] #:key [key-function values])
   (make-reducer
    #:starter (λ () (variant #:consume absent))
    #:consumer
@@ -516,23 +528,26 @@
           [else (variant #:consume best-candidate)])]))
    #:finisher (λ (best) (option-map best candidate-element))
    #:early-finisher values
-   #:name 'into-max))
+   #:name enclosing-function-name))
 
 (define (into-min [comparator real<=>] #:key [key-function values])
   (into-max (comparator-reverse comparator) #:key key-function))
 
 (module+ test
-  (test-case "into-max"
+  (test-case (name-string into-max)
     (check-equal? (reduce (into-max)) absent)
     (check-equal? (reduce (into-max) 2) (present 2))
     (check-equal? (reduce (into-max) 2 7 5 3) (present 7))
+    
     (test-case "key-function"
       (define max (into-max #:key string-length))
       (check-equal? (reduce max "goodbye" "cruel" "world") (present "goodbye"))
       (check-equal? (reduce max "the" "quick" "brown" "fox") (present "quick")))
+    
     (test-case "custom-comparator"
       (define max (into-max string<=>))
       (check-equal? (reduce max "a" "c" "b") (present "c"))
       (check-equal? (reduce max "abc" "aaa") (present "abc"))))
-  (test-case "into-min"
+  
+  (test-case (name-string into-min)
     (check-equal? (reduce (into-min) 4 8 2 16) (present 2))))

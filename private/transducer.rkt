@@ -25,6 +25,7 @@
          rebellion/base/variant
          rebellion/collection/list
          rebellion/private/impossible
+         rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
          rebellion/type/record)
@@ -119,7 +120,7 @@
       (transducer-position-advance trans position)
       position))
 
-(define (transducer-position-advance trans position)
+(define/name (transducer-position-advance trans position)
   (define consumer (transducer-consumer trans))
   (define half-closer (transducer-half-closer trans))
   (define state (transducer-position-state position))
@@ -135,7 +136,7 @@
     [else
      (unless (equal? (length upstream-element) 1)
        (apply raise-result-arity-error
-              'advance-consuming-transducer-position-once
+              enclosing-function-name
               1
               "\n  in: the transduced sequence"
               upstream-element))
@@ -148,7 +149,7 @@
                           #:upstream-element next-upstream-element
                           #:upstream-generator next-upstream-generator)]))
 
-(define (transducer-position-try-emit trans position)
+(define/name (transducer-position-try-emit trans position)
   (define emitter (transducer-emitter trans))
   (define half-closed-emitter (transducer-half-closed-emitter trans))
   (define state (transducer-position-state position))
@@ -157,12 +158,12 @@
   (define upstream-generator (transducer-position-upstream-generator position))
   (unless (absent? downstream-element)
     (raise-argument-error
-     'transducer-position-try-emit
+     enclosing-function-name
      "transducer-position that is not already emitting an element downstream"
      position))
   (when (variant-tagged-as? state '#:consume)
     (raise-argument-error
-     'transducer-position-try-emit
+     enclosing-function-name
      "cannot try emitting when in consuming position"
      position))
   (cond
@@ -227,7 +228,7 @@
              continue-after-pos+val?))))
 
 (module+ test
-  (test-case "in-transduced"
+  (test-case (name-string in-transduced)
     (define seq (in-transduced (in-range 5) (mapping number->string)))
     (check-equal? (sequence->list seq) (list "0" "1" "2" "3" "4"))
     (check-equal? (sequence->list seq) (sequence->list seq))
@@ -263,7 +264,7 @@
 (define (immediately-consuming-stateless-starter) stateless-consume)
 (define (immediately-finishing-half-closer _) stateless-finish)
 
-(define (mapping f)
+(define/name (mapping f)
   (make-transducer
    #:starter immediately-consuming-stateless-starter
    #:consumer (λ (_ v) (variant #:emit v))
@@ -271,9 +272,9 @@
    #:half-closer immediately-finishing-half-closer
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'mapping))
+   #:name enclosing-function-name))
 
-(define (peeking handler)
+(define/name (peeking handler)
   (make-transducer
    #:starter immediately-consuming-stateless-starter
    #:consumer (λ (_ v) (variant #:emit v))
@@ -281,9 +282,9 @@
    #:half-closer immediately-finishing-half-closer
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'peeking))
+   #:name enclosing-function-name))
 
-(define (filtering pred)
+(define/name (filtering pred)
   (define consume-state (variant #:consume #f))
   (make-transducer
    #:starter (λ () consume-state)
@@ -292,9 +293,9 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'filtering))
+   #:name enclosing-function-name))
 
-(define (folding f init)
+(define/name (folding f init)
   (make-transducer
    #:starter (λ () (variant #:consume init))
    #:consumer (λ (st v) (variant #:emit (f st v)))
@@ -302,7 +303,7 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'folding))
+   #:name enclosing-function-name))
 
 (define-record-type iterator (head tail-maker))
 
@@ -321,7 +322,7 @@
   (define-values (head tail-maker) ((iterator-tail-maker iter)))
   (iterator #:head head #:tail-maker tail-maker))
 
-(define (append-mapping f)
+(define/name (append-mapping f)
   (define consume-state (variant #:consume #f))
   (make-transducer
    #:starter (λ () consume-state)
@@ -342,16 +343,16 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'append-mapping))
+   #:name enclosing-function-name))
 
 (module+ test
-  (test-case "mapping"
+  (test-case (name-string mapping)
     (check-equal? (transduce (in-range 0 5)
                              (mapping number->string)
                              #:into into-list)
                   (list "0" "1" "2" "3" "4")))
 
-  (test-case "peeking"
+  (test-case (name-string peeking)
     (define st (mutable-set))
     (check-equal? (transduce (in-range 0 3)
                              (peeking (λ (v) (set-add! st v)))
@@ -359,15 +360,15 @@
                   (list 0 1 2))
     (check-equal? st (mutable-set 0 1 2)))
   
-  (test-case "filtering"
+  (test-case (name-string filtering)
     (check-equal? (transduce (in-range 0 10) (filtering even?) #:into into-list)
                   (list 0 2 4 6 8)))
   
-  (test-case "folding"
+  (test-case (name-string folding)
     (check-equal? (transduce (in-range 0 10) (folding + 0) #:into into-list)
                   (list 0 1 3 6 10 15 21 28 36 45)))
   
-  (test-case "append-mapping"
+  (test-case (name-string append-mapping)
     (check-equal? (transduce (list (vector 1 2 3)
                                    (vector 1 2 3 4 5)
                                    (vector 1 2))
@@ -375,7 +376,7 @@
                              #:into into-list)
                   (list 1 2 3 1 2 3 4 5 1 2))))
 
-(define (taking amount)
+(define/name (taking amount)
   (make-transducer
    #:starter
    (if (zero? amount)
@@ -392,9 +393,9 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'taking))
+   #:name enclosing-function-name))
 
-(define (dropping amount)
+(define/name (dropping amount)
   (make-transducer
    #:starter (λ () (variant #:consume amount))
    #:consumer
@@ -407,9 +408,9 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'dropping))
+   #:name enclosing-function-name))
 
-(define (taking-while pred)
+(define/name (taking-while pred)
   (make-transducer
    #:starter (λ () (variant #:consume #f))
    #:consumer (λ (_ v) (if (pred v) (variant #:emit v) (variant #:finish #f)))
@@ -417,9 +418,9 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'taking-while))
+   #:name enclosing-function-name))
 
-(define (dropping-while pred)
+(define/name (dropping-while pred)
   (make-transducer
    #:starter (λ () (variant #:consume #f))
    #:consumer
@@ -432,10 +433,10 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'dropping-while))
+   #:name enclosing-function-name))
 
 (module+ test
-  (test-case "taking"
+  (test-case (name-string taking)
     (check-equal? (transduce (in-naturals) (taking 5) #:into into-list)
                   (list 0 1 2 3 4))
     (check-equal? (transduce (in-range 10) (taking 0) #:into into-list)
@@ -443,13 +444,13 @@
     (check-equal? (transduce (in-range 10) (taking 25) #:into into-list)
                   (list 0 1 2 3 4 5 6 7 8 9)))
   
-  (test-case "dropping"
+  (test-case (name-string dropping)
     (check-equal? (transduce (in-range 10) (dropping 3) #:into into-list)
                   (list 3 4 5 6 7 8 9))
     (check-equal? (transduce (in-range 10) (dropping 25) #:into into-list)
                   empty-list))
   
-  (test-case "taking-while"
+  (test-case (name-string taking-while)
     (define (small? n) (< n 5))
     (define while-small (taking-while small?))
     (check-equal? (transduce (in-naturals) while-small #:into into-list)
@@ -461,7 +462,7 @@
                              #:into into-list)
                   (list 0 1 2)))
   
-  (test-case "dropping-while"
+  (test-case (name-string dropping-while)
     (check-equal? (transduce (list 0 1 2 'a 'b 3 4 'c 5 6 7)
                              (dropping-while number?)
                              #:into into-list)

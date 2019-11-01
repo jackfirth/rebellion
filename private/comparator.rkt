@@ -25,6 +25,7 @@
 
 (require rebellion/base/immutable-string
          rebellion/base/symbol
+         rebellion/private/static-name
          rebellion/type/reference
          rebellion/type/singleton)
 
@@ -59,28 +60,29 @@
   (define (wrapped-func left right) (func right left))
   (make-comparator wrapped-func))
 
-(define real<=>
+(define/name real<=>
   (make-comparator
    (λ (x y) (cond [(< x y) lesser] [(= x y) equivalent] [else greater]))
-   #:name 'real<=>))
+   #:name enclosing-variable-name))
 
-(define string<=>
+(define/name string<=>
   (make-comparator
    (λ (s1 s2)
      (cond [(immutable-string<? s1 s2) lesser]
            [(equal? s1 s2) equivalent]
-           [else greater]))))
+           [else greater]))
+   #:name enclosing-variable-name))
 
 (module+ test
-  (test-case "real<=>"
+  (test-case (name-string real<=>)
     (check-equal? (compare real<=> 4 5.2) lesser)
     (check-equal? (compare real<=> 0 -7) greater)
     (check-equal? (compare real<=> 3 3) equivalent))
-  (test-case "string<=>"
+  (test-case (name-string string<=>)
     (check-equal? (compare string<=> "apple" "banana") lesser)
     (check-equal? (compare string<=> "apple" "aardvark") greater)
     (check-equal? (compare string<=> "apple" "apple") equivalent))
-  (test-case "comparator-reverse"
+  (test-case (name-string comparator-reverse)
     (define reversed (comparator-reverse real<=>))
     (check-equal? (compare reversed 1 2) greater)
     (check-equal? (compare reversed 2 1) lesser)

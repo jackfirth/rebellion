@@ -29,7 +29,8 @@
 
 (module+ test
   (require (submod "..")
-           rackunit))
+           rackunit
+           rebellion/private/static-name))
 
 ;@------------------------------------------------------------------------------
 
@@ -123,19 +124,19 @@
          (plain-bitstring padded-bytes padding)]))
 
 (module+ test
-  (test-case "bitstring"
+  (test-case (name-string bitstring)
     (for ([i (in-range 0 100)])
       (define zero-bits (apply bitstring (make-list i 0)))
       (define one-bits (apply bitstring (make-list i 1)))
       (void))
-    (test-case "roundtripping"
+    (test-case (name-string bitstring-bytes)
       (check-equal? (bitstring-bytes (bitstring 0 0 0 0 1 1 1 1
                                                 1 1 0 0 1 1 0 0
                                                 1 0 0 1))
                     (bytes (byte 0 0 0 0 1 1 1 1)
                            (byte 1 1 0 0 1 1 0 0)
                            (byte 1 0 0 1 0 0 0 0))))
-    (test-case "printing"
+    (test-case "bitstring-printed-representation"
       (check-equal? (~a (bitstring 0 1 1 0 0 1 0 1 1 1 1))
                     "#<bitstring: 0 1 1 0 0 1 0 1 1 1 1>")
       (check-equal? (~a (bitstring)) "#<bitstring:>"))))
@@ -150,13 +151,13 @@
   (byte-ref (bytes-ref bytes byte-pos) bit-pos))
 
 (module+ test
-  (test-case "bitstring-size"
+  (test-case (name-string bitstring-size)
     (check-equal? (bitstring-size (bitstring)) 0)
     (check-equal? (bitstring-size (bitstring 0)) 1)
     (check-equal? (bitstring-size (bitstring 1)) 1)
     (check-equal? (bitstring-size (bitstring 1 1 1 1 1 1 1 1)) 8)
     (check-equal? (bitstring-size (bitstring 1 1 1 1 1 1 1 1 1)) 9))
-  (test-case "bitstring-ref"
+  (test-case (name-string bitstring-ref)
     (check-equal? (bitstring-ref (bitstring 0 1) 0) 0)
     (check-equal? (bitstring-ref (bitstring 0 1) 1) 1)
     (define bits
