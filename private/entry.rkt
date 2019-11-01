@@ -16,16 +16,19 @@
   [filtering-values (-> predicate/c transducer?)]
   [append-mapping-keys (-> (-> any/c (sequence/c any/c)) transducer?)]
   [append-mapping-values (-> (-> any/c (sequence/c any/c)) transducer?)]
-  [grouping (-> reducer? transducer?)]))
+  [grouping (-> reducer? transducer?)]
+  [grouping-consecutive (-> reducer? transducer?)]))
 
 (require racket/sequence
          racket/set
+         rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer
          rebellion/type/record
+         rebellion/type/singleton
          rebellion/type/tuple)
 
 (module+ test
@@ -266,3 +269,75 @@
                              #:into into-list)
                   (list (entry 'a (present 3))
                         (entry 'b (present 5))))))
+
+(define-singleton-type unstarted-group)
+(define-tuple-type finished-group (key))
+(define-record-type consecutive-group (key value-state))
+(define-record-type consecutive-group-emission (key value next-group))
+
+(define (check-value-reducer-not-finished! value-reducer init-state)
+  (unless (variant-tagged-as? init-state '#:consume)
+    (raise-arguments-error 'grouping-consecutive
+                           "value reducer must consume at least one element"
+                           "value reducer" value-reducer
+                           "value reducer start state" init-state)))
+
+(define (make-empty-consecutive-group key value-reducer)
+  (define init-state ((reducer-starter value-reducer)))
+  (check-value-reducer-not-finished! value-reducer init-state)
+  (consecutive-group #:key key #:value-state (variant-value init-state)))
+
+(define (grouping-consecutive value-reducer)
+  (make-transducer
+   #:starter (λ () (variant #:consume unstarted-group))
+   #:consumer
+   (λ (state e)
+     (cond
+       [(unstarted-group? state) #f]
+       [(finished-group? state) #f]
+       [else
+        #f]))
+
+   #:emitter
+   (λ (group-emission)
+     (define emitted-entry
+       (entry (consecutive-group-emission-key group-emission)
+              (consecutive-group-emission-value group-emission)))
+     (define next-group (consecutive-group-emission-next-group group-emission))
+     (emission (variant #:consume next-group) emitted-entry))
+   #:half-closer
+   (λ (state)
+     (cond
+       [(absent? state) (variant #:finish #f)]
+       [else
+        (consecutive-group-finish-last (present-value state) value-reducer)]))
+   #:half-closed-emitter
+   (λ (group-emission)
+     (define emitted-entry
+       (entry (consecutive-group-emission-key group-emission)
+              (consecutive-group-emission-value group-emission)))
+     (half-closed-emission (variant #:finish #f) emitted-entry))
+   #:finisher void
+   #:name 'grouping-consecutive))
+
+(module+ test
+  (test-case "grouping-consecutive"
+    (test-case "empty"
+      (check-equal? (transduce empty-list
+                               (grouping-consecutive into-list)
+                               #:into into-list)
+                    empty-list))
+
+    (test-case "only-one-group"
+      (check-equal? (transduce (list (entry 'a 1) (entry 'a 2) (entry 'a 3))
+                               (grouping-consecutive into-sum)
+                               #:into into-list)
+                    (list (entry 'a 6)))
+      (check-equal? (transduce (list (entry 'a 1) (entry 'a 2) (entry 'a 3))
+                               (grouping-consecutive into-first)
+                               #:into into-list)
+                    (list (entry 'a (present 1))))
+      (check-equal? (transduce (list (entry 'a 1) (entry 'a 2) (entry 'a 3))
+                               (grouping-consecutive (into-nth 2))
+                               #:into into-list)
+                    (list (entry 'a (present 3)))))))
