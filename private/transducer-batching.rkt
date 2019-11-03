@@ -7,6 +7,7 @@
   [batching (-> reducer? transducer?)]))
 
 (require rebellion/base/variant
+         rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
          rebellion/type/singleton
@@ -17,7 +18,7 @@
 (define-singleton-type unstarted-batch-placeholder)
 (define-tuple-type batch (state))
 
-(define (batching batch-reducer)
+(define/name (batching batch-reducer)
   (define batch-starter (reducer-starter batch-reducer))
   (define batch-consumer (reducer-consumer batch-reducer))
   (define batch-finisher (reducer-finisher batch-reducer))
@@ -25,7 +26,7 @@
   (define (start-new-batch)
     (define init-state (batch-starter))
     (unless (variant-tagged-as? init-state '#:consume)
-      (raise-arguments-error 'batching
+      (raise-arguments-error enclosing-function-name
                              "batch reducer must consume at least one value"
                              "batch reducer" batch-reducer
                              "batch start state" init-state))
@@ -58,4 +59,4 @@
    #:half-closer half-close
    #:half-closed-emitter half-closed-emit
    #:finisher void
-   #:name 'batching))
+   #:name enclosing-function-name))

@@ -10,7 +10,8 @@
 
 (module+ test
   (require (submod "..")
-           rackunit))
+           rackunit
+           rebellion/private/static-name))
 
 ;@------------------------------------------------------------------------------
 
@@ -20,9 +21,9 @@
 (define (boolean->bit b) (if b 1 0))
 
 (module+ test
-  (test-case "bit->boolean"
+  (test-case (name-string bit->boolean)
     (check-false (bit->boolean 0))
     (check-true (bit->boolean 1)))
-  (test-case "boolean->bit"
+  (test-case (name-string boolean->bit)
     (check-equal? (boolean->bit #f) 0)
     (check-equal? (boolean->bit #t) 1)))

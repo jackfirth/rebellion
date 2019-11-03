@@ -27,6 +27,7 @@
          rebellion/collection/keyset
          rebellion/collection/record
          rebellion/private/markup
+         rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/type/record
          syntax/parse/define)
@@ -50,14 +51,14 @@
   (define size-field (keyset-index-of fields '#:size))
   (define custom-write
     (make-constructor-style-printer
-     (λ (_) 'table)
+     (λ (_) (name table))
      (λ (this)
        (define vectors (accessor this backing-column-vectors-field))
        (define size (accessor this size-field))
        (define column-names (record-keywords vectors))
        (define columns-markup
          (constructor-call-markup
-          #:type-name 'columns
+          #:type-name (name columns)
           #:subexpressions
           (for/list ([k (in-keyset column-names)]) (keyword-markup k))))
        (define rows-markup
@@ -66,7 +67,7 @@
              (for/list ([k (in-keyset column-names)])
                (table-ref this pos k)))
            (constructor-call-markup
-            #:type-name 'row
+            #:type-name (name row)
             #:subexpressions row-values)))
        (stream-cons columns-markup rows-markup))))
   (list (cons prop:custom-write custom-write)
@@ -164,7 +165,7 @@
         [else
          (unless (equal? columns (record-keywords record))
            (define msg "record contains different keys than previous records")
-           (raise-arguments-error 'into-table
+           (raise-arguments-error (name into-table)
                                   msg
                                   "record" record
                                   "previous-keys" columns))
@@ -189,11 +190,11 @@
   (define columns-record (build-record build columns))
   (constructor:table #:backing-column-vectors columns-record #:size size))
 
-(define into-table
+(define/name into-table
   (make-effectful-fold-reducer table-builder-add
                                empty-table-builder
                                build-table
-                               #:name 'into-table))
+                               #:name enclosing-variable-name))
 
 (define-syntaxes (for/table for*/table)
   (make-reducer-based-for-comprehensions #'into-table))

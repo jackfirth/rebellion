@@ -22,6 +22,7 @@
          racket/set
          rebellion/base/variant
          rebellion/collection/list
+         rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer
          rebellion/type/record
@@ -192,7 +193,7 @@
                   #:encounter-ordered-keys keys
                   #:size (list-size keys)))
 
-(define (grouping value-reducer)
+(define/name (grouping value-reducer)
   (define start-value (reducer-starter value-reducer))
   (define consume-value (reducer-consumer value-reducer))
   (define finish-value (reducer-finisher value-reducer))
@@ -234,10 +235,11 @@
          [(zero? (closing-groups-size next-g)) (variant #:finish #f)]
          [else (variant #:half-closed-emit next-g)]))
      (half-closed-emission next-state (entry next-key next-value)))
-   #:finisher void))
+   #:finisher void
+   #:name enclosing-function-name))
 
 (module+ test
-  (test-case "grouping"
+  (test-case (name-string grouping)
     (check-equal? (transduce (list (entry 'a 1)
                                    (entry 'a 2)
                                    (entry 'a 3)

@@ -26,7 +26,8 @@
 
 (module+ test
   (require (submod "..")
-           rackunit))
+           rackunit
+           rebellion/private/static-name))
 
 ;@------------------------------------------------------------------------------
 
@@ -41,7 +42,7 @@
      h))
 
 (module+ test
-  (test-case "byte"
+  (test-case (name-string byte)
     (check-equal? (byte 0 0 0 0 0 0 0 0) 0)
     (check-equal? (byte 1 1 1 1 1 1 1 1) 255)
     (check-equal? (byte 1 0 0 0 0 0 0 0) 128)
@@ -52,7 +53,7 @@
   (quotient b (expt 2 num-bits)))
 
 (module+ test
-  (test-case "byte-drop-rightmost-bits"
+  (test-case (name-string byte-drop-rightmost-bits)
     (define f byte-drop-rightmost-bits)
     (check-equal? (f (byte 1 1 0 0 1 0 1 1) 6) (byte 0 0 0 0 0 0 1 1))
     (check-equal? (f (byte 1 1 0 0 1 0 1 1) 3) (byte 0 0 0 1 1 0 0 1))
@@ -63,7 +64,7 @@
   (modulo b (expt 2 (- 8 num-bits))))
 
 (module+ test
-  (test-case "byte-clear-leftmost-bits"
+  (test-case (name-string byte-clear-leftmost-bits)
     (define f byte-clear-leftmost-bits)
     (check-equal? (f (byte 1 1 0 0 1 0 1 1) 6) (byte 0 0 0 0 0 0 1 1))
     (check-equal? (f (byte 1 1 0 0 1 0 1 1) 3) (byte 0 0 0 0 1 0 1 1))
@@ -75,7 +76,7 @@
   (* (quotient b n) n))
 
 (module+ test
-  (test-case "byte-clear-rightmost-bits"
+  (test-case (name-string byte-clear-rightmost-bits)
     (define f byte-clear-rightmost-bits)
     (check-equal? (f (byte 1 1 0 0 1 0 1 1) 0) (byte 1 1 0 0 1 0 1 1))
     (check-equal? (f (byte 1 1 0 0 1 0 1 1) 1) (byte 1 1 0 0 1 0 1 0))
@@ -93,7 +94,7 @@
   (byte-drop-rightmost-bits (byte-clear-leftmost-bits b left-bits) right-bits))
 
 (module+ test
-  (test-case "byte-ref"
+  (test-case (name-string byte-ref)
 
     (test-case "edge-values"
       (for ([i (in-range 8)])
@@ -127,7 +128,7 @@
     (bitwise-and (byte-ref left i) (byte-ref right i))))
 
 (module+ test
-  (test-case "byte-and"
+  (test-case (name-string byte-and)
     (define test-patterns
       (list (byte 0 1 1 1 1 1 1 1)
             (byte 1 0 1 1 1 1 1 1)
@@ -150,7 +151,7 @@
     (bitwise-ior (byte-ref left i) (byte-ref right i))))
 
 (module+ test
-  (test-case "byte-or"
+  (test-case (name-string byte-or)
     (define test-patterns
       (list (byte 1 0 0 0 0 0 0 0)
             (byte 0 1 0 0 0 0 0 0)
@@ -173,7 +174,7 @@
     (bitwise-xor (byte-ref b i) 1)))
 
 (module+ test
-  (test-case "byte-not"
+  (test-case (name-string byte-not)
     (for ([x (in-range 256)])
       (check-equal? (byte-ref (byte-not x) 0) (bitwise-xor (byte-ref x 0) 1))
       (check-equal? (byte-ref (byte-not x) 1) (bitwise-xor (byte-ref x 1) 1))
@@ -191,7 +192,7 @@
     (bitwise-xor (byte-ref left i) (byte-ref right i))))
 
 (module+ test
-  (test-case "byte-xor"
+  (test-case (name-string byte-xor)
     (for ([x (in-range 256)])
       (check-equal? (byte-xor x 0) x)
       (check-equal? (byte-xor x 255) (byte-not x))
@@ -202,7 +203,7 @@
     (bitwise-xor (bitwise-and (byte-ref left i) (byte-ref right i)) 1)))
 
 (module+ test
-  (test-case "byte-nand"
+  (test-case (name-string byte-nand)
     (define test-patterns
       (list (byte 0 1 1 1 1 1 1 1)
             (byte 1 0 1 1 1 1 1 1)
@@ -225,7 +226,7 @@
     (bitwise-xor (bitwise-ior (byte-ref left i) (byte-ref right i)) 1)))
 
 (module+ test
-  (test-case "byte-nor"
+  (test-case (name-string byte-nor)
     (define test-patterns
       (list (byte 1 0 0 0 0 0 0 0)
             (byte 0 1 0 0 0 0 0 0)
@@ -248,7 +249,7 @@
     (bitwise-xor (bitwise-xor (byte-ref left i) (byte-ref right i)) 1)))
 
 (module+ test
-  (test-case "byte-xnor"
+  (test-case (name-string byte-xnor)
     (for ([x (in-range 256)])
       (check-equal? (byte-xnor x 0) (byte-not x))
       (check-equal? (byte-xnor x 255) x)
@@ -264,13 +265,13 @@
                  8))
 
 (module+ test
-  (test-case "in-byte"
+  (test-case (name-string in-byte)
     (for ([x (in-range 256)]
           #:when #t
           [b (in-byte x)]
           [i (in-range 8)])
       (check-equal? b (byte-ref x i))))
-  (test-case "into-byte"
+  (test-case (name-string into-byte)
     (check-equal? (reduce into-byte 0 0 0 0 0 0 0 0) 0)
     (check-equal? (reduce into-byte 1 1 1 1 1 1 1 1) 255)
     (check-equal? (reduce into-byte 0 0 0 0 0 0 0 1) 1)
@@ -283,7 +284,7 @@
   (for/sum ([bit (in-byte b)]) bit))
 
 (module+ test
-  (test-case "byte-hamming-weight"
+  (test-case (name-string byte-hamming-weight)
     (for ([x (in-range 256)])
       (check-equal? (byte-hamming-weight x)
                     (- 8 (byte-hamming-weight (byte-not x)))))
