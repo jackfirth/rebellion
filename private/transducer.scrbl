@@ -12,6 +12,7 @@
                      rebellion/collection/list
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer
+                     rebellion/streaming/transducer/testing
                      rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
           (submod rebellion/private/scribble-cross-document-tech doc)
@@ -25,6 +26,7 @@
                    'rebellion/collection/list
                    'rebellion/streaming/reducer
                    'rebellion/streaming/transducer
+                   'rebellion/streaming/transducer/testing
                    'rebellion/type/record)
     #:private (list 'racket/base)))
 
@@ -67,6 +69,8 @@ early, before the input sequence is fully consumed.
  @tech/reference{sequence} that, when iterated, passes the elements of @racket[
  seq] to @racket[trans] as inputs and uses the emitted outputs of @racket[trans]
  as the wrapper sequence's elements.}
+
+@section{Standard Transducers}
 
 @defproc[(mapping [f (-> any/c any/c)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
@@ -282,6 +286,8 @@ early, before the input sequence is fully consumed.
               (batching (reducer-limit into-list 4))
               #:into into-list))}
 
+@section{The Transduction Protocol}
+
 @defproc[(make-transducer
           [#:starter starter (-> transduction-state/c)]
           [#:consumer consumer (-> any/c transduction-state/c)]
@@ -319,3 +325,67 @@ early, before the input sequence is fully consumed.
          half-closed-transduction-state/c]
 
 @defproc[(half-closed-emission-value [em half-closed-emission?]) any/c]
+
+@section{Testing Transducers}
+@defmodule[rebellion/streaming/transducer/testing]
+
+This module provides utilities for testing @tech{transducers}.
+
+@defproc[(materializing [subject transducer?]) transducer?]{
+ Constructs a @tech{transducer} that passes consumed values to @racket[subject],
+ then emits @racket[transducer-event?] structures describing the state
+ transitions that @racket[subject] performs, including any consumed or emitted
+ values. This is mostly useful when testing transducers, as the emitted events
+ can be gathered into a list and asserted against.
+
+ The first emitted event is always @racket[start-event] and the last one is
+ always @racket[finish-event]. A @racket[half-close-event] is emitted if
+ @racket[subject] was half-closed, which means the upstream sequence ran out of
+ elements while @racket[subject] was trying to consume one.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-naturals)
+              (materializing (taking 3))
+              #:into into-list)
+   (eval:no-prompt)
+   (transduce (list 1 2)
+              (materializing (taking 3))
+              #:into into-list))}
+
+@defproc[(transducer-event? [v any/c]) boolean?]{
+ A predicate that identifiers transducer events, which are emitted by @racket[
+ materializing] to describe the behavior of a @tech{transducer}.}
+
+@deftogether[[
+ @defthing[start-event transducer-event?]
+ @defthing[half-close-event transducer-event?]
+ @defthing[finish-event transducer-event?]]]{
+ Constants representing a @tech{transducer} starting, half-closing, or
+ finishing, respectively.}
+
+@deftogether[[
+ @defthing[consume-event? predicate/c]
+ @defproc[(consume-event [v any/c]) consume-event?]
+ @defproc[(consume-event-value [event consume-event?]) any/c]]]{
+ Predicate, constructor, and accessor for transducer events representing a
+ @tech{transducer} consuming a value. The consumed value is wrapped by the
+ event. Every @racket[consume-event?] is a @racket[transducer-event?].}
+
+@deftogether[[
+ @defthing[emit-event? predicate/c]
+ @defproc[(emit-event [v any/c]) emit-event?]
+ @defproc[(emit-event-value [event emit-event?]) any/c]]]{
+ Predicate, constructor, and accessor for transducer events representing a
+ @tech{transducer} emitting a value. The emitted value is wrapped by the event.
+ Every @racket[emit-event?] is a @racket[transducer-event?].}
+
+@deftogether[[
+ @defthing[half-closed-emit-event? predicate/c]
+ @defproc[(half-closed-emit-event [v any/c]) half-closed-emit-event?]
+ @defproc[(half-closed-emit-event-value [event half-closed-emit-event?])
+          any/c]]]{
+ Predicate, constructor, and accessor for transducer events representing a
+ half-closed @tech{transducer} emitting a value. The emitted value is wrapped by
+ the event. Every @racket[half-closed-emit-event?] is a @racket[
+ transducer-event?].}
