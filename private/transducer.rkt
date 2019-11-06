@@ -380,18 +380,21 @@
   (make-transducer
    #:starter
    (if (zero? amount)
-       (λ () (variant #:finish #f))
+       (λ () stateless-finish)
        (λ () (variant #:consume amount)))
-   #:consumer (λ (amount v) (variant #:emit (pair (sub1 amount) v)))
+   #:consumer
+   (λ (amount v)
+     (define remaining (sub1 amount))
+     (if (zero? remaining)
+         (variant #:half-closed-emit v)
+         (variant #:emit (pair remaining v))))
    #:emitter
    (λ (state)
      (define amount (pair-first state))
      (define v (pair-second state))
-     (define next-state
-       (if (zero? amount) (variant #:finish #f) (variant #:consume amount)))
-     (emission next-state v))
-   #:half-closer (λ (_) (variant #:finish #f))
-   #:half-closed-emitter impossible
+     (emission (variant #:consume amount) v))
+   #:half-closer (λ (_) stateless-finish)
+   #:half-closed-emitter (λ (v) (half-closed-emission stateless-finish v))
    #:finisher void
    #:name enclosing-function-name))
 
