@@ -17,7 +17,6 @@
   [dropping-while (-> predicate/c transducer?)]))
 
 (require racket/bool
-         racket/contract/region
          racket/list
          racket/math
          rebellion/base/option
@@ -28,6 +27,7 @@
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
+         rebellion/streaming/transducer/testing
          rebellion/type/record)
 
 (module+ test
@@ -347,18 +347,34 @@
 
 (module+ test
   (test-case (name-string mapping)
-    (check-equal? (transduce (in-range 0 5)
-                             (mapping number->string)
-                             #:into into-list)
-                  (list "0" "1" "2" "3" "4")))
+    (define trans (mapping number->string))
+    (define inputs (list 1 2 3))
+    (define expected (list "1" "2" "3"))
+    (check-equal? (transduce inputs trans #:into into-list) expected)
+    (define expected-events
+      (list start-event
+            (consume-event 1)
+            (emit-event "1")
+            (consume-event 2)
+            (emit-event "2")
+            (consume-event 3)
+            (emit-event "3")
+            half-close-event
+            finish-event))
+    (check-equal? (transduce inputs (materializing trans) #:into into-list)
+                  expected-events))
 
   (test-case (name-string peeking)
-    (define st (mutable-set))
-    (check-equal? (transduce (in-range 0 3)
-                             (peeking (λ (v) (set-add! st v)))
-                             #:into into-list)
-                  (list 0 1 2))
-    (check-equal? st (mutable-set 0 1 2)))
+    (define peeked (mutable-set))
+    (define trans (peeking (λ (v) (set-add! peeked v))))
+    (define inputs (list 1 2 3))
+    (define expected inputs)
+    (check-equal? (transduce inputs trans #:into into-list) expected)
+    (check-equal? peeked (mutable-set 1 2 3))
+    (define expected-states
+      (transduce inputs (materializing (mapping values)) #:into into-list))
+    (check-equal? (transduce inputs (materializing trans) #:into into-list)
+                  expected-states))
   
   (test-case (name-string filtering)
     (check-equal? (transduce (in-range 0 10) (filtering even?) #:into into-list)
