@@ -67,4 +67,11 @@
                           (consume-event 9)
                           half-close-event
                           (half-closed-emit-event (list 0 1 2 3 4 5 6 7 8 9))
+                          finish-event)))
+
+    (test-case "should-emit-nothing-if-upstream-empty"
+      (define trans (materializing (batching into-list)))
+      (check-equal? (transduce empty-list trans #:into into-list)
+                    (list start-event
+                          half-close-event
                           finish-event)))))
