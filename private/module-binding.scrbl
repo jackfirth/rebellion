@@ -18,12 +18,12 @@
 
 @defproc[(module-binding? [v any/c]) boolean?]
 
-@defproc[(module-binding [path module-path?]
+@defproc[(module-binding [source module-path?]
                          [phase execution-phase?]
                          [name symbol?])
          module-binding?]
 
-@defproc[(module-binding-path [binding module-binding?]) module-path?]
+@defproc[(module-binding-source [binding module-binding?]) module-path?]
 @defproc[(module-binding-phase [binding module-binding?]) phase?]
 @defproc[(module-binding-name [binding module-binding?]) symbol?]
 
