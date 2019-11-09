@@ -1,2 +1,2 @@
 #lang reprovide
-rebellion/private/transducer-materializing
+rebellion/private/transducer-observing

@@ -13,7 +13,8 @@
 (module+ test
   (test-case (name-string batching)
     (test-case "should emit last batch on half close"
-      (define trans (materializing (batching (reducer-limit into-list 4))))
+      (define trans
+        (observing-transduction-events (batching (reducer-limit into-list 4))))
       (check-equal? (transduce (in-range 10) trans #:into into-list)
                     (list start-event
                           (consume-event 0)
@@ -33,7 +34,8 @@
                           finish-event)))
 
     (test-case "should not emit empty batches"
-      (define trans (materializing (batching (reducer-limit into-list 5))))
+      (define trans
+        (observing-transduction-events (batching (reducer-limit into-list 5))))
       (check-equal? (transduce (in-range 10) trans #:into into-list)
                     (list start-event
                           (consume-event 0)
@@ -52,7 +54,7 @@
                           finish-event)))
 
     (test-case "should emit one batch if reducer never finishes"
-      (define trans (materializing (batching into-list)))
+      (define trans (observing-transduction-events (batching into-list)))
       (check-equal? (transduce (in-range 10) trans #:into into-list)
                     (list start-event
                           (consume-event 0)
@@ -70,7 +72,7 @@
                           finish-event)))
 
     (test-case "should emit nothing if upstream empty"
-      (define trans (materializing (batching into-list)))
+      (define trans (observing-transduction-events (batching into-list)))
       (check-equal? (transduce empty-list trans #:into into-list)
                     (list start-event
                           half-close-event

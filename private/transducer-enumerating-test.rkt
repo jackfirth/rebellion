@@ -28,5 +28,7 @@
             finish-event))
     (check-equal? (transduce inputs enumerating #:into into-list) expected)
     (define actual-events
-      (transduce inputs (materializing enumerating) #:into into-list))
+      (transduce inputs
+                 (observing-transduction-events enumerating)
+                 #:into into-list))
     (check-equal? actual-events expected-events)))
