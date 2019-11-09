@@ -351,6 +351,8 @@
     (define inputs (list 1 2 3))
     (define expected (list "1" "2" "3"))
     (check-equal? (transduce inputs trans #:into into-list) expected)
+    (define actual-events
+      (transduce inputs (observing-transduction-events trans) #:into into-list))
     (define expected-events
       (list start-event
             (consume-event 1)
@@ -361,8 +363,7 @@
             (emit-event "3")
             half-close-event
             finish-event))
-    (check-equal? (transduce inputs (materializing trans) #:into into-list)
-                  expected-events))
+    (check-equal? actual-events expected-events))
 
   (test-case (name-string peeking)
     (define peeked (mutable-set))
@@ -371,10 +372,13 @@
     (define expected inputs)
     (check-equal? (transduce inputs trans #:into into-list) expected)
     (check-equal? peeked (mutable-set 1 2 3))
-    (define expected-states
-      (transduce inputs (materializing (mapping values)) #:into into-list))
-    (check-equal? (transduce inputs (materializing trans) #:into into-list)
-                  expected-states))
+    (define actual-events
+      (transduce inputs (observing-transduction-events trans) #:into into-list))
+    (define expected-events
+      (transduce inputs
+                 (observing-transduction-events (mapping values))
+                 #:into into-list))
+    (check-equal? actual-events expected-events))
   
   (test-case (name-string filtering)
     (check-equal? (transduce (in-range 0 10) (filtering even?) #:into into-list)

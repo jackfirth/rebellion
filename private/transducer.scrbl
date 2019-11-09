@@ -220,10 +220,10 @@ early, before the input sequence is fully consumed.
             (gem #:kind 'sapphire #:weight 9)
             (gem #:kind 'emerald #:weight 13)
             (gem #:kind 'topaz #:weight 17))))
-   
-    (transduce gems
-               (sorting #:key gem-weight)
-               #:into into-list))}
+
+   (transduce gems
+              (sorting #:key gem-weight)
+              #:into into-list))}
 
 @defproc[(deduplicating [#:key key-function (-> any/c any/c) values])
          transducer?]{
@@ -237,11 +237,11 @@ early, before the input sequence is fully consumed.
  If @racket[key-function] is provided, is is applied to each element and
  uniqueness is based on the returned key value.
 
-@(examples
-  #:eval (make-evaluator) #:once
-  (transduce (list "cat" "dog" "CAT" "HORSE" "horse")
-             (deduplicating #:key string-foldcase)
-             #:into into-list))}
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list "cat" "dog" "CAT" "HORSE" "horse")
+              (deduplicating #:key string-foldcase)
+              #:into into-list))}
 
 @defproc[(deduplicating-consecutive
           [#:key key-function (-> any/c any/c) values])
@@ -331,9 +331,9 @@ early, before the input sequence is fully consumed.
 
 This module provides utilities for testing @tech{transducers}.
 
-@defproc[(materializing [subject transducer?]) transducer?]{
+@defproc[(observing-transduction-events [subject transducer?]) transducer?]{
  Constructs a @tech{transducer} that passes consumed values to @racket[subject],
- then emits @racket[transducer-event?] structures describing the state
+ then emits @racket[transduction-event?] structures describing the state
  transitions that @racket[subject] performs, including any consumed or emitted
  values. This is mostly useful when testing transducers, as the emitted events
  can be gathered into a list and asserted against.
@@ -346,21 +346,22 @@ This module provides utilities for testing @tech{transducers}.
  @(examples
    #:eval (make-evaluator) #:once
    (transduce (in-naturals)
-              (materializing (taking 3))
+              (observing-transduction-events (taking 3))
               #:into into-list)
    (eval:no-prompt)
    (transduce (list 1 2)
-              (materializing (taking 3))
+              (observing-transduction-events (taking 3))
               #:into into-list))}
 
-@defproc[(transducer-event? [v any/c]) boolean?]{
+@defproc[(transduction-event? [v any/c]) boolean?]{
  A predicate that identifiers transducer events, which are emitted by @racket[
- materializing] to describe the behavior of a @tech{transducer}.}
+ observing-transduction-events] to describe the behavior of a @tech{
+  transducer}.}
 
 @deftogether[[
- @defthing[start-event transducer-event?]
- @defthing[half-close-event transducer-event?]
- @defthing[finish-event transducer-event?]]]{
+ @defthing[start-event transduction-event?]
+ @defthing[half-close-event transduction-event?]
+ @defthing[finish-event transduction-event?]]]{
  Constants representing a @tech{transducer} starting, half-closing, or
  finishing, respectively.}
 
@@ -370,7 +371,7 @@ This module provides utilities for testing @tech{transducers}.
  @defproc[(consume-event-value [event consume-event?]) any/c]]]{
  Predicate, constructor, and accessor for transducer events representing a
  @tech{transducer} consuming a value. The consumed value is wrapped by the
- event. Every @racket[consume-event?] is a @racket[transducer-event?].}
+ event. Every @racket[consume-event?] is a @racket[transduction-event?].}
 
 @deftogether[[
  @defthing[emit-event? predicate/c]
@@ -378,7 +379,7 @@ This module provides utilities for testing @tech{transducers}.
  @defproc[(emit-event-value [event emit-event?]) any/c]]]{
  Predicate, constructor, and accessor for transducer events representing a
  @tech{transducer} emitting a value. The emitted value is wrapped by the event.
- Every @racket[emit-event?] is a @racket[transducer-event?].}
+ Every @racket[emit-event?] is a @racket[transduction-event?].}
 
 @deftogether[[
  @defthing[half-closed-emit-event? predicate/c]
@@ -388,4 +389,4 @@ This module provides utilities for testing @tech{transducers}.
  Predicate, constructor, and accessor for transducer events representing a
  half-closed @tech{transducer} emitting a value. The emitted value is wrapped by
  the event. Every @racket[half-closed-emit-event?] is a @racket[
- transducer-event?].}
+ transduction-event?].}

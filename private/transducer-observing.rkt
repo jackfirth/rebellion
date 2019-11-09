@@ -4,11 +4,11 @@
 
 (provide
  (contract-out
-  [materializing (-> transducer? transducer?)]
-  [transducer-event? predicate/c]
-  [start-event transducer-event?]
-  [half-close-event transducer-event?]
-  [finish-event transducer-event?]
+  [observing-transduction-events (-> transducer? transducer?)]
+  [transduction-event? predicate/c]
+  [start-event transduction-event?]
+  [half-close-event transduction-event?]
+  [finish-event transduction-event?]
   [consume-event (-> any/c consume-event?)]
   [consume-event? predicate/c]
   [consume-event-value (-> consume-event? any/c)]
@@ -35,7 +35,7 @@
 (define-wrapper-type emit-event)
 (define-wrapper-type half-closed-emit-event)
 
-(define (transducer-event? v)
+(define (transduction-event? v)
   (or (start-event? v)
       (half-close-event? v)
       (finish-event? v)
@@ -45,7 +45,7 @@
 
 (define-record-type materialized-transduction-step (event original-state))
 
-(define/name (materializing original)
+(define/name (observing-transduction-events original)
 
   (define original-starter (transducer-starter original))
   (define original-consumer (transducer-consumer original))
