@@ -7,72 +7,196 @@
   [transducer-pipe (-> transducer? ... transducer?)]
   [transducer-compose (-> transducer? ... transducer?)]))
 
-(require racket/contract/region
+(require racket/bool
+         racket/contract/region
+         racket/list
          rebellion/base/variant
          rebellion/collection/immutable-vector
+         rebellion/private/impossible
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
 ;@------------------------------------------------------------------------------
-;; Implementation of transducer-pipe
-
-;; Transducers should only be started once their output is requested by a
-;; downstream transducer entering the consume state.
-
-(define-record-type pipe-state (subtransducers))
-(define-record-type subtransducer (transducer state))
+;; Wrappers that provide a nicer API over core binary composition
 
 (define (transducer-pipe . transducers-list)
-  (define transducers (list->immutable-vector transducers-list))
-  (define (start)
-    (define state (make-start-pipe-state transducers))
-    (cond
-      [(final-pipe-state? state) (variant #:finish state)]
-      [(emitting-pipe-state? state) (variant #:emit state)]
-      [(half-closed-emitting-pipe-state? state)
-       (variant #:half-closed-emit state)]
-      [(consuming-pipe-state? state) (variant #:consume state)]
-      [else (error "impossible")]))
-  (define (consume state element) #f)
-  (define (emit state) #f)
-  (define (half-close state) #f)
-  (define (half-closed-emit state) #f)
-  (define (finish state) #f)
-  (make-transducer
-   #:starter start
-   #:consumer consume
-   #:emitter emit
-   #:half-closer half-close
-   #:half-closed-emitter half-closed-emit
-   #:finisher finish
-   #:name 'piped))
-
-(define/contract (make-start-pipe-state transducers)
-  (-> (vectorof transducer? #:immutable #t #:flat? #t) pipe-state?)
-  (define subtransducers
-    (for/vector #:length (vector-length transducers)
-      ([trans (in-vector transducers)]
-       [should-start? (in-sequences (list #t) (in-cycle (list #f)))])
-      (subtransducer #:transducer trans
-                     #:state (and should-start?
-                                  ((transducer-starter trans))))))
-  (pipe-state #:subtransducers subtransducers))
-
-(define/contract (final-pipe-state? state)
-  (-> pipe-state? boolean?)
-  #f)
-
-(define/contract (emitting-pipe-state? state)
-  (-> pipe-state? boolean?)
-  #f)
-
-(define/contract (half-closed-emitting-pipe-state? state)
-  (-> pipe-state? boolean?)
-  #f)
-
-(define/contract (consuming-pipe-state? state)
-  (-> pipe-state? boolean?)
-  #f)
+  (if (empty? transducers-list)
+      identity-transducer
+      (for/fold ([piped (first transducers-list)])
+                ([trans (in-list (rest transducers-list))])
+        (transducer-binary-pipe piped trans))))
 
 (define (transducer-compose . transducers)
   (apply transducer-pipe (reverse transducers)))
+
+(define empty-consume-state (variant #:consume #f))
+(define empty-finish-state (variant #:finish #f))
+
+(define identity-transducer
+  (make-transducer
+   #:starter (λ () empty-consume-state)
+   #:consumer (λ (_ v) (variant #:emit v))
+   #:emitter (λ (v) (emission empty-consume-state v))
+   #:half-closer (λ (_) empty-finish-state)
+   #:half-closed-emitter impossible
+   #:finisher void))
+
+;@------------------------------------------------------------------------------
+;; Core binary composition
+
+(define-record-type pipe-state
+  (upstream-transducer
+   downstream-transducer
+   upstream-state
+   downstream-state))
+
+(define (emit-pipe-state? v)
+  (and (pipe-state? v)
+       (variant-tagged-as? (pipe-state-downstream-state v) '#:emit)))
+
+(define (half-closed-emit-pipe-state? v)
+  (and (pipe-state? v)
+       (variant-tagged-as? (pipe-state-downstream-state v)
+                           '#:half-closed-emit)))
+
+(define (finish-pipe-state? v)
+  (and (pipe-state? v)
+       (variant-tagged-as? (pipe-state-downstream-state v) '#:finish)))
+
+(define (consume-pipe-state? v)
+  (and (pipe-state? v)
+       (variant-tagged-as? (pipe-state-upstream-state v) '#:consume)
+       (variant-tagged-as? (pipe-state-downstream-state v) '#:consume)))
+
+(define (internal-consume-pipe-state? v)
+  (and (pipe-state? v)
+       (variant-tagged-as? (pipe-state-upstream-state v) '#:emit)
+       (variant-tagged-as? (pipe-state-downstream-state v) '#:consume)))
+
+(define (internal-half-closed-consume-pipe-state? v)
+  (and (pipe-state? v)
+       (variant-tagged-as? (pipe-state-upstream-state v) '#:half-closed-emit)
+       (variant-tagged-as? (pipe-state-downstream-state v) '#:consume)))
+
+(define (internal-finish-pipe-state? v)
+  (and (pipe-state? v)
+       (variant-tagged-as? (pipe-state-upstream-state v) '#:finish)))
+
+(define (internal-half-close-pipe-state? v)
+  (and (pipe-state? v)
+       (false? (pipe-state-upstream-state v))
+       (variant-tagged-as? (pipe-state-downstream-state v) '#:consume)))
+
+(define (resolve-internal-pipe-state-transitions state)
+  (define upstream (pipe-state-upstream-transducer state))
+  (define upstream-state (pipe-state-upstream-state state))
+  (define downstream (pipe-state-downstream-transducer state))
+  (define downstream-state (pipe-state-downstream-state state))
+  (cond
+    [(internal-half-close-pipe-state? state)
+     (define downstream-half-closer (transducer-half-closer downstream))
+     (define next-downstream-state
+       (downstream-half-closer (variant-value downstream-state)))
+     (resolve-internal-pipe-state-transitions
+      (pipe-state #:upstream-transducer #f
+                  #:upstream-state #f
+                  #:downstream-transducer downstream
+                  #:downstream-state next-downstream-state))]
+     
+    [(internal-finish-pipe-state? state)
+     (define upstream-finisher (transducer-finisher upstream))
+     (upstream-finisher (variant-value upstream-state))
+     (resolve-internal-pipe-state-transitions
+      (pipe-state #:upstream-transducer #f
+                  #:upstream-state #f
+                  #:downstream-transducer downstream
+                  #:downstream-state downstream-state))]
+    
+    [(internal-consume-pipe-state? state)
+     (define upstream-emitter (transducer-emitter upstream))
+     (define downstream-consumer (transducer-consumer downstream))
+     (define em (upstream-emitter (variant-value upstream-state)))
+     (define next-upstream-state (emission-state em))
+     (define next-downstream-state
+       (downstream-consumer (variant-value downstream-state)
+                            (emission-value em)))
+     (resolve-internal-pipe-state-transitions
+      (pipe-state #:upstream-transducer upstream
+                  #:upstream-state next-upstream-state
+                  #:downstream-transducer downstream
+                  #:downstream-state next-downstream-state))]
+    
+    [(internal-half-closed-consume-pipe-state? state)
+     (define upstream-emitter (transducer-half-closed-emitter upstream))
+     (define downstream-consumer (transducer-consumer downstream))
+     (define em (upstream-emitter (variant-value upstream-state)))
+     (define next-upstream-state (half-closed-emission-state em))
+     (define next-downstream-state
+       (downstream-consumer (variant-value downstream-state)
+                            (half-closed-emission-value em)))
+     (resolve-internal-pipe-state-transitions
+      (pipe-state #:upstream-transducer upstream
+                  #:upstream-state next-upstream-state
+                  #:downstream-transducer downstream
+                  #:downstream-state next-downstream-state))]
+    
+    [else state]))
+
+(define (tag-pipe-state unresolved-state)
+  (define state (resolve-internal-pipe-state-transitions unresolved-state))
+  (cond
+    [(emit-pipe-state? state) (variant #:emit state)]
+    [(half-closed-emit-pipe-state? state) (variant #:half-closed-emit state)]
+    [(finish-pipe-state? state) (variant #:finish state)]
+    [(consume-pipe-state? state) (variant #:consume state)]))
+
+(define (pipe-start upstream downstream)
+  (tag-pipe-state
+   (pipe-state #:upstream-transducer upstream
+               #:upstream-state ((transducer-starter upstream))
+               #:downstream-transducer downstream
+               #:downstream-state ((transducer-starter downstream)))))
+
+(define (pipe-consume state element)
+  (define upstream (pipe-state-upstream-transducer state))
+  (define upstream-state (pipe-state-upstream-state state))
+  (define downstream (pipe-state-downstream-transducer state))
+  (define downstream-state (pipe-state-downstream-state state))
+  (define upstream-consumer (transducer-consumer upstream))
+  (define next-upstream-state
+    (upstream-consumer (variant-value upstream-state) element))
+  (tag-pipe-state
+   (pipe-state #:upstream-transducer upstream
+               #:upstream-state next-upstream-state
+               #:downstream-transducer downstream
+               #:downstream-state downstream-state)))
+
+(define (pipe-emit state) #f)
+
+(define (pipe-half-close state)
+  (define upstream (pipe-state-upstream-transducer state))
+  (define upstream-state (pipe-state-upstream-state state))
+  (define downstream (pipe-state-downstream-transducer state))
+  (define downstream-state (pipe-state-downstream-state state))
+  (define upstream-half-closer (transducer-half-closer upstream))
+  (define next-upstream-state
+    (upstream-half-closer (variant-value upstream-state)))
+  (tag-pipe-state
+   (pipe-state #:upstream-transducer upstream
+               #:upstream-state next-upstream-state
+               #:downstream-transducer downstream
+               #:downstream-state downstream-state)))
+
+(define (pipe-half-closed-emit state) #f)
+
+(define (pipe-finish state) #f)
+
+(define (transducer-binary-pipe upstream downstream)
+  (make-transducer
+   #:starter (λ () (pipe-start upstream downstream))
+   #:consumer pipe-consume
+   #:emitter pipe-emit
+   #:half-closer pipe-half-close
+   #:half-closed-emitter pipe-half-closed-emit
+   #:finisher pipe-finish
+   #:name 'piped))
