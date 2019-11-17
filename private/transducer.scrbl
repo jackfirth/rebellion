@@ -70,7 +70,7 @@ early, before the input sequence is fully consumed.
  seq] to @racket[trans] as inputs and uses the emitted outputs of @racket[trans]
  as the wrapper sequence's elements.}
 
-@section{Standard Transducers}
+@section{Element-Transforming Transducers}
 
 @defproc[(mapping [f (-> any/c any/c)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
@@ -80,33 +80,6 @@ early, before the input sequence is fully consumed.
    #:eval (make-evaluator) #:once
    (transduce (in-range 1 10)
               (mapping (λ (x) (* x x)))
-              #:into into-list))}
-
-@defproc[(peeking [handler (-> any/c void?)]) transducer?]{
- Constructs a @tech{transducer} that calls @racket[handler] on each element for
- its side effects. Elements are emitted immediately after @racket[handler] is
- called on them, so if an element is never consumed downstream then @racket[
- handler] won't be called on any later elements.
-
- This function is intended mostly for debugging, as @racket[(peeking displayln)]
- can be inserted into a transduction pipeline to investigate what elements are
- consumed in that part of the pipeline.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (transduce (list 1 2 3 'apple 4 5 6)
-              (peeking displayln)
-              (taking-while number?)
-              #:into into-sum))}
-
-@defproc[(filtering [pred predicate/c]) transducer?]{
- Constructs a @tech{transducer} that passes input elements downstream only when
- they satisfy @racket[pred].
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (transduce (in-range 1 10)
-              (filtering even?)
               #:into into-list))}
 
 @defproc[(append-mapping [f (-> any/c sequence?)]) transducer?]{
@@ -132,6 +105,26 @@ early, before the input sequence is fully consumed.
               (folding + 0)
               #:into into-list))}
 
+@defproc[(batching [batch-reducer reducer?]) transducer?]{
+ Constructs a @tech{transducer} that collects elements of the transduced
+ sequence into batches using @racket[batch-reducer]. Elements are fed into
+ @racket[batch-reducer] until it terminates the reduction, then the reduction
+ result is emitted downstream. If there are more elements remaining, then the
+ @racket[batch-reducer] is restarted to prepare the next batch. When the
+ transduced sequence has no more elements, if the last batch is only partially
+ complete, then the @racket[batch-reducer]'s finisher is called to produce the
+ last batch.
+
+ If @racket[batch-reducer] refuses to consume any elements and immediately
+ terminates the reduction every time it's started, then the returned transducer
+ raises @racket[exn:fail:contract].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 10)
+              (batching (reducer-limit into-list 4))
+              #:into into-list))}
+
 @defthing[enumerating transducer?]{
  A transducer that emits each element along with its position in the sequence,
  as an @racket[enumerated?] value.
@@ -148,6 +141,18 @@ early, before the input sequence is fully consumed.
  @defproc[(enumerated-position [enum enumerated?]) natural?]]]{
  Predicate, constructor, and accessors for the enumerated values emitted by the
  @racket[enumerating] transducer.}
+
+@section{Element-Removing Transducers}
+
+@defproc[(filtering [pred predicate/c]) transducer?]{
+ Constructs a @tech{transducer} that passes input elements downstream only when
+ they satisfy @racket[pred].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 10)
+              (filtering even?)
+              #:into into-list))}
 
 @defproc[(taking [amount natural?]) transducer?]{
  Constructs a @tech{transducer} that limits the upstream sequence to its first
@@ -192,39 +197,6 @@ early, before the input sequence is fully consumed.
               (dropping-while char-alphabetic?)
               #:into into-string))}
 
-@defproc[(sorting [comparator comparator? real<=>]
-                  [#:key key-function (-> any/c any/c) values])
-         transducer?]{
- Constructs a @tech{transducer} that sorts elements in ascending order according
- to @racket[comparator]. The sort is @emph{stable}; the relative order of
- equivalent elements is preserved.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (transduce (list 4 1 2 5 3)
-              (sorting)
-              #:into into-list)
-   (transduce (list "the" "quick" "brown" "fox")
-              (sorting string<=>)
-              #:into into-list))
-
- If @racket[key-function] is provided, it is applied to each element and the
- result is tested with @racket[comparator] rather than the element itself.
-
- @(examples
-   #:eval (make-evaluator) #:once
-   (eval:no-prompt
-    (define-record-type gem (kind weight))
-    (define gems
-      (list (gem #:kind 'ruby #:weight 17)
-            (gem #:kind 'sapphire #:weight 9)
-            (gem #:kind 'emerald #:weight 13)
-            (gem #:kind 'topaz #:weight 17))))
-
-   (transduce gems
-              (sorting #:key gem-weight)
-              #:into into-list))}
-
 @defproc[(deduplicating [#:key key-function (-> any/c any/c) values])
          transducer?]{
  Constructs a @tech{transducer} that removes duplicate elements from the
@@ -266,24 +238,39 @@ early, before the input sequence is fully consumed.
               (deduplicating-consecutive #:key string-foldcase)
               #:into into-list))}
 
-@defproc[(batching [batch-reducer reducer?]) transducer?]{
- Constructs a @tech{transducer} that collects elements of the transduced
- sequence into batches using @racket[batch-reducer]. Elements are fed into
- @racket[batch-reducer] until it terminates the reduction, then the reduction
- result is emitted downstream. If there are more elements remaining, then the
- @racket[batch-reducer] is restarted to prepare the next batch. When the
- transduced sequence has no more elements, if the last batch is only partially
- complete, then the @racket[batch-reducer]'s finisher is called to produce the
- last batch.
+@section{Element-Rearranging Transducers}
 
- If @racket[batch-reducer] refuses to consume any elements and immediately
- terminates the reduction every time it's started, then the returned transducer
- raises @racket[exn:fail:contract].
+@defproc[(sorting [comparator comparator? real<=>]
+                  [#:key key-function (-> any/c any/c) values])
+         transducer?]{
+ Constructs a @tech{transducer} that sorts elements in ascending order according
+ to @racket[comparator]. The sort is @emph{stable}; the relative order of
+ equivalent elements is preserved.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (transduce (in-range 10)
-              (batching (reducer-limit into-list 4))
+   (transduce (list 4 1 2 5 3)
+              (sorting)
+              #:into into-list)
+   (transduce (list "the" "quick" "brown" "fox")
+              (sorting string<=>)
+              #:into into-list))
+
+ If @racket[key-function] is provided, it is applied to each element and the
+ result is tested with @racket[comparator] rather than the element itself.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-record-type gem (kind weight))
+    (define gems
+      (list (gem #:kind 'ruby #:weight 17)
+            (gem #:kind 'sapphire #:weight 9)
+            (gem #:kind 'emerald #:weight 13)
+            (gem #:kind 'topaz #:weight 17))))
+
+   (transduce gems
+              (sorting #:key gem-weight)
               #:into into-list))}
 
 @section{Transducer Composition}
@@ -356,6 +343,25 @@ early, before the input sequence is fully consumed.
          half-closed-transduction-state/c]
 
 @defproc[(half-closed-emission-value [em half-closed-emission?]) any/c]
+
+@section{Debugging Transducers}
+
+@defproc[(peeking [handler (-> any/c void?)]) transducer?]{
+ Constructs a @tech{transducer} that calls @racket[handler] on each element for
+ its side effects. Elements are emitted immediately after @racket[handler] is
+ called on them, so if an element is never consumed downstream then @racket[
+ handler] won't be called on any later elements.
+
+ This function is intended mostly for debugging, as @racket[(peeking displayln)]
+ can be inserted into a transduction pipeline to investigate what elements are
+ consumed in that part of the pipeline.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 1 2 3 'apple 4 5 6)
+              (peeking displayln)
+              (taking-while number?)
+              #:into into-sum))}
 
 @section{Testing Transducers}
 @defmodule[rebellion/streaming/transducer/testing]
