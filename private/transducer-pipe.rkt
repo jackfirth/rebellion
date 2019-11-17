@@ -65,21 +65,25 @@
 
 (define (consume-pipe-state? v)
   (and (pipe-state? v)
+       (variant? (pipe-state-upstream-state v))
        (variant-tagged-as? (pipe-state-upstream-state v) '#:consume)
        (variant-tagged-as? (pipe-state-downstream-state v) '#:consume)))
 
 (define (internal-consume-pipe-state? v)
   (and (pipe-state? v)
+       (variant? (pipe-state-upstream-state v))
        (variant-tagged-as? (pipe-state-upstream-state v) '#:emit)
        (variant-tagged-as? (pipe-state-downstream-state v) '#:consume)))
 
 (define (internal-half-closed-consume-pipe-state? v)
   (and (pipe-state? v)
+       (variant? (pipe-state-upstream-state v))
        (variant-tagged-as? (pipe-state-upstream-state v) '#:half-closed-emit)
        (variant-tagged-as? (pipe-state-downstream-state v) '#:consume)))
 
 (define (internal-finish-pipe-state? v)
   (and (pipe-state? v)
+       (variant? (pipe-state-upstream-state v))
        (variant-tagged-as? (pipe-state-upstream-state v) '#:finish)))
 
 (define (internal-half-close-pipe-state? v)
@@ -171,7 +175,21 @@
                #:downstream-transducer downstream
                #:downstream-state downstream-state)))
 
-(define (pipe-emit state) #f)
+(define (pipe-emit state)
+  (define upstream (pipe-state-upstream-transducer state))
+  (define upstream-state (pipe-state-upstream-state state))
+  (define downstream (pipe-state-downstream-transducer state))
+  (define downstream-state (pipe-state-downstream-state state))
+  (define downstream-emitter (transducer-emitter downstream))
+  (define downstream-emission
+    (downstream-emitter (variant-value downstream-state)))
+  (define next-downstream-state (emission-state downstream-emission))
+  (emission (tag-pipe-state
+             (pipe-state #:upstream-transducer upstream
+                         #:upstream-state upstream-state
+                         #:downstream-transducer downstream
+                         #:downstream-state next-downstream-state))
+            (emission-value downstream-emission)))
 
 (define (pipe-half-close state)
   (define upstream (pipe-state-upstream-transducer state))
@@ -187,9 +205,29 @@
                #:downstream-transducer downstream
                #:downstream-state downstream-state)))
 
-(define (pipe-half-closed-emit state) #f)
+(define (pipe-half-closed-emit state)
+  (define upstream (pipe-state-upstream-transducer state))
+  (define upstream-state (pipe-state-upstream-state state))
+  (define downstream (pipe-state-downstream-transducer state))
+  (define downstream-state (pipe-state-downstream-state state))
+  (define downstream-half-closed-emitter
+    (transducer-half-closed-emitter downstream))
+  (define downstream-emission
+    (downstream-half-closed-emitter (variant-value downstream-state)))
+  (define next-downstream-state
+    (half-closed-emission-state downstream-emission))
+  (half-closed-emission (tag-pipe-state
+                         (pipe-state #:upstream-transducer upstream
+                                     #:upstream-state upstream-state
+                                     #:downstream-transducer downstream
+                                     #:downstream-state next-downstream-state))
+                        (half-closed-emission-value downstream-emission)))
 
-(define (pipe-finish state) #f)
+(define (pipe-finish state)
+  (define downstream (pipe-state-downstream-transducer state))
+  (define downstream-state (pipe-state-downstream-state state))
+  (define downstream-finisher (transducer-finisher downstream))
+  (downstream-finisher (variant-value downstream-state)))
 
 (define (transducer-binary-pipe upstream downstream)
   (make-transducer
