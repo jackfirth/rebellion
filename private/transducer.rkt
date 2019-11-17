@@ -27,16 +27,17 @@
          rebellion/collection/list
          rebellion/private/impossible
          rebellion/private/static-name
+         rebellion/private/transducer-pipe
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
-         rebellion/streaming/transducer/testing
          rebellion/type/record)
 
 (module+ test
   (require (submod "..")
            racket/sequence
            racket/set
-           rackunit))
+           rackunit
+           rebellion/streaming/transducer/testing))
 
 ;@------------------------------------------------------------------------------
 ;; Implementation of in-transduced
@@ -245,10 +246,8 @@
 ;; Implementation of transduce
 
 (define (transduce seq #:into red . transducers)
-  (reduce-all red
-              (for/fold ([seq seq])
-                        ([trans (in-list transducers)])
-                (in-transduced seq trans))))
+  (define piped (apply transducer-pipe transducers))
+  (reduce-all red (in-transduced seq piped)))
 
 ;@------------------------------------------------------------------------------
 ;; Everything else
