@@ -286,6 +286,37 @@ early, before the input sequence is fully consumed.
               (batching (reducer-limit into-list 4))
               #:into into-list))}
 
+@section{Transducer Composition}
+
+@defproc[(transducer-pipe [trans transducer?] ...) transducer?]{
+ Composes each @racket[trans] into the next, returning a single @tech{
+  transducer}. When the returned transducer is used with @racket[transduce], it
+ has the same behavior as using all of the given transducers in series. That is,
+ @racket[(transduce _seq (transducer-pipe _trans ...) #:into _red)] always has
+ the same result as @racket[(transduce _seq _trans ... #:into _red)].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-naturals)
+              (transducer-pipe (filtering even?)
+                               (taking 5))
+              #:into into-list))}
+
+@defproc[(transducer-compose [trans transducer?] ...) transducer?]{
+ Like @racket[transducer-pipe], but in right-to-left order instead of
+ left-to-right order. This matches the behavior of the @racket[compose] and
+ @racket[compose1] functions, but right-to-left ordered composition is not
+ recommended. Left-to-right composition with @racket[transducer-pipe] should be
+ preferred instead as it is far more readable and aligns with the order in which
+ transducers are given to @racket[transduce].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-naturals)
+              (transducer-compose (filtering even?)
+                                  (taking 5))
+              #:into into-list))}
+
 @section{The Transduction Protocol}
 
 @defproc[(make-transducer
