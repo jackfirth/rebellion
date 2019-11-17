@@ -19,11 +19,9 @@
 (require racket/bool
          racket/list
          racket/math
-         rebellion/base/immutable-string
          rebellion/base/option
          rebellion/base/pair
          rebellion/base/variant
-         rebellion/collection/immutable-vector
          rebellion/collection/list
          rebellion/private/impossible
          rebellion/private/static-name
