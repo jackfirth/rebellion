@@ -20,16 +20,24 @@
     (pattern (~seq [v:expr i:boolean]))
     (pattern (~seq val:value)
              #:with v #'val.v
-             #:with i #'null)))
+             #:with i #'null))
+  (define-splicing-syntax-class bounds
+    #:attributes(l.v l.i u.v u.i)
+    (pattern (~seq (~optional l:bound
+                              #:defaults([l.v #'0] [l.i #'null]))
+                   u:bound))
+    (pattern (~seq (~or (~seq #:incl (~bind [l.i #'#t]))
+                        (~seq #:excl (~bind [l.i #'#f])))
+                   (~optional (~seq l:value
+                                    (~or (~seq #:incl (~bind [u.i #'#t]))
+                                         (~seq #:excl (~bind [u.i #'#f]))
+                                         (~seq (~bind [u.i #'l.i]))))
+                              #:defaults([l.v #'0] [u.i #'l.i]))
+                   u:value))))
 
 (define-syntax (range/macro stx)
   (syntax-parse stx
-    [(_ u:bound) #'(range/create 0 null u.v u.i)]
-    [(_ l:bound u:bound) #'(range/create l.v l.i u.v u.i)]
-    [(_ #:incl l:value u:value) #'(range/create l.v #t u.v #t)]
-    [(_ #:excl l:value u:value) #'(range/create l.v #f u.v #f)]
-    [(_ #:incl l:value #:excl u:value) #'(range/create l.v #t u.v #f)]
-    [(_ #:excl l:value #:incl u:value) #'(range/create l.v #f u.v #t)]))
+    [(_ b:bounds) #'(range/create b.l.v b.l.i b.u.v b.u.i)]))
 
 (struct range (lower upper))
 (struct bound (value incl))
