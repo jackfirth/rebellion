@@ -10,7 +10,10 @@
          range/upper-incl
          range/contains)
 
-(require (for-syntax racket/base syntax/parse))
+(require (for-syntax racket/base
+                     syntax/parse)
+         rebellion/base/comparator)
+
 (begin-for-syntax
   (define-splicing-syntax-class value
     (pattern (~seq (~datum *))
@@ -37,13 +40,16 @@
 
 (define-syntax (range/macro stx)
   (syntax-parse stx
-    [(_ b:bounds) #'(range/create b.l.v b.l.i b.u.v b.u.i)]))
+    [(_ b:bounds
+        (~optional (~seq #:cmp c:expr)
+                   #:defaults([c #'null])))
+     #'(range/create b.l.v b.l.i b.u.v b.u.i c)]))
 
-(struct range (lower upper))
+(struct range (lower upper comparator))
 (struct bound (value incl))
 (define unbounded (bound null #f))
 
-(define (range/create lower lower-incl upper upper-incl)
+(define (range/create lower lower-incl upper upper-incl comparator)
   (range (cond
            [(null? lower) unbounded]
            [(null? lower-incl) (bound lower #t)]
@@ -51,7 +57,8 @@
          (cond
            [(null? upper) unbounded]
            [(null? upper-incl) (bound upper #f)]
-           [else (bound upper upper-incl)])))
+           [else (bound upper upper-incl)])
+         (if (null? comparator) real<=> comparator)))
 
 (define (range/lower? range)
   (not (eq? (range-lower range) unbounded)))
@@ -68,13 +75,16 @@
   (bound-incl (range-upper range)))
 
 (define (range/contains range value)
+  (define comparator (range-comparator range))
   (and (let ([lower (range-lower range)])
-         (cond
-           [(eq? lower unbounded) #t]
-           [(bound-incl lower) (<= (bound-value lower) value)]
-           [else (< (bound-value lower) value)]))
+         (or (eq? lower unbounded)
+             (let ([cmp (compare comparator (bound-value lower) value)])
+               (if (bound-incl lower)
+                   (not (eq? cmp greater))
+                   (eq? cmp lesser)))))
        (let ([upper (range-upper range)])
-         (cond
-           [(eq? upper unbounded) #t]
-           [(bound-incl upper) (>= (bound-value upper) value)]
-           [else (>= (bound-value upper) value)]))))
+         (or (eq? upper unbounded)
+             (let ([cmp (compare comparator (bound-value upper) value)])
+               (if (bound-incl upper)
+                   (not (eq? cmp lesser))
+                   (eq? cmp greater)))))))
