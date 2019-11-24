@@ -12,22 +12,25 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
-         rebellion/base/comparator)
+         rebellion/base/comparator
+         rebellion/base/option)
 
 (begin-for-syntax
   (define-splicing-syntax-class value
     (pattern (~seq (~datum *))
-             #:with v #'null)
-    (pattern (~seq v:expr)))
+             #:with v #'absent)
+    (pattern (~seq e:expr)
+             #:with v #'(present e)))
   (define-splicing-syntax-class bound
-    (pattern (~seq [v:expr i:boolean]))
+    (pattern (~seq [e:expr i:boolean])
+             #:with v #'(present e))
     (pattern (~seq val:value)
              #:with v #'val.v
              #:with i #'null))
   (define-splicing-syntax-class bounds
     #:attributes(l.v l.i u.v u.i)
     (pattern (~seq (~optional l:bound
-                              #:defaults([l.v #'0] [l.i #'null]))
+                              #:defaults([l.v #'null] [l.i #'null]))
                    u:bound))
     (pattern (~seq (~or (~seq #:incl (~bind [l.i #'#t]))
                         (~seq #:excl (~bind [l.i #'#f])))
@@ -35,7 +38,7 @@
                                     (~or (~seq #:incl (~bind [u.i #'#t]))
                                          (~seq #:excl (~bind [u.i #'#f]))
                                          (~seq (~bind [u.i #'l.i]))))
-                              #:defaults([l.v #'0] [u.i #'l.i]))
+                              #:defaults([l.v #'null] [u.i #'l.i]))
                    u:value))))
 
 (define-syntax (range/macro stx)
@@ -45,46 +48,42 @@
                    #:defaults([c #'null])))
      #'(range/create b.l.v b.l.i b.u.v b.u.i c)]))
 
-(struct range (lower upper comparator))
-(struct bound (value incl))
-(define unbounded (bound null #f))
+(struct range (lower-val lower-incl upper-val upper-incl comparator))
 
-(define (range/create lower lower-incl upper upper-incl comparator)
-  (range (cond
-           [(null? lower) unbounded]
-           [(null? lower-incl) (bound lower #t)]
-           [else (bound lower lower-incl)])
-         (cond
-           [(null? upper) unbounded]
-           [(null? upper-incl) (bound upper #f)]
-           [else (bound upper upper-incl)])
+(define (range/create lower-val lower-incl upper-val upper-incl comparator)
+  (range (if (null? lower-val) (present 0) lower-val)
+         (if (null? lower-incl) #t lower-incl)
+         upper-val
+         (if (null? upper-incl) #f upper-incl)
          (if (null? comparator) real<=> comparator)))
 
 (define (range/lower? range)
-  (not (eq? (range-lower range) unbounded)))
+  (present? (range-lower-val range)))
 (define (range/lower range)
-  (bound-value (range-lower range)))
+  (present-value (range-lower-val range)))
 (define (range/lower-incl range)
-  (bound-incl (range-lower range)))
+  (and (range/lower? range) (range-lower-incl range)))
 
 (define (range/upper? range)
-  (not (eq? (range-upper range) unbounded)))
+  (present? (range-upper-val range)))
 (define (range/upper range)
-  (bound-value (range-upper range)))
+  (present-value (range-upper-val range)))
 (define (range/upper-incl range)
-  (bound-incl (range-upper range)))
+  (and (range/upper? range) (range-upper-incl range)))
 
 (define (range/contains range value)
   (define comparator (range-comparator range))
-  (and (let ([lower (range-lower range)])
-         (or (eq? lower unbounded)
-             (let ([cmp (compare comparator (bound-value lower) value)])
-               (if (bound-incl lower)
-                   (not (eq? cmp greater))
-                   (eq? cmp lesser)))))
-       (let ([upper (range-upper range)])
-         (or (eq? upper unbounded)
-             (let ([cmp (compare comparator (bound-value upper) value)])
-               (if (bound-incl upper)
-                   (not (eq? cmp lesser))
-                   (eq? cmp greater)))))))
+  (and (option-case (range-lower-val range)
+         #:present (λ (lower)
+                     (define cmp (compare comparator value lower))
+                     (if (range-lower-incl range)
+                         (not (eq? cmp lesser))
+                         (eq? cmp greater)))
+         #:absent (λ () #t))
+       (option-case (range-upper-val range)
+         #:present (λ (upper)
+                     (define cmp (compare comparator value upper))
+                     (if (range-upper-incl range)
+                         (not (eq? cmp greater))
+                         (eq? cmp lesser)))
+         #:absent (λ () #t))))
