@@ -1,14 +1,24 @@
 #lang racket/base
 
-(provide (rename-out [range/macro range])
-         range?
-         range/lower
-         range/lower?
-         range/lower-incl
-         range/upper
-         range/upper?
-         range/upper-incl
-         range/contains)
+(require racket/contract/base)
+
+(provide
+ (rename-out [range/macro range])
+ (contract-out
+  [range/create (-> (or/c option? null?)
+                    (or/c boolean? null?)
+                    (or/c option? null?)
+                    (or/c boolean? null?)
+                    (or/c comparator? null?)
+                    range?)]
+  [range? predicate/c]
+  [range/lower? (-> range? boolean?)]
+  [range/lower (-> range? any/c)]
+  [range/lower-incl? (-> range? boolean?)]
+  [range/upper? (-> range? boolean?)]
+  [range/upper (-> range? any/c)]
+  [range/upper-incl? (-> range? boolean?)]
+  [range/contains? (-> range? any/c boolean?)]))
 
 (require (for-syntax racket/base
                      syntax/parse)
@@ -61,17 +71,17 @@
   (present? (range-lower-val range)))
 (define (range/lower range)
   (present-value (range-lower-val range)))
-(define (range/lower-incl range)
+(define (range/lower-incl? range)
   (and (range/lower? range) (range-lower-incl range)))
 
 (define (range/upper? range)
   (present? (range-upper-val range)))
 (define (range/upper range)
   (present-value (range-upper-val range)))
-(define (range/upper-incl range)
+(define (range/upper-incl? range)
   (and (range/upper? range) (range-upper-incl range)))
 
-(define (range/contains range value)
+(define (range/contains? range value)
   (define comparator (range-comparator range))
   (and (option-case (range-lower-val range)
          #:present (λ (lower)
