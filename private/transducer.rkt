@@ -25,9 +25,9 @@
          rebellion/collection/list
          rebellion/private/impossible
          rebellion/private/static-name
-         rebellion/private/transducer-pipe
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
+         rebellion/streaming/transducer/composition
          rebellion/type/record)
 
 (module+ test
@@ -371,15 +371,15 @@
                  (observing-transduction-events (mapping values))
                  #:into into-list))
     (check-equal? actual-events expected-events))
-  
+
   (test-case (name-string filtering)
     (check-equal? (transduce (in-range 0 10) (filtering even?) #:into into-list)
                   (list 0 2 4 6 8)))
-  
+
   (test-case (name-string folding)
     (check-equal? (transduce (in-range 0 10) (folding + 0) #:into into-list)
                   (list 0 1 3 6 10 15 21 28 36 45)))
-  
+
   (test-case (name-string append-mapping)
     (check-equal? (transduce (list (vector 1 2 3)
                                    (vector 1 2 3 4 5)
@@ -458,13 +458,13 @@
                   empty-list)
     (check-equal? (transduce (in-range 10) (taking 25) #:into into-list)
                   (list 0 1 2 3 4 5 6 7 8 9)))
-  
+
   (test-case (name-string dropping)
     (check-equal? (transduce (in-range 10) (dropping 3) #:into into-list)
                   (list 3 4 5 6 7 8 9))
     (check-equal? (transduce (in-range 10) (dropping 25) #:into into-list)
                   empty-list))
-  
+
   (test-case (name-string taking-while)
     (define (small? n) (< n 5))
     (define while-small (taking-while small?))
@@ -476,7 +476,7 @@
                              (taking-while number?)
                              #:into into-list)
                   (list 0 1 2)))
-  
+
   (test-case (name-string dropping-while)
     (check-equal? (transduce (list 0 1 2 'a 'b 3 4 'c 5 6 7)
                              (dropping-while number?)

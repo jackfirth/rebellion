@@ -13,6 +13,7 @@
          rebellion/base/variant
          rebellion/collection/immutable-vector
          rebellion/private/impossible
+         rebellion/private/static-name
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
@@ -32,14 +33,15 @@
 (define empty-consume-state (variant #:consume #f))
 (define empty-finish-state (variant #:finish #f))
 
-(define identity-transducer
+(define/name identity-transducer
   (make-transducer
    #:starter (λ () empty-consume-state)
    #:consumer (λ (_ v) (variant #:emit v))
    #:emitter (λ (v) (emission empty-consume-state v))
    #:half-closer (λ (_) empty-finish-state)
    #:half-closed-emitter impossible
-   #:finisher void))
+   #:finisher void
+   #:name enclosing-variable-name))
 
 ;@------------------------------------------------------------------------------
 ;; Core binary composition

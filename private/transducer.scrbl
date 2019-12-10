@@ -70,6 +70,23 @@ early, before the input sequence is fully consumed.
  seq] to @racket[trans] as inputs and uses the emitted outputs of @racket[trans]
  as the wrapper sequence's elements.}
 
+@defproc[(into-transduced [trans transducer?] ... [#:into red reducer?])
+         reducer?]{
+ Combines @racket[red] with each @racket[trans], returning a new @tech{reducer}
+ that, when reducing a @tech/reference{sequence}, first passes the elements
+ through the given chain of @tech{transducers}. The outputs of the last @racket[
+ trans] are sent to @racket[red] as inputs.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define into-first-ten-letters
+      (into-transduced (filtering char-alphabetic?)
+                       (mapping char-downcase)
+                       (taking 10)
+                       #:into into-string)))
+   (transduce "The quick brown fox" #:into into-first-ten-letters))}
+
 @section{Element-Transforming Transducers}
 
 @defproc[(mapping [f (-> any/c any/c)]) transducer?]{
