@@ -141,6 +141,19 @@
     #:downstream-state downstream-state)))
 
 (define (finish-transduced state)
-  #f)
+  (define upstream (transduced-state-upstream-transducer state))
+  (define upstream-state (transduced-state-upstream-state state))
+  (define downstream (transduced-state-downstream-reducer state))
+  (define downstream-state (transduced-state-downstream-state state))
+  (define upstream-half-closer (transducer-half-closer upstream))
+  (define next-upstream-state
+    (upstream-half-closer (variant-value upstream-state)))
+  (variant-value
+   (tag-transduced-state
+    (transduced-state
+     #:upstream-transducer upstream
+     #:upstream-state next-upstream-state
+     #:downstream-reducer downstream
+     #:downstream-state downstream-state))))
 
 (define (early-finish-transduced result) result)
