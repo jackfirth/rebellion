@@ -189,12 +189,6 @@
   (present? (transducer-position-downstream-element pos)))
 
 (define (in-transduced seq trans)
-  (define starter (transducer-starter trans))
-  (define consumer (transducer-consumer trans))
-  (define emitter (transducer-emitter trans))
-  (define half-closer (transducer-half-closer trans))
-  (define half-closed-emitter (transducer-half-closed-emitter trans))
-  (define finisher (transducer-finisher trans))
   (make-do-sequence
    (λ ()
      (define init-pos (make-initial-transducer-position trans seq))
