@@ -11,8 +11,8 @@
   [enumerating transducer?]))
 
 (require racket/math
+         rebellion/base/impossible-function
          rebellion/base/variant
-         rebellion/private/impossible
          rebellion/streaming/transducer/base
          rebellion/type/record)
 

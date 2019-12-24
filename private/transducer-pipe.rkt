@@ -10,9 +10,9 @@
 (require racket/bool
          racket/contract/region
          racket/list
+         rebellion/base/impossible-function
          rebellion/base/variant
          rebellion/collection/immutable-vector
-         rebellion/private/impossible
          rebellion/private/static-name
          rebellion/streaming/transducer/base
          rebellion/type/record)
@@ -108,7 +108,7 @@
                   #:upstream-state #f
                   #:downstream-transducer downstream
                   #:downstream-state next-downstream-state))]
-     
+
     [(internal-finish-pipe-state? state)
      (define upstream-finisher (transducer-finisher upstream))
      (upstream-finisher (variant-value upstream-state))
@@ -117,7 +117,7 @@
                   #:upstream-state #f
                   #:downstream-transducer downstream
                   #:downstream-state downstream-state))]
-    
+
     [(internal-consume-pipe-state? state)
      (define upstream-emitter (transducer-emitter upstream))
      (define downstream-consumer (transducer-consumer downstream))
@@ -131,7 +131,7 @@
                   #:upstream-state next-upstream-state
                   #:downstream-transducer downstream
                   #:downstream-state next-downstream-state))]
-    
+
     [(internal-half-closed-consume-pipe-state? state)
      (define upstream-emitter (transducer-half-closed-emitter upstream))
      (define downstream-consumer (transducer-consumer downstream))
@@ -145,7 +145,7 @@
                   #:upstream-state next-upstream-state
                   #:downstream-transducer downstream
                   #:downstream-state next-downstream-state))]
-    
+
     [else state]))
 
 (define (tag-pipe-state unresolved-state)
