@@ -9,10 +9,10 @@
 (require racket/bool
          racket/sequence
          rebellion/base/comparator
+         rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
-         rebellion/private/impossible
          rebellion/streaming/transducer/base
          rebellion/type/record
          rebellion/type/singleton
@@ -147,7 +147,7 @@
   ;; TODO(https://github.com/jackfirth/rebellion/issues/301): consider handling
   ;;   key function more efficiently by caching keys.
   (define keyed-comparator (comparator-map comparator key-function))
-  
+
   (define (start)
     (variant #:consume empty-tree))
   (define (consume state element)

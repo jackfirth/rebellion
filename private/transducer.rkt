@@ -19,11 +19,11 @@
 (require racket/bool
          racket/list
          racket/math
+         rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/pair
          rebellion/base/variant
          rebellion/collection/list
-         rebellion/private/impossible
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base

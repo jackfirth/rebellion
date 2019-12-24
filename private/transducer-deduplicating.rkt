@@ -10,9 +10,9 @@
 (require racket/contract/region
          racket/set
          rebellion/base/equivalence-relation
+         rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
-         rebellion/private/impossible
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
