@@ -16,10 +16,13 @@
   [filtering-values (-> predicate/c transducer?)]
   [append-mapping-keys (-> (-> any/c (sequence/c any/c)) transducer?)]
   [append-mapping-values (-> (-> any/c (sequence/c any/c)) transducer?)]
+  [batching-into-entries transducer?]
   [grouping (-> reducer? transducer?)]))
 
 (require racket/sequence
          racket/set
+         rebellion/base/impossible-function
+         rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
          rebellion/private/static-name
@@ -134,6 +137,51 @@
                         (entry 'bar 4)
                         (entry 'bar 5)
                         (entry 'bar 6)))))
+
+(define batching-into-entries-message
+  "odd number of sequence elements
+ last key could not be paired with a value")
+
+(define/name batching-into-entries
+  (make-transducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer
+   (λ (previous element)
+     (option-case previous
+                  #:present (λ (key) (variant #:emit (entry key element)))
+                  #:absent (λ () (variant #:consume (present element)))))
+   #:emitter (λ (e) (emission (variant #:consume absent) e))
+   #:half-closer
+   (λ (previous)
+     (option-case previous
+                  #:present
+                  (λ (key)
+                    (raise-arguments-error
+                     (name batching-into-entries)
+                     batching-into-entries-message
+                     "last key" key))
+                  #:absent
+                  (λ () (variant #:finish #f))))
+   #:half-closed-emitter impossible
+   #:finisher void
+   #:name enclosing-variable-name))
+
+(module+ test
+  (test-case (name-string batching-into-entries)
+    (test-case "should turn even-length sequence into entries"
+      (define actual
+        (transduce (list 'a 1 'b 2 'c 3)
+                   batching-into-entries
+                   #:into into-list))
+      (check-equal? actual (list (entry 'a 1) (entry 'b 2) (entry 'c 3))))
+
+    (test-case "should raise error on odd-length sequence"
+      (define (actual)
+        (transduce (list 'a 1 'b 2 'c 3 'd)
+                   batching-into-entries
+                   #:into into-list))
+      (check-exn exn:fail:contract? actual)
+      (check-exn #rx"last key: 'd" actual))))
 
 (define-record-type groups (reducer-states reverse-ordered-keys finished-keys))
 (define-record-type closing-groups (reducer-states encounter-ordered-keys size))
