@@ -154,6 +154,21 @@ than a collection of @racket[pair?] values.
               (append-mapping-values in-immutable-set)
               #:into into-set))}
 
+@defthing[batching-into-entries transducer?]{
+ A @tech{transducer} that transforms a flat sequences of alternating keys and
+ values into a sequence of @tech{entries}. The sequence must contain an even
+ number of elements, otherwise a contract failure is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 'a 1 'b 2 'c 3)
+              batching-into-entries
+              #:into into-set)
+   (eval:error
+    (transduce (list 'a 1 'b 2 'c)
+               batching-into-entries
+               #:into into-set)))}
+
 @defproc[(grouping [value-reducer reducer?]) transducer?]{
  Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by
  merging entries with equal keys. For each key, the values of all entries with
