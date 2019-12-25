@@ -7,6 +7,7 @@
 @include-section[(lib "rebellion/private/entry.scrbl")]
 @include-section[(lib "rebellion/private/list.scrbl")]
 @include-section[(lib "rebellion/private/immutable-vector.scrbl")]
+@include-section[(lib "rebellion/private/vector-builder.scrbl")]
 @include-section[(lib "rebellion/private/set.scrbl")]
 @include-section[(lib "rebellion/private/hash.scrbl")]
 @include-section[(lib "rebellion/private/multiset.scrbl")]
