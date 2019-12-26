@@ -258,11 +258,13 @@ early, before the input sequence is fully consumed.
 @section{Element-Rearranging Transducers}
 
 @defproc[(sorting [comparator comparator? real<=>]
-                  [#:key key-function (-> any/c any/c) values])
+                  [#:key key-function (-> any/c any/c) values]
+                  [#:descending? descending? boolean? #f])
          transducer?]{
  Constructs a @tech{transducer} that sorts elements in ascending order according
  to @racket[comparator]. The sort is @emph{stable}; the relative order of
- equivalent elements is preserved.
+ equivalent elements is preserved. If @racket[descending?] is true, the elements
+ are sorted in descending order instead of ascending order.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -288,6 +290,9 @@ early, before the input sequence is fully consumed.
 
    (transduce gems
               (sorting #:key gem-weight)
+              #:into into-list)
+   (transduce gems
+              (sorting #:key gem-weight #:descending? #t)
               #:into into-list))}
 
 @section{Transducer Composition}

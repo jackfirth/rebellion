@@ -4,7 +4,9 @@
 
 (provide
  (contract-out
-  [sorting (->* () (comparator? #:key (-> any/c any/c)) transducer?)]))
+  [sorting
+   (->* () (comparator? #:key (-> any/c any/c) #:descending? boolean?)
+        transducer?)]))
 
 (require racket/bool
          racket/sequence
@@ -143,13 +145,16 @@
          #:equivalent-stack equivalent-stack
          #:greater-stack greater-stack)])]))
 
-(define (sorting [comparator real<=>] #:key [key-function values])
+(define (sorting [comparator real<=>]
+                 #:key [key-function values]
+                 #:descending? [descending? #f])
   ;; TODO(https://github.com/jackfirth/rebellion/issues/301): consider handling
   ;;   key function more efficiently by caching keys.
-  (define keyed-comparator (comparator-map comparator key-function))
+  (define keyed-comparator
+    (comparator-map (if descending? (comparator-reverse comparator) comparator)
+                    key-function))
 
-  (define (start)
-    (variant #:consume empty-tree))
+  (define (start) (variant #:consume empty-tree))
   (define (consume state element)
     (define next-state
       (cond
