@@ -23,8 +23,7 @@
                   default-predicate-name
                   default-constructor-name)
     (pattern id:id
-      #:do [(define (derived-id fmt)
-              (format-id #'id fmt #'id #:source #'id #:props #'id))]
+      #:do [(define (derived-id fmt) (format-id #'id fmt #'id #:subs? #t))]
       #:with default-name #'id
       #:with default-predicate-name (derived-id "~a?")
       #:with default-constructor-name (derived-id "make-~a"))))
@@ -57,7 +56,7 @@
   #:with fields #'(keyset field-kw ...)
   #:with (field-accessor ...)
   (for/list ([field-stx (in-syntax #'(field* ...))])
-    (format-id field-stx "~a-~a" #'id.default-name field-stx))
+    (format-id #'id "~a-~a" #'id.default-name field-stx #:subs? #t))
   (begin
     (define type (reference-type 'id.default-name fields))
     (define descriptor
