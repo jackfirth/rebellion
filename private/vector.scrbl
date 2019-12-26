@@ -3,6 +3,8 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     racket/sequence
+                     rebellion/collection/immutable-vector
                      rebellion/collection/vector
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer)
@@ -39,3 +41,12 @@
    (transduce (in-naturals)
               (filtering even?)
               #:into (into-mutable-vector #:size 5)))}
+
+@defproc[(sequence->vector [seq (sequence/c any/c)]) immutable-vector?]{
+ Copies @racket[seq] into an immutable vector. If @racket[seq] is already an
+ immutable vector, it is returned directly.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sequence->vector (list 1 2 3))
+   (sequence->vector (in-range 0 10)))}
