@@ -23,7 +23,7 @@
                   default-type-name)
     (pattern id:id
       #:do [(define (format-singleton-id fmt)
-              (format-id #'id fmt #'id #:source #'id #:props #'id))]
+              (format-id #'id fmt #'id #:subs? #t))]
       #:with default-name #'id
       #:with default-predicate-name (format-singleton-id "~a?")
       #:with default-descriptor-name (format-singleton-id "descriptor:~a")

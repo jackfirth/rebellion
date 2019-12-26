@@ -19,15 +19,17 @@
 
 (define-simple-macro
   (define-record-type id:id (field-id:id ...)
-    (~alt (~optional (~seq #:predicate-name predicate-name:id)
-                     #:defaults ([predicate-name (format-id #'id "~a?" #'id)])
-                     #:name "#:predicate-name option")
-          (~optional (~seq #:constructor-name constructor-name:id)
-                     #:defaults ([constructor-name #'id])
-                     #:name "#:constructor-name option")
-          (~optional (~seq #:property-maker prop-maker:expr)
-                     #:defaults ([prop-maker #'default-record-properties])
-                     #:name "#:property-maker option"))
+    (~alt
+     (~optional (~seq #:predicate-name predicate-name:id)
+                #:defaults
+                ([predicate-name (format-id #'id "~a?" #'id #:subs? #t)])
+                #:name "#:predicate-name option")
+     (~optional (~seq #:constructor-name constructor-name:id)
+                #:defaults ([constructor-name #'id])
+                #:name "#:constructor-name option")
+     (~optional (~seq #:property-maker prop-maker:expr)
+                #:defaults ([prop-maker #'default-record-properties])
+                #:name "#:property-maker option"))
     ...)
   #:with fields
   #`(keyset
@@ -37,7 +39,7 @@
   (sort (syntax->list #'(field-id ...)) symbol<? #:key syntax-e)
   #:with (field-accessor-id ...)
   (for/list ([field-id-stx (in-syntax #'(sorted-field-id ...))])
-    (format-id field-id-stx "~a-~a" #'id field-id-stx))
+    (format-id field-id-stx "~a-~a" #'id field-id-stx #:subs? #t))
   #:with (position ...)
   (for/list ([n (in-range (length (syntax->list #'(field-id ...))))])
     #`(quote #,n))
