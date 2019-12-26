@@ -122,4 +122,14 @@
       (check-equal? (transduce (list 2 1 4 1 4 1 2 3 5 3)
                                (sorting)
                                #:into into-list)
-                    (list 1 1 1 2 2 3 3 4 4 5)))))
+                    (list 1 1 1 2 2 3 3 4 4 5)))
+
+    (test-case "descending-order"
+      (define gems (list (ruby 2) (emerald 2) (sapphire 1) (topaz 3) (ruby 3)))
+      (define expected
+        (list (topaz 3) (ruby 3) (ruby 2) (emerald 2) (sapphire 1)))
+      (define actual
+        (transduce gems
+                   (sorting #:key gemstone-weight #:descending? #t)
+                   #:into into-list))
+      (check-equal? actual expected))))
