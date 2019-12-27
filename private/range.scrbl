@@ -16,7 +16,7 @@
 @title{Ranges}
 @defmodule[rebellion/base/range]
 
-A @deftech{range}, also called an @deftech{interval}, is a contiguous set of
+A @deftech{range}, also called an @deftech{interval}, is a continuous set of
 ordered values. Ranges have at most two bounds: an upper bound and a lower
 bound. Either bound may be absent, in which case the range is @deftech{
  unbounded}. If a bound is present, it contains an endpoint value and an
