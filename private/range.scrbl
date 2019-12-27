@@ -223,6 +223,19 @@ indication of whether the bound is inclusive or exclusive.
    (range-contains? (less-than 14) 14)
    (range-contains? (less-than 14) 87))}
 
+@defproc[(singleton-range [endpoint any/c]
+                          [#:comparator comparator comparator? real<=>])
+         range?]{
+ Constructs a @tech{singleton range} that contains only values that are
+ equivalent to @racket[endpoint], according to @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (singleton-range 42)
+   (range-contains? (singleton-range 42) 42)
+   (range-contains? (singleton-range 42) 41)
+   (range-contains? (singleton-range 42) 43))}
+
 @section{Querying Ranges}
 
 @defproc[(range-contains? [rng range?] [v any/c]) boolean?]{

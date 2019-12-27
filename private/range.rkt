@@ -79,10 +79,11 @@
 
         [_ range?])]
 
-  [at-least unbounded-range-constructor/c]
-  [at-most unbounded-range-constructor/c]
-  [less-than unbounded-range-constructor/c]
-  [greater-than unbounded-range-constructor/c]
+  [at-least single-endpoint-range-constructor/c]
+  [at-most single-endpoint-range-constructor/c]
+  [less-than single-endpoint-range-constructor/c]
+  [greater-than single-endpoint-range-constructor/c]
+  [singleton-range single-endpoint-range-constructor/c]
   [range-contains? (-> range? any/c boolean?)]
   [range-lower-bound (-> range? (or/c range-bound? unbounded?))]
   [range-upper-bound (-> range? (or/c range-bound? unbounded?))]
@@ -185,6 +186,10 @@
 (define (less-than endpoint #:comparator [comparator real<=>])
   (range unbounded (exclusive-bound endpoint) #:comparator comparator))
 
+(define (singleton-range endpoint #:comparator [comparator real<=>])
+  (define bound (inclusive-bound endpoint))
+  (range bound bound #:comparator comparator))
+
 (module+ test
   (test-case (name-string range)
     (check-exn exn:fail:contract?
@@ -260,12 +265,18 @@
     (define rng (less-than 2))
     (check-true (range-contains? rng 1))
     (check-false (range-contains? rng 2))
-    (check-false (range-contains? rng 3))))
+    (check-false (range-contains? rng 3)))
+
+  (test-case (name-string singleton-range)
+    (define rng (singleton-range 42))
+    (check-true (range-contains? rng 42))
+    (check-false (range-contains? rng 41))
+    (check-false (range-contains? rng 43))))
 
 ;@------------------------------------------------------------------------------
 ;; Contract helpers
 
 (define (default-real<=> v) (if (unsupplied-arg? v) real<=> v))
 
-(define unbounded-range-constructor/c
+(define single-endpoint-range-constructor/c
   (->* (any/c) (#:comparator comparator?) range?))
