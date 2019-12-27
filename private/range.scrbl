@@ -249,3 +249,20 @@ indication of whether the bound is inclusive or exclusive.
    (range-contains? (closed-range 3 7) 10)
    (range-contains? (greater-than "apple" #:comparator string<=>) "banana")
    (range-contains? (greater-than "apple" #:comparator string<=>) "aardvark"))}
+
+@defproc[(range-encloses? [range range?] [other-range range?]) boolean?]{
+ Determines whether or not @racket[range] @tech{encloses} @racket[other-range].
+ One range @deftech{encloses} another range when the first range contains every
+ value contained by the second. Both ranges must use the same @tech{comparator},
+ or else a contract violation is raised. Every range encloses itself, and empty
+ ranges never enclose nonempty ranges.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-encloses? (open-range 2 8) (closed-range 4 6))
+   (range-encloses? (open-range 2 8) (closed-range 2 6))
+   (range-encloses? (open-range 2 8) (at-least 5))
+   (range-encloses? (greater-than 2) (at-least 5))
+   (eval:error
+    (range-encloses? (greater-than 2)
+                     (greater-than "apple" #:comparator string<=>))))}

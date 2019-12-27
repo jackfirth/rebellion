@@ -85,6 +85,17 @@
   [greater-than single-endpoint-range-constructor/c]
   [singleton-range single-endpoint-range-constructor/c]
   [range-contains? (-> range? any/c boolean?)]
+
+  [range-encloses?
+   (->i #:chaperone
+        ([range range?] [other-range range?])
+
+        #:pre/name (range other-range)
+        "both ranges must use the same comparator"
+        (equal? (range-comparator range) (range-comparator other-range))
+
+        [_ boolean?])]
+
   [range-lower-bound (-> range? (or/c range-bound? unbounded?))]
   [range-upper-bound (-> range? (or/c range-bound? unbounded?))]
   [range-comparator (-> range? comparator?)]
@@ -272,6 +283,181 @@
     (check-true (range-contains? rng 42))
     (check-false (range-contains? rng 41))
     (check-false (range-contains? rng 43))))
+
+;@------------------------------------------------------------------------------
+;; Queries
+
+(define (range-encloses? outer inner)
+  (define outer-lower (range-lower-bound outer))
+  (define outer-upper (range-upper-bound outer))
+  (define inner-lower (range-lower-bound inner))
+  (define inner-upper (range-upper-bound inner))
+  (define cmp (range-comparator outer))
+  (define (encloses-lower?)
+    (cond
+      [(unbounded? outer-lower) #t]
+      [(unbounded? inner-lower) #f]
+      [else
+       (define result
+         (compare cmp
+                  (range-bound-endpoint outer-lower)
+                  (range-bound-endpoint inner-lower)))
+       (cond
+         [(equal? result lesser) #t]
+         [(equal? result greater) #f]
+         [else
+          (or (inclusive-bound? outer-lower)
+              (exclusive-bound? inner-lower))])]))
+  (define (encloses-upper?)
+    (cond
+      [(unbounded? outer-upper) #t]
+      [(unbounded? inner-upper) #f]
+      [else
+       (define result
+         (compare cmp
+                  (range-bound-endpoint outer-upper)
+                  (range-bound-endpoint inner-upper)))
+       (cond
+         [(equal? result greater) #t]
+         [(equal? result lesser) #f]
+         [else
+          (or (inclusive-bound? outer-upper)
+              (exclusive-bound? inner-upper))])]))
+  (and (encloses-lower?) (encloses-upper?)))
+
+(module+ test
+  (test-case (name-string range-encloses?)
+
+    (test-case "should raise error on unequal comparators"
+      (define num-range (closed-range 2 9))
+      (define string-range
+        (closed-range "apple" "zebra" #:comparator string<=>))
+      (check-exn exn:fail:contract?
+                 (λ () (range-encloses? num-range string-range))))
+
+    (test-case "closed ranges"
+      (define outer (closed-range 2 9))
+      (check-true (range-encloses? outer outer))
+      (check-true (range-encloses? outer (closed-range 4 6)))
+      (check-true (range-encloses? outer (closed-range 2 6)))
+      (check-true (range-encloses? outer (closed-range 4 9)))
+      (check-true (range-encloses? outer (open-range 2 6)))
+      (check-true (range-encloses? outer (open-range 4 9)))
+      (check-false (range-encloses? outer (closed-range 1 10)))
+      (check-false (range-encloses? outer (closed-range 1 5)))
+      (check-false (range-encloses? outer (closed-range 5 10)))
+      (check-false (range-encloses? outer (open-range 1 5)))
+      (check-false (range-encloses? outer (open-range 5 10)))
+      (check-false (range-encloses? outer (greater-than 5)))
+      (check-false (range-encloses? outer (less-than 5)))
+      (check-false (range-encloses? outer (at-least 5)))
+      (check-false (range-encloses? outer (at-most 5)))
+      (check-true (range-encloses? outer (singleton-range 2)))
+      (check-true (range-encloses? outer (singleton-range 5)))
+      (check-true (range-encloses? outer (singleton-range 9))))
+
+    (test-case "open ranges"
+      (define outer (open-range 2 9))
+      (check-true (range-encloses? outer outer))
+      (check-true (range-encloses? outer (closed-range 4 6)))
+      (check-false (range-encloses? outer (closed-range 2 6)))
+      (check-false (range-encloses? outer (closed-range 4 9)))
+      (check-true (range-encloses? outer (open-range 2 6)))
+      (check-true (range-encloses? outer (open-range 4 9)))
+      (check-false (range-encloses? outer (closed-range 1 10)))
+      (check-false (range-encloses? outer (closed-range 1 5)))
+      (check-false (range-encloses? outer (closed-range 5 10)))
+      (check-false (range-encloses? outer (open-range 1 5)))
+      (check-false (range-encloses? outer (open-range 5 10)))
+      (check-false (range-encloses? outer (greater-than 5)))
+      (check-false (range-encloses? outer (less-than 5)))
+      (check-false (range-encloses? outer (at-least 5)))
+      (check-false (range-encloses? outer (at-most 5)))
+      (check-false (range-encloses? outer (singleton-range 2)))
+      (check-true (range-encloses? outer (singleton-range 5)))
+      (check-false (range-encloses? outer (singleton-range 9))))
+
+    (test-case "closed-open ranges"
+      (define outer (closed-open-range 2 9))
+      (check-true (range-encloses? outer outer))
+      (check-true (range-encloses? outer (closed-range 4 6)))
+      (check-true (range-encloses? outer (closed-range 2 6)))
+      (check-false (range-encloses? outer (closed-range 4 9)))
+      (check-true (range-encloses? outer (open-range 2 6)))
+      (check-true (range-encloses? outer (open-range 4 9)))
+      (check-false (range-encloses? outer (closed-range 1 10)))
+      (check-false (range-encloses? outer (closed-range 1 5)))
+      (check-false (range-encloses? outer (closed-range 5 10)))
+      (check-false (range-encloses? outer (open-range 1 5)))
+      (check-false (range-encloses? outer (open-range 5 10)))
+      (check-false (range-encloses? outer (greater-than 5)))
+      (check-false (range-encloses? outer (less-than 5)))
+      (check-false (range-encloses? outer (at-least 5)))
+      (check-false (range-encloses? outer (at-most 5)))
+      (check-true (range-encloses? outer (singleton-range 2)))
+      (check-true (range-encloses? outer (singleton-range 5)))
+      (check-false (range-encloses? outer (singleton-range 9))))
+
+    (test-case "open-closed ranges"
+      (define outer (open-closed-range 2 9))
+      (check-true (range-encloses? outer outer))
+      (check-true (range-encloses? outer (closed-range 4 6)))
+      (check-false (range-encloses? outer (closed-range 2 6)))
+      (check-true (range-encloses? outer (closed-range 4 9)))
+      (check-true (range-encloses? outer (open-range 2 6)))
+      (check-true (range-encloses? outer (open-range 4 9)))
+      (check-false (range-encloses? outer (closed-range 1 10)))
+      (check-false (range-encloses? outer (closed-range 1 5)))
+      (check-false (range-encloses? outer (closed-range 5 10)))
+      (check-false (range-encloses? outer (open-range 1 5)))
+      (check-false (range-encloses? outer (open-range 5 10)))
+      (check-false (range-encloses? outer (greater-than 5)))
+      (check-false (range-encloses? outer (less-than 5)))
+      (check-false (range-encloses? outer (at-least 5)))
+      (check-false (range-encloses? outer (at-most 5)))
+      (check-false (range-encloses? outer (singleton-range 2)))
+      (check-true (range-encloses? outer (singleton-range 5)))
+      (check-true (range-encloses? outer (singleton-range 9))))
+
+    (test-case "unbounded-above ranges"
+      (define outer (at-least 5))
+      (check-true (range-encloses? outer outer))
+      (check-true (range-encloses? outer (greater-than 5)))
+      (check-true (range-encloses? outer (at-least 9)))
+      (check-false (range-encloses? outer (at-least 2)))
+      (check-true (range-encloses? outer (closed-range 5 9)))
+      (check-true (range-encloses? outer (open-range 5 9)))
+      (check-false (range-encloses? outer (closed-range 2 9)))
+      (check-false (range-encloses? outer (open-range 2 9)))
+      (check-false (range-encloses? outer (at-most 2)))
+      (check-false (range-encloses? outer (at-most 5)))
+      (check-false (range-encloses? outer (at-most 9)))
+      (check-false (range-encloses? outer (less-than 2)))
+      (check-false (range-encloses? outer (less-than 5)))
+      (check-false (range-encloses? outer (less-than 9)))
+      (check-false (range-encloses? outer (singleton-range 2)))
+      (check-true (range-encloses? outer (singleton-range 5)))
+      (check-true (range-encloses? outer (singleton-range 9))))
+
+    (test-case "unbounded-below ranges"
+      (define outer (at-most 5))
+      (check-true (range-encloses? outer outer))
+      (check-true (range-encloses? outer (less-than 5)))
+      (check-true (range-encloses? outer (at-most 2)))
+      (check-false (range-encloses? outer (at-most 9)))
+      (check-true (range-encloses? outer (closed-range 2 5)))
+      (check-true (range-encloses? outer (open-range 2 5)))
+      (check-false (range-encloses? outer (closed-range 2 9)))
+      (check-false (range-encloses? outer (open-range 2 9)))
+      (check-false (range-encloses? outer (at-least 2)))
+      (check-false (range-encloses? outer (at-least 5)))
+      (check-false (range-encloses? outer (at-least 9)))
+      (check-false (range-encloses? outer (greater-than 2)))
+      (check-false (range-encloses? outer (greater-than 5)))
+      (check-false (range-encloses? outer (greater-than 9)))
+      (check-true (range-encloses? outer (singleton-range 2)))
+      (check-true (range-encloses? outer (singleton-range 5)))
+      (check-false (range-encloses? outer (singleton-range 9))))))
 
 ;@------------------------------------------------------------------------------
 ;; Contract helpers
