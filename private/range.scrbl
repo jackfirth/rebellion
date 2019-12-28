@@ -267,6 +267,16 @@ indication of whether the bound is inclusive or exclusive.
     (range-encloses? (greater-than 2)
                      (greater-than "apple" #:comparator string<=>))))}
 
+@defproc[(range-connected? [range1 range?] [range2 range?]) boolean?]{
+ Determines whether or not there exists a (possibly empty) range that is @tech{
+  enclosed} by both @racket[range1] and @racket[range2].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-connected? (closed-range 2 7) (open-range 3 8))
+   (range-connected? (closed-range 2 5) (open-range 5 8))
+   (range-connected? (open-range 2 5) (open-range 5 8)))}
+
 @section{Operations on Ranges}
 
 @defproc[(range-span [range1 range?] [range2 range?]) range?]{

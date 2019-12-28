@@ -96,6 +96,16 @@
 
         [_ boolean?])]
 
+  [range-connected?
+   (->i #:chaperone
+        ([range1 range?] [range2 range?])
+
+        #:pre/name (range1 range2)
+        "both ranges must use the same comparator"
+        (equal? (range-comparator range1) (range-comparator range2))
+
+        [_ boolean?])]
+
   [range-span
    (->i #:chaperone
         ([range1 range?] [range2 range?])
@@ -120,14 +130,16 @@
   [inclusive-bound (-> any/c range-bound?)]
   [exclusive-bound (-> any/c range-bound?)]))
 
-(require rebellion/base/comparator
+(require racket/bool
+         rebellion/base/comparator
+         rebellion/private/static-name
+         rebellion/private/strict-cond
          rebellion/type/singleton
          rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")
-           rackunit
-           rebellion/private/static-name))
+           rackunit))
 
 ;@------------------------------------------------------------------------------
 ;; Data model
@@ -157,33 +169,82 @@
       (inclusive-bound-endpoint bound)
       (exclusive-bound-endpoint bound)))
 
-(define (range lower-bound upper-bound #:comparator [comparator real<=>])
-  (constructor:range lower-bound upper-bound comparator))
+(define-tuple-type upper-cut (value))
+(define-tuple-type middle-cut (value))
+(define-tuple-type lower-cut (value))
+(define-singleton-type top-cut)
+(define-singleton-type bottom-cut)
+
+(define (intermediate-cut-value cut)
+  (strict-cond
+    [(upper-cut? cut) (upper-cut-value cut)]
+    [(middle-cut? cut) (middle-cut-value cut)]
+    [(lower-cut? cut) (lower-cut-value cut)]))
+
+(define (range-lower-cut range)
+  (define bound (range-lower-bound range))
+  (cond
+    [(unbounded? bound) bottom-cut]
+    [(inclusive-bound? bound) (lower-cut (range-bound-endpoint bound))]
+    [else (upper-cut (range-bound-endpoint bound))]))
+
+(define (range-upper-cut range)
+  (define bound (range-upper-bound range))
+  (cond
+    [(unbounded? bound) top-cut]
+    [(inclusive-bound? bound) (upper-cut (range-bound-endpoint bound))]
+    [else (lower-cut (range-bound-endpoint bound))]))
+
+(define (cut->lower-bound cut)
+  (strict-cond
+   [(bottom-cut? cut) unbounded]
+   [(lower-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
+   [(upper-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
+
+(define (cut->upper-bound cut)
+  (strict-cond
+   [(top-cut? cut) unbounded]
+   [(upper-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
+   [(lower-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
+
+(define/name (cut<=> base-comparator)
+  (define (cmp left right)
+    (cond
+      [(and (bottom-cut? left) (bottom-cut? right)) equivalent]
+      [(bottom-cut? left) lesser]
+      [(bottom-cut? right) greater]
+      [(and (top-cut? left) (top-cut? right)) equivalent]
+      [(top-cut? left) greater]
+      [(top-cut? right) lesser]
+      [else
+       (define result
+         (compare base-comparator
+                  (intermediate-cut-value left)
+                  (intermediate-cut-value right)))
+       (cond
+         [(or (equal? result lesser) (equal? result greater)) result]
+         [(and (lower-cut? left) (lower-cut? right)) equivalent]
+         [(lower-cut? left) lesser]
+         [(lower-cut? right) greater]
+         [(and (middle-cut? left) (middle-cut? right)) equivalent]
+         [(middle-cut? left) lesser]
+         [(middle-cut? right) greater]
+         [else equivalent])]))
+  (make-comparator cmp #:name enclosing-function-name))
 
 (define (range-contains? rng v)
-  (define lower (range-lower-bound rng))
-  (define upper (range-upper-bound rng))
-  (define cmp (range-comparator rng))
-  (define within-lower-bound?
-    (cond
-      [(unbounded? lower) #t]
-      [else
-       (define result (compare cmp (range-bound-endpoint lower) v))
-       (if (exclusive-bound? lower)
-           (equal? result lesser)
-           (not (equal? result greater)))]))
-  (define within-upper-bound?
-    (cond
-      [(unbounded? upper) #t]
-      [else
-       (define result (compare cmp v (range-bound-endpoint upper)))
-       (if (exclusive-bound? upper)
-           (equal? result lesser)
-           (not (equal? result greater)))]))
-  (and within-lower-bound? within-upper-bound?))
+  (define lower (range-lower-cut rng))
+  (define upper (range-upper-cut rng))
+  (define cut-v (middle-cut v))
+  (define cmp (cut<=> (range-comparator rng)))
+  (and (equal? (compare cmp lower cut-v) lesser)
+       (equal? (compare cmp cut-v upper) lesser)))
 
 ;@------------------------------------------------------------------------------
 ;; Smart constructors
+
+(define (range lower-bound upper-bound #:comparator [comparator real<=>])
+  (constructor:range lower-bound upper-bound comparator))
 
 (define ((range-factory lower-bound-maker upper-bound-maker)
          lower-endpoint upper-endpoint #:comparator [comparator real<=>])
@@ -298,42 +359,13 @@
 ;; Queries
 
 (define (range-encloses? outer inner)
-  (define outer-lower (range-lower-bound outer))
-  (define outer-upper (range-upper-bound outer))
-  (define inner-lower (range-lower-bound inner))
-  (define inner-upper (range-upper-bound inner))
-  (define cmp (range-comparator outer))
-  (define (encloses-lower?)
-    (cond
-      [(unbounded? outer-lower) #t]
-      [(unbounded? inner-lower) #f]
-      [else
-       (define result
-         (compare cmp
-                  (range-bound-endpoint outer-lower)
-                  (range-bound-endpoint inner-lower)))
-       (cond
-         [(equal? result lesser) #t]
-         [(equal? result greater) #f]
-         [else
-          (or (inclusive-bound? outer-lower)
-              (exclusive-bound? inner-lower))])]))
-  (define (encloses-upper?)
-    (cond
-      [(unbounded? outer-upper) #t]
-      [(unbounded? inner-upper) #f]
-      [else
-       (define result
-         (compare cmp
-                  (range-bound-endpoint outer-upper)
-                  (range-bound-endpoint inner-upper)))
-       (cond
-         [(equal? result greater) #t]
-         [(equal? result lesser) #f]
-         [else
-          (or (inclusive-bound? outer-upper)
-              (exclusive-bound? inner-upper))])]))
-  (and (encloses-lower?) (encloses-upper?)))
+  (define outer-lower (range-lower-cut outer))
+  (define outer-upper (range-upper-cut outer))
+  (define inner-lower (range-lower-cut inner))
+  (define inner-upper (range-upper-cut inner))
+  (define cmp (cut<=> (range-comparator outer)))
+  (nor (equal? (compare cmp outer-lower inner-lower) greater)
+       (equal? (compare cmp outer-upper inner-upper) lesser)))
 
 (module+ test
   (test-case (name-string range-encloses?)
@@ -469,44 +501,46 @@
       (check-true (range-encloses? outer (singleton-range 5)))
       (check-false (range-encloses? outer (singleton-range 9))))))
 
+(define (range-connected? range1 range2)
+  (define cmp (cut<=> (range-comparator range1)))
+  (define lower1 (range-lower-cut range1))
+  (define upper1 (range-upper-cut range1))
+  (define lower2 (range-lower-cut range2))
+  (define upper2 (range-upper-cut range2))
+  (nor (equal? (compare cmp lower1 upper2) greater)
+       (equal? (compare cmp lower2 upper1) greater)))
+
+(module+ test
+  (test-case (name-string range-connected?)
+    (check-true (range-connected? (closed-range 3 6) (closed-range 4 8)))
+    (check-true (range-connected? (closed-range 1 9) (closed-range 4 6)))
+    (check-true (range-connected? (open-range 1 9) (closed-range 1 4)))
+    (check-true (range-connected? (open-range 1 9) (closed-range 4 9)))
+    (check-true (range-connected? (closed-range 1 5) (closed-range 5 9)))
+    (check-true (range-connected? (open-range 1 5) (closed-range 5 9)))
+    (check-true (range-connected? (closed-range 1 5) (open-range 5 9)))
+    (check-false (range-connected? (open-range 1 5) (open-range 5 9)))
+    (check-false (range-connected? (closed-range 1 2) (closed-range 7 8)))
+    (check-false (range-connected? (at-most 2) (at-least 5)))
+    (check-false (range-connected? (less-than 4) (greater-than 4)))
+    (check-true (range-connected? (less-than 4) (at-least 4)))
+    (check-true (range-connected? (at-most 4) (greater-than 4)))
+    (check-true (range-connected? (less-than 5) (greater-than 3)))))
+
 ;@------------------------------------------------------------------------------
 ;; Operations
 
 (define (range-span range1 range2)
-  (define lower1 (range-lower-bound range1))
-  (define upper1 (range-upper-bound range1))
-  (define lower2 (range-lower-bound range2))
-  (define upper2 (range-upper-bound range2))
-  (define cmp (range-comparator range1))
-  (define lower
-    (cond
-      [(or (unbounded? lower1) (unbounded? lower2)) unbounded]
-      [else
-       (define result
-         (compare cmp
-                  (range-bound-endpoint lower1)
-                  (range-bound-endpoint lower2)))
-       (cond
-         [(equal? result lesser) lower1]
-         [(equal? result greater) lower2]
-         [(inclusive-bound? lower1) lower1]
-         [(inclusive-bound? lower2) lower2]
-         [else lower1])]))
-  (define upper
-    (cond
-      [(or (unbounded? upper1) (unbounded? upper2)) unbounded]
-      [else
-       (define result
-         (compare cmp
-                  (range-bound-endpoint upper1)
-                  (range-bound-endpoint upper2)))
-       (cond
-         [(equal? result lesser) upper2]
-         [(equal? result greater) upper1]
-         [(inclusive-bound? upper2) upper2]
-         [(inclusive-bound? upper1) upper1]
-         [else upper2])]))
-  (range lower upper #:comparator cmp))
+  (define lower1 (range-lower-cut range1))
+  (define upper1 (range-upper-cut range1))
+  (define lower2 (range-lower-cut range2))
+  (define upper2 (range-upper-cut range2))
+  (define cmp (cut<=> (range-comparator range1)))
+  (define lower (if (equal? (compare cmp lower1 lower2) greater) lower2 lower1))
+  (define upper (if (equal? (compare cmp upper1 upper2) lesser) upper2 upper1))
+  (range (cut->lower-bound lower)
+         (cut->upper-bound upper)
+         #:comparator (range-comparator range1)))
 
 (module+ test
   (test-case (name-string range-span)
