@@ -238,8 +238,8 @@ indication of whether the bound is inclusive or exclusive.
 
 @section{Querying Ranges}
 
-@defproc[(range-contains? [rng range?] [v any/c]) boolean?]{
- Determines whether or not @racket[v] lies within @racket[rng] by comparing
+@defproc[(range-contains? [range range?] [v any/c]) boolean?]{
+ Determines whether or not @racket[v] lies within @racket[range] by comparing
  @racket[v] to its bounds, using the range's @tech{comparator}.
 
  @(examples
@@ -266,3 +266,16 @@ indication of whether the bound is inclusive or exclusive.
    (eval:error
     (range-encloses? (greater-than 2)
                      (greater-than "apple" #:comparator string<=>))))}
+
+@section{Operations on Ranges}
+
+@defproc[(range-span [range1 range?] [range2 range?]) range?]{
+ Returns the smallest range that @tech{encloses} both @racket[range1] and
+ @racket[range2]. The ranges need not be connected, but they must use the same
+ @tech{comparator}. This operation is commutative, associative, and idempotent.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-span (closed-range 2 5) (open-range 8 9))
+   (range-span (less-than 4) (singleton-range 6))
+   (range-span (open-range 2 8) (at-most 5)))}

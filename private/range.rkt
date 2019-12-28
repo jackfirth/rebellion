@@ -96,6 +96,16 @@
 
         [_ boolean?])]
 
+  [range-span
+   (->i #:chaperone
+        ([range1 range?] [range2 range?])
+
+        #:pre/name (range1 range2)
+        "both ranges must use the same comparator"
+        (equal? (range-comparator range1) (range-comparator range2))
+
+        [_ range?])]
+
   [range-lower-bound (-> range? (or/c range-bound? unbounded?))]
   [range-upper-bound (-> range? (or/c range-bound? unbounded?))]
   [range-comparator (-> range? comparator?)]
@@ -458,6 +468,71 @@
       (check-true (range-encloses? outer (singleton-range 2)))
       (check-true (range-encloses? outer (singleton-range 5)))
       (check-false (range-encloses? outer (singleton-range 9))))))
+
+;@------------------------------------------------------------------------------
+;; Operations
+
+(define (range-span range1 range2)
+  (define lower1 (range-lower-bound range1))
+  (define upper1 (range-upper-bound range1))
+  (define lower2 (range-lower-bound range2))
+  (define upper2 (range-upper-bound range2))
+  (define cmp (range-comparator range1))
+  (define lower
+    (cond
+      [(or (unbounded? lower1) (unbounded? lower2)) unbounded]
+      [else
+       (define result
+         (compare cmp
+                  (range-bound-endpoint lower1)
+                  (range-bound-endpoint lower2)))
+       (cond
+         [(equal? result lesser) lower1]
+         [(equal? result greater) lower2]
+         [(inclusive-bound? lower1) lower1]
+         [(inclusive-bound? lower2) lower2]
+         [else lower1])]))
+  (define upper
+    (cond
+      [(or (unbounded? upper1) (unbounded? upper2)) unbounded]
+      [else
+       (define result
+         (compare cmp
+                  (range-bound-endpoint upper1)
+                  (range-bound-endpoint upper2)))
+       (cond
+         [(equal? result lesser) upper2]
+         [(equal? result greater) upper1]
+         [(inclusive-bound? upper2) upper2]
+         [(inclusive-bound? upper1) upper1]
+         [else upper2])]))
+  (range lower upper #:comparator cmp))
+
+(module+ test
+  (test-case (name-string range-span)
+    (check-exn
+     exn:fail:contract?
+     (λ () (range-span (at-most 7) (at-most "apple" #:comparator string<=>))))
+    (check-equal? (range-span (closed-range 2 4) (open-range 8 16))
+                  (closed-open-range 2 16))
+    (check-equal? (range-span (open-range 3 8) (closed-range 3 5))
+                  (closed-open-range 3 8))
+    (check-equal? (range-span (open-range 2 9) (closed-range 4 6))
+                  (open-range 2 9))
+    (check-equal? (range-span (closed-open-range 2 5) (open-closed-range 7 9))
+                  (closed-range 2 9))
+    (check-equal? (range-span (open-closed-range 2 5) (closed-open-range 7 9))
+                  (open-range 2 9))
+    (check-equal? (range-span (at-least 2) (closed-range 5 6)) (at-least 2))
+    (check-equal? (range-span (at-least 4) (closed-range 3 8)) (at-least 3))
+    (check-equal? (range-span (at-least 4) (open-range 3 8)) (greater-than 3))
+    (check-equal? (range-span (less-than 4) (greater-than 2))
+                  (range unbounded unbounded))
+    (check-equal? (range-span (greater-than 4) (less-than 2))
+                  (range unbounded unbounded))
+    (check-equal? (range-span (less-than 7) (closed-range 2 5)) (less-than 7))
+    (check-equal? (range-span (less-than 7) (open-range 2 7)) (less-than 7))
+    (check-equal? (range-span (less-than 7) (closed-range 2 7)) (at-most 7))))
 
 ;@------------------------------------------------------------------------------
 ;; Contract helpers
