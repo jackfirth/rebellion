@@ -14,3 +14,4 @@
 @include-section[(lib "rebellion/private/variant.scrbl")]
 @include-section[(lib "rebellion/private/equivalence-relation.scrbl")]
 @include-section[(lib "rebellion/private/comparator.scrbl")]
+@include-section[(lib "rebellion/private/range.scrbl")]
