@@ -66,11 +66,11 @@ exactly the same fields.
 
 @subsection{Struct-Based Types and Struct Type Properties}
 
-All types are created using Racket @tech/reference{structure types}, and the created struct types
-can have @tech/reference{structure type properties} attached to them. Each module
-typically provides default structure type properties for the types it creates,
-based on how its types are typically used. These defaults can be freely
-overriden when desired.
+All types are created using Racket @tech/reference{structure types}, and the
+created struct types can have @tech/reference{structure type properties}
+attached to them. Each module typically provides default structure type
+properties for the types it creates, based on how its types are typically used.
+These defaults can be freely overriden when desired.
 
 @subsection{Type Implementations and Generativity}
 
@@ -129,6 +129,7 @@ on or integrate with this library.
 
 @include-section[(lib "rebellion/private/record-type.scrbl")]
 @include-section[(lib "rebellion/private/tuple-type.scrbl")]
+@include-section[(lib "rebellion/private/enum-type.scrbl")]
 @include-section[(lib "rebellion/private/singleton-type.scrbl")]
 @include-section[(lib "rebellion/private/wrapper-type.scrbl")]
 @include-section[(lib "rebellion/private/reference-type.scrbl")]
