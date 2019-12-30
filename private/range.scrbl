@@ -35,8 +35,8 @@ indication of whether the bound is inclusive or exclusive.
    #:eval (make-evaluator) #:once
    (range-lower-bound (closed-range 3 7))
    (range-lower-bound (open-closed-range 3 7))
-   (range-lower-bound (at-least 5))
-   (range-lower-bound (less-than 14)))}
+   (range-lower-bound (at-least-range 5))
+   (range-lower-bound (less-than-range 14)))}
 
 @defproc[(range-upper-bound [rng range?]) (or/c range-bound? unbounded?)]{
  Returns the upper bound of @racket[rng], or @racket[unbounded] if @racket[rng]
@@ -46,8 +46,8 @@ indication of whether the bound is inclusive or exclusive.
    #:eval (make-evaluator) #:once
    (range-upper-bound (closed-range 3 7))
    (range-upper-bound (open-closed-range 3 7))
-   (range-upper-bound (at-least 5))
-   (range-upper-bound (less-than 14)))}
+   (range-upper-bound (at-least-range 5))
+   (range-upper-bound (less-than-range 14)))}
 
 @defproc[(range-comparator [rng range?]) comparator?]{
  Returns the @tech{comparator} that @racket[rng] uses to compare values to its
@@ -203,8 +203,8 @@ indication of whether the bound is inclusive or exclusive.
  lower-endpoint] and an inclusive upper bound of @racket[upper-endpoint]. Values
  are compared using @racket[comparator].}
 
-@defproc[(at-least [lower-endpoint any/c]
-                   [#:comparator comparator comparator? real<=>])
+@defproc[(at-least-range [lower-endpoint any/c]
+                         [#:comparator comparator comparator? real<=>])
          range?]{
  Constructs an unbounded-above @tech{range} with an inclusive lower bound of
  @racket[lower-endpoint]. The constructed range includes every value that is
@@ -213,13 +213,13 @@ indication of whether the bound is inclusive or exclusive.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (at-least 14)
-   (range-contains? (at-least 14) 5)
-   (range-contains? (at-least 14) 14)
-   (range-contains? (at-least 14) 87))}
+   (at-least-range 14)
+   (range-contains? (at-least-range 14) 5)
+   (range-contains? (at-least-range 14) 14)
+   (range-contains? (at-least-range 14) 87))}
 
-@defproc[(at-most [upper-endpoint any/c]
-                  [#:comparator comparator comparator? real<=>])
+@defproc[(at-most-range [upper-endpoint any/c]
+                        [#:comparator comparator comparator? real<=>])
          range?]{
  Constructs an unbounded-below @tech{range} with an inclusive upper bound of
  @racket[upper-endpoint]. The constructed range includes every value that is
@@ -228,13 +228,13 @@ indication of whether the bound is inclusive or exclusive.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (at-most 14)
-   (range-contains? (at-most 14) 5)
-   (range-contains? (at-most 14) 14)
-   (range-contains? (at-most 14) 87))}
+   (at-most-range 14)
+   (range-contains? (at-most-range 14) 5)
+   (range-contains? (at-most-range 14) 14)
+   (range-contains? (at-most-range 14) 87))}
 
-@defproc[(greater-than [lower-endpoint any/c]
-                       [#:comparator comparator comparator? real<=>])
+@defproc[(greater-than-range [lower-endpoint any/c]
+                             [#:comparator comparator comparator? real<=>])
          range?]{
  Constructs an unbounded-above @tech{range} with an exclusive lower bound of
  @racket[lower-endpoint]. The constructed range includes every value that is
@@ -242,13 +242,13 @@ indication of whether the bound is inclusive or exclusive.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (greater-than 14)
-   (range-contains? (greater-than 14) 5)
-   (range-contains? (greater-than 14) 14)
-   (range-contains? (greater-than 14) 87))}
+   (greater-than-range 14)
+   (range-contains? (greater-than-range 14) 5)
+   (range-contains? (greater-than-range 14) 14)
+   (range-contains? (greater-than-range 14) 87))}
 
-@defproc[(less-than [upper-endpoint any/c]
-                    [#:comparator comparator comparator? real<=>])
+@defproc[(less-than-range [upper-endpoint any/c]
+                          [#:comparator comparator comparator? real<=>])
          range?]{
  Constructs an unbounded-below @tech{range} with an exclusive upper bound of
  @racket[upper-endpoint]. The constructed range includes every value that is
@@ -256,10 +256,10 @@ indication of whether the bound is inclusive or exclusive.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (less-than 14)
-   (range-contains? (less-than 14) 5)
-   (range-contains? (less-than 14) 14)
-   (range-contains? (less-than 14) 87))}
+   (less-than-range 14)
+   (range-contains? (less-than-range 14) 5)
+   (range-contains? (less-than-range 14) 14)
+   (range-contains? (less-than-range 14) 87))}
 
 @defproc[(singleton-range [endpoint any/c]
                           [#:comparator comparator comparator? real<=>])
@@ -285,8 +285,10 @@ indication of whether the bound is inclusive or exclusive.
    (range-contains? (closed-range 3 7) 5)
    (range-contains? (closed-range 3 7) 7)
    (range-contains? (closed-range 3 7) 10)
-   (range-contains? (greater-than "apple" #:comparator string<=>) "banana")
-   (range-contains? (greater-than "apple" #:comparator string<=>) "aardvark"))}
+   (range-contains? (greater-than-range "apple" #:comparator string<=>)
+                    "banana")
+   (range-contains? (greater-than-range "apple" #:comparator string<=>)
+                    "aardvark"))}
 
 @defproc[(range-encloses? [range range?] [other-range range?]) boolean?]{
  Determines whether or not @racket[range] @tech{encloses} @racket[other-range].
@@ -299,11 +301,11 @@ indication of whether the bound is inclusive or exclusive.
    #:eval (make-evaluator) #:once
    (range-encloses? (open-range 2 8) (closed-range 4 6))
    (range-encloses? (open-range 2 8) (closed-range 2 6))
-   (range-encloses? (open-range 2 8) (at-least 5))
-   (range-encloses? (greater-than 2) (at-least 5))
+   (range-encloses? (open-range 2 8) (at-least-range 5))
+   (range-encloses? (greater-than-range 2) (at-least-range 5))
    (eval:error
-    (range-encloses? (greater-than 2)
-                     (greater-than "apple" #:comparator string<=>))))}
+    (range-encloses? (greater-than-range 2)
+                     (greater-than-range "apple" #:comparator string<=>))))}
 
 @defproc[(range-connected? [range1 range?] [range2 range?]) boolean?]{
  Determines whether or not there exists a (possibly empty) range that is @tech{
@@ -325,5 +327,5 @@ indication of whether the bound is inclusive or exclusive.
  @(examples
    #:eval (make-evaluator) #:once
    (range-span (closed-range 2 5) (open-range 8 9))
-   (range-span (less-than 4) (singleton-range 6))
-   (range-span (open-range 2 8) (at-most 5)))}
+   (range-span (less-than-range 4) (singleton-range 6))
+   (range-span (open-range 2 8) (at-most-range 5)))}
