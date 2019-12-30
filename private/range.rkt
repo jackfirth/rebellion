@@ -14,7 +14,7 @@
 
         #:pre/name (lower-bound upper-bound cmp)
         "lower endpoint must be less than or equal to upper endpoint"
-        (cond
+        (strict-cond
           [(unbounded? lower-bound) #t]
           [(unbounded? upper-bound) #t]
           [else
@@ -125,6 +125,7 @@
   [inclusive range-bound-type?]
   [exclusive range-bound-type?]
   [range-bound? predicate/c]
+  [range-bound (-> any/c range-bound-type? range-bound?)]
   [range-bound-endpoint (-> range-bound? any/c)]
   [range-bound-type (-> range-bound? range-bound-type?)]
   [inclusive-bound (-> any/c range-bound?)]
@@ -134,6 +135,7 @@
          rebellion/base/comparator
          rebellion/private/static-name
          rebellion/private/strict-cond
+         rebellion/type/enum
          rebellion/type/singleton
          rebellion/type/tuple)
 
@@ -149,8 +151,7 @@
 
 (define-singleton-type unbounded)
 
-(define-singleton-type inclusive)
-(define-singleton-type exclusive)
+(define-enum-type range-bound-type (inclusive exclusive))
 
 (define-tuple-type inclusive-bound (endpoint))
 (define-tuple-type exclusive-bound (endpoint))
@@ -158,8 +159,10 @@
 (define (range-bound? v)
   (or (inclusive-bound? v) (exclusive-bound? v)))
 
-(define (range-bound-type? v)
-  (or (inclusive? v) (exclusive? v)))
+(define (range-bound endpoint type)
+  (strict-cond
+    [(equal? type inclusive) (inclusive-bound endpoint)]
+    [else (exclusive-bound endpoint)]))
 
 (define (range-bound-type bound)
   (if (inclusive-bound? bound) inclusive exclusive))
@@ -183,33 +186,33 @@
 
 (define (range-lower-cut range)
   (define bound (range-lower-bound range))
-  (cond
+  (strict-cond
     [(unbounded? bound) bottom-cut]
     [(inclusive-bound? bound) (lower-cut (range-bound-endpoint bound))]
     [else (upper-cut (range-bound-endpoint bound))]))
 
 (define (range-upper-cut range)
   (define bound (range-upper-bound range))
-  (cond
+  (strict-cond
     [(unbounded? bound) top-cut]
     [(inclusive-bound? bound) (upper-cut (range-bound-endpoint bound))]
     [else (lower-cut (range-bound-endpoint bound))]))
 
 (define (cut->lower-bound cut)
   (strict-cond
-   [(bottom-cut? cut) unbounded]
-   [(lower-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
-   [(upper-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
+    [(bottom-cut? cut) unbounded]
+    [(lower-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
+    [(upper-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
 
 (define (cut->upper-bound cut)
   (strict-cond
-   [(top-cut? cut) unbounded]
-   [(upper-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
-   [(lower-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
+    [(top-cut? cut) unbounded]
+    [(upper-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
+    [(lower-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
 
 (define/name (cut<=> base-comparator)
   (define (cmp left right)
-    (cond
+    (strict-cond
       [(and (bottom-cut? left) (bottom-cut? right)) equivalent]
       [(bottom-cut? left) lesser]
       [(bottom-cut? right) greater]
@@ -221,7 +224,7 @@
          (compare base-comparator
                   (intermediate-cut-value left)
                   (intermediate-cut-value right)))
-       (cond
+       (strict-cond
          [(or (equal? result lesser) (equal? result greater)) result]
          [(and (lower-cut? left) (lower-cut? right)) equivalent]
          [(lower-cut? left) lesser]
