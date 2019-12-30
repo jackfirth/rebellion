@@ -51,7 +51,12 @@ indication of whether the bound is inclusive or exclusive.
 
 @defproc[(range-comparator [rng range?]) comparator?]{
  Returns the @tech{comparator} that @racket[rng] uses to compare values to its
- bounds.}
+ bounds.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-comparator (closed-range 3 7))
+   (range-comparator (open-range "apple" "orange" #:comparator string<=>)))}
 
 @defproc[(unbounded? [v any/c]) boolean?]{
  A predicate for the @tech{unbounded} range endpoint constant.}
@@ -64,19 +69,52 @@ indication of whether the bound is inclusive or exclusive.
  A predicate for @tech{range} bounds, which contain an endpoint value and are
  either inclusive or exclusive.}
 
+@defproc[(range-bound [endpoint any/c] [type range-bound-type?]) range-bound?]{
+ Constructs a range bound containing @racket[endpoint] and of type @racket[
+ type]. See also the @racket[inclusive-bound] and @racket[exclusive-bound]
+ constructors, which are shorthands for when the bound type is already known.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-bound 5 inclusive)
+   (range-bound "banana" exclusive))}
+
 @defproc[(range-bound-endpoint [bound range-bound?]) any/c]{
- Returns the endpoint value in @racket[bound].}
+ Returns the endpoint value in @racket[bound].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-bound-endpoint (inclusive-bound 5))
+   (range-bound-endpoint (exclusive-bound "banana")))}
 
 @defproc[(range-bound-type [bound range-bound?]) range-bound-type?]{
- Returns the type (inclusive or exclusive) of @racket[bound].}
+ Returns the type (inclusive or exclusive) of @racket[bound].
 
-@defproc[(inclusive-bound [v any/c]) range-bound?]{
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-bound-type (inclusive-bound 5))
+   (range-bound-type (exclusive-bound "banana")))}
+
+@defproc[(inclusive-bound [endpoint any/c]) range-bound?]{
  Constructs an @deftech{inclusive} @tech{range} bound, which includes values
- equal to @racket[v]. An inclusive bound is also called a closed bound.}
+ equal to @racket[endpoint]. An inclusive bound is also called a closed bound.
 
-@defproc[(exclusive-bound [v any/c]) range-bound?]{
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define bound (inclusive-bound 5))
+   (range-bound-endpoint bound)
+   (range-bound-type bound))}
+
+@defproc[(exclusive-bound [endpoint any/c]) range-bound?]{
  Constructs an @deftech{exclusive} @tech{range} bound, which does not include
- values equal to @racket[v]. An exclusive bound is also called an open bound.}
+ values equal to @racket[endpoint]. An exclusive bound is also called an open
+ bound.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (define bound (exclusive-bound "banana"))
+   (range-bound-endpoint bound)
+   (range-bound-type bound))}
 
 @defproc[(range-bound-type? [v any/c]) boolean?]{
  A predicate for the two constants @racket[inclusive] and @racket[exclusive].}
