@@ -274,6 +274,43 @@ indication of whether the bound is inclusive or exclusive.
    (range-contains? (singleton-range 42) 41)
    (range-contains? (singleton-range 42) 43))}
 
+@defproc[(unbounded-range [#:comparator comparator comparator? real<=>])
+         range?]{
+ Constructs an unbounded @tech{range} that contains all values, provided they
+ are acceptable inputs for @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (unbounded-range #:comparator string<=>)
+   (range-contains? (unbounded-range #:comparator string<=>) "apple")
+   (range-contains? (unbounded-range #:comparator string<=>) "zebra"))}
+
+@defproc[(unbounded-above-range [lower-bound range-bound?]
+                                [#:comparator comparator comparator? real<=>])
+         range?]{
+ Constructs an unbounded-above @tech{range} that contains all values greater
+ than @racket[lower-bound], according to @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (unbounded-above-range (inclusive-bound 5))
+   (range-contains? (unbounded-above-range (inclusive-bound 5)) 3)
+   (range-contains? (unbounded-above-range (inclusive-bound 5)) 5)
+   (range-contains? (unbounded-above-range (inclusive-bound 5)) 8))}
+
+@defproc[(unbounded-below-range [lower-bound range-bound?]
+                                [#:comparator comparator comparator? real<=>])
+         range?]{
+ Constructs an unbounded-below @tech{range} that contains all values smaller
+ than @racket[lower-bound], according to @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (unbounded-below-range (exclusive-bound 5))
+   (range-contains? (unbounded-below-range (exclusive-bound 5)) 3)
+   (range-contains? (unbounded-below-range (exclusive-bound 5)) 5)
+   (range-contains? (unbounded-below-range (exclusive-bound 5)) 8))}
+
 @section{Querying Ranges}
 
 @defproc[(range-contains? [range range?] [v any/c]) boolean?]{

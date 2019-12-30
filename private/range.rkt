@@ -84,6 +84,9 @@
   [less-than-range single-endpoint-range-constructor/c]
   [greater-than-range single-endpoint-range-constructor/c]
   [singleton-range single-endpoint-range-constructor/c]
+  [unbounded-range (->* () (#:comparator comparator?) range?)]
+  [unbounded-above-range (->* (range-bound?) (#:comparator comparator?) range?)]
+  [unbounded-below-range (->* (range-bound?) (#:comparator comparator?) range?)]
   [range-contains? (-> range? any/c boolean?)]
 
   [range-encloses?
@@ -275,6 +278,15 @@
   (define bound (inclusive-bound endpoint))
   (range bound bound #:comparator comparator))
 
+(define (unbounded-range #:comparator [comparator real<=>])
+  (range unbounded unbounded #:comparator comparator))
+
+(define (unbounded-above-range lower-bound #:comparator [comparator real<=>])
+  (range lower-bound unbounded #:comparator comparator))
+
+(define (unbounded-below-range upper-bound #:comparator [comparator real<=>])
+  (range unbounded upper-bound #:comparator comparator))
+
 (module+ test
   (test-case (name-string range)
     (check-exn exn:fail:contract?
@@ -356,7 +368,25 @@
     (define rng (singleton-range 42))
     (check-true (range-contains? rng 42))
     (check-false (range-contains? rng 41))
-    (check-false (range-contains? rng 43))))
+    (check-false (range-contains? rng 43)))
+
+  (test-case (name-string unbounded-range)
+    (define rng (unbounded-range))
+    (check-true (range-contains? rng -100))
+    (check-true (range-contains? rng 0))
+    (check-true (range-contains? rng 100)))
+
+  (test-case (name-string unbounded-above-range)
+    (define rng (unbounded-above-range (inclusive-bound 0)))
+    (check-false (range-contains? rng -100))
+    (check-true (range-contains? rng 0))
+    (check-true (range-contains? rng 100)))
+
+  (test-case (name-string unbounded-below-range)
+    (define rng (unbounded-below-range (inclusive-bound 0)))
+    (check-true (range-contains? rng -100))
+    (check-true (range-contains? rng 0))
+    (check-false (range-contains? rng 100))))
 
 ;@------------------------------------------------------------------------------
 ;; Queries
