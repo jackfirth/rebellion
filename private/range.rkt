@@ -5,6 +5,15 @@
 (provide
  (contract-out
   [range? predicate/c]
+  [bounded-range? predicate/c]
+  [bounded-below-range? predicate/c]
+  [bounded-above-range? predicate/c]
+  [unbounded-range? predicate/c]
+  [unbounded-below-range? predicate/c]
+  [unbounded-above-range? predicate/c]
+  [singleton-range? predicate/c]
+  [empty-range? predicate/c]
+  [nonempty-range? predicate/c]
 
   [range
    (->i #:chaperone
@@ -41,7 +50,7 @@
         "lower endpoint must be less than or equal to upper endpoint"
         (not (equal? (compare (default-real<=> cmp) lower upper) greater))
 
-        [_ range?])]
+        [_ bounded-range?])]
 
   [open-range
    (->i #:chaperone
@@ -53,7 +62,7 @@
         "lower endpoint must be less than upper endpoint"
         (equal? (compare (default-real<=> cmp) lower upper) lesser)
 
-        [_ range?])]
+        [_ bounded-range?])]
 
   [closed-open-range
    (->i #:chaperone
@@ -65,7 +74,7 @@
         "lower endpoint must be less than or equal to upper endpoint"
         (not (equal? (compare (default-real<=> cmp) lower upper) greater))
 
-        [_ range?])]
+        [_ bounded-range?])]
 
   [open-closed-range
    (->i #:chaperone
@@ -77,16 +86,27 @@
         "lower endpoint must be less than or equal to upper endpoint"
         (not (equal? (compare (default-real<=> cmp) lower upper) greater))
 
-        [_ range?])]
+        [_ bounded-range?])]
 
-  [at-least-range single-endpoint-range-constructor/c]
-  [at-most-range single-endpoint-range-constructor/c]
-  [less-than-range single-endpoint-range-constructor/c]
-  [greater-than-range single-endpoint-range-constructor/c]
-  [singleton-range single-endpoint-range-constructor/c]
-  [unbounded-range (->* () (#:comparator comparator?) range?)]
-  [unbounded-above-range (->* (range-bound?) (#:comparator comparator?) range?)]
-  [unbounded-below-range (->* (range-bound?) (#:comparator comparator?) range?)]
+  [at-least-range
+   (single-endpoint-range-constructor/c
+    (and/c unbounded-above-range? bounded-below-range?))]
+  [at-most-range
+   (single-endpoint-range-constructor/c
+    (and/c unbounded-below-range? bounded-above-range?))]
+  [less-than-range
+   (single-endpoint-range-constructor/c
+    (and/c unbounded-below-range? bounded-above-range?))]
+  [greater-than-range
+   (single-endpoint-range-constructor/c
+    (and/c unbounded-above-range? bounded-below-range?))]
+  [singleton-range
+   (single-endpoint-range-constructor/c (and/c bounded-range? nonempty-range?))]
+  [unbounded-range (->* () (#:comparator comparator?) unbounded-range?)]
+  [unbounded-above-range
+   (->* (range-bound?) (#:comparator comparator?) unbounded-above-range?)]
+  [unbounded-below-range
+   (->* (range-bound?) (#:comparator comparator?) unbounded-below-range?)]
   [range-contains? (-> range? any/c boolean?)]
 
   [range-encloses?
@@ -121,6 +141,8 @@
 
   [range-lower-bound (-> range? (or/c range-bound? unbounded?))]
   [range-upper-bound (-> range? (or/c range-bound? unbounded?))]
+  [range-lower-endpoint (-> bounded-below-range? any/c)]
+  [range-upper-endpoint (-> bounded-above-range? any/c)]
   [range-comparator (-> range? comparator?)]
   [unbounded? predicate/c]
   [unbounded unbounded?]
@@ -174,6 +196,12 @@
   (if (inclusive-bound? bound)
       (inclusive-bound-endpoint bound)
       (exclusive-bound-endpoint bound)))
+
+(define (range-lower-endpoint range)
+  (range-bound-endpoint (range-lower-bound range)))
+
+(define (range-upper-endpoint range)
+  (range-bound-endpoint (range-upper-bound range)))
 
 (define-tuple-type upper-cut (value))
 (define-tuple-type middle-cut (value))
@@ -390,6 +418,56 @@
 
 ;@------------------------------------------------------------------------------
 ;; Queries
+
+(define (bounded-range? range)
+  (and (range? range)
+       (nor (unbounded? (range-lower-bound range))
+            (unbounded? (range-upper-bound range)))))
+
+(define (bounded-below-range? range)
+  (and (range? range) (not (unbounded? (range-lower-bound range)))))
+
+(define (bounded-above-range? range)
+  (and (range? range) (not (unbounded? (range-upper-bound range)))))
+
+(define (unbounded-range? range)
+  (and (range? range)
+       (or (unbounded? (range-lower-bound range))
+           (unbounded? (range-upper-bound range)))))
+
+(define (unbounded-below-range? range)
+  (and (range? range)
+       (unbounded? (range-lower-bound range))))
+
+(define (unbounded-above-range? range)
+  (and (range? range)
+       (unbounded? (range-upper-bound range))))
+
+(define (singleton-range? range)
+  (and (bounded-range? range)
+       (equal? (range-lower-endpoint range)
+               (range-upper-endpoint range))
+       (and (inclusive-bound? (range-lower-bound range))
+            (inclusive-bound? (range-upper-bound range)))))
+
+(define (empty-range? range)
+  (and (bounded-range? range)
+       (equal? (range-lower-endpoint range)
+               (range-upper-endpoint range))
+       (xor (inclusive-bound? (range-lower-bound range))
+            (inclusive-bound? (range-upper-bound range)))))
+
+(define (nonempty-range? range)
+  (cond
+    [(range? range) #t]
+    [else
+     (define lower (range-lower-bound range))
+     (define upper (range-upper-bound range))
+     (or (unbounded? lower)
+         (unbounded? upper)
+         (and (inclusive-bound? lower) (inclusive-bound? upper))
+         (not (equal? (range-bound-endpoint lower)
+                      (range-bound-endpoint upper))))]))
 
 (define (range-encloses? outer inner)
   (define outer-lower (range-lower-cut outer))
@@ -615,5 +693,5 @@
 
 (define (default-real<=> v) (if (unsupplied-arg? v) real<=> v))
 
-(define single-endpoint-range-constructor/c
-  (->* (any/c) (#:comparator comparator?) range?))
+(define (single-endpoint-range-constructor/c range-subtype)
+  (->* (any/c) (#:comparator comparator?) range-subtype))
