@@ -76,7 +76,7 @@
         (cons prop:custom-write custom-write)))
 
 (define-record-type association-list (backing-hash size)
-  #:constructor-name constructor:association-list
+  #:omit-root-binding
   #:property-maker make-association-list-properties)
 
 (define (association-list . entries)

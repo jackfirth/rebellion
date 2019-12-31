@@ -66,7 +66,7 @@
 
 (define-record-type multiset (size frequencies unique-elements)
   #:property-maker make-multiset-props
-  #:constructor-name constructor:multiset)
+  #:omit-root-binding)
 
 (define empty-hash (hash))
 (define empty-set (set))

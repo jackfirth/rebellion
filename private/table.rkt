@@ -75,7 +75,7 @@
         (cons prop:equal+hash (default-record-equal+hash descriptor))))
 
 (define-record-type table (backing-column-vectors size)
-  #:constructor-name constructor:table
+  #:omit-root-binding
   #:property-maker make-table-properties)
 
 (define-syntax (columns stx)

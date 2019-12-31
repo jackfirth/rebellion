@@ -24,7 +24,7 @@
 
 (define-record-type wrapper-type
   (name predicate-name constructor-name accessor-name)
-  #:constructor-name constructor:wrapper-type)
+  #:omit-root-binding)
 
 (define (wrapper-type
          name
