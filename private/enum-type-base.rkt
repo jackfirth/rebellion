@@ -28,7 +28,7 @@
 
 (define-tuple-type enum-type
   (name cases predicate-name discriminator-name selector-name)
-  #:constructor-name constructor:enum-type)
+  #:omit-root-binding)
 
 (define (enum-type name fields
                    #:predicate-name [predicate-name* #f]

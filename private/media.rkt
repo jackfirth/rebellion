@@ -57,7 +57,7 @@
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type media-type (top-level tree subtype suffix parameters)
-  #:constructor-name constructor:media-type
+  #:omit-root-binding
   #:property-maker make-media-type-properties)
 
 (define (media-type top-level subtype

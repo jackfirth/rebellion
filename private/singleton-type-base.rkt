@@ -16,8 +16,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-tuple-type singleton-type (name predicate-name)
-  #:constructor-name constructor:singleton-type)
+(define-tuple-type singleton-type (name predicate-name) #:omit-root-binding)
 
 (define (singleton-type name #:predicate-name [pred-name #f])
   (constructor:singleton-type name pred-name))

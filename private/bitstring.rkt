@@ -64,7 +64,7 @@
         (cons prop:sequence sequence-impl)))
 
 (define-tuple-type bitstring (bytes padding)
-  #:constructor-name plain-bitstring
+  #:omit-root-binding
   #:property-maker make-bitstring-properties)
 
 (define (bitstring . bits)
@@ -99,7 +99,7 @@
   ;; merely contributes to memory pressure.
   (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
 
-  (plain-bitstring padded-bytes padding-size))
+  (constructor:bitstring padded-bytes padding-size))
 
 (define (in-bitstring bits)
   (for/stream ([i (in-range (bitstring-size bits))])
@@ -110,7 +110,7 @@
 (define (bitstring->padded-bytes bits) (bitstring-bytes bits))
 
 (define (bytes->bitstring bytes #:padding [padding 0])
-  (cond [(zero? padding) (plain-bitstring bytes 0)]
+  (cond [(zero? padding) (constructor:bitstring bytes 0)]
         [else
          (define size (bytes-length bytes))
          (define last-pos (sub1 size))
@@ -121,7 +121,7 @@
          (define padded-last-byte (byte-clear-rightmost-bits last-byte padding))
          (bytes-set! mutable-padded-bytes last-pos padded-last-byte)
          (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
-         (plain-bitstring padded-bytes padding)]))
+         (constructor:bitstring padded-bytes padding)]))
 
 (module+ test
   (test-case (name-string bitstring)

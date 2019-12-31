@@ -35,7 +35,7 @@
 
 (define-tuple-type initialized-singleton-descriptor
   (type instance predicate)
-  #:constructor-name constructor:initialized-singleton-descriptor
+  #:omit-root-binding
   #:property-maker make-singleton-properties)
 
 (define (initialized-singleton-descriptor #:type type
@@ -45,7 +45,7 @@
 
 (define-tuple-type uninitialized-singleton-descriptor
   (type predicate)
-  #:constructor-name constructor:uninitialized-singleton-descriptor
+  #:omit-root-binding
   #:property-maker make-singleton-properties)
 
 (define (uninitialized-singleton-descriptor #:type type #:predicate predicate)

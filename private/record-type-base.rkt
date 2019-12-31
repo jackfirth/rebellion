@@ -25,7 +25,7 @@
 
 (define-tuple-type record-type
   (name fields predicate-name constructor-name accessor-name)
-  #:constructor-name constructor:record-type)
+  #:omit-root-binding)
 
 (define (record-type name fields
                      #:predicate-name [predicate-name* #f]
