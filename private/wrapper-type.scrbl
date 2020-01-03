@@ -3,10 +3,12 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/contract/region
+                     racket/match
                      rebellion/base/symbol
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/wrapper)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 
@@ -14,6 +16,7 @@
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/contract/base
                    'racket/contract/region
+                   'racket/match
                    'rebellion/type/wrapper)
     #:private (list 'racket/base)))
 
@@ -43,19 +46,27 @@ distinguished.
 
 @defform[
  (define-wrapper-type id option ...)
- #:grammar ([option (code:line #:constructor-name constructor-id)
-             (code:line #:accessor-name accessor-id)
-             (code:line #:predicate-name predicate-id)
-             (code:line #:property-maker prop-maker-expr)])
- #:contracts ([prop-maker-expr
-               (-> uninitialized-wrapper-descriptor?
-                   (listof (cons/c struct-type-property? any/c)))])]{
+
+ #:grammar
+ ([option
+   #:omit-root-binding
+   (code:line #:constructor-name constructor-id)
+   (code:line #:accessor-name accessor-id)
+   (code:line #:predicate-name predicate-id)
+   (code:line #:pattern-name pattern-id)
+   (code:line #:property-maker prop-maker-expr)])
+
+ #:contracts
+ ([prop-maker-expr
+   (-> uninitialized-wrapper-descriptor?
+       (listof (cons/c struct-type-property? any/c)))])]{
  Creates a new @tech{wrapper type} named @racket[id] and binds the following
  identifiers:
 
  @itemlist[
- @item{@racket[constructor-id], which defaults to @racket[id] --- a constructor
-   function that wraps a value and returns an instance of the created type.}
+ @item{@racket[constructor-id], which defaults to @racketidfont{
+    constructor:}@racket[id] --- a constructor function that wraps a value and
+   returns an instance of the created type.}
 
  @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
    a predicate function that returns @racket[#t] when given instances of the
@@ -63,14 +74,26 @@ distinguished.
 
  @item{@racket[accessor-id], which defaults to @racket[id]@racketidfont{-value}
    --- an accessor function that unwraps instances of the created type and
-   returns their underlying value.}]
+   returns their underlying value.}
+
+ @item{@racket[pattern-id], which defaults to @racketidfont{pattern:}@racket[id]
+   --- a @tech/reference{match expander} that unwraps instances of the created
+   type and matches their contents against a subpattern.}]
+
+ Additionally, unless @racket[#:omit-root-binding] is specified, the original
+ @racket[id] is bound to @racket[pattern-id] when used in match patterns and to
+ @racket[constructor-id] when used as an expression. Use @racket[
+ #:omit-root-binding] when you want control over what @racket[id] is bound to,
+ such as when creating a smart constructor.
 
  @(examples
    #:eval (make-evaluator) #:once
    (define-wrapper-type seconds)
    (seconds 10)
    (seconds-value (seconds 25))
-   (seconds? (seconds 10)))}
+   (seconds? (seconds 10))
+   (match-define (seconds (? even? x)) (seconds 10))
+   (eval:error (match-define (seconds (? even? x)) (seconds 25))))}
 
 @defproc[(wrapper-type? [v any/c]) boolean?]
 
