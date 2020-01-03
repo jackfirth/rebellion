@@ -29,11 +29,10 @@
 ;@------------------------------------------------------------------------------
 
 ;; TODO: handle the "type" parameter
-(define-tuple-type octet-stream (bytes padding)
-  #:constructor-name plain-octet-stream)
+(define-tuple-type octet-stream (bytes padding) #:omit-root-binding)
 
 (define (octet-stream bytes #:padding [padding 0])
-  (plain-octet-stream bytes padding))
+  (constructor:octet-stream bytes padding))
 
 (define (octet-stream->bitstring octets)
   (bytes->bitstring (octet-stream-bytes octets)

@@ -2,16 +2,19 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/match
                      racket/math
                      rebellion/collection/keyset
                      rebellion/type/record
                      rebellion/type/struct)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/examples)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/type/record)
+    #:public (list 'racket/match
+                   'rebellion/type/record)
     #:private (list 'racket/base)))
 
 @title{Record Types}
@@ -37,22 +40,29 @@ obvious order to those pieces.
   add-42
   (opcode-name add-42))
 
-@defform[(define-record-type id (field-id ...) option ...)
-         #:grammar ([option
-                     (code:line #:constructor-name constructor-id)
-                     (code:line #:predicate-name predicate-id)
-                     (code:line #:property-maker prop-maker-expr)])
-         #:contracts
-         ([prop-maker-expr
-           (-> uninitialized-record-descriptor?
-               (listof (cons/c struct-type-property? any/c)))])]{
+@defform[
+ (define-record-type id (field-id ...) option ...)
+
+ #:grammar
+ ([option
+   #:omit-root-binding
+   (code:line #:constructor-name constructor-id)
+   (code:line #:predicate-name predicate-id)
+   (code:line #:pattern-name pattern-id)
+   (code:line #:property-maker prop-maker-expr)])
+ 
+ #:contracts
+ ([prop-maker-expr
+   (-> uninitialized-record-descriptor?
+       (listof (cons/c struct-type-property? any/c)))])]{
  Creates a new @tech{record type} named @racket[id] and binds the following
  identifiers:
 
  @itemlist[
- @item{@racket[constructor-id], which defaults to @racket[id] --- a constructor
-   function that accepts one mandatory keyword argument for each @racket[
- field-id] and returns an instance of the created type.}
+ @item{@racket[constructor-id], which defaults to @racketidfont{
+    constructor:}@racket[id] --- a constructor function that accepts one
+   mandatory keyword argument for each @racket[field-id] and returns an instance
+   of the created type.}
 
  @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
    a predicate function that returns @racket[#t] when given instances of the
@@ -60,7 +70,19 @@ obvious order to those pieces.
 
  @item{@racket[id]@racketidfont{-}@racket[field-id] for each @racket[field-id]
    --- an accessor function that returns the value for @racket[field-id] when
-   given an instance of the created type.}]
+   given an instance of the created type.}
+
+ @item{@racket[pattern-id], which defaults to @racketidfont{pattern:}@racket[id]
+   --- a @tech/reference{match expander} that accepts one optional keyword and
+   subpattern pair for each field and deconstructs instances of the created
+   type, matching each field with its corresponding subpattern (if a subpattern
+   for that field is given).}]
+
+ Additionally, unless @racket[#:omit-root-binding] is specified, the original
+ @racket[id] is bound to @racket[pattern-id] when used in match patterns and to
+ @racket[constructor-id] when used as an expression. Use @racket[
+ #:omit-root-binding] when you want control over what @racket[id] is bound to,
+ such as when creating a smart constructor.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -71,7 +93,10 @@ obvious order to those pieces.
    (color? yellow)
    (color-red yellow)
    (color-green yellow)
-   (color-blue yellow))}
+   (color-blue yellow)
+   (match yellow
+     [(color #:red r #:blue b)
+      (list r b)]))}
 
 @defproc[(record-type? [v any/c]) boolean?]{
  A predicate for @tech{record types}.}
@@ -120,7 +145,8 @@ obvious order to those pieces.
 @defproc[(default-record-properties [descriptor record-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
 
-@defproc[(default-record-equal+hash [descriptor record-descriptor?]) equal+hash/c]
+@defproc[(default-record-equal+hash [descriptor record-descriptor?])
+         equal+hash/c]
 
 @defproc[(default-record-custom-write [descriptor record-descriptor?])
          custom-write-function/c]

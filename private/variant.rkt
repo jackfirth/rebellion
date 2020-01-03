@@ -36,7 +36,7 @@
         (cons prop:equal+hash (default-tuple-equal+hash descriptor))))
 
 (define-tuple-type variant (tag value)
-  #:constructor-name constructor:variant
+  #:omit-root-binding
   #:property-maker make-variant-properties)
 
 (define (variant-keyword-function kws kw-args)

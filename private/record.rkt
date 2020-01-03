@@ -56,11 +56,11 @@
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type record (keywords values)
-  #:constructor-name internal-record-constructor
+  #:omit-root-binding
   #:property-maker make-record-properties)
 
 (define (record-keyword-procedure kws vs)
-  (internal-record-constructor (list->keyset kws) (list->immutable-vector vs)))
+  (constructor:record (list->keyset kws) (list->immutable-vector vs)))
 
 (define record
   (procedure-reduce-keyword-arity
@@ -129,7 +129,7 @@
   (define kws (record-keywords rec))
   (define vs (record-values rec))
   (define mapped-vs (immutable-vector-map f vs))
-  (internal-record-constructor kws mapped-vs))
+  (constructor:record kws mapped-vs))
 
 (define (build-record builder keys)
   (define vs
@@ -137,7 +137,7 @@
      (for/vector #:length (keyset-size keys)
        ([kw (in-keyset keys)])
        (builder kw))))
-  (internal-record-constructor keys vs))
+  (constructor:record keys vs))
 
 (define (record-contains-key? rec kw)
   (keyset-contains? (record-keywords rec) kw))
@@ -186,7 +186,7 @@
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type record-field (name value)
-  #:constructor-name constructor:record-field
+  #:omit-root-binding
   #:property-maker make-record-field-properties)
 
 (define (record-field-keyword-function kws kw-args)

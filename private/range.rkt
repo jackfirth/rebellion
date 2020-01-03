@@ -172,7 +172,7 @@
 ;; Data model
 
 (define-tuple-type range (lower-bound upper-bound comparator)
-  #:constructor-name constructor:range)
+  #:omit-root-binding)
 
 (define-singleton-type unbounded)
 

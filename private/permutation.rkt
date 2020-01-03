@@ -46,7 +46,7 @@
         (cons prop:custom-write custom-write)))
 
 (define-tuple-type permutation (vector)
-  #:constructor-name permutation-constructor
+  #:omit-root-binding
   #:property-maker make-permutation-properties)
 
 (define (permutation-size/c expected-size)
@@ -70,7 +70,7 @@
   #:fail-when (check-position-bounds #'(position ...) size)
   (format "position out of bounds for permutation of size ~a" size)
   #:fail-when (check-duplicate-position #'(position ...)) "duplicate position"
-  (permutation-constructor (vector-immutable position ...)))
+  (constructor:permutation (vector-immutable position ...)))
 
 (define-simple-macro (cyclic-permutation position:nat ...+)
   #:do [(define positions
@@ -87,7 +87,7 @@
           (define next-pos (vector-ref positions-vec j))
           (vector-set! vec next-pos pos))]
   #:with vec #`(quote #,(vector->immutable-vector vec))
-  (permutation-constructor vec))
+  (constructor:permutation vec))
 
 (define empty-permutation (permutation))
 

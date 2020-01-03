@@ -30,7 +30,7 @@
 
 (define-record-type reference-type
   (name fields object-name-field constructor-name predicate-name accessor-name)
-  #:constructor-name constructor:reference-type)
+  #:omit-root-binding)
 
 (define (reference-type name fields
                         #:object-name-field [name-field

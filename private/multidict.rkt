@@ -106,7 +106,7 @@
 
 ;@------------------------------------------------------------------------------
 (define-record-type multidict (size backing-hash inverted-hash keys values)
-  #:constructor-name constructor:multidict
+  #:omit-root-binding
   #:property-maker make-multidict-properties)
 
 (define (in-multidict-entries dict) dict)

@@ -34,7 +34,7 @@
 
 (define-tuple-type web-graph (links)
   #:property-maker property-maker
-  #:constructor-name constructor:web-graph)
+  #:omit-root-binding)
 
 (define (web-graph . links)
   (constructor:web-graph links))
