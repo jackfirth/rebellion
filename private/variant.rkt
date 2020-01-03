@@ -2,17 +2,21 @@
 
 (require racket/contract/base)
 
+(provide variant)
+
 (provide
  (contract-out
-  [variant (unconstrained-domain-> variant?)]
   [variant? (-> any/c boolean?)]
   [variant-value (-> variant? any/c)]
   [variant-tag (-> variant? keyword?)]
   [variant-tagged-as? (-> variant? keyword? boolean?)]))
 
-(require racket/list
+(require (for-syntax racket/base
+                     syntax/parse)
+         racket/list
+         racket/match
          racket/struct
-         rebellion/base/generative-token
+         rebellion/private/static-name
          rebellion/type/tuple)
 
 (module+ test
@@ -26,12 +30,12 @@
   (define accessor (tuple-descriptor-accessor descriptor))
   (define custom-write
     (make-constructor-style-printer
-      (λ (this) type-name)
-      (λ (this)
-        (define tag (accessor this 0))
-        (define value (accessor this 1))
-        (define tag-str (string-append "#:" (keyword->string tag)))
-        (list (unquoted-printing-string tag-str) value))))
+     (λ (this) type-name)
+     (λ (this)
+       (define tag (accessor this 0))
+       (define value (accessor this 1))
+       (define tag-str (string-append "#:" (keyword->string tag)))
+       (list (unquoted-printing-string tag-str) value))))
   (list (cons prop:custom-write custom-write)
         (cons prop:equal+hash (default-tuple-equal+hash descriptor))))
 
@@ -49,23 +53,40 @@
     (raise-arguments-error 'variant "no arguments given"))
   (constructor:variant (first kws) (first kw-args)))
 
-(define variant
+(define unchecked:variant
   (procedure-reduce-keyword-arity
    (make-keyword-procedure variant-keyword-function)
    0
    empty
    #f))
 
-(module+ test
-  (define var (variant #:success 42))
-  (check-equal? (variant-tag var) '#:success)
-  (check-equal? (variant-value var) 42)
-  (check-equal? var (variant #:success 42)))
+(define-module-boundary-contract contracted:variant unchecked:variant
+  (unconstrained-domain-> variant?)
+  #:name-for-blame variant)
+
+(define-match-expander variant
+  (syntax-parser
+    [(_ tag:keyword value-pattern)
+     #'(? variant?
+          (app variant-tag 'tag)
+          (app variant-value value-pattern))])
+  (make-rename-transformer #'contracted:variant))
 
 (define (variant-tagged-as? var tag-keyword)
   (equal? (variant-tag var) tag-keyword))
 
 (module+ test
-  (test-case "variant-tagged-as?"
+  (test-case "basic variant construction"
+    (define var (variant #:success 42))
+    (check-equal? (variant-tag var) '#:success)
+    (check-equal? (variant-value var) 42)
+    (check-equal? var (variant #:success 42)))
+
+  (test-case "variant pattern matching"
+    (check-match (variant #:success 42) (variant #:success 42))
+    (check-match (variant #:success 42) (not (variant #:success 0)))
+    (check-match (variant #:success 42) (not (variant #:failure _))))
+
+  (test-case (name-string variant-tagged-as?)
     (check-true (variant-tagged-as? (variant #:success 42) '#:success))
     (check-false (variant-tagged-as? (variant #:failure "oh no") '#:success))))
