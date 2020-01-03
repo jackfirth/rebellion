@@ -164,9 +164,9 @@ represent a single logical thing, and there is an obvious order to those pieces.
        (listof (cons/c struct-type-property? any/c)))
    default-tuple-properties])
  initialized-tuple-descriptor?]{
- Implements @racket[type] and returns a @tech{tuple type descriptor} for the
- new implementation. The @racket[guard] and @racket[inspector] arguments behave
- the same as the corresponding arguments of @racket[make-struct-type], although
+ Implements @racket[type] and returns a @tech{type descriptor} for the new
+ implementation. The @racket[guard] and @racket[inspector] arguments behave the
+ same as the corresponding arguments of @racket[make-struct-type], although
  there are no transparent or prefab tuple types. The @racket[prop-maker]
  argument is similar to the corresponding argument of @racket[
  make-struct-implementation]. By default, tuple types are created with
