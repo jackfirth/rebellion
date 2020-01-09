@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/match
                      racket/sequence
                      rebellion/base/option
                      rebellion/streaming/transducer)
@@ -11,7 +12,8 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/base/option)
+    #:public (list 'racket/match
+                   'rebellion/base/option)
     #:private (list 'racket/base)))
 
 @title{Option Values}
@@ -40,7 +42,15 @@ function, and absent values are represented by the @racket[absent] constant.
  A predicate for @tech{present} values. Implies @racket[option?].}
 
 @defproc[(present [v any/c]) present?]{
- Constructs a @tech{present} value containing @racket[v].}
+ Constructs a @tech{present} value containing @racket[v]. Additionally, can be
+ used as a @tech/reference{match expander} to match @tech{present} values and
+ unwrap them.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (match (present 42)
+     [(present x) (add1 x)]
+     [(== absent) 0]))}
 
 @defproc[(present-value [pres present?]) any/c]{
  Returns the value wrapped by @racket[pres].}
