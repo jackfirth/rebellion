@@ -2,9 +2,10 @@
 
 (require racket/contract/base)
 
+(provide entry)
+
 (provide
  (contract-out
-  [entry (-> any/c any/c entry?)]
   [entry? (-> any/c boolean?)]
   [entry-key (-> entry? any/c)]
   [entry-value (-> entry? any/c)]
@@ -26,6 +27,7 @@
          rebellion/base/variant
          rebellion/collection/list
          rebellion/private/static-name
+         rebellion/private/total-match
          rebellion/streaming/reducer
          rebellion/streaming/transducer
          rebellion/type/record
@@ -33,6 +35,7 @@
 
 (module+ test
   (require (submod "..")
+           racket/match
            rackunit
            rebellion/base/option))
 
@@ -45,10 +48,10 @@
    (λ (element) (entry (key-function element) (value-function element)))))
 
 (define (mapping-keys key-function)
-  (mapping (λ (e) (entry (key-function (entry-key e)) (entry-value e)))))
+  (mapping (λ/match ((entry k v)) (entry (key-function k) v))))
 
 (define (mapping-values value-function)
-  (mapping (λ (e) (entry (entry-key e) (value-function (entry-value e))))))
+  (mapping (λ/match ((entry k v)) (entry k (value-function v)))))
 
 (define (indexing key-function) (bisecting key-function values))
 
@@ -60,18 +63,18 @@
 
 (define (append-mapping-keys key-sequence-maker)
   (append-mapping
-   (λ (e)
-     (define v (entry-value e))
-     (sequence-map (λ (k) (entry k v)) (key-sequence-maker (entry-key e))))))
+   (λ/match ((entry k v))
+     (sequence-map (λ (k) (entry k v)) (key-sequence-maker k)))))
 
 (define (append-mapping-values value-sequence-maker)
   (append-mapping
-   (λ (e)
-     (define k (entry-key e))
-     (sequence-map (λ (v) (entry k v))
-                   (value-sequence-maker (entry-value e))))))
+   (λ/match ((entry k v))
+     (sequence-map (λ (v) (entry k v)) (value-sequence-maker v)))))
 
 (module+ test
+  (test-case "entry pattern matching"
+    (check-match (entry 'a 42) (entry _ _)))
+
   (test-case "bisecting"
     (check-equal? (transduce (list "the" "quick" "brown" "fox")
                              (bisecting string->symbol string-length)
@@ -249,9 +252,8 @@
   (make-transducer
    #:starter (λ () (variant #:consume (make-empty-groups)))
    #:consumer
-   (λ (g e)
-     (define next
-       (groups-insert g (entry-key e) (entry-value e) #:reducer value-reducer))
+   (λ/match (g (entry k v))
+     (define next (groups-insert g k v #:reducer value-reducer))
      (cond
        [(groups? next) (variant #:consume next)]
        [else (variant #:emit next)]))
