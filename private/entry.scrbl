@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/match
                      racket/sequence
                      racket/set
                      rebellion/collection/entry
@@ -11,12 +12,14 @@
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer
                      rebellion/type/record)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'racket/set
+    #:public (list 'racket/match
+                   'racket/set
                    'rebellion/collection/entry
                    'rebellion/collection/hash
                    'rebellion/collection/multidict
@@ -45,7 +48,15 @@ than a collection of @racket[pair?] values.
  @(examples
    #:eval (make-evaluator) #:once
    (entry "apple" 'red)
-   (entry "banana" 'yellow))}
+   (entry "banana" 'yellow))
+
+ Additionally, @racket[entry] can be used as a @tech/reference{match expander}
+ with @racket[match].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (match (entry "apple" 'red)
+     [(entry k v) (entry v k)]))}
 
 @defproc[(entry-key [e entry?]) any/c]{
  Returns the key of @racket[e].
