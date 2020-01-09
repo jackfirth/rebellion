@@ -2,6 +2,8 @@
 
 (require racket/contract/base)
 
+(provide result)
+
 (provide
  (contract-out
   [result? predicate/c]
@@ -19,7 +21,9 @@
 
 (require racket/contract/combinator
          rebellion/private/contract-projection
-         rebellion/type/tuple)
+         rebellion/private/static-name
+         rebellion/type/tuple
+         syntax/parse/define)
 
 (module+ test
   (require (submod "..")
@@ -31,6 +35,11 @@
 (define-tuple-type failure (error))
 
 (define (result? v) (or (success? v) (failure? v)))
+
+(define-simple-macro (result body:expr ...+) (call/result (λ () body ...)))
+
+(define (call/result thunk)
+  (with-handlers ([(λ (_) #t) failure]) (success (thunk))))
 
 (define (result-case result #:success success-handler #:failure failure-handler)
   (if (success? result)
@@ -91,6 +100,12 @@
   (projection-convert underlying-projection failure-error failure))
 
 (module+ test
+  (test-case (name-string result)
+    (check-equal? (result (+ 1 2)) (success 3))
+    (check-equal? (result (define foo 1) (define bar 2) (+ foo bar))
+                  (success 3))
+    (check-equal? (result (raise "kaboom!")) (failure "kaboom!")))
+  
   (test-case "result/c"
     (check-not-exn
      (λ () (invariant-assertion (result/c number? string?) (success 42))))

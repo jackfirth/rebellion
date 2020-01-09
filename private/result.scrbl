@@ -28,6 +28,32 @@ value.
 @defproc[(result? [v any/c]) boolean?]{
  A predicate for @tech{result} values.}
 
+@defform[(result body ...+)]{
+ Evaluates each @racket[body] form and returns the result of the last @racket[
+ body], wrapped as a @racket[success] result. Definitions within the @racket[
+ body] forms are locally scoped and aren't visible outside the @racket[result]
+ expression. The last @racket[body] must be an expression that produces exactly
+ one value.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (result
+    (define foo 1)
+    (define bar 2)
+    (+ foo bar)))
+
+ If any @racket[body] form raises an error, that error is wrapped as a @racket[
+ failure] result and returned. Any remaining @racket[body] forms are not
+ evaluated.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (result
+    (define foo 1)
+    (raise "oh no!")
+    (define bar 2)
+    (+ foo bar)))}
+
 @defproc[(result-case [result result?]
                       [#:success success-handler (-> any/c any/c)]
                       [#:failure failure-handler (-> any/c any/c)])
