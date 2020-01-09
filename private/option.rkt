@@ -2,6 +2,8 @@
 
 (require racket/contract/base)
 
+(provide present)
+
 (provide
  (contract-out
   [option? predicate/c]
@@ -12,7 +14,6 @@
   [option-flat-map (-> option? (-> any/c option?) option?)]
   [option-get (-> option? any/c any/c)]
   [in-option (-> option? (sequence/c any/c))]
-  [present (-> any/c present?)]
   [present? predicate/c]
   [present-value (-> present? any/c)]
   [absent absent?]
@@ -21,6 +22,7 @@
   [present/c (-> chaperone-contract? chaperone-contract?)]))
 
 (require racket/contract/combinator
+         racket/match
          racket/sequence
          rebellion/private/contract-projection
          rebellion/type/singleton
@@ -38,24 +40,23 @@
 (define (option? v) (or (absent? v) (present? v)))
 
 (define (option-case opt #:present present-handler #:absent absent-handler)
-  (if (present? opt) (present-handler (present-value opt)) (absent-handler)))
+  (match opt [(present v) (present-handler v)] [_ (absent-handler)]))
 
 (define (option-map opt f)
-  (if (present? opt) (present (f (present-value opt))) absent))
+  (match opt [(present v) (present (f v))] [_ absent]))
 
 (define (option-filter opt pred)
-  (if (and (present? opt) (pred (present-value opt))) opt absent))
+  (match opt [(present (? pred)) opt] [_ absent]))
 
-(define (option-flat-map opt f)
-  (if (present? opt) (f (present-value opt)) absent))
-
-(define (option-get opt default)
-  (if (present? opt) (present-value opt) default))
-
-(define (in-option opt)
-  (if (present? opt) (list (present-value opt)) '()))
+(define (option-flat-map opt f) (match opt [(present v) (f v)] [_ absent]))
+(define (option-get opt default) (match opt [(present v) v] [_ default]))
+(define (in-option opt) (match opt [(present v) (list v)] [_ '()]))
 
 (module+ test
+  (test-case "pattern matching"
+    (check-match (present 42) (present _))
+    (check-match absent (== absent)))
+  
   (test-case "option-map"
     (check-equal? (option-map (present 2) add1) (present 3))
     (check-equal? (option-map absent add1) absent))
