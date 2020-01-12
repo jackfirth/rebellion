@@ -21,7 +21,6 @@
   [tuple-descriptor-accessor (-> tuple-descriptor? (-> any/c natural? any/c))]
   [tuple-descriptor-constructor (-> tuple-descriptor? procedure?)]
   [tuple-descriptor-predicate (-> tuple-descriptor? (-> any/c boolean?))]
-  [tuple-descriptor-struct-type (-> initialized-tuple-descriptor? struct-type?)]
   [tuple-descriptor-type (-> tuple-descriptor? tuple-type?)]
   [make-tuple-implementation
    (->* (tuple-type?)
@@ -31,7 +30,14 @@
          (-> uninitialized-tuple-descriptor?
              (listof (cons/c struct-type-property? any/c))))
         initialized-tuple-descriptor?)]
-  [uninitialized-tuple-descriptor? (-> any/c boolean?)]))
+  [uninitialized-tuple-descriptor? (-> any/c boolean?)]
+  [tuple-impersonate
+   (->i #:chaperone
+        ([instance (descriptor) (tuple-descriptor-predicate descriptor)]
+         [descriptor initialized-tuple-descriptor?])
+        (#:properties [properties impersonator-property-hash/c]
+         #:chaperone? [chaperone? boolean?])
+        [_ (descriptor) (tuple-descriptor-predicate descriptor)])]))
 
 (require racket/math
          racket/struct
@@ -39,6 +45,7 @@
          rebellion/custom-write
          rebellion/equal+hash
          rebellion/equal+hash/struct
+         rebellion/private/impersonation
          rebellion/private/struct-definition-util
          rebellion/type/tuple/base
          rebellion/type/struct)
@@ -87,7 +94,7 @@
   (keyset #:type #:predicate #:constructor #:accessor))
 
 (define fields:initialized-tuple-descriptor
-  (keyset #:type #:predicate #:constructor #:accessor #:struct-type))
+  (keyset #:type #:predicate #:constructor #:accessor #:backing-struct-type))
 
 (define descriptor:uninitialized-tuple-descriptor
   (make-struct-implementation
@@ -127,7 +134,7 @@
   (struct-descriptor-constructor descriptor:initialized-tuple-descriptor))
 
 (define (initialized-tuple-descriptor #:type type
-                                      #:struct-type struct-type
+                                      #:backing-struct-type struct-type
                                       #:predicate predicate
                                       #:constructor constructor
                                       #:accessor accessor)
@@ -135,7 +142,7 @@
    type predicate constructor accessor struct-type))
 
 (define-struct-field-accessors initialized-tuple-descriptor
-  (type predicate constructor accessor struct-type)
+  (type predicate constructor accessor backing-struct-type)
   #:descriptor descriptor:initialized-tuple-descriptor)
 
 ;@------------------------------------------------------------------------------
@@ -153,9 +160,6 @@
   (tuple-descriptor-case descriptor
                          #:initialized initialized-tuple-descriptor-type
                          #:uninitialized uninitialized-tuple-descriptor-type))
-
-(define (tuple-descriptor-struct-type descriptor)
-  (uninitialized-tuple-descriptor-type descriptor))
 
 (define (tuple-descriptor-predicate descriptor)
   (tuple-descriptor-case
@@ -208,7 +212,7 @@
      #:property-maker struct-prop-maker))
   (initialized-tuple-descriptor
    #:type type
-   #:struct-type (struct-descriptor-type descriptor)
+   #:backing-struct-type (struct-descriptor-type descriptor)
    #:predicate (get-predicate descriptor)
    #:constructor (get-constructor descriptor)
    #:accessor (get-accessor descriptor)))
@@ -220,6 +224,15 @@
   (define field-name (or field-name* (string->symbol (format "field~a" pos))))
   (define field-accessor-name (string->symbol (format "~a-~a" name field-name)))
   (procedure-rename (λ (this) (accessor this pos)) field-accessor-name))
+
+(define (tuple-impersonate instance descriptor
+                           #:properties [props (hash)]
+                           #:chaperone? [chaperone? #t])
+  (define struct-type
+    (initialized-tuple-descriptor-backing-struct-type descriptor))
+  (struct-impersonate instance struct-type
+                      #:properties props
+                      #:chaperone? chaperone?))
 
 (module+ test
   (test-case "make-tuple-implementation"

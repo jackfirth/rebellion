@@ -103,6 +103,8 @@ represent a single logical thing, and there is an obvious order to those pieces.
    (point-y (point 42 0))
    (match-define (point (? positive? x) (? negative? y)) (point 3 -3)))}
 
+@section{Tuple Type Information}
+
 @defproc[(tuple-type? [v any/c]) boolean?]{
  A predicate for @tech{tuple types}.}
 
@@ -131,6 +133,8 @@ represent a single logical thing, and there is an obvious order to those pieces.
  @defproc[(tuple-type-accessor-name [type tuple-type?]) symbol?]]]{
  Accessors for the various fields of a @tech{tuple type}.}
 
+@section{Tuple Type Descriptors}
+
 @defproc[(tuple-descriptor? [v any/c]) boolean?]{
  A predicate for @tech{type descriptors} of @tech{tuple types}.}
 
@@ -153,6 +157,8 @@ represent a single logical thing, and there is an obvious order to those pieces.
  @defproc[(tuple-descriptor-accessor [descriptor tuple-descriptor?])
           (-> (tuple-descriptor-predicate descriptor) natural? any/c)]]]{
  Accessors for the various fields of a tuple @tech{type descriptor}.}
+
+@section{Dynamically Implementing Tuple Types}
 
 @defproc[
  (make-tuple-implementation
@@ -238,3 +244,18 @@ represent a single logical thing, and there is an obvious order to those pieces.
    (point 1 2)
    (parameterize ([pretty-print-columns 10])
      (pretty-print (point 100000000000000 200000000000000))))}
+
+@section{Tuple Chaperones and Impersonators}
+
+@defproc[(tuple-impersonate
+          [instance (tuple-descriptor-predicate descriptor)]
+          [descriptor initialized-tuple-descriptor?]
+          [#:properties props
+           (hash/c impersonator-property? any/c #:immutable #t)
+           empty-hash]
+          [#:chaperone? chaperone? boolean? #t])
+         (tuple-descriptor-predicate descriptor)]{
+ Returns an @tech/reference{impersonator} of @racket[instance] with each
+ @tech/reference{impersonator property} in @racket[props] attached to it. If
+ @racket[chaperone?] is true (the default), the returned impersonator is a
+ @tech/reference{chaperone}.}
