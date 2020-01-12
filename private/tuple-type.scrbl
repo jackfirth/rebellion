@@ -7,6 +7,7 @@
                      racket/math
                      racket/pretty
                      racket/struct
+                     rebellion/base/symbol
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/tuple
@@ -109,11 +110,11 @@ represent a single logical thing, and there is an obvious order to those pieces.
  A predicate for @tech{tuple types}.}
 
 @defproc[
- (tuple-type [name symbol?]
+ (tuple-type [name interned-symbol?]
              [size natural?]
-             [#:predicate-name predicate-name (or/c symbol? #f) #f]
-             [#:constructor-name constructor-name (or/c symbol? #f) #f]
-             [#:accessor-name accessor-name (or/c symbol? #f) #f])
+             [#:predicate-name predicate-name (or/c interned-symbol? #f) #f]
+             [#:constructor-name constructor-name (or/c interned-symbol? #f) #f]
+             [#:accessor-name accessor-name (or/c interned-symbol? #f) #f])
  tuple-type?]{
  Constructs a @tech{tuple type} of size @racket[size] and named @racket[name].
  The optional @racket[predicate-name], @racket[constructor-name], and @racket[
@@ -126,11 +127,11 @@ represent a single logical thing, and there is an obvious order to those pieces.
  make-tuple-implementation].}
 
 @deftogether[[
- @defproc[(tuple-type-name [type tuple-type?]) symbol?]
+ @defproc[(tuple-type-name [type tuple-type?]) interned-symbol?]
  @defproc[(tuple-type-size [type tuple-type?]) natural?]
- @defproc[(tuple-type-predicate-name [type tuple-type?]) symbol?]
- @defproc[(tuple-type-constructor-name [type tuple-type?]) symbol?]
- @defproc[(tuple-type-accessor-name [type tuple-type?]) symbol?]]]{
+ @defproc[(tuple-type-predicate-name [type tuple-type?]) interned-symbol?]
+ @defproc[(tuple-type-constructor-name [type tuple-type?]) interned-symbol?]
+ @defproc[(tuple-type-accessor-name [type tuple-type?]) interned-symbol?]]]{
  Accessors for the various fields of a @tech{tuple type}.}
 
 @section{Tuple Type Descriptors}
@@ -193,7 +194,7 @@ represent a single logical thing, and there is an obvious order to those pieces.
 @defproc[
  (make-tuple-field-accessor [descriptor tuple-descriptor?]
                             [pos natural?]
-                            [name (or/c symbol? #f)
+                            [name (or/c interned-symbol? #f)
                              (symbol->string (format "field~a" pos))])
  (-> (tuple-descriptor-predicate descriptor) any/c)]{
  Builds a field accessor function that returns the @racket[pos] field of
@@ -250,12 +251,12 @@ represent a single logical thing, and there is an obvious order to those pieces.
 @defproc[(tuple-impersonate
           [instance (tuple-descriptor-predicate descriptor)]
           [descriptor initialized-tuple-descriptor?]
-          [#:properties props
+          [#:properties properties
            (hash/c impersonator-property? any/c #:immutable #t)
            empty-hash]
           [#:chaperone? chaperone? boolean? #t])
          (tuple-descriptor-predicate descriptor)]{
  Returns an @tech/reference{impersonator} of @racket[instance] with each
- @tech/reference{impersonator property} in @racket[props] attached to it. If
- @racket[chaperone?] is true (the default), the returned impersonator is a
+ @tech/reference{impersonator property} in @racket[properties] attached to it.
+ If @racket[chaperone?] is true (the default), the returned impersonator is a
  @tech/reference{chaperone}.}
