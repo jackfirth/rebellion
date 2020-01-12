@@ -7,10 +7,31 @@
                      rebellion/collection/keyset
                      rebellion/custom-write
                      rebellion/equal+hash
-                     rebellion/type/reference))
+                     rebellion/type/reference)
+          (submod rebellion/private/scribble-cross-document-tech doc))
 
 @title{Reference Types}
 @defmodule[rebellion/type/reference]
+
+@defform[(define-reference-type id (field-id ...) option ...)
+         #:grammar
+         ([option field-option naming-option property-option]
+          [field-option
+           (code:line)
+           (code:line #:object-name-field name-field-id)]
+          [naming-option
+           (code:line #:predicate-name predicate-id)
+           (code:line #:constructor-name constructor-id)
+           (code:line #:accessor-name accessor-id)
+           (code:line #:descriptor-name descriptor-id)]
+          [property-option
+           (code:line)
+           (code:line #:property-maker prop-maker-expr)])
+         #:contracts
+         ([prop-maker-expr (-> uninitialized-reference-descriptor?
+                               (listof (cons/c struct-type-property? any/c)))])]
+
+@section{Reference Type Information}
 
 @defproc[(reference-type? [v any/c]) boolean?]
 
@@ -23,32 +44,6 @@
           [#:predicate-name predicate-name (or/c interned-symbol? #f) #f]
           [#:accessor-name accessor-name (or/c interned-symbol? #f) #f])
          reference-type?]
-
-@defform[(define-reference-type id (field-id ...) option ...)
-         #:grammar
-         ([option field-option naming-option property-option]
-          [field-option
-           (code:line)
-           (code:line #:object-name-field name-field-id)]
-          [naming-option
-           (code:line #:predicate-name predicate-id)
-           (code:line #:constructor-name constructor-id)
-           (code:line #:accessor-name accessor-id)]
-          [property-option
-           (code:line)
-           (code:line #:property-maker prop-maker-expr)])
-         #:contracts
-         ([prop-maker-expr (-> uninitialized-reference-descriptor?
-                               (listof (cons/c struct-type-property? any/c)))])]
-
-@defproc[(make-reference-implementation
-          [type reference-type?]
-          [#:property-maker prop-maker
-           (-> uninitialized-reference-descriptor?
-               (listof (cons/c struct-type-property? any/c)))
-           default-reference-properties]
-          [#:inspector inspector inspector? (current-inspector)])
-         initialized-reference-descriptor?]
 
 @defproc[(reference-type-name [type reference-type?]) interned-symbol?]
 @defproc[(reference-type-fields [type reference-type?]) keyset?]
@@ -82,7 +77,16 @@
 @defproc[(reference-descriptor-accessor [descriptor reference-descriptor?])
          (-> (reference-descriptor-predicate descriptor) natural? any/c)]
 
-@section{Reference Type Properties}
+@section{Dynamically Implementing Reference Types}
+
+@defproc[(make-reference-implementation
+          [type reference-type?]
+          [#:property-maker prop-maker
+           (-> uninitialized-reference-descriptor?
+               (listof (cons/c struct-type-property? any/c)))
+           default-reference-properties]
+          [#:inspector inspector inspector? (current-inspector)])
+         initialized-reference-descriptor?]
 
 @defproc[(default-reference-properties [descriptor reference-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
@@ -96,3 +100,18 @@
 
 @defproc[(default-reference-object-name [descriptor reference-descriptor?])
          natural?]
+
+@section{Reference Type Chaperones and Impersonators}
+
+@defproc[(reference-impersonate
+          [instance (reference-descriptor-predicate descriptor)]
+          [descriptor initialized-reference-descriptor?]
+          [#:properties properties
+           (hash/c impersonator-property? any/c #:immutable #t)
+           empty-hash]
+          [#:chaperone? chaperone? boolean? #t])
+         (reference-descriptor-predicate descriptor)]{
+ Returns an @tech/reference{impersonator} of @racket[instance] with each
+ @tech/reference{impersonator property} in @racket[properties] attached to it.
+ If @racket[chaperone?] is true (the default), the returned impersonator is a
+ @tech/reference{chaperone}.}

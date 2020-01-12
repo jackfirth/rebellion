@@ -7,6 +7,7 @@
                      racket/math
                      racket/pretty
                      racket/struct
+                     rebellion/base/symbol
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/tuple
@@ -103,15 +104,17 @@ represent a single logical thing, and there is an obvious order to those pieces.
    (point-y (point 42 0))
    (match-define (point (? positive? x) (? negative? y)) (point 3 -3)))}
 
+@section{Tuple Type Information}
+
 @defproc[(tuple-type? [v any/c]) boolean?]{
  A predicate for @tech{tuple types}.}
 
 @defproc[
- (tuple-type [name symbol?]
+ (tuple-type [name interned-symbol?]
              [size natural?]
-             [#:predicate-name predicate-name (or/c symbol? #f) #f]
-             [#:constructor-name constructor-name (or/c symbol? #f) #f]
-             [#:accessor-name accessor-name (or/c symbol? #f) #f])
+             [#:predicate-name predicate-name (or/c interned-symbol? #f) #f]
+             [#:constructor-name constructor-name (or/c interned-symbol? #f) #f]
+             [#:accessor-name accessor-name (or/c interned-symbol? #f) #f])
  tuple-type?]{
  Constructs a @tech{tuple type} of size @racket[size] and named @racket[name].
  The optional @racket[predicate-name], @racket[constructor-name], and @racket[
@@ -124,12 +127,14 @@ represent a single logical thing, and there is an obvious order to those pieces.
  make-tuple-implementation].}
 
 @deftogether[[
- @defproc[(tuple-type-name [type tuple-type?]) symbol?]
+ @defproc[(tuple-type-name [type tuple-type?]) interned-symbol?]
  @defproc[(tuple-type-size [type tuple-type?]) natural?]
- @defproc[(tuple-type-predicate-name [type tuple-type?]) symbol?]
- @defproc[(tuple-type-constructor-name [type tuple-type?]) symbol?]
- @defproc[(tuple-type-accessor-name [type tuple-type?]) symbol?]]]{
+ @defproc[(tuple-type-predicate-name [type tuple-type?]) interned-symbol?]
+ @defproc[(tuple-type-constructor-name [type tuple-type?]) interned-symbol?]
+ @defproc[(tuple-type-accessor-name [type tuple-type?]) interned-symbol?]]]{
  Accessors for the various fields of a @tech{tuple type}.}
+
+@section{Tuple Type Descriptors}
 
 @defproc[(tuple-descriptor? [v any/c]) boolean?]{
  A predicate for @tech{type descriptors} of @tech{tuple types}.}
@@ -153,6 +158,8 @@ represent a single logical thing, and there is an obvious order to those pieces.
  @defproc[(tuple-descriptor-accessor [descriptor tuple-descriptor?])
           (-> (tuple-descriptor-predicate descriptor) natural? any/c)]]]{
  Accessors for the various fields of a tuple @tech{type descriptor}.}
+
+@section{Dynamically Implementing Tuple Types}
 
 @defproc[
  (make-tuple-implementation
@@ -187,7 +194,7 @@ represent a single logical thing, and there is an obvious order to those pieces.
 @defproc[
  (make-tuple-field-accessor [descriptor tuple-descriptor?]
                             [pos natural?]
-                            [name (or/c symbol? #f)
+                            [name (or/c interned-symbol? #f)
                              (symbol->string (format "field~a" pos))])
  (-> (tuple-descriptor-predicate descriptor) any/c)]{
  Builds a field accessor function that returns the @racket[pos] field of
@@ -238,3 +245,18 @@ represent a single logical thing, and there is an obvious order to those pieces.
    (point 1 2)
    (parameterize ([pretty-print-columns 10])
      (pretty-print (point 100000000000000 200000000000000))))}
+
+@section{Tuple Chaperones and Impersonators}
+
+@defproc[(tuple-impersonate
+          [instance (tuple-descriptor-predicate descriptor)]
+          [descriptor initialized-tuple-descriptor?]
+          [#:properties properties
+           (hash/c impersonator-property? any/c #:immutable #t)
+           empty-hash]
+          [#:chaperone? chaperone? boolean? #t])
+         (tuple-descriptor-predicate descriptor)]{
+ Returns an @tech/reference{impersonator} of @racket[instance] with each
+ @tech/reference{impersonator property} in @racket[properties] attached to it.
+ If @racket[chaperone?] is true (the default), the returned impersonator is a
+ @tech/reference{chaperone}.}

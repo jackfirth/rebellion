@@ -21,31 +21,38 @@
   (define-syntax-class reference-id
     #:attributes (default-name
                   default-predicate-name
-                  default-constructor-name)
+                  default-constructor-name
+                  default-descriptor-name)
     (pattern id:id
       #:do [(define (derived-id fmt) (format-id #'id fmt #'id #:subs? #t))]
       #:with default-name #'id
       #:with default-predicate-name (derived-id "~a?")
-      #:with default-constructor-name (derived-id "make-~a"))))
+      #:with default-constructor-name (derived-id "make-~a")
+      #:with default-descriptor-name (derived-id "descriptor:~a"))))
 
 (define-simple-macro
   (define-reference-type id:reference-id (field:id ...)
-    (~alt (~optional (~seq #:constructor-name constructor:id)
-                     #:name "#:constructor-name option"
-                     #:defaults ([constructor #'id.default-constructor-name]))
+    (~alt
+     (~optional (~seq #:constructor-name constructor:id)
+                #:name "#:constructor-name option"
+                #:defaults ([constructor #'id.default-constructor-name]))
 
-          (~optional (~seq #:predicate-name predicate:id)
-                     #:name "#:predicate-name option"
-                     #:defaults ([predicate #'id.default-predicate-name]))
+     (~optional (~seq #:predicate-name predicate:id)
+                #:name "#:predicate-name option"
+                #:defaults ([predicate #'id.default-predicate-name]))
 
-          (~optional (~seq #:inspector inspector:expr)
-                     #:name "#:inspector option"
-                     #:defaults ([inspector #'(current-inspector)]))
+     (~optional (~seq #:descriptor-name descriptor:id)
+                #:name "#:descriptor-name option"
+                #:defaults ([descriptor #'id.default-descriptor-name]))
 
-          (~optional (~seq #:property-maker prop-maker:expr)
-                     #:name "#:property-maker option"
-                     #:defaults
-                     ([prop-maker #'default-reference-properties])))
+     (~optional (~seq #:inspector inspector:expr)
+                #:name "#:inspector option"
+                #:defaults ([inspector #'(current-inspector)]))
+
+     (~optional (~seq #:property-maker prop-maker:expr)
+                #:name "#:property-maker option"
+                #:defaults
+                ([prop-maker #'default-reference-properties])))
     ...)
 
   #:with (field* ...) (cons (syntax-local-introduce #'name)
@@ -76,6 +83,7 @@
                       #:backwards symbol->string
                       #:name 'string<->symbol))
     (check-pred converter? string<->symbol)
+    (check-pred initialized-reference-descriptor? descriptor:converter)
     (check-equal? (converter-name string<->symbol) 'string<->symbol)
     (check-equal? (object-name string<->symbol) 'string<->symbol)
     (check-equal? (converter-forwards string<->symbol) string->symbol)

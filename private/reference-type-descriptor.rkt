@@ -25,16 +25,25 @@
    (-> reference-descriptor? custom-write-function/c)]
   [default-reference-object-name (-> reference-descriptor? natural?)]
   [make-reference-field-accessor
-   (-> reference-descriptor? keyword? procedure?)]))
+   (-> reference-descriptor? keyword? procedure?)]
+  [reference-impersonate
+   (->i #:chaperone
+        ([instance (descriptor) (reference-descriptor-predicate descriptor)]
+         [descriptor initialized-reference-descriptor?])
+        (#:properties [properties impersonator-property-hash/c]
+         #:chaperone? [chaperone? boolean?])
+        [_ (descriptor) (reference-descriptor-predicate descriptor)])]))
 
 (require racket/list
          racket/math
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
+         rebellion/private/impersonation
          rebellion/type/record
          rebellion/type/reference/base
-         rebellion/type/tuple)
+         rebellion/type/tuple/base
+         rebellion/type/tuple/descriptor)
 
 ;@------------------------------------------------------------------------------
 
@@ -51,7 +60,7 @@
         (cons prop:object-name name-getter)))
 
 (define-record-type initialized-reference-descriptor
-  (type constructor accessor predicate)
+  (type backing-tuple-descriptor constructor accessor predicate)
   #:constructor-name make-initialized-reference-descriptor
   #:property-maker make-descriptor-properties)
 
@@ -110,17 +119,21 @@
                     (reference-type-constructor-name type)))
 
 (define (tuple-descriptor->reference-descriptor descriptor type)
-  (define make-descriptor
-    (if (initialized-tuple-descriptor? descriptor)
-        make-initialized-reference-descriptor
-        make-uninitialized-reference-descriptor))
   (define constructor
     (tuple-constructor->reference-constructor
      (tuple-descriptor-constructor descriptor) type))
-  (make-descriptor #:type type
-                   #:constructor constructor
-                   #:predicate (tuple-descriptor-predicate descriptor)
-                   #:accessor (tuple-descriptor-accessor descriptor)))
+  (if (initialized-tuple-descriptor? descriptor)
+      (make-initialized-reference-descriptor
+       #:type type
+       #:constructor constructor
+       #:predicate (tuple-descriptor-predicate descriptor)
+       #:accessor (tuple-descriptor-accessor descriptor)
+       #:backing-tuple-descriptor descriptor)
+      (make-uninitialized-reference-descriptor
+       #:type type
+       #:constructor constructor
+       #:predicate (tuple-descriptor-predicate descriptor)
+       #:accessor (tuple-descriptor-accessor descriptor))))
 
 (define (reference-type->tuple-type type)
   (tuple-type (reference-type-name type)
@@ -170,3 +183,12 @@
     (string->symbol
      (format "~a-~a" (reference-type-name type) (keyword->string field))))
   (procedure-rename (λ (this) (accessor this position)) name))
+
+(define (reference-impersonate instance descriptor
+                               #:properties [props (hash)]
+                               #:chaperone? [chaperone? #t])
+  (define tuple-descriptor
+    (initialized-reference-descriptor-backing-tuple-descriptor descriptor))
+  (tuple-impersonate instance tuple-descriptor
+                     #:properties props
+                     #:chaperone? chaperone?))
