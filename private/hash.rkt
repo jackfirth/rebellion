@@ -6,7 +6,9 @@
  (contract-out
   [immutable-hash? predicate/c]
   [mutable-hash? predicate/c]
-  [empty-hash immutable-hash?]
+  [empty-hash empty-immutable-hash?]
+  [empty-immutable-hash? predicate/c]
+  [nonempty-immutable-hash? predicate/c]
   [in-hash-entries (-> immutable-hash? (sequence/c entry?))]
   [in-mutable-hash-entries (-> mutable-hash? (sequence/c entry?))]
   [into-hash reducer?]
@@ -15,13 +17,15 @@
   [combine-into-mutable-hash (-> (-> any/c any/c any/c) reducer?)]
   [hash-set-entry (-> immutable-hash? entry? immutable-hash?)]
   [hash-set-entry! (-> mutable-hash? entry? void?)]
-  [hash-key-set (-> immutable-hash? set?)]))
+  [hash-key-set (-> immutable-hash? set?)]
+  [hash-ref-safe (-> immutable-hash? any/c option?)]))
 
 (require racket/sequence
          racket/set
          racket/splicing
-         rebellion/streaming/reducer
-         rebellion/collection/entry)
+         rebellion/base/option
+         rebellion/collection/entry
+         rebellion/streaming/reducer)
 
 (module+ test
   (require (submod "..")
@@ -34,6 +38,12 @@
 (define (immutable-hash? v) (and (hash? v) (immutable? v)))
 (define (hash-set-entry h e) (hash-set h (entry-key e) (entry-value e)))
 (define (hash-set-entry! h e) (hash-set! h (entry-key e) (entry-value e)))
+
+(define (empty-immutable-hash? v)
+  (and (hash? v) (immutable? v) (hash-empty? v)))
+
+(define (nonempty-immutable-hash? v)
+  (and (hash? v) (immutable? v) (not (hash-empty? v))))
 
 (define (check-not-duplicate-key who h e)
   (define k (entry-key e))
@@ -90,6 +100,9 @@
 
 (define (hash-key-set h) (for/set ([k (in-immutable-hash-keys h)]) k))
 
+(define (hash-ref-safe h k)
+  (if (hash-has-key? h k) (present (hash-ref h k)) absent))
+
 (module+ test
   (test-case "into-hash"
     (check-equal? (reduce into-hash (entry 'a 1) (entry 'b 2) (entry 'c 3))
@@ -132,4 +145,9 @@
                   (hash 'a 1 'b 2)))
   
   (test-case "hash-key-set"
-    (check-equal? (hash-key-set (hash 'a 1 'b 2)) (set 'a 'b))))
+    (check-equal? (hash-key-set (hash 'a 1 'b 2)) (set 'a 'b)))
+
+  (test-case "hash-ref-safe"
+    (check-equal? (hash-ref-safe (hash 'a 1 'b 2) 'a) (present 1))
+    (check-equal? (hash-ref-safe (hash 'a 1 'b 2) 'b) (present 2))
+    (check-equal? (hash-ref-safe (hash 'a 1 'b 2) 'c) absent)))

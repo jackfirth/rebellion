@@ -28,7 +28,13 @@
  @defproc[(immutable-hash? [v any/c]) boolean?]
  @defproc[(mutable-hash? [v any/c]) boolean?]]]{
  Convenience predicates for immutable and mutable hash tables, respectively.
- Implies @racket[hash?].}
+ Both predicates imply @racket[hash?].}
+
+@deftogether[[
+ @defproc[(empty-immutable-hash? [v any/c]) boolean?]
+ @defproc[(nonempty-immutable-hash? [v any/c]) boolean?]]]{
+ Convenience predicates for empty and nonempty immutable hash tables,
+ respectively. Both predicates imply @racket[immutable-hash?].}
 
 @deftogether[[
  @defthing[into-hash reducer?]
@@ -63,8 +69,17 @@
            (entry 2 ".")
            (entry 2 "grape"))))}
 
-@defthing[empty-hash immutable-hash? #:value (hash)]{
+@defthing[empty-hash empty-immutable-hash? #:value (hash)]{
  The empty (immutable) hash table.}
+
+@defproc[(hash-ref-safe [h immutable-hash?] [k any/c]) option?]{
+ Returns an @tech{option} containing the value mapped by @racket[k] in @racket[
+ h], returning @racket[absent] if no such value exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (hash-ref-safe (hash 'a 42) 'a)
+   (hash-ref-safe (hash 'a 42) 'b))}
 
 @defproc[(hash-set-entry [h immutable-hash?] [e entry?]) immutable-hash?]{
  Like @racket[hash-set], but accepting a single @tech{entry} argument instead of
