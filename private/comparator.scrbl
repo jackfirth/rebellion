@@ -3,7 +3,9 @@
 @(require (for-label racket/base
                      racket/bool
                      racket/contract/base
+                     racket/contract/region
                      rebellion/base/comparator
+                     rebellion/base/immutable-string
                      rebellion/base/symbol
                      rebellion/collection/hash
                      rebellion/streaming/reducer
@@ -15,7 +17,9 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/base/comparator
+    #:public (list 'racket/contract/base
+                   'racket/contract/region
+                   'rebellion/base/comparator
                    'rebellion/streaming/reducer
                    'rebellion/streaming/transducer
                    'rebellion/type/record)
@@ -25,7 +29,29 @@
 @defmodule[rebellion/base/comparator]
 
 A @deftech{comparator} is an object that compares two values and determines
-which (if either) is greater.
+whether one is greater than the other, or whether they are equivalent. This
+comparison must respect some @deftech{total ordering}, meaning that for any two
+values @racket[_x] and @racket[_y]:
+
+@itemlist[
+ @item{If @racket[_x] is less than @racket[_y], then @racket[_y] must be greater
+  than @racket[x]. The reverse must hold true if @racket[_x] is greater than
+  @racket[_y].}
+
+ @item{If @racket[_x] is equivalent to @racket[_y], then @racket[_y] must be
+  equivalent to @racket[_x].}
+
+ @item{If @racket[_x] is @racket[equal?] to @racket[_y], they must be
+  equivalent.}]
+
+Note that the third requirement above does @bold{not} imply that all equivalent
+values must be @racket[equal?]. For example, the @racket[real<=>] comparator
+considers @racket[3] and @racket[3.0] equivalent, but @racket[(equal? 3 3.0)]
+returns false. A comparator for which all equivalent values are also equal is
+said to be @deftech{consistent with equality}, and comparators which do not
+satisfy this stronger property are @deftech{inconsistent with equality}. All
+comparators defined in @racketmodname[rebellion/base/comparator] are consistent
+with equality unless otherwise stated.
 
 @defproc[(comparator? [v any/c]) boolean?]{
  A predicate for @tech{comparators}.}
@@ -47,7 +73,8 @@ which (if either) is greater.
                          [#:name name (or/c interned-symbol? #f) #f])
          comparator?]{
  Wraps @racket[comparator] as a @tech{comparator} that first calls @racket[f] on
- both of its inputs before comparing them.
+ both of its inputs before comparing them. Beware that this often creates a
+ comparator that is @tech{inconsistent with equality}.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -89,13 +116,49 @@ which (if either) is greater.
 
 @section{Predefined Comparators}
 
-@defthing[real<=> comparator?]{
- A @tech{comparator} that compares real numbers.}
+@defthing[real<=> (comparator/c comparable-real?)]{
+ A @tech{comparator} that compares real numbers. Note that not all values that
+ satisfy the @racket[real?] predicate can be compared: the not-a-number
+ constants @racket[+nan.0] and @racket[+nan.f] are disallowed.
 
-@defthing[string<=> comparator?]{
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare real<=> 42 99.99)
+   (compare real<=> 42 +inf.0)
+   (compare real<=> 42 -inf.0)
+   (eval:error (compare real<=> 42 +nan.0)))
+
+ Beware that this comparator is @tech{inconsistent with equality}, as it ignores
+ the exactness of the compared numbers. This is the same behavior as @racket[<],
+ @racket[=], and @racket[>], but it means that two un-@racket[equal?] numbers
+ may compare equivalent.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare real<=> 5 5.0)
+   (compare real<=> -0.0 0.0)
+   (compare real<=> +inf.0 +inf.f))}
+
+@defproc[(comparable-real? [v any/c]) boolean?]{
+ A predicate that identifies @tech/reference{real numbers} that can be compared
+ sensibly. This predicate is almost identical to @racket[real?], with the
+ exception that it rejects the not-a-number constants.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (comparable-real? 42)
+   (comparable-real? +inf.0)
+   (comparable-real? +nan.0))}
+
+@defthing[string<=> (comparator/c immutable-string?)]{
  A @tech{comparator} that lexicographically compares immutable strings. Mutable
  strings are disallowed, to prevent clients from concurrently mutating a string
- while it's being compared.}
+ while it's being compared.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare string<=> "aardvark" "zebra")
+   (eval:error (compare string<=> "aardvark" (make-string 5 #\z))))}
 
 @section{Comparison Constants}
 
@@ -114,6 +177,24 @@ which (if either) is greater.
  A comparison constant indicating that the left value of a comparison is
  equivalent to the right value. Note that equivalent values may not be @racket[
  equal?], depending on the @tech{comparator} used.}
+
+@section{Comparator Contracts}
+
+@defproc[(comparator/c [operand-contract contract?]) contract?]{
+ A @tech/reference{contract combinator} for @tech{comparators}. Returns a
+ contract that enforces that the contracted value is a comparator, and wraps the
+ comparator to check every value it compares with @racket[operand-contract]. If
+ @racket[operand-contract] is a @tech/reference{chaperone contract}, then the
+ returned contract is as well.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define/contract even-integer<=>
+      (comparator/c (and/c integer? even?))
+      real<=>))
+   (compare even-integer<=> 2 8)
+   (eval:error (compare even-integer<=> 3 8)))}
 
 @section{Comparator Chaperones and Impersonators}
 
