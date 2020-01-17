@@ -41,7 +41,8 @@
          #:results-guard [results-guard #f]
          #:properties [props (hash)]
          #:application-marks [marks (hash)]
-         #:chaperone? [chaperone? (false? arguments-guard)])
+         #:chaperone?
+         [chaperone? (and (false? arguments-guard) (false? results-guard))])
   (define impersonator-factory
     (if chaperone? chaperone-procedure impersonate-procedure))
   (define prop-args (impersonator-properties->positional-arguments props))
@@ -87,7 +88,10 @@
       (define impersonated (function-impersonate expt #:arguments-guard guard))
       (check-equal? (impersonated 2 5) 32)
       (check-equal? (unbox arg1) 2)
-      (check-equal? (unbox arg2) 5))
+      (check-equal? (unbox arg2) 5)
+      (check-equal? impersonated expt)
+      (check-true (impersonator-of? impersonated expt))
+      (check-false (chaperone-of? impersonated expt)))
 
     (test-case "result guard"
       (define result (box #f))
@@ -96,7 +100,10 @@
         x)
       (define impersonated (function-impersonate + #:results-guard guard))
       (check-equal? (impersonated 1 2 3) 6)
-      (check-equal? (unbox result) 6))
+      (check-equal? (unbox result) 6)
+      (check-equal? impersonated +)
+      (check-true (impersonator-of? impersonated +))
+      (check-false (chaperone-of? impersonated +)))
 
     (test-case "argument and result guards"
       (define arg1 (box #f))
@@ -116,4 +123,7 @@
       (check-equal? (impersonated 2 5) 32)
       (check-equal? (unbox arg1) 2)
       (check-equal? (unbox arg2) 5)
-      (check-equal? (unbox result) 32))))
+      (check-equal? (unbox result) 32)
+      (check-equal? impersonated expt)
+      (check-true (impersonator-of? impersonated expt))
+      (check-false (chaperone-of? impersonated expt)))))
