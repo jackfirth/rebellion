@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/sequence
                      racket/set
                      rebellion/base/immutable-string
                      rebellion/collection/entry
