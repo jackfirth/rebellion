@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     racket/set
                      rebellion/collection/association-list
                      rebellion/collection/entry
                      rebellion/collection/immutable-vector
@@ -89,7 +90,8 @@ key-value pairs.
    (association-list-keys (association-list 'a 1 'a 1 'b 2 'b 2 'c 3)))}
 
 @defproc[(association-list-unique-keys [assoc association-list?]) set?]{
- Returns a @tech/reference{set} containing the keys in @racket[assoc], without duplicates.
+ Returns a @tech/reference{set} containing the keys in @racket[assoc], without
+ duplicates.
 
  @(examples
    #:eval (make-evaluator) #:once

@@ -101,7 +101,8 @@ at compile-time.
    (keyset-remove fruits '#:banana))}
 
 @defproc[(in-keyset [keys keyset?]) (sequence/c keyword?)]{
- Returns a @tech/reference{sequence} of the keywords in @racket[keys], in ascending order.
+ Returns a @tech/reference{sequence} of the keywords in @racket[keys], in
+ ascending order.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -151,14 +152,14 @@ at compile-time.
    #:eval (make-evaluator) #:once
    (list->keyset (list '#:banana '#:orange '#:orange '#:apple '#:grape)))}
 
-@defproc[(keyset->set [keys keyset?]) (immutable-set/c keyword?)]{
+@defproc[(keyset->set [keys keyset?]) (set/c keyword?)]{
  Converts @racket[keys] into a plain @tech/reference{set} of keywords.
 
  @(examples
    #:eval (make-evaluator) #:once
    (keyset->set (keyset #:red #:blue #:green #:yellow)))}
 
-@defproc[(set->keyset [kw-set (immutable-set/c keyword?)]) keyset?]{
+@defproc[(set->keyset [kw-set (set/c keyword?)]) keyset?]{
  Sorts @racket[kw-set], returning a @tech{keyset}.
 
  @(examples

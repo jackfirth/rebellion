@@ -5,6 +5,7 @@
                      racket/math
                      racket/sequence
                      rebellion/base/symbol
+                     rebellion/collection/immutable-vector
                      rebellion/collection/record
                      rebellion/collection/table
                      rebellion/streaming/reducer)

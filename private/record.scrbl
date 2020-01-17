@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     rebellion/collection/immutable-vector
                      rebellion/collection/keyset
                      rebellion/collection/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -18,8 +19,8 @@
 @defmodule[rebellion/collection/record]
 
 A @deftech{record} is a collection of name-value mappings, each which is called
-a @deftech{record field}. The name of a field is a @tech/reference{keyword}. Records
-support constant-time lookup of field values by name.
+a @deftech{record field}. The name of a field is a @tech/reference{keyword}.
+Records support constant-time lookup of field values by name.
 
 Records are similar to hash tables, except keys @emph{must} be keywords. Records
 are less dynamic than general-purpose hash tables, but their specialized nature
