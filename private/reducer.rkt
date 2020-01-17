@@ -50,6 +50,13 @@
          #:after-last immutable-string?)
         reducer?)]
   [into-for-each (-> (-> any/c void?) reducer?)]
+  [reducer-impersonate
+   (->* (reducer?)
+        (#:domain-guard (or/c (-> any/c any/c) #f)
+         #:range-guard (or/c (-> any/c any/c) #f)
+         #:properties impersonator-property-hash/c
+         #:chaperone? boolean?)
+        reducer?)]
   [reducer-map
    (->* (reducer?)
         (#:domain (-> any/c any/c) #:range (-> any/c any/c))
@@ -68,6 +75,7 @@
          rebellion/base/option
          rebellion/base/symbol
          rebellion/base/variant
+         rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/type/record
          rebellion/type/reference
@@ -86,8 +94,37 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
+;; Core APIs
 
-(define-reference-type reducer (starter consumer finisher early-finisher))
+(define-reference-type reducer (starter consumer finisher early-finisher)
+  #:constructor-name constructor:reducer)
+
+(define (make-reducer #:starter starter*
+                      #:consumer consumer*
+                      #:finisher finisher*
+                      #:early-finisher early-finisher*
+                      #:name [name #f])
+  (define starter
+    (if (zero? (procedure-arity starter*))
+        starter*
+        (procedure-reduce-arity starter* 0)))
+  (define consumer
+    (if (equal? (procedure-arity consumer*) 2)
+        consumer*
+        (procedure-reduce-arity consumer* 2)))
+  (define finisher
+    (if (equal? (procedure-arity finisher*) 1)
+        finisher*
+        (procedure-reduce-arity finisher* 1)))
+  (define early-finisher
+    (if (equal? (procedure-arity early-finisher*) 1)
+        early-finisher*
+        (procedure-reduce-arity early-finisher* 1)))
+  (constructor:reducer #:starter starter
+                       #:consumer consumer
+                       #:finisher finisher
+                       #:early-finisher early-finisher
+                       #:name name))
 
 (define (make-fold-reducer consumer init-state #:name [name #f])
   (make-effectful-fold-reducer consumer (λ () init-state) values #:name name))
@@ -164,6 +201,75 @@
                               (in-hash-values (hash 'a 2 'b 3 'c 5 'd 7)))
                   210)
     (check-equal? (reduce-all into-count (in-string "abcde")) 5)))
+
+;@------------------------------------------------------------------------------
+;; Contracts
+
+(define ((reducer-consumer-guard domain-guard) state element)
+  (values state (domain-guard element)))
+
+(define (reducer-impersonate
+         reducer
+         #:domain-guard [domain-guard #f]
+         #:range-guard [range-guard #f]
+         #:properties [props (hash)]
+         #:chaperone? [chaperone? (nor domain-guard range-guard)])
+  (define consumer (reducer-consumer reducer))
+  (define finisher (reducer-finisher reducer))
+  (define early-finisher (reducer-finisher reducer))
+  (define domain-chaperone? (or chaperone? (not domain-guard)))
+  (define range-chaperone? (or chaperone? (not range-guard)))
+
+  (define impersonated-consumer
+    (function-impersonate
+     consumer
+     #:arguments-guard (and domain-guard (reducer-consumer-guard domain-guard))
+     #:chaperone? domain-chaperone?))
+  
+  (define impersonated-finisher
+    (function-impersonate finisher
+                          #:results-guard range-guard
+                          #:chaperone? range-chaperone?))
+  
+  (define impersonated-early-finisher
+    (function-impersonate early-finisher
+                          #:results-guard range-guard
+                          #:chaperone? range-chaperone?))
+  
+  (define impersonated-without-props
+    (make-reducer #:starter (reducer-starter reducer)
+                  #:consumer impersonated-consumer
+                  #:finisher impersonated-finisher
+                  #:early-finisher impersonated-early-finisher
+                  #:name (object-name reducer)))
+  
+  (reference-impersonate impersonated-without-props descriptor:reducer
+                         #:properties props))
+
+(module+ test
+  (test-case (name-string reducer-impersonate)
+    (test-case "domain guard"
+      (define counter (box 0))
+      (define (guard v)
+        (set-box! counter (add1 (unbox counter)))
+        v)
+      (define impersonated
+        (reducer-impersonate into-list #:domain-guard guard #:chaperone? #t))
+      (check-equal? (reduce impersonated 1 2 3) (list 1 2 3))
+      (check-equal? (unbox counter) 3))
+
+    (test-case "range guard"
+      (define result (box #f))
+      (define (guard v)
+        (set-box! result v)
+        v)
+      (define impersonated
+        (reducer-impersonate into-list #:range-guard guard #:chaperone? #t))
+      (check-equal? (reduce impersonated 1 2 3) (list 1 2 3))
+      (check-equal? (unbox result) (list 1 2 3)))))
+
+;@------------------------------------------------------------------------------
+;; Non-core APIs
 
 (define (reducer-map red #:domain [f values] #:range [g values])
   (define consumer (reducer-consumer red))

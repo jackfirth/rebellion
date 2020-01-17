@@ -1,6 +1,7 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
+                     racket/bool
                      racket/contract/base
                      racket/math
                      racket/sequence
@@ -10,6 +11,7 @@
                      rebellion/base/option
                      rebellion/base/symbol
                      rebellion/base/variant
+                     rebellion/collection/hash
                      rebellion/collection/list
                      rebellion/streaming/reducer
                      rebellion/type/record)
@@ -19,7 +21,8 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'racket/sequence
+    #:public (list 'racket/bool
+                   'racket/sequence
                    'racket/vector
                    'rebellion/base/comparator
                    'rebellion/base/immutable-string
@@ -32,14 +35,14 @@
 @title{Reducers}
 @defmodule[rebellion/streaming/reducer]
 
-A @deftech{reducer} is an object that can combine a (possibly infinite) sequence
-of elements into a single result value. Reducers are state machines; performing
-a reduction involves @emph{starting} the reducer to get an initial state, then
-@emph{consuming} elements one at a time to transform the current state into a
-new, updated state. When no more elements are available, the reducer's @emph{
- finisher} is called to transform the final state into a result value.
-Optionally, a reducer may terminate the reduction early, before the sequence is
-fully consumed.
+A @deftech{reducer} is an object that can combine a (possibly infinite)
+@tech/reference{sequence} of elements into a single result value. Reducers are
+state machines; performing a reduction involves @emph{starting} the reducer to
+get an initial state, then @emph{consuming} elements one at a time to transform
+the current state into a new, updated state. When no more elements are
+available, the reducer's @emph{finisher} is called to transform the final state
+into a result value. Optionally, a reducer may terminate the reduction early,
+before the sequence is fully consumed.
 
 @defproc[(reducer? [v any/c]) boolean?]{
  A predicate for @tech{reducers}.}
@@ -460,3 +463,43 @@ reducers with increasing power and complexity:
      (make-reducer-based-for-comprehensions #'into-sum))
    (for/sum ([str (in-list (list "apple" "orange" "banana" "grapefruit"))])
      (string-length str)))}
+
+@section{Reducer Chaperones and Impersonators}
+
+@defproc[(reducer-impersonate
+          [reducer reducer?]
+          [#:domain-guard domain-guard (or/c (-> any/c any/c) #f) #f]
+          [#:range-guard range-guard (or/c (-> any/c any/c) #f) #f]
+          [#:properties properties
+           (hash/c impersonator-property? any/c #:immutable #t)
+           empty-hash]
+          [#:chaperone? chaperone? boolean? (nor domain-guard range-guard)])
+         reducer?]{
+ Returns an @tech/reference{impersonator} of @racket[reducer]. Whenever the
+ impersonating reducer is used to reduce a sequence, @racket[domain-guard] is
+ applied to each sequence element it reduces and @racket[range-guard] is
+ applied to the result of the reducer. Either of @racket[domain-guard] or
+ @racket[range-guard] may be skipped by providing @racket[#f] (the default). All
+ of the @tech/reference{impersonator properties} in @racket[properties] are
+ attached to the returned impersonator.
+
+ If @racket[chaperone?] is true, then the returned impersonator is a
+ @tech/reference{chaperone}. In that case, both @racket[domain-guard] and
+ @racket[range-guard] must always return values equal to whatever they're given.
+ Additionally, if a returned value is an impersonator, it must also be a
+ chaperone.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define (print-domain v)
+      (printf "Reducing ~a\n" v)
+      v)
+    (define (print-range v)
+      (printf "Reduction finished, result is ~a\n" v)
+      v)
+    (define into-list/printing
+      (reducer-impersonate into-list
+                           #:domain-guard print-domain
+                           #:range-guard print-range)))
+   (reduce-all into-list/printing (in-range 5)))}
