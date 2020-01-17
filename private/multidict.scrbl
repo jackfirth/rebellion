@@ -4,6 +4,7 @@
                      racket/contract/base
                      racket/math
                      racket/sequence
+                     racket/set
                      rebellion/collection/entry
                      rebellion/collection/list
                      rebellion/collection/multidict
