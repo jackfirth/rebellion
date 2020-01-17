@@ -3,10 +3,13 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/math
+                     racket/sequence
+                     racket/set
                      rebellion/collection/entry
                      rebellion/collection/list
                      rebellion/collection/multidict
                      rebellion/collection/multiset
+                     rebellion/collection/set
                      rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           (submod rebellion/private/scribble-cross-document-tech doc)
@@ -188,9 +191,9 @@ interface is based on a flattened collection of key-value pairs.
                "The Hulk" 'marvel
                "Captain Marvel" 'marvel)))}
 
-@defproc[(multidict-entries [dict multidict?]) (immutable-set/c entry?)]{
- Returns the set of @tech{entries} in @racket[dict]. Note that this is
- @bold{not} a @tech{multiset}, because for each key the collection of values
+@defproc[(multidict-entries [dict multidict?]) (set/c entry?)]{
+ Returns the (immutable) set of @tech{entries} in @racket[dict]. Note that this
+ is @bold{not} a @tech{multiset}, because for each key the collection of values
  mapped by that key contains no duplicates.
 
  @(examples
@@ -251,7 +254,7 @@ interface is based on a flattened collection of key-value pairs.
 @section{Multidict Conversions}
 
 @defproc[(multidict->hash [dict multidict?])
-         (hash/c any/c nonempty-set? #:immutable? #t)]{
+         (hash/c any/c nonempty-set? #:immutable #t)]{
  Converts @racket[dict] into a hash table from keys to (nonempty) sets of
  values.
 
@@ -292,6 +295,6 @@ interface is based on a flattened collection of key-value pairs.
  Iterates like @racket[for*], but collects each @tech{entry} returned by
  @racket[body] into a @tech{multidict}.}
 
-@defthing[into-multidict reducer?]{
+@defthing[into-multidict (reducer/c entry? multidict?)]{
  A @tech{reducer} that reduces a sequence of @tech{entries} into a
  @tech{multidict}.}

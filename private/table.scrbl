@@ -5,6 +5,7 @@
                      racket/math
                      racket/sequence
                      rebellion/base/symbol
+                     rebellion/collection/immutable-vector
                      rebellion/collection/record
                      rebellion/collection/table
                      rebellion/streaming/reducer)
@@ -137,7 +138,7 @@ is significant and duplicate rows are allowed. Tables implement the
  tab]. Tables already implement the sequence interface, but using this function
  in a @racket[for] form may perform better and give clearer error messages.}
 
-@defthing[into-table reducer?]{
+@defthing[into-table (reducer/c record? table?)]{
  A @tech{reducer} that reduces @tech{records} into a @tech{table}, in the same
  manner as @racket[for/table].
 

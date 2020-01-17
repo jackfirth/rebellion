@@ -1,7 +1,9 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
+                     racket/bool
                      racket/contract/base
+                     racket/contract/region
                      racket/math
                      racket/sequence
                      racket/vector
@@ -10,6 +12,7 @@
                      rebellion/base/option
                      rebellion/base/symbol
                      rebellion/base/variant
+                     rebellion/collection/hash
                      rebellion/collection/list
                      rebellion/streaming/reducer
                      rebellion/type/record)
@@ -19,7 +22,9 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'racket/sequence
+    #:public (list 'racket/bool
+                   'racket/contract/region
+                   'racket/sequence
                    'racket/vector
                    'rebellion/base/comparator
                    'rebellion/base/immutable-string
@@ -32,14 +37,14 @@
 @title{Reducers}
 @defmodule[rebellion/streaming/reducer]
 
-A @deftech{reducer} is an object that can combine a (possibly infinite) sequence
-of elements into a single result value. Reducers are state machines; performing
-a reduction involves @emph{starting} the reducer to get an initial state, then
-@emph{consuming} elements one at a time to transform the current state into a
-new, updated state. When no more elements are available, the reducer's @emph{
- finisher} is called to transform the final state into a result value.
-Optionally, a reducer may terminate the reduction early, before the sequence is
-fully consumed.
+A @deftech{reducer} is an object that can combine a (possibly infinite)
+@tech/reference{sequence} of elements into a single result value. Reducers are
+state machines; performing a reduction involves @emph{starting} the reducer to
+get an initial state, then @emph{consuming} elements one at a time to transform
+the current state into a new, updated state. When no more elements are
+available, the reducer's @emph{finisher} is called to transform the final state
+into a result value. Optionally, a reducer may terminate the reduction early,
+before the sequence is fully consumed.
 
 @defproc[(reducer? [v any/c]) boolean?]{
  A predicate for @tech{reducers}.}
@@ -64,7 +69,7 @@ fully consumed.
    (reduce-all into-product (in-range 1 20))
    (reduce-all into-count (in-hash-values (hash 'a 1 'b 2 'c 3 'd 4))))}
 
-@defthing[into-sum reducer?]{
+@defthing[into-sum (reducer/c number? number?)]{
  A @tech{reducer} that reduces a sequence of numbers into their sum with
  @racket[+].
 
@@ -74,7 +79,7 @@ fully consumed.
    (reduce into-sum)
    (reduce-all into-sum (in-range 10000)))}
 
-@defthing[into-product reducer?]{
+@defthing[into-product (reducer/c number? number?)]{
  A @tech{reducer} that reduces a sequence of numbers into their product with
  @racket[*].
 
@@ -84,7 +89,7 @@ fully consumed.
    (reduce into-product)
    (reduce-all into-product (in-range 1 20)))}
 
-@defthing[into-count reducer?]{
+@defthing[into-count (reducer/c any/c number?)]{
  A @tech{reducer} that ignores the specific elements it reduces and returns only
  a count of how many elements were reduced.
 
@@ -93,7 +98,7 @@ fully consumed.
    (reduce into-count 'a 'b 'c)
    (reduce-all into-count "hello world"))}
 
-@defthing[into-first reducer?]{
+@defthing[into-first (reducer/c any/c option?)]{
  A @tech{reducer} that returns an @tech{option} of the first element it reduces,
  or @racket[absent] if the reduced sequence is empty.
 
@@ -101,7 +106,7 @@ fully consumed.
    #:eval (make-evaluator) #:once
    (reduce-all into-first "hello world"))}
 
-@defthing[into-last reducer?]{
+@defthing[into-last (reducer/c any/c option?)]{
  A @tech{reducer} that returns an @tech{option} of the last element it reduces,
  or @racket[absent] if the reduced sequence is empty.
 
@@ -109,7 +114,7 @@ fully consumed.
    #:eval (make-evaluator) #:once
    (reduce-all into-last "hello world"))}
 
-@defproc[(into-nth [n natural?]) reducer?]{
+@defproc[(into-nth [n natural?]) (reducer/c any/c option?)]{
  Constructs a @tech{reducer} that returns the @racket[n]th element it reduces,
  wrapped in an @tech{option} value. If the reduced sequence has fewer than
  @racket[n] elements, the reducer returns @racket[absent].
@@ -120,7 +125,7 @@ fully consumed.
    (reduce-all (into-nth 20) "hello world")
    (reduce-all (into-nth 0) "hello world"))}
 
-@defproc[(into-index-of [v any/c]) reducer?]{
+@defproc[(into-index-of [v any/c]) (reducer/c any/c (option/c natural?))]{
  Constructs a @tech{reducer} that searches the reduced sequence for @racket[v]
  and returns an @tech{option} wrapping the position of @racket[v] in the
  sequence. If the reduced sequence does not contain @racket[v], then the reducer
@@ -131,7 +136,8 @@ fully consumed.
    (reduce-all (into-index-of #\e) "battery")
    (reduce-all (into-index-of #\o) "cat"))}
 
-@defproc[(into-index-where [pred predicate/c]) reducer?]{
+@defproc[(into-index-where [pred predicate/c])
+         (reducer/c any/c (option/c natural?))]{
  Constructs a @tech{reducer} that searches the reduced sequence for the first
  value for which @racket[pred] returns true, then returns an @tech{option}
  wrapping the position of that value. If the reduced sequence does not contain
@@ -142,7 +148,7 @@ fully consumed.
    (reduce-all (into-index-where char-whitespace?) "hello world")
    (reduce-all (into-index-where char-numeric?) "goodbye world"))}
 
-@defproc[(into-any-match? [pred predicate/c]) reducer?]{
+@defproc[(into-any-match? [pred predicate/c]) (reducer/c any/c boolean?)]{
  Constructs a @tech{reducer} that searches the reduced sequence for at least one
  element that satisfies @racket[pred], returning true if an element is found and
  returning false otherwise. If the sequence is empty, then the reducer returns
@@ -154,7 +160,7 @@ fully consumed.
    (reduce-all (into-any-match? char-numeric?) "hello world")
    (reduce-all (into-any-match? char-whitespace?) ""))}
 
-@defproc[(into-all-match? [pred predicate/c]) reducer?]{
+@defproc[(into-all-match? [pred predicate/c]) (reducer/c any/c boolean?)]{
  Constructs a @tech{reducer} that returns true if every element in the reduced
  sequence satisfies @racket[pred], otherwise false is returned. If the sequence
  is empty, then the reducer returns true.
@@ -165,7 +171,7 @@ fully consumed.
    (reduce-all (into-all-match? char-alphabetic?) "hello world")
    (reduce-all (into-all-match? char-alphabetic?) ""))}
 
-@defproc[(into-none-match? [pred predicate/c]) reducer?]{
+@defproc[(into-none-match? [pred predicate/c]) (reducer/c any/c boolean?)]{
  Constructs a @tech{reducer} that returns true if no element in the reduced
  sequence satisfies @racket[pred], otherwise false is returned. If the sequence
  is empty, then the reducer returns true.
@@ -176,7 +182,7 @@ fully consumed.
    (reduce-all (into-none-match? char-whitespace?) "hello world")
    (reduce-all (into-none-match? char-whitespace?) ""))}
 
-@defproc[(into-for-each [handler (-> any/c void?)]) reducer?]{
+@defproc[(into-for-each [handler (-> any/c void?)]) (reducer/c any/c void?)]{
  Constructs a @tech{reducer} that calls @racket[handler] on each element for its
  side effects. The reduction result of the returned reducer is always @racket[
  (void)].
@@ -188,10 +194,10 @@ fully consumed.
 @deftogether[[
  @defproc[(into-max [comparator comparator? real<=>]
                     [#:key key-function (-> any/c any/c) values])
-          reducer?]
+          (reducer/c any/c option?)]
  @defproc[(into-min [comparator comparator? real<=>]
                     [#:key key-function (-> any/c any/c) values])
-          reducer?]]]{
+          (reducer/c any/c option?)]]]{
  Constructs a @tech{reducer} that searches the reduced sequence for either the
  greatest element or the least element, respectively. If @racket[key-function]
  is provided, it is used to extract the compared value from each element.
@@ -209,14 +215,16 @@ fully consumed.
 
    (reduce (into-min string<=>) "goodbye" "cruel" "world")
 
-   (define-record-type gemstone (color weight))
+   (eval:no-prompt
+    (define-record-type gemstone (color weight)))
+   
    (reduce (into-max #:key gemstone-weight)
            (gemstone #:color 'red #:weight 5)
            (gemstone #:color 'blue #:weight 7)
            (gemstone #:color 'green #:weight 3)
            (gemstone #:color 'yellow #:weight 7)))}
 
-@defthing[into-string reducer?]{
+@defthing[into-string (reducer/c char? immutable-string?)]{
  A @tech{reducer} that collects a sequence of individual characters into an
  immutable string.
 
@@ -225,8 +233,8 @@ fully consumed.
    (reduce into-string #\h #\e #\l #\l #\o)
    (reduce-all into-string (list #\a #\b #\c)))}
 
-@defthing[into-line reducer?]{
- Like @racket[into-string], but stops the reduction as soon as the @racket[
+@defthing[into-line (reducer/c char? immutable-string?)]{
+ Like @racket[into-string], but stops the reduction as soon as a @racket[
  #\newline] character is encountered.
 
  @(examples
@@ -241,7 +249,7 @@ Refrigerator"))}
           [#:before-first before-first immutable-string? ""]
           [#:before-last before-last immutable-string? sep]
           [#:after-last after-last immutable-string? ""])
-         reducer?]{
+         (reducer/c immutable-string? immutable-string?)]{
  Constructs a @tech{reducer} that joins a sequence of immutable strings into a
  single immutable string, in the same manner as @racket[string-join].
 
@@ -460,3 +468,65 @@ reducers with increasing power and complexity:
      (make-reducer-based-for-comprehensions #'into-sum))
    (for/sum ([str (in-list (list "apple" "orange" "banana" "grapefruit"))])
      (string-length str)))}
+
+@section{Reducer Contracts}
+
+@defproc[(reducer/c [domain-contract contract?] [range-contract contract?])
+         contract?]{
+ A @tech/reference{contract combinator} for @tech{reducers}. Returns a contract
+ that enforces that the contracted value is a reducer and wrap the reducer to
+ enforce @racket[domain-contract] and @racket[range-contract]. Every reduced
+ element is checked with @racket[domain-contract], and every reduction result is
+ checked with @racket[range-contract]. If both @racket[domain-contract] and
+ @racket[range-contract] are @tech/reference{chaperone contracts}, then the
+ returned contract is as well.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define/contract into-string-append
+      (reducer/c string? string?)
+      (make-fold-reducer string-append "" #:name 'into-string-append)))
+
+   (reduce into-string-append "Red" "Blue" "Green")
+   (eval:error (reduce into-string-append "Red" 42 "Green")))}
+
+@section{Reducer Chaperones and Impersonators}
+
+@defproc[(reducer-impersonate
+          [reducer reducer?]
+          [#:domain-guard domain-guard (or/c (-> any/c any/c) #f) #f]
+          [#:range-guard range-guard (or/c (-> any/c any/c) #f) #f]
+          [#:properties properties
+           (hash/c impersonator-property? any/c #:immutable #t)
+           empty-hash]
+          [#:chaperone? chaperone? boolean? (nor domain-guard range-guard)])
+         reducer?]{
+ Returns an @tech/reference{impersonator} of @racket[reducer]. Whenever the
+ impersonating reducer is used to reduce a sequence, @racket[domain-guard] is
+ applied to each sequence element it reduces and @racket[range-guard] is
+ applied to the result of the reducer. Either of @racket[domain-guard] or
+ @racket[range-guard] may be skipped by providing @racket[#f] (the default). All
+ of the @tech/reference{impersonator properties} in @racket[properties] are
+ attached to the returned impersonator.
+
+ If @racket[chaperone?] is true, then the returned impersonator is a
+ @tech/reference{chaperone}. In that case, both @racket[domain-guard] and
+ @racket[range-guard] must always return values equal to whatever they're given.
+ Additionally, if a returned value is an impersonator, it must also be a
+ chaperone.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define (print-domain v)
+      (printf "Reducing ~a\n" v)
+      v)
+    (define (print-range v)
+      (printf "Reduction finished, result is ~a\n" v)
+      v)
+    (define into-list/printing
+      (reducer-impersonate into-list
+                           #:domain-guard print-domain
+                           #:range-guard print-range)))
+   (reduce-all into-list/printing (in-range 5)))}

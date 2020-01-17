@@ -23,7 +23,7 @@
   [sequence->multiset (-> multiset-coercible-sequence/c multiset?)]
   [empty-multiset multiset?]
   [in-multiset (-> multiset? sequence?)]
-  [into-multiset reducer?]))
+  [into-multiset (reducer/c any/c multiset?)]))
 
 (require (for-syntax racket/base)
          racket/hash

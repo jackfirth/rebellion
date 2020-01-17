@@ -4,8 +4,11 @@
 
 (provide
  (contract-out
-  [into-set reducer?]
-  [into-mutable-set reducer?]))
+  [empty-set? predicate/c]
+  [nonempty-set? predicate/c]
+  [mutable-set? predicate/c]
+  [into-set (reducer/c any/c set?)]
+  [into-mutable-set (reducer/c any/c mutable-set?)]))
 
 (require racket/set
          rebellion/streaming/reducer)
@@ -17,6 +20,9 @@
 ;@------------------------------------------------------------------------------
 
 (define empty-set (set))
+
+(define (empty-set? v) (and (set? v) (set-empty? v)))
+(define (nonempty-set? v) (and (set? v) (not (set-empty? v))))
 
 (define (mutable-set? v) (set-mutable? v))
 

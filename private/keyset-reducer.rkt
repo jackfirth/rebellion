@@ -6,7 +6,7 @@
  for/keyset
  for*/keyset
  (contract-out
-  [into-keyset reducer?]))
+  [into-keyset (reducer/c keyword? keyset?)]))
 
 (require (for-syntax racket/base)
          rebellion/collection/keyset/low-dependency
