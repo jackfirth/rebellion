@@ -37,8 +37,8 @@
  respectively. Both predicates imply @racket[immutable-hash?].}
 
 @deftogether[[
- @defthing[into-hash reducer?]
- @defthing[into-mutable-hash reducer?]]]{
+ @defthing[into-hash (reducer/c entry? immutable-hash?)]
+ @defthing[into-mutable-hash (reducer/c entry? mutable-hash?)]]]{
  A pair of @tech{reducers} that build either an immutable hash table or a
  mutable hash table from a sequence of @tech{entries}. Duplicate keys are not
  allowed, and attempting to reduce a sequence containing duplicate keys will
@@ -52,9 +52,10 @@
             (immutable-string-length str))))}
 
 @deftogether[[
- @defproc[(combine-into-hash [value-combiner (-> any/c any/c any/c)]) reducer?]
+ @defproc[(combine-into-hash [value-combiner (-> any/c any/c any/c)])
+          (reducer/c entry? immutable-hash?)]
  @defproc[(combine-into-mutable-hash [value-combiner (-> any/c any/c any/c)])
-          reducer?]]]{
+          (reducer/c entry? mutable-hash?)]]]{
  Constructs a @tech{reducer} that combines a sequence of @tech{entries} into
  either an immutable hash table or a mutable hash table, respectively. Values
  for duplicate keys are combined using @racket[value-combiner].

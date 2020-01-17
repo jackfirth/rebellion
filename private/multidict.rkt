@@ -31,7 +31,7 @@
   [empty-multidict? predicate/c]
   [nonempty-multidict? predicate/c]
   [in-multidict-entries (-> multidict? (sequence/c entry?))]
-  [into-multidict reducer?]))
+  [into-multidict (reducer/c entry? multidict?)]))
 
 (require (for-syntax racket/base)
          racket/list

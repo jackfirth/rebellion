@@ -16,7 +16,7 @@
   [table-rows-ref (-> table? natural? record?)]
   [table-size (-> table? natural?)]
   [in-table (-> table? (sequence/c record?))]
-  [into-table reducer?]))
+  [into-table (reducer/c record? table?)]))
 
 (require (for-syntax racket/base)
          racket/math

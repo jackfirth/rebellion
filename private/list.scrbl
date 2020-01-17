@@ -25,8 +25,8 @@ lists. Additionally, it provides a few utilities for integrating lists with some
 of Rebellion's standard abstractions, such as @tech{reducers}. No attempt is
 made to wrap every possible list-related function or rename every export of
 @racketmodname[racket/list], as many of these operations are better expressed in
-terms of generic @tech/reference{sequences}, @racket[for] loops, and @tech{reducers}
-rather than lists specifically.
+terms of generic @tech/reference{sequences}, @racket[for] loops, @tech{
+ reducers}, and @tech{transducers} rather than lists specifically.
 
 For the purposes of this library, "list" means "proper list". Improper lists
 (such as those constructed by @racket[list*]) are a poor fit for most
@@ -95,8 +95,8 @@ list-related tasks and should be avoided in favor of other data structures.
  Returns @racket[#t] if @racket[lst] contains @racket[v], returns @racket[#f]
  otherwise. This operation takes time linear in the length of the list. Lists
  are not designed for efficient membership queries, so if you find yourself
- using this function consider whether you could use a @tech/reference{set} or @tech{
-  multiset} instead.
+ using this function consider whether you could use a @tech/reference{set} or
+ @tech{multiset} instead.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -126,25 +126,25 @@ list-related tasks and should be avoided in favor of other data structures.
  intended, and the latter unnecessarily requires the reader to understand the
  subtleties of quotation.}
 
-@defthing[into-list reducer?]{
+@defthing[into-list (reducer/c any/c list?)]{
  A @tech{reducer} that collects elements into a list, preserving their order.
 
  @(examples
    #:eval (make-evaluator) #:once
    (reduce into-list 1 2 3 4 5))}
 
-@defthing[into-reversed-list reducer?]{
+@defthing[into-reversed-list (reducer/c any/c list?)]{
  A @tech{reducer} that collects elements into a list, in reverse order. This can
  be more efficient than @racket[into-list]. This function should be preferred
  over @racket[in-list] when the order of the returned list doesn't matter, but
- in these cases strongly consider using @tech/reference{sets} or @tech{multisets} instead
- of lists to make the lack of order explicit.
+ in these cases strongly consider using @tech/reference{sets} or @tech{
+  multisets} instead of lists to make the lack of order explicit.
 
  @(examples
    #:eval (make-evaluator) #:once
    (reduce into-reversed-list 1 2 3 4 5))}
 
-@defthing[append-into-list reducer?]{
+@defthing[append-into-list (reducer/c list? list?)]{
  A @tech{reducer} that collects a sequence of lists into a single list, in the
  same manner as @racket[list-append].
 

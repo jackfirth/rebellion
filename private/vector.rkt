@@ -4,16 +4,20 @@
 
 (provide
  (contract-out
-  [into-vector (->* () (#:size (or/c natural? +inf.0)) reducer?)]
-  [into-mutable-vector (->* () (#:size (or/c natural? +inf.0)) reducer?)]
+  [mutable-vector? predicate/c]
+  [into-vector
+   (->* () (#:size (or/c natural? +inf.0)) (reducer/c any/c immutable-vector?))]
+  [into-mutable-vector
+   (->* () (#:size (or/c natural? +inf.0)) (reducer/c any/c mutable-vector?))]
   [sequence->vector
    (-> (or/c vector? list? set? (sequence/c any/c))
-       (and/c vector? immutable?))]))
+       immutable-vector?)]))
 
 (require racket/math
          racket/sequence
          racket/set
          rebellion/collection/vector/builder
+         rebellion/collection/immutable-vector
          rebellion/private/static-name
          rebellion/streaming/reducer)
 
@@ -22,6 +26,8 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
+
+(define (mutable-vector? v) (and (vector? v) (not (immutable? v))))
 
 (define into-unlimited-vector
   (make-effectful-fold-reducer vector-builder-add

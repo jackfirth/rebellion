@@ -21,7 +21,11 @@
 @title{Vectors}
 @defmodule[rebellion/collection/vector]
 
-@defproc[(into-vector [#:size size (or/c natural? +inf.0) +inf.0]) reducer?]{
+@defproc[(mutable-vector? [v any/c]) boolean?]{
+ A predicate for mutable vectors. Implies @racket[vector?].}
+
+@defproc[(into-vector [#:size size (or/c natural? +inf.0) +inf.0])
+         (reducer/c any/c immutable-vector?)]{
  Constructs a @tech{reducer} that collects at most @racket[size] elements of a
  sequence into an immutable vector.
 
@@ -32,7 +36,7 @@
               #:into (into-vector #:size 5)))}
 
 @defproc[(into-mutable-vector [#:size size (or/c natural? +inf.0) +inf.0])
-         reducer?]{
+         (reducer/c any/c mutable-vector?)]{
  Constructs a @tech{reducer} that collects at most @racket[size] elements of a
  sequence into a mutable vector.
 

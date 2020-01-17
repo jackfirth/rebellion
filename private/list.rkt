@@ -15,9 +15,9 @@
   [list-ref-safe (-> list? natural? option?)]
   [list-contains? (-> list? any/c boolean?)]
   [list-reverse (-> list? list?)]
-  [into-list reducer?]
-  [into-reversed-list reducer?]
-  [append-into-list reducer?]))
+  [into-list (reducer/c any/c list?)]
+  [into-reversed-list (reducer/c any/c list?)]
+  [append-into-list (reducer/c list? list?)]))
 
 (require racket/math
          rebellion/base/option

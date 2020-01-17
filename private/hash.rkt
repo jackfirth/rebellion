@@ -11,10 +11,12 @@
   [nonempty-immutable-hash? predicate/c]
   [in-hash-entries (-> immutable-hash? (sequence/c entry?))]
   [in-mutable-hash-entries (-> mutable-hash? (sequence/c entry?))]
-  [into-hash reducer?]
-  [into-mutable-hash reducer?]
-  [combine-into-hash (-> (-> any/c any/c any/c) reducer?)]
-  [combine-into-mutable-hash (-> (-> any/c any/c any/c) reducer?)]
+  [into-hash (reducer/c entry? immutable-hash?)]
+  [into-mutable-hash (reducer/c entry? mutable-hash?)]
+  [combine-into-hash
+   (-> (-> any/c any/c any/c) (reducer/c entry? immutable-hash?))]
+  [combine-into-mutable-hash
+   (-> (-> any/c any/c any/c) (reducer/c entry? mutable-hash?))]
   [hash-set-entry (-> immutable-hash? entry? immutable-hash?)]
   [hash-set-entry! (-> mutable-hash? entry? void?)]
   [hash-key-set (-> immutable-hash? set?)]

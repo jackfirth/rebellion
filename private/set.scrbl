@@ -23,8 +23,8 @@
 @defmodule[rebellion/collection/set]
 
 @deftogether[[
- @defthing[into-set reducer?]
- @defthing[into-mutable-set reducer?]]]{
+ @defthing[into-set (reducer/c any/c set?)]
+ @defthing[into-mutable-set (reducer/c any/c set-mutable?)]]]{
  @tech{Reducers} that collect elements of the reduced sequence into either an
  immutable @tech/reference{set} or a mutable set, respectively.
 

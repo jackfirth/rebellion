@@ -4,8 +4,8 @@
 
 (provide
  (contract-out
-  [into-set reducer?]
-  [into-mutable-set reducer?]))
+  [into-set (reducer/c any/c set?)]
+  [into-mutable-set (reducer/c any/c set-mutable?)]))
 
 (require racket/set
          rebellion/streaming/reducer)
