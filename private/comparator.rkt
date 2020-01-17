@@ -155,10 +155,11 @@
                                 #:chaperone? [chaperone? (not guard)])
   (define function (comparator-function comparator))
   (define impersonated-function
-    (function-impersonate function
-                          #:guard (and guard (comparator-function-guard guard))
-                          #:application-marks marks
-                          #:chaperone? chaperone?))
+    (function-impersonate
+     function
+     #:arguments-guard (and guard (comparator-function-guard guard))
+     #:application-marks marks
+     #:chaperone? chaperone?))
   (define impersonated-without-props
     (make-comparator impersonated-function #:name (object-name comparator)))
   (reference-impersonate impersonated-without-props descriptor:comparator
