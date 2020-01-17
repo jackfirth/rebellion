@@ -7,6 +7,7 @@
  for*/reducer
  (contract-out
   [reducer? predicate/c]
+  [reducer/c (-> contract? contract? contract?)]
   [make-fold-reducer
    (->* ((-> any/c any/c any/c) any/c)
         (#:name (or/c interned-symbol? #f))
@@ -28,28 +29,30 @@
   [reducer-early-finisher (-> reducer? (-> any/c any/c))]
   [reduce (-> reducer? any/c ... any/c)]
   [reduce-all (-> reducer? sequence? any/c)]
-  [into-sum reducer?]
-  [into-product reducer?]
-  [into-count reducer?]
-  [into-first reducer?]
-  [into-last reducer?]
-  [into-nth (-> natural? reducer?)]
-  [into-index-of (-> any/c reducer?)]
-  [into-index-where (-> predicate/c reducer?)]
-  [into-any-match? (-> predicate/c reducer?)]
-  [into-all-match? (-> predicate/c reducer?)]
-  [into-none-match? (-> predicate/c reducer?)]
-  [into-max (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
-  [into-min (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
-  [into-string reducer?]
-  [into-line reducer?]
+  [into-sum (reducer/c number? number?)]
+  [into-product (reducer/c number? number?)]
+  [into-count (reducer/c any/c number?)]
+  [into-first (reducer/c any/c option?)]
+  [into-last (reducer/c any/c option?)]
+  [into-nth (-> natural? (reducer/c any/c option?))]
+  [into-index-of (-> any/c (reducer/c any/c (option/c natural?)))]
+  [into-index-where (-> predicate/c (reducer/c any/c (option/c natural?)))]
+  [into-any-match? (-> predicate/c (reducer/c any/c boolean?))]
+  [into-all-match? (-> predicate/c (reducer/c any/c boolean?))]
+  [into-none-match? (-> predicate/c (reducer/c any/c boolean?))]
+  [into-for-each (-> (-> any/c void?) (reducer/c any/c void?))]
+  [into-max
+   (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
+  [into-min
+   (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
+  [into-string (reducer/c char? immutable-string?)]
+  [into-line (reducer/c char? immutable-string?)]
   [join-into-string
    (->* (immutable-string?)
         (#:before-first immutable-string?
          #:before-last immutable-string?
          #:after-last immutable-string?)
-        reducer?)]
-  [into-for-each (-> (-> any/c void?) reducer?)]
+        (reducer/c immutable-string? immutable-string?))]
   [reducer-impersonate
    (->* (reducer?)
         (#:domain-guard (or/c (-> any/c any/c) #f)
@@ -68,6 +71,7 @@
                      racket/contract/base
                      syntax/parse)
          racket/bool
+         racket/contract/combinator
          racket/list
          racket/math
          rebellion/base/comparator
@@ -75,6 +79,7 @@
          rebellion/base/option
          rebellion/base/symbol
          rebellion/base/variant
+         rebellion/private/contract-projection
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/type/record
@@ -90,6 +95,7 @@
 
 (module+ test
   (require (submod "..")
+           racket/contract/region
            racket/set
            rackunit))
 
@@ -290,6 +296,65 @@
       (check-false (impersonator-of? into-list impersonated))
       (check chaperone-of? impersonated into-list)
       (check-false (chaperone-of? into-list impersonated)))))
+
+(define/name (reducer/c domain-contract* range-contract*)
+  (define domain-contract
+    (coerce-contract enclosing-function-name domain-contract*))
+  (define range-contract
+    (coerce-contract enclosing-function-name range-contract*))
+  (define contract-name
+    (build-compound-type-name enclosing-function-name
+                              domain-contract
+                              range-contract))
+  (define domain-projection (contract-late-neg-projection domain-contract))
+  (define range-projection (contract-late-neg-projection range-contract))
+  (define chaperone?
+    (and (chaperone-contract? domain-contract)
+         (chaperone-contract? range-contract)))
+  (define (projection blame)
+    (define domain-blame
+      (blame-add-context blame "an element reduced by" #:swap? #t))
+    (define range-blame (blame-add-context blame "the reduction result of"))
+    (define late-neg-domain-guard (domain-projection domain-blame))
+    (define late-neg-range-guard (range-projection range-blame))
+    (λ (v missing-party)
+      (assert-satisfies v reducer? blame #:missing-party missing-party)
+      (define props
+        (hash impersonator-prop:contracted the-contract
+              impersonator-prop:blame (cons blame missing-party)))
+      (define (domain-guard v) (late-neg-domain-guard v missing-party))
+      (define (range-guard v) (late-neg-range-guard v missing-party))
+      (reducer-impersonate v
+                           #:domain-guard domain-guard
+                           #:range-guard range-guard
+                           #:chaperone? chaperone?
+                           #:properties props)))
+  (define the-contract
+    ((if chaperone? make-chaperone-contract make-contract)
+     #:name contract-name
+     #:first-order reducer?
+     #:late-neg-projection projection))
+  the-contract)
+
+(module+ test
+  (test-case (name-string reducer/c)
+    (test-case "should enforce the domain contract on sequence elements"
+      (define/contract reducer (reducer/c number? any/c) into-list)
+      (check-not-exn (λ () (reduce reducer 1 2 3)))
+      (define (bad) (reduce reducer 1 2 'foo 3))
+      (check-exn exn:fail:contract:blame? bad)
+      (check-exn #rx"expected: number\\?" bad)
+      (check-exn #rx"given: 'foo" bad)
+      (check-exn #rx"an element reduced by" bad))
+
+    (test-case "should enforce the range contract on reduction results"
+      (define/contract reducer (reducer/c any/c integer?) into-sum)
+      (check-not-exn (λ () (reduce reducer 1 2 3)))
+      (define (bad) (reduce reducer 1 2 3.5))
+      (check-exn exn:fail:contract:blame? bad)
+      (check-exn #rx"promised: integer\\?" bad)
+      (check-exn #rx"produced: 6\\.5" bad)
+      (check-exn #rx"the reduction result of" bad))))
 
 ;@------------------------------------------------------------------------------
 ;; Non-core APIs
