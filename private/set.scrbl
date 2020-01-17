@@ -22,6 +22,18 @@
 @title{Sets}
 @defmodule[rebellion/collection/set]
 
+@defthing[empty-set emtpy-set?]{
+ The empty immutable @tech{set}.}
+
+@defproc[(empty-set? [v any/c]) boolean?]{
+ A predicate for empty immutable sets. Implies @racket[set?].}
+
+@defproc[(nonempty-set? [v any/c]) boolean?]{
+ A predicate for nonempty immutable sets. Implies @racket[set?].}
+
+@defproc[(mutable-set? [v any/c]) boolean?]{
+ A predicate for mutable sets. Equivalent to @racket[set-mutable?].}
+
 @deftogether[[
  @defthing[into-set (reducer/c any/c set?)]
  @defthing[into-mutable-set (reducer/c any/c set-mutable?)]]]{
