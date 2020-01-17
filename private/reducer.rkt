@@ -212,20 +212,21 @@
          reducer
          #:domain-guard [domain-guard #f]
          #:range-guard [range-guard #f]
-         #:properties [props (hash)]
-         #:chaperone? [chaperone? (nor domain-guard range-guard)])
+         #:properties [properties (hash)]
+         #:chaperone?
+         [chaperone? (and (false? domain-guard) (false? range-guard))])
   (define consumer (reducer-consumer reducer))
   (define finisher (reducer-finisher reducer))
-  (define early-finisher (reducer-finisher reducer))
-  (define domain-chaperone? (or chaperone? (not domain-guard)))
-  (define range-chaperone? (or chaperone? (not range-guard)))
+  (define early-finisher (reducer-early-finisher reducer))
+  (define domain-chaperone? (or chaperone? (false? domain-guard)))
+  (define range-chaperone? (or chaperone? (false? range-guard)))
 
   (define impersonated-consumer
     (function-impersonate
      consumer
      #:arguments-guard (and domain-guard (reducer-consumer-guard domain-guard))
      #:chaperone? domain-chaperone?))
-  
+
   (define impersonated-finisher
     (function-impersonate finisher
                           #:results-guard range-guard
@@ -244,10 +245,22 @@
                   #:name (object-name reducer)))
   
   (reference-impersonate impersonated-without-props descriptor:reducer
-                         #:properties props))
+                         #:properties properties))
 
 (module+ test
   (test-case (name-string reducer-impersonate)
+    (test-case "properties only"
+      (define reducer (into-all-match? even?))
+      (define properties (hash impersonator-prop:contracted 'foo))
+      (define impersonated
+        (reducer-impersonate reducer #:properties properties))
+      (check-equal? (value-contract impersonated) 'foo)
+      (check-equal? impersonated reducer)
+      (check impersonator-of? impersonated reducer)
+      (check impersonator-of? reducer impersonated)
+      (check chaperone-of? impersonated reducer)
+      (check chaperone-of? reducer impersonated))
+    
     (test-case "domain guard"
       (define counter (box 0))
       (define (guard v)
@@ -255,8 +268,13 @@
         v)
       (define impersonated
         (reducer-impersonate into-list #:domain-guard guard #:chaperone? #t))
-      (check-equal? (reduce impersonated 1 2 3) (list 1 2 3))
-      (check-equal? (unbox counter) 3))
+      (check-equal? (reduce impersonated 'a 'b 'c) (list 'a 'b 'c))
+      (check-equal? (unbox counter) 3)
+      (check-equal? impersonated into-list)
+      (check impersonator-of? impersonated into-list)
+      (check-false (impersonator-of? into-list impersonated))
+      (check chaperone-of? impersonated into-list)
+      (check-false (chaperone-of? into-list impersonated)))
 
     (test-case "range guard"
       (define result (box #f))
@@ -266,7 +284,12 @@
       (define impersonated
         (reducer-impersonate into-list #:range-guard guard #:chaperone? #t))
       (check-equal? (reduce impersonated 1 2 3) (list 1 2 3))
-      (check-equal? (unbox result) (list 1 2 3)))))
+      (check-equal? (unbox result) (list 1 2 3))
+      (check-equal? impersonated into-list)
+      (check impersonator-of? impersonated into-list)
+      (check-false (impersonator-of? into-list impersonated))
+      (check chaperone-of? impersonated into-list)
+      (check-false (chaperone-of? into-list impersonated)))))
 
 ;@------------------------------------------------------------------------------
 ;; Non-core APIs
