@@ -1,6 +1,7 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
+                     racket/bool
                      racket/contract/base
                      racket/math
                      racket/sequence
@@ -9,6 +10,7 @@
                      rebellion/base/immutable-string
                      rebellion/base/symbol
                      rebellion/base/variant
+                     rebellion/collection/hash
                      rebellion/collection/list
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer
@@ -365,6 +367,48 @@ early, before the input sequence is fully consumed.
          half-closed-transduction-state/c]
 
 @defproc[(half-closed-emission-value [em half-closed-emission?]) any/c]
+
+@section{Transducer Chaperones and Impersonators}
+
+@defproc[(transducer-impersonate
+          [transducer transducer?]
+          [#:domain-guard domain-guard (or/c (-> any/c any/c) #f) #f]
+          [#:range-guard range-guard (or/c (-> any/c any/c) #f) #f]
+          [#:properties properties
+           (hash/c impersonator-property? any/c #:immutable #t)
+           empty-hash]
+          [#:chaperone? chaperone? boolean?
+           (and (false? domain-guard) (false? range-guard))])
+         transducer?]{
+ Returns an @tech/reference{impersonator} of @racket[transducer]. Whenever the
+ impersonating transducer is used to transduce a sequence, @racket[domain-guard]
+ is applied to each element it consumes and @racket[range-guard] is applied to
+ each element it emits. Either of @racket[domain-guard] or @racket[range-guard]
+ may be skipped by providing @racket[#f] (the default). All of the
+ @tech/reference{impersonator properties} in @racket[properties] are attached to
+ the returned impersonator.
+
+ If @racket[chaperone?] is true, then the returned impersonator is a
+ @tech/reference{chaperone}. In that case, both @racket[domain-guard] and
+ @racket[range-guard] must always return values equal to whatever they're given.
+ Additionally, if a returned value is an impersonator, it must also be a
+ chaperone.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define (print-domain v)
+      (printf "Consuming ~a\n" v)
+      v)
+    (define (print-range v)
+      (printf "Emitting ~a\n" v)
+      v)
+    (define summing/printing
+      (transducer-impersonate (folding + 0)
+                              #:domain-guard print-domain
+                              #:range-guard print-range)))
+
+   (transduce (in-range 1 6) summing/printing #:into into-list))}
 
 @section{Debugging Transducers}
 
