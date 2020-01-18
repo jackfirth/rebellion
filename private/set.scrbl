@@ -23,7 +23,7 @@
 @defmodule[rebellion/collection/set]
 
 @defthing[empty-set emtpy-set?]{
- The empty immutable @tech{set}.}
+ The empty immutable @tech/reference{set}.}
 
 @defproc[(empty-set? [v any/c]) boolean?]{
  A predicate for empty immutable sets. Implies @racket[set?].}
