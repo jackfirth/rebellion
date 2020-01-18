@@ -500,7 +500,8 @@ reducers with increasing power and complexity:
           [#:properties properties
            (hash/c impersonator-property? any/c #:immutable #t)
            empty-hash]
-          [#:chaperone? chaperone? boolean? (nor domain-guard range-guard)])
+          [#:chaperone? chaperone? boolean?
+           (and (false? domain-guard) (false? range-guard))])
          reducer?]{
  Returns an @tech/reference{impersonator} of @racket[reducer]. Whenever the
  impersonating reducer is used to reduce a sequence, @racket[domain-guard] is
