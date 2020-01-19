@@ -148,8 +148,7 @@
 
   (test-case (name-string atomic-fixnum-add!)
     (define num (make-atomic-fixnum 0))
-    (check-true
-     (with-contention #:threads 1000 #:calls 1000 (atomic-fixnum-add! num 1)))
+    (with-contention #:threads 1000 #:calls 1000 (atomic-fixnum-add! num 1))
     (check-equal? (atomic-fixnum-get num) 1000000))
 
   (test-case (name-string atomic-fixnum-get-then-add!)
