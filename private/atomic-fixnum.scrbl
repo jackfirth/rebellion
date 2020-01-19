@@ -63,7 +63,7 @@ operation again. This is a form of Optimistic Concurrency Control (OCC).
  name]. Providing a @racket[name] is recommended for debugging and logging
  purposes.}
 
-@section{Basic Atomic Fixnum Access and Mutation}
+@section{Basic Atomic Fixnum Operations}
 
 @defproc[(atomic-fixnum-get [num atomic-fixnum?]) fixnum?]{
  Returns the current value of @racket[num].
