@@ -130,19 +130,11 @@
     (check-equal? (range-sum 5 15) 110))
 
   (define (call/contention #:threads num-threads #:calls num-calls thunk)
-    (define (do-call)
-      (define threads
-        (for/list ([_ (in-range num-threads)])
-          (thread (λ () (for ([_ (in-range num-calls)]) (thunk))))))
-      (for ([thd (in-list threads)]) (thread-wait thd)))
-    (define contention-observed? (box #f))
-    (with-intercepted-logging (λ (_) (set-box! contention-observed? #t))
-      do-call
-      #:logger rebellion/concurrency/atomic/fixnum-logger
-      'debug
-      'rebellion/concurrency/atomic/fixnum)
-    (unbox contention-observed?))
-
+    (define threads
+      (for/list ([_ (in-range num-threads)])
+        (thread (λ () (for ([_ (in-range num-calls)]) (thunk))))))
+    (for ([thd (in-list threads)]) (thread-wait thd)))
+    
   (define-simple-macro
     (with-contention #:threads threads:expr #:calls calls:expr body:expr ...+)
     (call/contention #:threads threads #:calls calls (λ () body ...)))
@@ -163,42 +155,37 @@
   (test-case (name-string atomic-fixnum-get-then-add!)
     (define num (make-atomic-fixnum 0))
     (define total (make-atomic-fixnum 0))
-    (check-true
-     (with-contention #:threads 1000 #:calls 1000
-       (atomic-fixnum-add! total (atomic-fixnum-get-then-add! num 1))))
+    (with-contention #:threads 1000 #:calls 1000
+      (atomic-fixnum-add! total (atomic-fixnum-get-then-add! num 1)))
     (check-equal? (atomic-fixnum-get num) 1000000)
     (check-equal? (atomic-fixnum-get total) (range-sum 0 999999)))
 
   (test-case (name-string atomic-fixnum-add-then-get!)
     (define num (make-atomic-fixnum 0))
     (define total (make-atomic-fixnum 0))
-    (check-true
-     (with-contention #:threads 1000 #:calls 1000
-       (atomic-fixnum-add! total (atomic-fixnum-add-then-get! num 1))))
+    (with-contention #:threads 1000 #:calls 1000
+      (atomic-fixnum-add! total (atomic-fixnum-add-then-get! num 1)))
     (check-equal? (atomic-fixnum-get num) 1000000)
     (check-equal? (atomic-fixnum-get total) (range-sum 1 1000000)))
 
   (test-case (name-string atomic-fixnum-update!)
     (define num (make-atomic-fixnum 0))
-    (check-true
-     (with-contention #:threads 1000 #:calls 1000
-       (atomic-fixnum-update! num add1)))
+    (with-contention #:threads 1000 #:calls 1000
+      (atomic-fixnum-update! num add1))
     (check-equal? (atomic-fixnum-get num) 1000000))
 
   (test-case (name-string atomic-fixnum-get-then-update!)
     (define num (make-atomic-fixnum 0))
     (define total (make-atomic-fixnum 0))
-    (check-true
-     (with-contention #:threads 1000 #:calls 1000
-       (atomic-fixnum-add! total (atomic-fixnum-get-then-update! num add1))))
+    (with-contention #:threads 1000 #:calls 1000
+      (atomic-fixnum-add! total (atomic-fixnum-get-then-update! num add1)))
     (check-equal? (atomic-fixnum-get num) 1000000)
     (check-equal? (atomic-fixnum-get total) (range-sum 0 999999)))
 
   (test-case (name-string atomic-fixnum-update-then-get!)
     (define num (make-atomic-fixnum 0))
     (define total (make-atomic-fixnum 0))
-    (check-true
-     (with-contention #:threads 1000 #:calls 1000
-       (atomic-fixnum-add! total (atomic-fixnum-update-then-get! num add1))))
+    (with-contention #:threads 1000 #:calls 1000
+      (atomic-fixnum-add! total (atomic-fixnum-update-then-get! num add1)))
     (check-equal? (atomic-fixnum-get num) 1000000)
     (check-equal? (atomic-fixnum-get total) (range-sum 1 1000000))))
