@@ -1,0 +1,204 @@
+#lang racket/base
+
+(require racket/contract/base)
+
+(provide
+ (contract-out
+  [atomic-fixnum? predicate/c]
+  [make-atomic-fixnum (-> fixnum? atomic-fixnum?)]
+  [atomic-fixnum-get (-> atomic-fixnum? fixnum?)]
+  [rename set-atomic-fixnum-get! atomic-fixnum-set!
+          (-> atomic-fixnum? fixnum? void?)]
+  [atomic-fixnum-add! (-> atomic-fixnum? fixnum? void?)]
+  [atomic-fixnum-update! (-> atomic-fixnum? (-> fixnum? fixnum?) void?)]
+  [atomic-fixnum-compare-and-set! (-> atomic-fixnum? fixnum? fixnum? boolean?)]
+  [atomic-fixnum-compare-and-add! (-> atomic-fixnum? fixnum? fixnum? boolean?)]
+  [atomic-fixnum-compare-and-exchange!
+   (-> atomic-fixnum? fixnum? fixnum? fixnum?)]
+  [atomic-fixnum-get-then-set! (-> atomic-fixnum? fixnum? fixnum?)]
+  [atomic-fixnum-get-then-add! (-> atomic-fixnum? fixnum? fixnum?)]
+  [atomic-fixnum-add-then-get! (-> atomic-fixnum? fixnum? fixnum?)]
+  [atomic-fixnum-get-then-update!
+   (-> atomic-fixnum? (-> fixnum? fixnum?) fixnum?)]
+  [atomic-fixnum-update-then-get!
+   (-> atomic-fixnum? (-> fixnum? fixnum?) fixnum?)]))
+
+(require (only-in racket/unsafe/ops unsafe-struct*-cas!)
+         racket/fixnum
+         rebellion/private/static-name
+         syntax/parse/define)
+
+(module+ test
+  (require (submod "..")
+           racket/logging
+           rackunit))
+
+;@------------------------------------------------------------------------------
+
+(define-logger rebellion/concurrency/atomic/fixnum)
+
+(define-simple-macro (log-atomic-fixnum-contention num:id)
+  (log-rebellion/concurrency/atomic/fixnum-debug
+   "Retrying an atomic fixnum operation due to contention.
+  fixnum: ~e
+  operation: ~a"
+   num enclosing-function-name))
+
+(struct atomic-fixnum ([get #:mutable] name)
+  #:constructor-name constructor:atomic-fixnum)
+
+(define (atomic-fixnum-compare-and-set! num expected replacement)
+  (unsafe-struct*-cas! num 0 expected replacement))
+
+(define (make-atomic-fixnum initial-value #:name [name #f])
+  (constructor:atomic-fixnum initial-value name))
+
+(define (atomic-fixnum-compare-and-add! num expected amount)
+  (atomic-fixnum-compare-and-set! num expected (fx+ expected amount)))
+
+(define/name (atomic-fixnum-compare-and-exchange! num expected replacement)
+  (define x (atomic-fixnum-get num))
+  (cond
+    [(not (eq? x expected)) x]
+    [(atomic-fixnum-compare-and-set! num expected replacement) x]
+    [else
+     (log-atomic-fixnum-contention num)
+     (atomic-fixnum-compare-and-exchange! num expected replacement)]))
+
+(define/name (atomic-fixnum-get-then-set! num replacement)
+  (define x (atomic-fixnum-get num))
+  (cond
+    [(atomic-fixnum-compare-and-set! num x replacement) x]
+    [else
+     (log-atomic-fixnum-contention num)
+     (atomic-fixnum-get-then-set! num replacement)]))
+
+(define/name (atomic-fixnum-add! num amount)
+  (define x (atomic-fixnum-get num))
+  (unless (atomic-fixnum-compare-and-set! num x (fx+ x amount))
+    (log-atomic-fixnum-contention num)
+    (atomic-fixnum-add! num amount)))
+
+(define/name (atomic-fixnum-get-then-add! num amount)
+  (define x (atomic-fixnum-get num))
+  (cond
+    [(atomic-fixnum-compare-and-add! num x amount) x]
+    [else
+     (log-atomic-fixnum-contention num)
+     (atomic-fixnum-get-then-add! num amount)]))
+
+(define/name (atomic-fixnum-add-then-get! num amount)
+  (define x (atomic-fixnum-get num))
+  (define x* (fx+ x amount))
+  (cond
+    [(atomic-fixnum-compare-and-set! num x x*) x*]
+    [else
+     (log-atomic-fixnum-contention num)
+     (atomic-fixnum-add-then-get! num amount)]))
+
+(define/name (atomic-fixnum-update! num updater)
+  (define x (atomic-fixnum-get num))
+  (unless (atomic-fixnum-compare-and-set! num x (updater x))
+    (log-atomic-fixnum-contention num)
+    (atomic-fixnum-update! num updater)))
+
+(define/name (atomic-fixnum-get-then-update! num updater)
+  (define x (atomic-fixnum-get num))
+  (cond
+    [(atomic-fixnum-compare-and-set! num x (updater x)) x]
+    [else
+     (log-atomic-fixnum-contention num)
+     (atomic-fixnum-get-then-update! num updater)]))
+
+(define/name (atomic-fixnum-update-then-get! num updater)
+  (define x (atomic-fixnum-get num))
+  (define x* (updater x))
+  (cond
+    [(atomic-fixnum-compare-and-set! num x x*) x*]
+    [else
+     (log-atomic-fixnum-contention num)
+     (atomic-fixnum-update-then-get! num updater)]))
+
+(module+ test
+
+  (define (range-sum lower upper)
+    (/ (- (* upper (add1 upper)) (* lower (sub1 lower))) 2))
+
+  (test-case (name-string range-sum)
+    (check-equal? (range-sum 1 3) 6)
+    (check-equal? (range-sum 1 10) 55)
+    (check-equal? (range-sum 5 15) 110))
+
+  (define (call/contention #:threads num-threads #:calls num-calls thunk)
+    (define (do-call)
+      (define threads
+        (for/list ([_ (in-range num-threads)])
+          (thread (λ () (for ([_ (in-range num-calls)]) (thunk))))))
+      (for ([thd (in-list threads)]) (thread-wait thd)))
+    (define contention-observed? (box #f))
+    (with-intercepted-logging (λ (_) (set-box! contention-observed? #t))
+      do-call
+      #:logger rebellion/concurrency/atomic/fixnum-logger
+      'debug
+      'rebellion/concurrency/atomic/fixnum)
+    (unbox contention-observed?))
+
+  (define-simple-macro
+    (with-contention #:threads threads:expr #:calls calls:expr body:expr ...+)
+    (call/contention #:threads threads #:calls calls (λ () body ...)))
+  
+  (test-case (name-string atomic-fixnum-compare-and-set!)
+    (define num (make-atomic-fixnum 0))
+    (check-true (atomic-fixnum-compare-and-set! num 0 5))
+    (check-equal? (atomic-fixnum-get num) 5)
+    (check-false (atomic-fixnum-compare-and-set! num 0 42))
+    (check-equal? (atomic-fixnum-get num) 5))
+
+  (test-case (name-string atomic-fixnum-add!)
+    (define num (make-atomic-fixnum 0))
+    (check-true
+     (with-contention #:threads 1000 #:calls 1000 (atomic-fixnum-add! num 1)))
+    (check-equal? (atomic-fixnum-get num) 1000000))
+
+  (test-case (name-string atomic-fixnum-get-then-add!)
+    (define num (make-atomic-fixnum 0))
+    (define total (make-atomic-fixnum 0))
+    (check-true
+     (with-contention #:threads 1000 #:calls 1000
+       (atomic-fixnum-add! total (atomic-fixnum-get-then-add! num 1))))
+    (check-equal? (atomic-fixnum-get num) 1000000)
+    (check-equal? (atomic-fixnum-get total) (range-sum 0 999999)))
+
+  (test-case (name-string atomic-fixnum-add-then-get!)
+    (define num (make-atomic-fixnum 0))
+    (define total (make-atomic-fixnum 0))
+    (check-true
+     (with-contention #:threads 1000 #:calls 1000
+       (atomic-fixnum-add! total (atomic-fixnum-add-then-get! num 1))))
+    (check-equal? (atomic-fixnum-get num) 1000000)
+    (check-equal? (atomic-fixnum-get total) (range-sum 1 1000000)))
+
+  (test-case (name-string atomic-fixnum-update!)
+    (define num (make-atomic-fixnum 0))
+    (check-true
+     (with-contention #:threads 1000 #:calls 1000
+       (atomic-fixnum-update! num add1)))
+    (check-equal? (atomic-fixnum-get num) 1000000))
+
+  (test-case (name-string atomic-fixnum-get-then-update!)
+    (define num (make-atomic-fixnum 0))
+    (define total (make-atomic-fixnum 0))
+    (check-true
+     (with-contention #:threads 1000 #:calls 1000
+       (atomic-fixnum-add! total (atomic-fixnum-get-then-update! num add1))))
+    (check-equal? (atomic-fixnum-get num) 1000000)
+    (check-equal? (atomic-fixnum-get total) (range-sum 0 999999)))
+
+  (test-case (name-string atomic-fixnum-update-then-get!)
+    (define num (make-atomic-fixnum 0))
+    (define total (make-atomic-fixnum 0))
+    (check-true
+     (with-contention #:threads 1000 #:calls 1000
+       (atomic-fixnum-add! total (atomic-fixnum-update-then-get! num add1))))
+    (check-equal? (atomic-fixnum-get num) 1000000)
+    (check-equal? (atomic-fixnum-get total) (range-sum 1 1000000))))
