@@ -5,7 +5,8 @@
 (provide
  (contract-out
   [atomic-fixnum? predicate/c]
-  [make-atomic-fixnum (-> fixnum? atomic-fixnum?)]
+  [make-atomic-fixnum
+   (->* (fixnum?) (#:name (or/c interned-symbol? #f)) atomic-fixnum?)]
   [atomic-fixnum-get (-> atomic-fixnum? fixnum?)]
   [rename set-atomic-fixnum-get! atomic-fixnum-set!
           (-> atomic-fixnum? fixnum? void?)]
@@ -25,12 +26,12 @@
 
 (require (only-in racket/unsafe/ops unsafe-struct*-cas!)
          racket/fixnum
+         rebellion/base/symbol
          rebellion/private/static-name
          syntax/parse/define)
 
 (module+ test
   (require (submod "..")
-           racket/logging
            rackunit))
 
 ;@------------------------------------------------------------------------------
@@ -45,7 +46,9 @@
    num enclosing-function-name))
 
 (struct atomic-fixnum ([get #:mutable] name)
-  #:constructor-name constructor:atomic-fixnum)
+  #:property prop:object-name (struct-field-index name)
+  #:constructor-name constructor:atomic-fixnum
+  #:authentic)
 
 (define (atomic-fixnum-compare-and-set! num expected replacement)
   (unsafe-struct*-cas! num 0 expected replacement))

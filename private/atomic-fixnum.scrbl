@@ -36,9 +36,9 @@
 @title{Atomic Fixnums}
 @defmodule[rebellion/concurrency/atomic/fixnum]
 
-An @deftech{atomic fixnum} is a thread-safe, future-safe, kill-safe, and
-break-safe mutable object containing a single @tech/reference{fixnum}. The most
-basic operation on an atomic fixnum is a @deftech{compare and set}, which
+An @deftech{atomic fixnum} is a thread-safe, future-safe, kill-safe, break-safe,
+and lock-free mutable object containing a single @tech/reference{fixnum}. The
+most basic operation on an atomic fixnum is a @deftech{compare and set}, which
 attempts to set the atomic fixnum to a new value if and only if its current
 value is equal to some specific value. When Racket is compiled with support for
 @tech/reference{futures}, this operation is implemented with a single hardware
@@ -60,8 +60,8 @@ operation again. This is a form of Optimistic Concurrency Control (OCC).
                              [#:name name (or/c interned-symbol? #f) #f])
          atomic-fixnum?]{
  Constructs a new @tech{atomic fixnum} named @racket[name] and set to @racket[
- name]. Providing a @racket[name] is recommended for debugging and logging
- purposes.}
+ initial-value]. Providing a @racket[name] is recommended for debugging and
+ logging purposes.}
 
 @section{Basic Atomic Fixnum Operations}
 
