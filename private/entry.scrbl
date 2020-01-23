@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/match
+                     racket/math
                      racket/sequence
                      racket/set
                      rebellion/collection/entry
@@ -19,6 +20,7 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/match
+                   'racket/math
                    'racket/set
                    'rebellion/collection/entry
                    'rebellion/collection/hash
@@ -32,12 +34,14 @@
 @title{Entries}
 @defmodule[rebellion/collection/entry]
 
-An @deftech{entry} is a key-value pair representing a mapping in a
-dictionary-like collection. Entries are semantically equivalent to @tech{pairs},
-but use the less generic and more readable names @racket[entry-key] and @racket[
- entry-value]. Use entries instead of pairs when working with dicitonary-like
-types, as a collection of @racket[entry?] values has a clearer intended purpose
-than a collection of @racket[pair?] values.
+An @deftech{entry} is a key-value pair representing a mapping in a @tech{
+ dictionary-like collection}, also called a @tech{bicollection}. Entries are
+semantically equivalent to @tech{pairs}, but the two components of an entry are
+called the @emph{key} and the @emph{value} and are retrieved with the @racket[
+ entry-key] and @racket[entry-value] functions. Use entries instead of pairs
+when working with dicitonary-like types, as a collection of @racket[entry?]
+values has a clearer intended purpose than a collection of @racket[pair?]
+values.
 
 @defproc[(entry? [v any/c]) boolean?]{
  A predicate for @tech{entries}.}
@@ -111,11 +115,23 @@ than a collection of @racket[pair?] values.
 
 @defproc[(mapping-keys [key-function (-> any/c any/c)]) transducer?]{
  Like @racket[mapping], but the sequence must be made of @tech{entries} and
- @racket[key-function] is applied to the key of each entry.}
+ @racket[key-function] is applied to the key of each entry.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-hash-entries (hash "apPLe" 1 "BaNaNa" 2))
+              (mapping-keys string-titlecase)
+              #:into into-hash))}
 
 @defproc[(mapping-values [value-function (-> any/c any/c)]) transducer?]{
  Like @racket[mapping], but the sequence must be made of @tech{entries} and
- @racket[value-function] is applied to the key of each entry.}
+ @racket[value-function] is applied to the key of each entry.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-hash-entries (hash "car" 1 "bus" 2 "plane" 3 "boat" 4))
+              (mapping-values sqr)
+              #:into into-hash))}
 
 @defproc[(filtering-keys [key-predicate predicate/c]) transducer?]{
  Like @racket[filtering], but the sequence must be made of @tech{entries} and
