@@ -8,11 +8,13 @@
   [enumerated (-> #:element any/c #:position natural? enumerated?)]
   [enumerated-element (-> enumerated? any/c)]
   [enumerated-position (-> enumerated? natural?)]
-  [enumerating transducer?]))
+  [enumerating (transducer/c any/c enumerated?)]))
 
 (require racket/math
          rebellion/base/impossible-function
          rebellion/base/variant
+         rebellion/private/static-name
+         rebellion/private/transducer-contract
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
@@ -20,7 +22,7 @@
 
 (define-record-type enumerated (element position))
 
-(define enumerating
+(define/name enumerating
   (make-transducer
    #:starter (λ () (variant #:consume 0))
    #:consumer
@@ -32,4 +34,4 @@
    #:half-closer (λ (_) (variant #:finish #f))
    #:half-closed-emitter impossible
    #:finisher void
-   #:name 'enumerating))
+   #:name enclosing-variable-name))

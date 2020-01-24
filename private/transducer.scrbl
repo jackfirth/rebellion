@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/bool
                      racket/contract/base
+                     racket/contract/region
                      racket/math
                      racket/sequence
                      racket/set
@@ -22,7 +23,9 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'racket/set
+    #:public (list 'racket/contract/region
+                   'racket/math
+                   'racket/set
                    'rebellion/base/comparator
                    'rebellion/base/immutable-string
                    'rebellion/collection/list
@@ -144,7 +147,7 @@ early, before the input sequence is fully consumed.
               (batching (reducer-limit into-list 4))
               #:into into-list))}
 
-@defthing[enumerating transducer?]{
+@defthing[enumerating (transducer/c any/c enumerated?)]{
  A transducer that emits each element along with its position in the sequence,
  as an @racket[enumerated?] value.
 
@@ -368,6 +371,28 @@ early, before the input sequence is fully consumed.
 
 @defproc[(half-closed-emission-value [em half-closed-emission?]) any/c]
 
+@section{Transducer Contracts}
+
+@defproc[(transducer/c [domain-contract contract?] [range-contract contract?])
+         contract?]{
+ A @tech/reference{contract combinator} for @tech{transducers}. Returns a
+ contract that enforces that the contracted value is a transducer and wraps the
+ transducer to enforce @racket[domain-contract] and @racket[range-contract].
+ Every consumed element is checked with @racket[domain-contract], and every
+ emitted element is checked with @racket[range-contract]. If both @racket[
+ domain-contract] and @racket[range-contract] are @tech/reference{chaperone
+  contracts}, then the returned contract is as well.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define/contract squaring
+      (transducer/c number? number?)
+      (mapping sqr)))
+
+   (transduce (in-range 1 5) squaring #:into into-list)
+   (eval:error (transduce "abcd" squaring #:into into-list)))}
+
 @section{Transducer Chaperones and Impersonators}
 
 @defproc[(transducer-impersonate
@@ -434,7 +459,8 @@ early, before the input sequence is fully consumed.
 
 This module provides utilities for testing @tech{transducers}.
 
-@defproc[(observing-transduction-events [subject transducer?]) transducer?]{
+@defproc[(observing-transduction-events [subject transducer?])
+         (transducer/c any/c transduction-event?)]{
  Constructs a @tech{transducer} that passes consumed values to @racket[subject],
  then emits @racket[transduction-event?] structures describing the state
  transitions that @racket[subject] performs, including any consumed or emitted
