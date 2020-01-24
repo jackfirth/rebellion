@@ -9,16 +9,18 @@
   [entry? (-> any/c boolean?)]
   [entry-key (-> entry? any/c)]
   [entry-value (-> entry? any/c)]
-  [bisecting (-> (-> any/c any/c) (-> any/c any/c) transducer?)]
-  [mapping-keys (-> (-> any/c any/c) transducer?)]
-  [mapping-values (-> (-> any/c any/c) transducer?)]
-  [indexing (-> (-> any/c any/c) transducer?)]
-  [filtering-keys (-> predicate/c transducer?)]
-  [filtering-values (-> predicate/c transducer?)]
-  [append-mapping-keys (-> (-> any/c (sequence/c any/c)) transducer?)]
-  [append-mapping-values (-> (-> any/c (sequence/c any/c)) transducer?)]
-  [batching-into-entries transducer?]
-  [grouping (-> reducer? transducer?)]))
+  [bisecting (-> (-> any/c any/c) (-> any/c any/c) (transducer/c any/c entry?))]
+  [mapping-keys (-> (-> any/c any/c) (transducer/c entry? entry?))]
+  [mapping-values (-> (-> any/c any/c) (transducer/c entry? entry?))]
+  [indexing (-> (-> any/c any/c) (transducer/c any/c entry?))]
+  [filtering-keys (-> predicate/c (transducer/c entry? entry?))]
+  [filtering-values (-> predicate/c (transducer/c entry? entry?))]
+  [append-mapping-keys
+   (-> (-> any/c (sequence/c any/c)) (transducer/c entry? entry?))]
+  [append-mapping-values
+   (-> (-> any/c (sequence/c any/c)) (transducer/c entry? entry?))]
+  [batching-into-entries (transducer/c any/c entry?)]
+  [grouping (-> reducer? (transducer/c entry? entry?))]))
 
 (require racket/sequence
          racket/set

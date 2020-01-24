@@ -474,7 +474,7 @@ reducers with increasing power and complexity:
 @defproc[(reducer/c [domain-contract contract?] [range-contract contract?])
          contract?]{
  A @tech/reference{contract combinator} for @tech{reducers}. Returns a contract
- that enforces that the contracted value is a reducer and wrap the reducer to
+ that enforces that the contracted value is a reducer and wraps the reducer to
  enforce @racket[domain-contract] and @racket[range-contract]. Every reduced
  element is checked with @racket[domain-contract], and every reduction result is
  checked with @racket[range-contract]. If both @racket[domain-contract] and

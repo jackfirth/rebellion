@@ -78,7 +78,7 @@ values.
 
 @defproc[(bisecting [key-function (-> any/c any/c)]
                     [value-function (-> any/c any/c)])
-         transducer?]{
+         (transducer/c any/c entry?)]{
  Constructs a @tech{transducer} that transforms each element of a sequence into
  an @tech{entry}, by applying @racket[key-function] and @racket[value-function]
  to the element to extract the key and value of the entry.
@@ -96,7 +96,8 @@ values.
               (bisecting book-author book-title)
               #:into into-hash))}
 
-@defproc[(indexing [key-function (-> any/c any/c)]) transducer?]{
+@defproc[(indexing [key-function (-> any/c any/c)])
+         (transducer/c any/c entry?)]{
  Constructs a @tech{transducer} that transforms a sequence of elements into a
  sequence of @tech{entries} keyed by @racket[key-function].
 
@@ -113,7 +114,8 @@ values.
               (indexing book-title)
               #:into into-hash))}
 
-@defproc[(mapping-keys [key-function (-> any/c any/c)]) transducer?]{
+@defproc[(mapping-keys [key-function (-> any/c any/c)])
+         (transducer/c entry? entry?)]{
  Like @racket[mapping], but the sequence must be made of @tech{entries} and
  @racket[key-function] is applied to the key of each entry.
 
@@ -123,7 +125,8 @@ values.
               (mapping-keys string-titlecase)
               #:into into-hash))}
 
-@defproc[(mapping-values [value-function (-> any/c any/c)]) transducer?]{
+@defproc[(mapping-values [value-function (-> any/c any/c)])
+         (transducer/c entry? entry?)]{
  Like @racket[mapping], but the sequence must be made of @tech{entries} and
  @racket[value-function] is applied to the key of each entry.
 
@@ -133,7 +136,8 @@ values.
               (mapping-values sqr)
               #:into into-hash))}
 
-@defproc[(filtering-keys [key-predicate predicate/c]) transducer?]{
+@defproc[(filtering-keys [key-predicate predicate/c])
+         (transducer/c entry? entry?)]{
  Like @racket[filtering], but the sequence must be made of @tech{entries} and
  the key of each entry must satisfy @racket[key-predicate].
 
@@ -143,7 +147,8 @@ values.
               (filtering-keys symbol?)
               #:into into-hash))}
 
-@defproc[(filtering-values [value-predicate predicate/c]) transducer?]{
+@defproc[(filtering-values [value-predicate predicate/c])
+         (transducer/c entry? entry?)]{
  Like @racket[filtering], but the sequence must be made of @tech{entries} and
  the value of each entry must satisfy @racket[value-predicate].
 
@@ -155,7 +160,7 @@ values.
 
 @defproc[(append-mapping-keys
           [key-sequence-function (-> any/c (sequence/c any/c))])
-         transducer?]{
+         (transducer/c entry? entry?)]{
  Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by
  applying @racket[key-sequence-function] to the key of each entry, then emitting
  one entry per key in the sequence returned by @racket[key-sequence-function].
@@ -169,7 +174,7 @@ values.
 
 @defproc[(append-mapping-values
           [value-sequence-function (-> any/c (sequence/c any/c))])
-         transducer?]{
+         (transducer/c entry? entry?)]{
  Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by
  applying @racket[value-sequence-function] to the value of each entry, then
  emitting one entry per value in the sequence returned by @racket[
@@ -181,7 +186,7 @@ values.
               (append-mapping-values in-immutable-set)
               #:into into-set))}
 
-@defthing[batching-into-entries transducer?]{
+@defthing[batching-into-entries (transducer/c any/c entry?)]{
  A @tech{transducer} that transforms a flat sequences of alternating keys and
  values into a sequence of @tech{entries}. The sequence must contain an even
  number of elements, otherwise a contract failure is raised.
@@ -196,7 +201,7 @@ values.
                batching-into-entries
                #:into into-set)))}
 
-@defproc[(grouping [value-reducer reducer?]) transducer?]{
+@defproc[(grouping [value-reducer reducer?]) (transducer/c entry? entry?)]{
  Constructs a @tech{transducer} that transforms a sequence of @tech{entries} by
  merging entries with equal keys. For each key, the values of all entries with
  that key are combined using @racket[value-reducer]. If @racket[value-reducer]

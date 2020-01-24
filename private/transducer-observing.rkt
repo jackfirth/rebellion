@@ -4,7 +4,8 @@
 
 (provide
  (contract-out
-  [observing-transduction-events (-> transducer? transducer?)]
+  [observing-transduction-events
+   (-> transducer? (transducer/c any/c transduction-event?))]
   [transduction-event? predicate/c]
   [start-event transduction-event?]
   [half-close-event transduction-event?]
@@ -21,6 +22,7 @@
 
 (require rebellion/base/variant
          rebellion/private/static-name
+         rebellion/private/transducer-contract
          rebellion/streaming/transducer/base
          rebellion/type/record
          rebellion/type/singleton
