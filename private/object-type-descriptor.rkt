@@ -4,35 +4,35 @@
 
 (provide
  (contract-out
-  [reference-descriptor? predicate/c]
-  [reference-descriptor-type (-> reference-descriptor? object-type?)]
-  [reference-descriptor-constructor (-> reference-descriptor? procedure?)]
-  [reference-descriptor-predicate (-> reference-descriptor? predicate/c)]
-  [reference-descriptor-accessor
-   (-> reference-descriptor? (-> any/c natural? any/c))]
-  [initialized-reference-descriptor? predicate/c]
-  [uninitialized-reference-descriptor? predicate/c]
-  [make-reference-implementation
+  [object-descriptor? predicate/c]
+  [object-descriptor-type (-> object-descriptor? object-type?)]
+  [object-descriptor-constructor (-> object-descriptor? procedure?)]
+  [object-descriptor-predicate (-> object-descriptor? predicate/c)]
+  [object-descriptor-accessor
+   (-> object-descriptor? (-> any/c natural? any/c))]
+  [initialized-object-descriptor? predicate/c]
+  [uninitialized-object-descriptor? predicate/c]
+  [make-object-implementation
    (->* (object-type?)
-        (#:property-maker (-> uninitialized-reference-descriptor?
+        (#:property-maker (-> uninitialized-object-descriptor?
                               (listof (cons/c struct-type-property? any/c)))
          #:inspector inspector?)
-        initialized-reference-descriptor?)]
-  [default-reference-properties
-   (-> reference-descriptor? (listof (cons/c struct-type-property? any/c)))]
-  [default-reference-equal+hash (-> reference-descriptor? equal+hash/c)]
-  [default-reference-custom-write
-   (-> reference-descriptor? custom-write-function/c)]
-  [default-reference-object-name (-> reference-descriptor? natural?)]
-  [make-reference-field-accessor
-   (-> reference-descriptor? keyword? procedure?)]
-  [reference-impersonate
+        initialized-object-descriptor?)]
+  [default-object-properties
+   (-> object-descriptor? (listof (cons/c struct-type-property? any/c)))]
+  [default-object-equal+hash (-> object-descriptor? equal+hash/c)]
+  [default-object-custom-write
+   (-> object-descriptor? custom-write-function/c)]
+  [default-object-name-property (-> object-descriptor? natural?)]
+  [make-object-field-accessor
+   (-> object-descriptor? keyword? procedure?)]
+  [object-impersonate
    (->i #:chaperone
-        ([instance (descriptor) (reference-descriptor-predicate descriptor)]
-         [descriptor initialized-reference-descriptor?])
+        ([instance (descriptor) (object-descriptor-predicate descriptor)]
+         [descriptor initialized-object-descriptor?])
         (#:properties [properties impersonator-property-hash/c]
          #:chaperone? [chaperone? boolean?])
-        [_ (descriptor) (reference-descriptor-predicate descriptor)])]))
+        [_ (descriptor) (object-descriptor-predicate descriptor)])]))
 
 (require racket/list
          racket/math
@@ -47,7 +47,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (make-descriptor-properties descriptor)
+(define (make-object-properties descriptor)
   (define type (record-descriptor-type descriptor))
   (define type-name (record-type-name type))
   (define type-field (keyset-index-of (record-type-fields type) '#:type))
@@ -59,43 +59,43 @@
         (cons prop:custom-write custom-write)
         (cons prop:object-name name-getter)))
 
-(define-record-type initialized-reference-descriptor
+(define-record-type initialized-object-descriptor
   (type backing-tuple-descriptor constructor accessor predicate)
-  #:constructor-name make-initialized-reference-descriptor
-  #:property-maker make-descriptor-properties)
+  #:constructor-name make-initialized-object-descriptor
+  #:property-maker make-object-properties)
 
-(define-record-type uninitialized-reference-descriptor
+(define-record-type uninitialized-object-descriptor
   (type constructor accessor predicate)
-  #:constructor-name make-uninitialized-reference-descriptor
-  #:property-maker make-descriptor-properties)
+  #:constructor-name make-uninitialized-object-descriptor
+  #:property-maker make-object-properties)
 
-(define (reference-descriptor? v)
-  (or (initialized-reference-descriptor? v)
-      (uninitialized-reference-descriptor? v)))
+(define (object-descriptor? v)
+  (or (initialized-object-descriptor? v)
+      (uninitialized-object-descriptor? v)))
 
-(define (reference-descriptor-type descriptor)
-  (if (initialized-reference-descriptor? descriptor)
-      (initialized-reference-descriptor-type descriptor)
-      (uninitialized-reference-descriptor-type descriptor)))
+(define (object-descriptor-type descriptor)
+  (if (initialized-object-descriptor? descriptor)
+      (initialized-object-descriptor-type descriptor)
+      (uninitialized-object-descriptor-type descriptor)))
 
-(define (reference-descriptor-constructor descriptor)
-  (if (initialized-reference-descriptor? descriptor)
-      (initialized-reference-descriptor-constructor descriptor)
-      (uninitialized-reference-descriptor-constructor descriptor)))
+(define (object-descriptor-constructor descriptor)
+  (if (initialized-object-descriptor? descriptor)
+      (initialized-object-descriptor-constructor descriptor)
+      (uninitialized-object-descriptor-constructor descriptor)))
 
-(define (reference-descriptor-predicate descriptor)
-  (if (initialized-reference-descriptor? descriptor)
-      (initialized-reference-descriptor-predicate descriptor)
-      (uninitialized-reference-descriptor-predicate descriptor)))
+(define (object-descriptor-predicate descriptor)
+  (if (initialized-object-descriptor? descriptor)
+      (initialized-object-descriptor-predicate descriptor)
+      (uninitialized-object-descriptor-predicate descriptor)))
 
-(define (reference-descriptor-accessor descriptor)
-  (if (initialized-reference-descriptor? descriptor)
-      (initialized-reference-descriptor-accessor descriptor)
-      (uninitialized-reference-descriptor-accessor descriptor)))
+(define (object-descriptor-accessor descriptor)
+  (if (initialized-object-descriptor? descriptor)
+      (initialized-object-descriptor-accessor descriptor)
+      (uninitialized-object-descriptor-accessor descriptor)))
 
 ;@------------------------------------------------------------------------------
 
-(define (tuple-constructor->reference-constructor constructor type)
+(define (tuple-constructor->object-constructor constructor type)
   (define fields (object-type-fields type))
   (define size (keyset-size fields))
   (define name-field-position (object-type-object-name-field type))
@@ -118,65 +118,65 @@
   (procedure-rename unnamed-constructor
                     (object-type-constructor-name type)))
 
-(define (tuple-descriptor->reference-descriptor descriptor type)
+(define (tuple-descriptor->object-descriptor descriptor type)
   (define constructor
-    (tuple-constructor->reference-constructor
+    (tuple-constructor->object-constructor
      (tuple-descriptor-constructor descriptor) type))
   (if (initialized-tuple-descriptor? descriptor)
-      (make-initialized-reference-descriptor
+      (make-initialized-object-descriptor
        #:type type
        #:constructor constructor
        #:predicate (tuple-descriptor-predicate descriptor)
        #:accessor (tuple-descriptor-accessor descriptor)
        #:backing-tuple-descriptor descriptor)
-      (make-uninitialized-reference-descriptor
+      (make-uninitialized-object-descriptor
        #:type type
        #:constructor constructor
        #:predicate (tuple-descriptor-predicate descriptor)
        #:accessor (tuple-descriptor-accessor descriptor))))
 
-(define (reference-type->tuple-type type)
+(define (object-type->tuple-type type)
   (tuple-type (object-type-name type)
               (object-type-size type)
               #:predicate-name (object-type-predicate-name type)
               #:constructor-name (object-type-constructor-name type)
               #:accessor-name (object-type-accessor-name type)))
 
-(define (make-reference-implementation
+(define (make-object-implementation
          type
-         #:property-maker [prop-maker default-reference-properties]
+         #:property-maker [prop-maker default-object-properties]
          #:inspector [inspector (current-inspector)])
   (define (tuple-prop-maker descriptor)
-    (prop-maker (tuple-descriptor->reference-descriptor descriptor type)))
-  (tuple-descriptor->reference-descriptor
-   (make-tuple-implementation (reference-type->tuple-type type)
+    (prop-maker (tuple-descriptor->object-descriptor descriptor type)))
+  (tuple-descriptor->object-descriptor
+   (make-tuple-implementation (object-type->tuple-type type)
                               #:property-maker tuple-prop-maker
                               #:inspector inspector)
    type))
 
-(define (default-reference-properties descriptor)
-  (list (cons prop:equal+hash (default-reference-equal+hash descriptor))
+(define (default-object-properties descriptor)
+  (list (cons prop:equal+hash (default-object-equal+hash descriptor))
         (cons prop:custom-write
-              (default-reference-custom-write descriptor))
+              (default-object-custom-write descriptor))
         (cons prop:object-name
-              (default-reference-object-name descriptor))))
+              (default-object-name-property descriptor))))
 
-(define (default-reference-equal+hash descriptor)
-  (define accessor (reference-descriptor-accessor descriptor))
-  (define size (object-type-size (reference-descriptor-type descriptor)))
+(define (default-object-equal+hash descriptor)
+  (define accessor (object-descriptor-accessor descriptor))
+  (define size (object-type-size (object-descriptor-type descriptor)))
   (make-accessor-based-equal+hash accessor size))
 
-(define (default-reference-custom-write descriptor)
+(define (default-object-custom-write descriptor)
   (define type-name
-    (object-type-name (reference-descriptor-type descriptor)))
+    (object-type-name (object-descriptor-type descriptor)))
   (make-named-object-custom-write type-name))
 
-(define (default-reference-object-name descriptor)
-  (object-type-object-name-field (reference-descriptor-type descriptor)))
+(define (default-object-name-property descriptor)
+  (object-type-object-name-field (object-descriptor-type descriptor)))
 
-(define (make-reference-field-accessor descriptor field)
-  (define type (reference-descriptor-type descriptor))
-  (define accessor (reference-descriptor-accessor descriptor))
+(define (make-object-field-accessor descriptor field)
+  (define type (object-descriptor-type descriptor))
+  (define accessor (object-descriptor-accessor descriptor))
   (define fields (object-type-fields type))
   (define position (keyset-index-of fields field))
   (define name
@@ -184,11 +184,11 @@
      (format "~a-~a" (object-type-name type) (keyword->string field))))
   (procedure-rename (λ (this) (accessor this position)) name))
 
-(define (reference-impersonate instance descriptor
-                               #:properties [props (hash)]
-                               #:chaperone? [chaperone? #t])
+(define (object-impersonate instance descriptor
+                            #:properties [props (hash)]
+                            #:chaperone? [chaperone? #t])
   (define tuple-descriptor
-    (initialized-reference-descriptor-backing-tuple-descriptor descriptor))
+    (initialized-object-descriptor-backing-tuple-descriptor descriptor))
   (tuple-impersonate instance tuple-descriptor
                      #:properties props
                      #:chaperone? chaperone?))

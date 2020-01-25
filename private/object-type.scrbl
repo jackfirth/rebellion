@@ -11,7 +11,7 @@
                      rebellion/type/object)
           (submod rebellion/private/scribble-cross-document-tech doc))
 
-@title{Reference Types}
+@title{Object Types}
 @defmodule[rebellion/type/object]
 
 @defform[(define-object-type id (field-id ...) option ...)
@@ -29,10 +29,10 @@
            (code:line)
            (code:line #:property-maker prop-maker-expr)])
          #:contracts
-         ([prop-maker-expr (-> uninitialized-reference-descriptor?
+         ([prop-maker-expr (-> uninitialized-obejct-descriptor?
                                (listof (cons/c struct-type-property? any/c)))])]
 
-@section{Reference Type Information}
+@section{Object Type Information}
 
 @defproc[(object-type? [v any/c]) boolean?]
 
@@ -50,68 +50,60 @@
 @defproc[(object-type-fields [type object-type?]) keyset?]
 @defproc[(object-type-size [type object-type?]) natural?]
 @defproc[(object-type-object-name-field [type object-type?]) natural?]
+@defproc[(object-type-constructor-name [type object-type?]) interned-symbol?]
+@defproc[(object-type-predicate-name [type object-type?]) interned-symbol?]
+@defproc[(object-type-accessor-name [type object-type?]) interned-symbol?]
 
-@defproc[(object-type-constructor-name [type object-type?])
-         interned-symbol?]
+@section{Object Type Descriptors}
 
-@defproc[(object-type-predicate-name [type object-type?])
-         interned-symbol?]
+@defproc[(obejct-descriptor? [v any/c]) boolean?]
+@defproc[(initialized-object-descriptor? [v any/c]) boolean?]
+@defproc[(uninitialized-object-descriptor? [v any/c]) boolean?]
 
-@defproc[(object-type-accessor-name [type object-type?])
-         interned-symbol?]
+@defproc[(object-descriptor-type [descriptor object-descriptor?]) object-type?]
 
-@section{Reference Type Descriptors}
-
-@defproc[(reference-descriptor? [v any/c]) boolean?]
-@defproc[(initialized-reference-descriptor? [v any/c]) boolean?]
-@defproc[(uninitialized-reference-descriptor? [v any/c]) boolean?]
-
-@defproc[(reference-descriptor-type [descriptor reference-descriptor?])
-         object-type?]
-
-@defproc[(reference-descriptor-constructor [descriptor reference-descriptor?])
+@defproc[(object-descriptor-constructor [descriptor object-descriptor?])
          procedure?]
 
-@defproc[(reference-descriptor-predicate [descriptor reference-descriptor?])
+@defproc[(object-descriptor-predicate [descriptor object-descriptor?])
          predicate/c]
 
-@defproc[(reference-descriptor-accessor [descriptor reference-descriptor?])
-         (-> (reference-descriptor-predicate descriptor) natural? any/c)]
+@defproc[(object-descriptor-accessor [descriptor object-descriptor?])
+         (-> (object-descriptor-predicate descriptor) natural? any/c)]
 
-@section{Dynamically Implementing Reference Types}
+@section{Dynamically Implementing Object Types}
 
-@defproc[(make-reference-implementation
+@defproc[(make-object-implementation
           [type object-type?]
           [#:property-maker prop-maker
-           (-> uninitialized-reference-descriptor?
+           (-> uninitialized-object-descriptor?
                (listof (cons/c struct-type-property? any/c)))
-           default-reference-properties]
+           default-object-properties]
           [#:inspector inspector inspector? (current-inspector)])
-         initialized-reference-descriptor?]
+         initialized-object-descriptor?]
 
-@defproc[(default-reference-properties [descriptor reference-descriptor?])
+@defproc[(default-object-properties [descriptor object-descriptor?])
          (listof (cons/c struct-type-property? any/c))]
 
-@defproc[(default-reference-equal+hash [descriptor reference-descriptor?])
+@defproc[(default-object-equal+hash [descriptor object-descriptor?])
          equal+hash/c]
 
-@defproc[(default-reference-custom-write
-          [descriptor reference-descriptor?])
+@defproc[(default-object-custom-write [descriptor object-descriptor?])
          custom-write-function/c]
 
-@defproc[(default-reference-object-name [descriptor reference-descriptor?])
+@defproc[(default-object-name-property [descriptor object-descriptor?])
          natural?]
 
-@section{Reference Type Chaperones and Impersonators}
+@section{Object Type Chaperones and Impersonators}
 
-@defproc[(reference-impersonate
-          [instance (reference-descriptor-predicate descriptor)]
-          [descriptor initialized-reference-descriptor?]
+@defproc[(object-impersonate
+          [instance (object-descriptor-predicate descriptor)]
+          [descriptor initialized-object-descriptor?]
           [#:properties properties
            (hash/c impersonator-property? any/c #:immutable #t)
            empty-hash]
           [#:chaperone? chaperone? boolean? #t])
-         (reference-descriptor-predicate descriptor)]{
+         (object-descriptor-predicate descriptor)]{
  Returns an @tech/reference{impersonator} of @racket[instance] with each
  @tech/reference{impersonator property} in @racket[properties] attached to it.
  If @racket[chaperone?] is true (the default), the returned impersonator is a

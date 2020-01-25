@@ -97,7 +97,7 @@
                      #:finisher (transducer-finisher transducer)
                      #:name (object-name transducer)))
 
-  (reference-impersonate impersonated-without-props descriptor:transducer
+  (object-impersonate impersonated-without-props descriptor:transducer
                          #:properties properties))
 
 (define ((transducer-consumer-guard domain-guard) state element)

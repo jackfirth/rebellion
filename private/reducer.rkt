@@ -250,7 +250,7 @@
                   #:early-finisher impersonated-early-finisher
                   #:name (object-name reducer)))
   
-  (reference-impersonate impersonated-without-props descriptor:reducer
+  (object-impersonate impersonated-without-props descriptor:reducer
                          #:properties properties))
 
 (module+ test

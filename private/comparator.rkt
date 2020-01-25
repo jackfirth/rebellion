@@ -162,7 +162,7 @@
      #:chaperone? chaperone?))
   (define impersonated-without-props
     (make-comparator impersonated-function #:name (object-name comparator)))
-  (reference-impersonate impersonated-without-props descriptor:comparator
+  (object-impersonate impersonated-without-props descriptor:comparator
                          #:properties properties))
 
 (module+ test
