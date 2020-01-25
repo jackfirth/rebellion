@@ -55,7 +55,7 @@
 (define-tuple-type emission (state value))
 (define-tuple-type half-closed-emission (state value))
 
-(define-reference-type transducer
+(define-object-type transducer
   (starter consumer emitter half-closer half-closed-emitter finisher))
 
 (define (transducer-impersonate

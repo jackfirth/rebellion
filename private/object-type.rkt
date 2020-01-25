@@ -1,6 +1,6 @@
 #lang racket/base
 
-(provide define-reference-type)
+(provide define-object-type)
 
 (require (for-syntax racket/base
                      racket/sequence
@@ -31,7 +31,7 @@
       #:with default-descriptor-name (derived-id "descriptor:~a"))))
 
 (define-simple-macro
-  (define-reference-type id:reference-id (field:id ...)
+  (define-object-type id:reference-id (field:id ...)
     (~alt
      (~optional (~seq #:constructor-name constructor:id)
                 #:name "#:constructor-name option"
@@ -76,8 +76,8 @@
     ...))
 
 (module+ test
-  (test-case "define-reference-type"
-    (define-reference-type converter (forwards backwards))
+  (test-case "define-object-type"
+    (define-object-type converter (forwards backwards))
     (define string<->symbol
       (make-converter #:forwards string->symbol
                       #:backwards symbol->string

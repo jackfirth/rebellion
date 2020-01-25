@@ -28,7 +28,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-reference-type equivalence-relation (function)
+(define-object-type equivalence-relation (function)
   #:constructor-name constructor:equivalence-relation)
 
 (define (make-equivalence-relation function #:name [name #f])

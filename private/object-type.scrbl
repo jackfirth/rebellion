@@ -13,7 +13,7 @@
 @title{Reference Types}
 @defmodule[rebellion/type/object]
 
-@defform[(define-reference-type id (field-id ...) option ...)
+@defform[(define-object-type id (field-id ...) option ...)
          #:grammar
          ([option field-option naming-option property-option]
           [field-option

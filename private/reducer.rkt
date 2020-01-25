@@ -102,7 +102,7 @@
 ;@------------------------------------------------------------------------------
 ;; Core APIs
 
-(define-reference-type reducer (starter consumer finisher early-finisher)
+(define-object-type reducer (starter consumer finisher early-finisher)
   #:constructor-name constructor:reducer)
 
 (define (make-reducer #:starter starter*

@@ -51,7 +51,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-reference-type comparator (function)
+(define-object-type comparator (function)
   #:constructor-name constructor:comparator)
 
 (define-singleton-type lesser)
