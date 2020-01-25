@@ -7,11 +7,11 @@
                      rebellion/collection/keyset
                      rebellion/custom-write
                      rebellion/equal+hash
-                     rebellion/type/reference)
+                     rebellion/type/object)
           (submod rebellion/private/scribble-cross-document-tech doc))
 
 @title{Reference Types}
-@defmodule[rebellion/type/reference]
+@defmodule[rebellion/type/object]
 
 @defform[(define-reference-type id (field-id ...) option ...)
          #:grammar

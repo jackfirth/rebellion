@@ -44,7 +44,7 @@
          rebellion/base/symbol
          rebellion/base/variant
          rebellion/private/impersonation
-         rebellion/type/reference
+         rebellion/type/object
          rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------

@@ -20,7 +20,7 @@
 
 (require rebellion/base/symbol
          rebellion/private/static-name
-         rebellion/type/reference)
+         rebellion/type/object)
 
 (module+ test
   (require (submod "..")

@@ -41,7 +41,7 @@
          rebellion/equal+hash
          rebellion/private/impersonation
          rebellion/type/record
-         rebellion/type/reference/base
+         rebellion/type/object/base
          rebellion/type/tuple/base
          rebellion/type/tuple/descriptor)
 

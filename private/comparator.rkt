@@ -39,7 +39,7 @@
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/private/strict-cond
-         rebellion/type/reference
+         rebellion/type/object
          rebellion/type/singleton)
 
 (module+ test

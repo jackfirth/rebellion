@@ -6,8 +6,8 @@
                      racket/sequence
                      racket/syntax)
          rebellion/collection/keyset/low-dependency
-         rebellion/type/reference/base
-         rebellion/type/reference/descriptor
+         rebellion/type/object/base
+         rebellion/type/object/descriptor
          syntax/parse/define)
 
 (module+ test

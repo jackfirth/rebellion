@@ -83,7 +83,7 @@
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/type/record
-         rebellion/type/reference
+         rebellion/type/object
          rebellion/type/wrapper
          syntax/parse/define)
 
