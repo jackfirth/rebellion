@@ -65,7 +65,7 @@
   (for/list ([field-stx (in-syntax #'(field* ...))])
     (format-id #'id "~a-~a" #'id.default-name field-stx #:subs? #t))
   (begin
-    (define type (reference-type 'id.default-name fields))
+    (define type (object-type 'id.default-name fields))
     (define descriptor
       (make-reference-implementation type
                                      #:property-maker prop-maker

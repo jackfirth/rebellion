@@ -33,9 +33,9 @@
 
 @section{Reference Type Information}
 
-@defproc[(reference-type? [v any/c]) boolean?]
+@defproc[(object-type? [v any/c]) boolean?]
 
-@defproc[(reference-type
+@defproc[(object-type
           [name interned-symbol?]
           [fields keyset?]
           [#:object-name-field name-field natural?
@@ -43,20 +43,20 @@
           [#:constructor-name constructor-name (or/c interned-symbol? #f) #f]
           [#:predicate-name predicate-name (or/c interned-symbol? #f) #f]
           [#:accessor-name accessor-name (or/c interned-symbol? #f) #f])
-         reference-type?]
+         object-type?]
 
-@defproc[(reference-type-name [type reference-type?]) interned-symbol?]
-@defproc[(reference-type-fields [type reference-type?]) keyset?]
-@defproc[(reference-type-size [type reference-type?]) natural?]
-@defproc[(reference-type-object-name-field [type reference-type?]) natural?]
+@defproc[(object-type-name [type object-type?]) interned-symbol?]
+@defproc[(object-type-fields [type object-type?]) keyset?]
+@defproc[(object-type-size [type object-type?]) natural?]
+@defproc[(object-type-object-name-field [type object-type?]) natural?]
 
-@defproc[(reference-type-constructor-name [type reference-type?])
+@defproc[(object-type-constructor-name [type object-type?])
          interned-symbol?]
 
-@defproc[(reference-type-predicate-name [type reference-type?])
+@defproc[(object-type-predicate-name [type object-type?])
          interned-symbol?]
 
-@defproc[(reference-type-accessor-name [type reference-type?])
+@defproc[(object-type-accessor-name [type object-type?])
          interned-symbol?]
 
 @section{Reference Type Descriptors}
@@ -66,7 +66,7 @@
 @defproc[(uninitialized-reference-descriptor? [v any/c]) boolean?]
 
 @defproc[(reference-descriptor-type [descriptor reference-descriptor?])
-         reference-type?]
+         object-type?]
 
 @defproc[(reference-descriptor-constructor [descriptor reference-descriptor?])
          procedure?]
@@ -80,7 +80,7 @@
 @section{Dynamically Implementing Reference Types}
 
 @defproc[(make-reference-implementation
-          [type reference-type?]
+          [type object-type?]
           [#:property-maker prop-maker
            (-> uninitialized-reference-descriptor?
                (listof (cons/c struct-type-property? any/c)))

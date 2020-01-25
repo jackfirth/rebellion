@@ -5,7 +5,7 @@
 (provide
  (contract-out
   [reference-descriptor? predicate/c]
-  [reference-descriptor-type (-> reference-descriptor? reference-type?)]
+  [reference-descriptor-type (-> reference-descriptor? object-type?)]
   [reference-descriptor-constructor (-> reference-descriptor? procedure?)]
   [reference-descriptor-predicate (-> reference-descriptor? predicate/c)]
   [reference-descriptor-accessor
@@ -13,7 +13,7 @@
   [initialized-reference-descriptor? predicate/c]
   [uninitialized-reference-descriptor? predicate/c]
   [make-reference-implementation
-   (->* (reference-type?)
+   (->* (object-type?)
         (#:property-maker (-> uninitialized-reference-descriptor?
                               (listof (cons/c struct-type-property? any/c)))
          #:inspector inspector?)
@@ -52,7 +52,7 @@
   (define type-name (record-type-name type))
   (define type-field (keyset-index-of (record-type-fields type) '#:type))
   (define accessor (record-descriptor-accessor descriptor))
-  (define (name-getter this) (reference-type-name (accessor this type-field)))
+  (define (name-getter this) (object-type-name (accessor this type-field)))
   (define custom-write
     (make-named-object-custom-write type-name #:name-getter name-getter))
   (list (cons prop:equal+hash (default-record-equal+hash descriptor))
@@ -96,9 +96,9 @@
 ;@------------------------------------------------------------------------------
 
 (define (tuple-constructor->reference-constructor constructor type)
-  (define fields (reference-type-fields type))
+  (define fields (object-type-fields type))
   (define size (keyset-size fields))
-  (define name-field-position (reference-type-object-name-field type))
+  (define name-field-position (object-type-object-name-field type))
   (define name-field (keyset-ref fields name-field-position))
   (define required-fields (keyset-remove fields name-field))
   (define (positional-keyword-constructor kws vs)
@@ -116,7 +116,7 @@
                                     (keyset->list required-fields)
                                     (keyset->list fields)))
   (procedure-rename unnamed-constructor
-                    (reference-type-constructor-name type)))
+                    (object-type-constructor-name type)))
 
 (define (tuple-descriptor->reference-descriptor descriptor type)
   (define constructor
@@ -136,11 +136,11 @@
        #:accessor (tuple-descriptor-accessor descriptor))))
 
 (define (reference-type->tuple-type type)
-  (tuple-type (reference-type-name type)
-              (reference-type-size type)
-              #:predicate-name (reference-type-predicate-name type)
-              #:constructor-name (reference-type-constructor-name type)
-              #:accessor-name (reference-type-accessor-name type)))
+  (tuple-type (object-type-name type)
+              (object-type-size type)
+              #:predicate-name (object-type-predicate-name type)
+              #:constructor-name (object-type-constructor-name type)
+              #:accessor-name (object-type-accessor-name type)))
 
 (define (make-reference-implementation
          type
@@ -163,25 +163,25 @@
 
 (define (default-reference-equal+hash descriptor)
   (define accessor (reference-descriptor-accessor descriptor))
-  (define size (reference-type-size (reference-descriptor-type descriptor)))
+  (define size (object-type-size (reference-descriptor-type descriptor)))
   (make-accessor-based-equal+hash accessor size))
 
 (define (default-reference-custom-write descriptor)
   (define type-name
-    (reference-type-name (reference-descriptor-type descriptor)))
+    (object-type-name (reference-descriptor-type descriptor)))
   (make-named-object-custom-write type-name))
 
 (define (default-reference-object-name descriptor)
-  (reference-type-object-name-field (reference-descriptor-type descriptor)))
+  (object-type-object-name-field (reference-descriptor-type descriptor)))
 
 (define (make-reference-field-accessor descriptor field)
   (define type (reference-descriptor-type descriptor))
   (define accessor (reference-descriptor-accessor descriptor))
-  (define fields (reference-type-fields type))
+  (define fields (object-type-fields type))
   (define position (keyset-index-of fields field))
   (define name
     (string->symbol
-     (format "~a-~a" (reference-type-name type) (keyword->string field))))
+     (format "~a-~a" (object-type-name type) (keyword->string field))))
   (procedure-rename (λ (this) (accessor this position)) name))
 
 (define (reference-impersonate instance descriptor
