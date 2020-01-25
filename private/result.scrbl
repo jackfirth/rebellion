@@ -2,13 +2,16 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/match
                      rebellion/base/result)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/base/result)
+    #:public (list 'racket/match
+                   'rebellion/base/result)
     #:private (list 'racket/base)))
 
 @title{Results}
@@ -80,7 +83,13 @@ value.
  A predicate for successful @tech{result} values. Implies @racket[result?].}
 
 @defproc[(success [v any/c]) success?]{
- Constructs a successful @tech{result}.}
+ Constructs a successful @tech{result}. Additionally, @racket[success] can be
+ used as a @tech/reference{match expander} with @racket[match].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (match (success 42)
+     [(success x) (add1 x)]))}
 
 @defproc[(success-value [succ success?]) any/c]{
  Returns the value wrapped by @racket[succ].}
@@ -95,7 +104,13 @@ value.
  A predicate for failed @tech{result} values. Implies @racket[result?].}
 
 @defproc[(failure [err any/c]) failure?]{
- Constructs a failed @tech{result}.}
+ Constructs a failed @tech{result}. Additionally, @racket[failure] can be
+ used as a @tech/reference{match expander} with @racket[match].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (match (failure "kaboom!")
+     [(failure message) (string-upcase message)]))}
 
 @defproc[(failure-error [fail failure?]) any/c]{
  Returns the error value wrapped by @racket[fail].}
