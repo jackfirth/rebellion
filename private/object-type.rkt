@@ -1,13 +1,13 @@
 #lang racket/base
 
-(provide define-reference-type)
+(provide define-object-type)
 
 (require (for-syntax racket/base
                      racket/sequence
                      racket/syntax)
          rebellion/collection/keyset/low-dependency
-         rebellion/type/reference/base
-         rebellion/type/reference/descriptor
+         rebellion/type/object/base
+         rebellion/type/object/descriptor
          syntax/parse/define)
 
 (module+ test
@@ -18,7 +18,7 @@
 ;@------------------------------------------------------------------------------
 
 (begin-for-syntax
-  (define-syntax-class reference-id
+  (define-syntax-class object-id
     #:attributes (default-name
                   default-predicate-name
                   default-constructor-name
@@ -31,7 +31,7 @@
       #:with default-descriptor-name (derived-id "descriptor:~a"))))
 
 (define-simple-macro
-  (define-reference-type id:reference-id (field:id ...)
+  (define-object-type id:object-id (field:id ...)
     (~alt
      (~optional (~seq #:constructor-name constructor:id)
                 #:name "#:constructor-name option"
@@ -52,7 +52,7 @@
      (~optional (~seq #:property-maker prop-maker:expr)
                 #:name "#:property-maker option"
                 #:defaults
-                ([prop-maker #'default-reference-properties])))
+                ([prop-maker #'default-object-properties])))
     ...)
 
   #:with (field* ...) (cons (syntax-local-introduce #'name)
@@ -65,25 +65,25 @@
   (for/list ([field-stx (in-syntax #'(field* ...))])
     (format-id #'id "~a-~a" #'id.default-name field-stx #:subs? #t))
   (begin
-    (define type (reference-type 'id.default-name fields))
+    (define type (object-type 'id.default-name fields))
     (define descriptor
-      (make-reference-implementation type
+      (make-object-implementation type
                                      #:property-maker prop-maker
                                      #:inspector inspector))
-    (define constructor (reference-descriptor-constructor descriptor))
-    (define predicate (reference-descriptor-predicate descriptor))
-    (define field-accessor (make-reference-field-accessor descriptor 'field-kw))
+    (define constructor (object-descriptor-constructor descriptor))
+    (define predicate (object-descriptor-predicate descriptor))
+    (define field-accessor (make-object-field-accessor descriptor 'field-kw))
     ...))
 
 (module+ test
-  (test-case "define-reference-type"
-    (define-reference-type converter (forwards backwards))
+  (test-case "define-object-type"
+    (define-object-type converter (forwards backwards))
     (define string<->symbol
       (make-converter #:forwards string->symbol
                       #:backwards symbol->string
                       #:name 'string<->symbol))
     (check-pred converter? string<->symbol)
-    (check-pred initialized-reference-descriptor? descriptor:converter)
+    (check-pred initialized-object-descriptor? descriptor:converter)
     (check-equal? (converter-name string<->symbol) 'string<->symbol)
     (check-equal? (object-name string<->symbol) 'string<->symbol)
     (check-equal? (converter-forwards string<->symbol) string->symbol)

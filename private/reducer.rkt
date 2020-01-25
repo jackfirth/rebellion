@@ -83,7 +83,7 @@
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/type/record
-         rebellion/type/reference
+         rebellion/type/object
          rebellion/type/wrapper
          syntax/parse/define)
 
@@ -102,7 +102,7 @@
 ;@------------------------------------------------------------------------------
 ;; Core APIs
 
-(define-reference-type reducer (starter consumer finisher early-finisher)
+(define-object-type reducer (starter consumer finisher early-finisher)
   #:constructor-name constructor:reducer)
 
 (define (make-reducer #:starter starter*
@@ -250,7 +250,7 @@
                   #:early-finisher impersonated-early-finisher
                   #:name (object-name reducer)))
   
-  (reference-impersonate impersonated-without-props descriptor:reducer
+  (object-impersonate impersonated-without-props descriptor:reducer
                          #:properties properties))
 
 (module+ test

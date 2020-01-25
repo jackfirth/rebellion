@@ -39,7 +39,7 @@
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/private/strict-cond
-         rebellion/type/reference
+         rebellion/type/object
          rebellion/type/singleton)
 
 (module+ test
@@ -51,7 +51,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-reference-type comparator (function)
+(define-object-type comparator (function)
   #:constructor-name constructor:comparator)
 
 (define-singleton-type lesser)
@@ -162,7 +162,7 @@
      #:chaperone? chaperone?))
   (define impersonated-without-props
     (make-comparator impersonated-function #:name (object-name comparator)))
-  (reference-impersonate impersonated-without-props descriptor:comparator
+  (object-impersonate impersonated-without-props descriptor:comparator
                          #:properties properties))
 
 (module+ test

@@ -132,5 +132,5 @@ on or integrate with this library.
 @include-section[(lib "rebellion/private/enum-type.scrbl")]
 @include-section[(lib "rebellion/private/singleton-type.scrbl")]
 @include-section[(lib "rebellion/private/wrapper-type.scrbl")]
-@include-section[(lib "rebellion/private/reference-type.scrbl")]
+@include-section[(lib "rebellion/private/object-type.scrbl")]
 @include-section[(lib "rebellion/private/struct-type.scrbl")]
