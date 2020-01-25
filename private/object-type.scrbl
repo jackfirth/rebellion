@@ -56,7 +56,7 @@
 
 @section{Object Type Descriptors}
 
-@defproc[(obejct-descriptor? [v any/c]) boolean?]
+@defproc[(object-descriptor? [v any/c]) boolean?]
 @defproc[(initialized-object-descriptor? [v any/c]) boolean?]
 @defproc[(uninitialized-object-descriptor? [v any/c]) boolean?]
 
