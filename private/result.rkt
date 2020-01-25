@@ -2,7 +2,9 @@
 
 (require racket/contract/base)
 
-(provide result)
+(provide result
+         success
+         failure)
 
 (provide
  (contract-out
@@ -10,16 +12,15 @@
   [result-case
    (-> result? #:success (-> any/c any/c) #:failure (-> any/c any/c) any/c)]
   [result/c (-> chaperone-contract? chaperone-contract? chaperone-contract?)]
-  [success (-> any/c success?)]
   [success? predicate/c]
   [success-value (-> success? any/c)]
   [success/c (-> chaperone-contract? chaperone-contract?)]
   [failure? predicate/c]
-  [failure (-> any/c failure?)]
   [failure-error (-> failure? any/c)]
   [failure/c (-> chaperone-contract? chaperone-contract?)]))
 
 (require racket/contract/combinator
+         racket/match
          rebellion/private/contract-projection
          rebellion/private/static-name
          rebellion/type/tuple
@@ -42,9 +43,9 @@
   (with-handlers ([(λ (_) #t) failure]) (success (thunk))))
 
 (define (result-case result #:success success-handler #:failure failure-handler)
-  (if (success? result)
-      (success-handler (success-value result))
-      (failure-handler (failure-error result))))
+  (match result
+    [(success v) (success-handler v)]
+    [(failure e) (failure-handler e)]))
 
 ;@------------------------------------------------------------------------------
 ;; Contract combinators
@@ -106,7 +107,7 @@
                   (success 3))
     (check-equal? (result (raise "kaboom!")) (failure "kaboom!")))
   
-  (test-case "result/c"
+  (test-case (name-string result/c)
     (check-not-exn
      (λ () (invariant-assertion (result/c number? string?) (success 42))))
     (check-not-exn
@@ -128,7 +129,7 @@
                (λ ()
                  (invariant-assertion (result/c number? string?)
                                       (failure 42)))))
-  (test-case "success/c"
+  (test-case (name-string success/c)
     (check-not-exn
      (λ () (invariant-assertion (success/c number?) (success 42))))
     (check-exn exn:fail:contract:blame?
@@ -137,7 +138,7 @@
                (λ () (invariant-assertion (success/c number?) (failure 42))))
     (check-exn exn:fail:contract:blame?
                (λ () (invariant-assertion (success/c number?) 42))))
-  (test-case "failure/c"
+  (test-case (name-string failure/c)
     (check-not-exn
      (λ () (invariant-assertion (failure/c string?) (failure "foo"))))
     (check-exn exn:fail:contract:blame?
