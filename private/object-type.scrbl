@@ -4,6 +4,7 @@
                      racket/contract/base
                      racket/math
                      rebellion/base/symbol
+                     rebellion/collection/hash
                      rebellion/collection/keyset
                      rebellion/custom-write
                      rebellion/equal+hash
