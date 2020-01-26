@@ -34,6 +34,6 @@
 (define (assert-satisfies v predicate blame #:missing-party missing-party)
   (unless (predicate v)
     (raise-blame-error blame #:missing-party missing-party v
-                       '(expected: "~e" given: "~e")
-                       predicate
+                       '(expected: "~a" given: "~e")
+                       (object-name predicate)
                        v)))
