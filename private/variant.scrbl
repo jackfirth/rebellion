@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      racket/contract/base
+                     racket/contract/region
                      racket/match
                      rebellion/base/variant)
           (submod rebellion/private/scribble-cross-document-tech doc)
@@ -11,6 +12,8 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/match
+                   'racket/contract/base
+                   'racket/contract/region
                    'rebellion/base/variant)
     #:private (list 'racket/base)))
 
@@ -71,3 +74,24 @@ the types of those values.
    #:eval (make-evaluator) #:once
    (variant-tagged-as? (variant #:success 42) '#:success)
    (variant-tagged-as? (variant #:success 42) '#:failure))}
+
+@defproc[(variant/c [#:<kw> case-contract contract?] ...) contract?]{
+ A @tech/reference{contract combinator} for @tech{variants}. Returns a contract
+ that enforces that the contracted value is a variant tagged with one of the
+ given @racket[#:<kw>]s. If it is, then the corresponding @racket[case-contract]
+ is used to check the variant's value. If every @racket[case-contract] is a
+ @tech/reference{flat contract} then the returned contract is as well, and
+ likewise for @tech/reference{chaperone contracts}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define/contract (get-success-or-zero var)
+      (-> (variant/c #:success number? #:failure string?) number?)
+      (match var
+        [(variant #:success x) x]
+        [(variant #:failure _) 0])))
+
+   (get-success-or-zero (variant #:success 42))
+   (eval:error (get-success-or-zero (variant #:success "not a number")))
+   (eval:error (get-success-or-zero (variant #:other "whoops"))))}

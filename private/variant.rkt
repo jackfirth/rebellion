@@ -2,7 +2,8 @@
 
 (require racket/contract/base)
 
-(provide variant)
+(provide variant
+         variant/c)
 
 (provide
  (contract-out
@@ -13,14 +14,20 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
+         racket/contract/combinator
+         racket/format
          racket/list
+         racket/local
          racket/match
+         racket/string
          racket/struct
+         rebellion/private/contract-projection
          rebellion/private/static-name
          rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")
+           racket/contract/region
            rackunit))
 
 ;@------------------------------------------------------------------------------
@@ -58,7 +65,7 @@
    (make-keyword-procedure variant-keyword-function)
    0
    empty
-   #f))
+   #false))
 
 (define-module-boundary-contract contracted:variant unchecked:variant
   (unconstrained-domain-> variant?)
@@ -90,3 +97,107 @@
   (test-case (name-string variant-tagged-as?)
     (check-true (variant-tagged-as? (variant #:success 42) '#:success))
     (check-false (variant-tagged-as? (variant #:failure "oh no") '#:success))))
+
+;@------------------------------------------------------------------------------
+;; Contracts
+
+(define (make-variant-contract case-keywords uncoerced-case-contracts)
+  (define case-contracts
+    (coerce-contracts (name variant/c) uncoerced-case-contracts))
+  (define ctc-name (build-variant-contract-name case-keywords case-contracts))
+  ((cond [(andmap flat-contract? case-contracts) make-flat-contract]
+         [(andmap chaperone-contract? case-contracts) make-chaperone-contract]
+         [else make-contract])
+   #:name ctc-name
+   #:first-order
+   (build-variant-contract-first-order-test case-keywords case-contracts)
+   #:late-neg-projection
+   (build-variant-contract-projection case-keywords case-contracts)))
+
+(define (build-variant-contract-name case-keywords case-contracts)
+  (cons (name variant/c)
+        (for/list ([kw (in-list case-keywords)]
+                   [c (in-list case-contracts)]
+                   #:when #true
+                   [name-part (in-list (list kw (contract-name c)))])
+          name-part)))
+
+(define (build-variant-contract-projection case-keywords case-contracts)
+  (define case-projections (map contract-late-neg-projection case-contracts))
+  (λ (blame)
+    (define late-neg-case-guards
+      (for/list ([proj (in-list case-projections)]
+                 [kw (in-list case-keywords)])
+        (proj (blame-add-context blame (format "the ~a case of" kw)))))
+    (λ (v missing-party)
+      (assert-satisfies v variant? blame #:missing-party missing-party)
+      (define tag
+        (assert-variant-tag v case-keywords blame
+                            #:missing-party missing-party))
+      (define case-index (index-of case-keywords tag))
+      (define case-guard (list-ref late-neg-case-guards case-index))
+      (constructor:variant tag (case-guard (variant-value v) missing-party)))))
+
+(define (build-variant-contract-first-order-test case-keywords case-contracts)
+  (define first-order-case-tests (map contract-first-order case-contracts))
+  (λ (first-order-test v)
+    (cond
+      [(not (variant? v)) #false]
+      [else
+       (define index (index-of case-keywords (variant-tag v)))
+       (and index ((list-ref first-order-case-tests index) v))])))
+
+(define (assert-variant-tag var tags blame #:missing-party missing-party)
+  (define tail (member (variant-tag var) tags))
+  (unless tail
+    (define last-separator (if (equal? (length tags) 2) " or " ", or "))
+    (raise-blame-error blame #:missing-party missing-party var
+                       '(expected: "a variant with tag ~a" given: "~e")
+                       (string-join (map ~a tags) ", "
+                                    #:before-last last-separator)
+                       var))
+  (first tail))
+
+(define variant/c
+  ;; The name of the keyword procedure is based on the second function argument,
+  ;; so we locally define it with the name "variant/c" to ensure the procedure
+  ;; gets the correct name.
+  (local [(define (variant/c) (make-variant-contract '() '()))]
+    (make-keyword-procedure make-variant-contract variant/c)))
+
+(module+ test
+  (test-case (name-string variant/c)
+
+    (test-case "should build a reasonably-named contract"
+      (define contract (variant/c #:case1 (-> any/c any/c) #:case2 number?))
+      (define expected '(variant/c #:case1 (-> any/c any/c) #:case2 number?))
+      (check-equal? (contract-name contract) expected))
+
+    (test-case "should reject non-variant values"
+      (define/contract (bad) (-> (variant/c #:foo any/c)) 42)
+      (check-exn exn:fail:contract:blame? bad)
+      (check-exn #rx"bad: broke its own contract" bad)
+      (check-exn #rx"promised: variant\\?" bad)
+      (check-exn #rx"produced: 42" bad))
+
+    (test-case "should only allow variants with one of the given tags"
+      (define/contract (bad)
+        (-> (variant/c #:red any/c #:blue any/c #:green any/c))
+        (variant #:white 42))
+      (check-exn exn:fail:contract:blame? bad)
+      (check-exn #rx"bad: broke its own contract" bad)
+      (check-exn
+       #rx"promised: a variant with tag #:blue, #:green, or #:red" bad)
+      (check-exn #rx"produced: \\(variant #:white 42\\)" bad))
+
+    (test-case "should enforce the relevant case contract"
+      (define contract (variant/c #:success number? #:failure string?))
+      (define/contract try (-> contract void?) void)
+      (define (try-success v) (try (variant #:success v)))
+      (define (try-failure v) (try (variant #:failure v)))
+      (check-not-exn (λ () (try-success 42)))
+      (check-not-exn (λ () (try-failure "kaboom!")))
+      (check-exn exn:fail:contract:blame? (λ () (try-failure 42)))
+      (check-exn #rx"expected: string\\?" (λ () (try-failure 42)))
+      (check-exn #rx"given: 42" (λ () (try-failure 42)))
+      (check-exn #rx"the #:failure case of" (λ () (try-failure 42))))))

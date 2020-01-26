@@ -49,8 +49,14 @@
 
 ;@------------------------------------------------------------------------------
 
-(define transduction-state/c variant?)
-(define half-closed-transduction-state/c variant?)
+(define transduction-state/c
+  (variant/c #:consume any/c
+             #:emit any/c
+             #:half-closed-emit any/c
+             #:finish any/c))
+
+(define half-closed-transduction-state/c
+  (variant/c #:half-closed-emit any/c #:finish any/c))
 
 (define-tuple-type emission (state value))
 (define-tuple-type half-closed-emission (state value))
@@ -98,7 +104,7 @@
                      #:name (object-name transducer)))
 
   (object-impersonate impersonated-without-props descriptor:transducer
-                         #:properties properties))
+                      #:properties properties))
 
 (define ((transducer-consumer-guard domain-guard) state element)
   (values state (domain-guard element)))
