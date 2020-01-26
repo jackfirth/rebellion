@@ -17,14 +17,14 @@
         (#:name (or/c interned-symbol? #f))
         reducer?)]
   [make-reducer
-   (->* (#:starter (-> variant?)
-         #:consumer (-> any/c any/c variant?)
+   (->* (#:starter (-> reduction-state/c)
+         #:consumer (-> any/c any/c reduction-state/c)
          #:finisher (-> any/c any/c)
          #:early-finisher (-> any/c any/c))
         (#:name (or/c interned-symbol? #f))
         reducer?)]
-  [reducer-starter (-> reducer? (-> variant?))]
-  [reducer-consumer (-> reducer? (-> any/c any/c variant?))]
+  [reducer-starter (-> reducer? (-> reduction-state/c))]
+  [reducer-consumer (-> reducer? (-> any/c any/c reduction-state/c))]
   [reducer-finisher (-> reducer? (-> any/c any/c))]
   [reducer-early-finisher (-> reducer? (-> any/c any/c))]
   [reduce (-> reducer? any/c ... any/c)]
@@ -101,6 +101,8 @@
 
 ;@------------------------------------------------------------------------------
 ;; Core APIs
+
+(define reduction-state/c (variant/c #:consume any/c #:early-finish any/c))
 
 (define-object-type reducer (starter consumer finisher early-finisher)
   #:constructor-name constructor:reducer)
