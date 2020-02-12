@@ -64,7 +64,7 @@
   (define function
     (if (equal? (procedure-arity function*) 2)
         function*
-        (procedure-reduce-arity function 2)))
+        (procedure-reduce-arity function* 2)))
   (constructor:comparator #:function function #:name name))
 
 (define (compare comparator left right)
