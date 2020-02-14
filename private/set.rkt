@@ -4,6 +4,7 @@
 
 (provide
  (contract-out
+  [empty-set empty-set?]
   [empty-set? predicate/c]
   [nonempty-set? predicate/c]
   [mutable-set? predicate/c]
