@@ -22,7 +22,7 @@
 @title{Sets}
 @defmodule[rebellion/collection/set]
 
-@defthing[empty-set emtpy-set?]{
+@defthing[empty-set empty-set?]{
  The empty immutable @tech/reference{set}.}
 
 @defproc[(empty-set? [v any/c]) boolean?]{
