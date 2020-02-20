@@ -125,18 +125,21 @@
               (list 1 2 3 4 5))))
     (check-true (immutable? vec))
     (check-equal? vec (vector-immutable 1 2 3 4 5)))
-
+  
   (test-case "vector builders should raise errors when used after building"
     (define builder
       (foldl (λ (v builder) (vector-builder-add builder v))
              (make-vector-builder)
              (list 1 2 3 4 5)))
     (define vec (build-vector builder))
-    (check-exn exn:fail:contract? (λ () (build-vector builder)))
-    (check-exn exn:fail:contract? (λ () (vector-builder-add builder 1)))
-    (check-exn exn:fail:contract?
+    (check-exn #rx"this builder has already been used"
+               (λ () (build-vector builder)))
+    (check-exn #rx"this builder has already been used"
+               (λ () (vector-builder-add builder 1)))
+    (check-exn #rx"this builder has already been used"
                (λ () (vector-builder-add-all builder (list 1 2 3))))
-    (check-exn exn:fail:contract? (λ () (build-mutable-vector builder))))
+    (check-exn #rx"this builder has already been used"
+               (λ () (build-mutable-vector builder))))
 
   (test-case "vector-builder-add"
     (define builder0 (make-vector-builder))
@@ -155,4 +158,5 @@
   (test-case "vector builders should not allow multiple usages"
     (define builder (make-vector-builder))
     (vector-builder-add builder 42)
-    (check-exn exn:fail:contract? (λ () (vector-builder-add builder 42)))))
+    (check-exn #rx"this builder has already been used"
+               (λ () (vector-builder-add builder 42)))))
