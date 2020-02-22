@@ -19,6 +19,7 @@
 (require racket/bool
          racket/list
          racket/math
+         racket/sequence
          rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/pair
