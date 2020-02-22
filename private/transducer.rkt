@@ -4,13 +4,13 @@
 
 (provide
  (contract-out
-  [transduce (-> sequence? #:into reducer? transducer? ... any/c)]
-  [in-transduced (-> sequence? transducer? sequence?)]
+  [transduce (-> (sequence/c any/c) #:into reducer? transducer? ... any/c)]
+  [in-transduced (-> (sequence/c any/c) transducer? (sequence/c any/c))]
   [mapping (-> (-> any/c any/c) transducer?)]
   [peeking (-> (-> any/c void?) transducer?)]
   [filtering (-> predicate/c transducer?)]
   [folding (-> (-> any/c any/c any/c) any/c transducer?)]
-  [append-mapping (-> (-> any/c sequence?) transducer?)]
+  [append-mapping (-> (-> any/c (sequence/c any/c)) transducer?)]
   [taking (-> natural? transducer?)]
   [taking-while (-> predicate/c transducer?)]
   [dropping (-> natural? transducer?)]
