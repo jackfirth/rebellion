@@ -111,7 +111,7 @@ cancels its background work.
   synchronization result} is the result of @racket[task]. If @racket[task] is
  failed, the synchronization throws an instance of @racket[exn:fail:async]
  containing the task's failure. If @racket[task] is cancelled, synchronization
- throws an instance of @racket[exn:fail:async-cancel] containing the task's
+ throws an instance of @racket[exn:fail:cancel] containing the task's
  cancellation reason.}
 
 @defproc[(async-task-await-ready-evt [task async-task?]) (evt/c void?)]{
