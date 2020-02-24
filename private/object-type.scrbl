@@ -29,7 +29,7 @@
            (code:line)
            (code:line #:property-maker prop-maker-expr)])
          #:contracts
-         ([prop-maker-expr (-> uninitialized-obejct-descriptor?
+         ([prop-maker-expr (-> uninitialized-object-descriptor?
                                (listof (cons/c struct-type-property? any/c)))])]
 
 @section{Object Type Information}
