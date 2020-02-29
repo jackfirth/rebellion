@@ -23,4 +23,4 @@
     (apply tech #:doc '(lib "scribblings/guide/guide.scrbl") text))
 
   (define (tech/reference . text)
-    (apply tech #:doc '(lib "scribblings/reference/reference.scrbl") text))
+    (apply tech #:doc '(lib "scribblings/reference/reference.scrbl") text)))
