@@ -20,7 +20,7 @@
            scribble/manual)
 
   (define (tech/guide . text)
-    (keyword-apply tech (list '#:doc) (list '(lib "scribblings/guide/guide.scrbl")) text))
+    (apply tech #:doc '(lib "scribblings/guide/guide.scrbl") text))
 
   (define (tech/reference . text)
-    (keyword-apply tech (list '#:doc) (list '(lib "scribblings/reference/reference.scrbl")) text)))
+    (apply tech #:doc '(lib "scribblings/reference/reference.scrbl") text))
