@@ -69,7 +69,7 @@ early, before the input sequence is fully consumed.
               (mapping number->immutable-string)
               #:into (join-into-string ", ")))}
 
-@defproc[(in-transducing [seq sequence?] [trans transducer?]) sequence?]{
+@defproc[(in-transduced [seq sequence?] [trans transducer?]) sequence?]{
  Lazily transduces @racket[seq] with @racket[trans], returning a
  @tech/reference{sequence} that, when iterated, passes the elements of @racket[
  seq] to @racket[trans] as inputs and uses the emitted outputs of @racket[trans]
