@@ -5,6 +5,7 @@
 (require (for-syntax racket/base
                      racket/sequence
                      racket/syntax)
+         racket/match
          rebellion/collection/keyset/low-dependency
          rebellion/type/enum/base
          rebellion/type/enum/descriptor
@@ -40,6 +41,14 @@
       (check-duplicate-identifier (syntax->list #'(unsorted-id ...)))
       "duplicate enum cases are not allowed")))
 
+(define-simple-macro (define-enum-case case-id selector case-index)
+  #:with case-value (format-id #'case-id "~a-val" #'case-id)
+  (begin
+    (define case-value (selector case-index))
+    (define-match-expander case-id
+      (lambda (stx) #'(== case-value))
+      (make-rename-transformer #'case-value))))
+
 (define-simple-macro
   (define-enum-type id:id cases:enum-cases
     (~alt
@@ -57,7 +66,7 @@
       (make-enum-implementation type #:property-maker prop-maker))
     (define predicate-name (enum-descriptor-predicate descriptor))
     (define selector (enum-descriptor-selector descriptor))
-    (define cases.id (selector cases.index))
+    (define-enum-case cases.id selector cases.index)
     ...))
 
 (module+ test
