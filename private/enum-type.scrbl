@@ -83,3 +83,12 @@ related constants, such as primary colors and directions.
    (card-value king-of-clubs)
    (card-value (card 7 spades))
    (card-value (card jack hearts)))}
+
+@defproc[(enum-descriptor? [v any/c]) boolean?]{
+ A predicate for enum @tech{type descriptors}.}
+
+@defproc[(initialized-enum-descriptor? [v any/c]) boolean?]{
+ A predicate for initialized enum @tech{type descriptors}.}
+
+@defproc[(uninitialized-enum-descriptor? [v any/c]) boolean?]{
+ A predicate for uninitialized enum @tech{type descriptors}.}
