@@ -106,6 +106,21 @@ distinct implementations that are not @racket[equal?] to each other, meaning
 that the @racketmodname[rebellion/type] modules create @deftech{generative
  types}.
 
+Type descriptors may be @emph{uninitialized}. An uninitialized type descriptor
+cannot be used to create or interact with instances of the type until after
+initialization is complete. Uninitialized type descriptors are fairly rare: they
+can only be obtained via the @racket[#:property-maker] mechanism for specifying
+structure type properties of created types. This is because the property-making
+function needs to receive the type descriptor in order to return implementations
+of type properties, but this happens @emph{before} the type is created. Property
+makers can't use the descriptor's constructor and accessor immediately, but they
+can refer to them in implementations of properties such as
+@racket[prop:custom-write] (since by the time the constructor or accessor is
+actually used, the type is created and the descriptor is initialized). This
+delayed initialization step is necessary to allow property makers to be defined
+without mutual recursion and in separate modules from the type definitions
+they're used for, allowing reuse of generic property makers.
+
 @subsection{Defining Types}
 
 Each @racketmodfont{rebellion/type/}@racket[_kind] module provides a
