@@ -133,14 +133,23 @@ function.
 
 @subsection{Compile-Time Type Information}
 
-At present, no means of representing compile-time information about types is
-provided. As a result various related features, such as integration with
-@racket[match] are not provided by any @racketmodname[rebellion/type] modules.
-However, both a basic represention of compile-time type information and
-integration with @racket[match] are intended to happen eventually. More advanced
-functionality such as a full static type system and compile-time type checker
-are out of scope for now, but it is hoped that such an effort can either build
-on or integrate with this library.
+Some types encapsulate compile-time information about their name, size, fields,
+and other properties inside a @deftech{type binding}. Type bindings are used by
+macros such as @racket[enum-out] to generate code specialized to that type. Type
+bindings are created by type definition macros and extracted using
+@syntax-tech[#:key "syntax clas" #:normalize? #f]{syntax classes}. For
+example, @racket[define-enum-type] creates a type binding using
+@racket[define-syntax] and the corresponding syntax class @racket[enum-id]
+extracts that binding.
+
+At present, not all kinds of types support type bindings --- follow
+@hyperlink["https://github.com/jackfirth/rebellion/issues/179"]{issue #179} for
+updates on this feature and the current status of supported type bindings. More
+advanced compile-time type functionality such as a full static type system and
+checker are out of scope for now, but it is hoped that such an effort can either
+build on top of the Rebellion type libraries. If you are interested in such a
+project please reach out to the Rebellion project owners, we'd love to hear
+more!
 
 @include-section[(lib "rebellion/private/record-type.scrbl")]
 @include-section[(lib "rebellion/private/tuple-type.scrbl")]
