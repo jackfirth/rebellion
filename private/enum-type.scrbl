@@ -111,6 +111,10 @@ related constants, such as primary colors and directions.
    (card-value (card 7 spades))
    (card-value (card jack hearts)))}
 
+@defform[#:kind "provide transformer" (enum-out enum)]{
+ Provides @racket[enum], which must be an @racket[enum-id], along with its
+ predicate and constants.}
+
 @defproc[(enum-descriptor? [v any/c]) boolean?]{
  A predicate for enum @tech{type descriptors}.}
 

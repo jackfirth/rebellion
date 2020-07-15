@@ -3,11 +3,13 @@
 (provide define-enum-type)
 
 (require (for-syntax racket/base
+                     racket/provide-transform
                      racket/sequence
                      racket/set
                      racket/syntax
                      rebellion/collection/keyset/low-dependency
                      rebellion/type/enum/base
+                     rebellion/private/enum-type-binding
                      (submod rebellion/private/enum-type-binding
                              private-constructor))
          rebellion/collection/keyset/low-dependency
@@ -116,3 +118,15 @@
       (set enum.constant ...))
     (check-equal? (enum-constants compass-direction)
                   (set north south east west))))
+
+(define-syntax enum-out
+  (make-provide-transformer
+   (λ (provide-spec modes)
+     (syntax-parse provide-spec
+       [(_ enum:enum-id)
+        (expand-export
+         #'(combine-out enum enum.predicate enum.constant ...) modes)]))))
+
+(module+ test
+  (provide (enum-out direction))
+  (define-enum-type direction (up down left right)))
