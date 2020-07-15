@@ -226,7 +226,7 @@ whether the bound is inclusive or exclusive.
  A predicate for @tech{range} bounds, which contain an endpoint value and are
  either inclusive or exclusive.}
 
-@defproc[(range-bound [endpoint any/c] [type range-bound-type?]) range-bound?]{
+@defproc[(range-bound [endpoint any/c] [type bound-type?]) range-bound?]{
  Constructs a range bound containing @racket[endpoint] and of type @racket[
  type]. See also the @racket[inclusive-bound] and @racket[exclusive-bound]
  constructors, which are shorthands for when the bound type is already known.
@@ -244,7 +244,7 @@ whether the bound is inclusive or exclusive.
    (range-bound-endpoint (inclusive-bound 5))
    (range-bound-endpoint (exclusive-bound "banana")))}
 
-@defproc[(range-bound-type [bound range-bound?]) range-bound-type?]{
+@defproc[(range-bound-type [bound range-bound?]) bound-type?]{
  Returns the type (inclusive or exclusive) of @racket[bound].
 
  @(examples
@@ -273,12 +273,12 @@ whether the bound is inclusive or exclusive.
    (range-bound-endpoint bound)
    (range-bound-type bound))}
 
-@defproc[(range-bound-type? [v any/c]) boolean?]{
+@defproc[(bound-type? [v any/c]) boolean?]{
  A predicate for the two constants @racket[inclusive] and @racket[exclusive].}
 
 @deftogether[[
- @defthing[inclusive range-bound-type?]
- @defthing[exclusive range-bound-type?]]]{
+ @defthing[inclusive bound-type?]
+ @defthing[exclusive bound-type?]]]{
  Constants for the two types of @tech{range} bounds. An inclusive bound includes
  the endpoint value, an exclusive bound does not include the endpoint value.}
 
