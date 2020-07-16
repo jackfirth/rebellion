@@ -12,7 +12,7 @@
         enum-type?)]
   [enum-type? predicate/c]
   [enum-type-name (-> enum-type? interned-symbol?)]
-  [enum-type-cases (-> enum-type? keyset?)]
+  [enum-type-constants (-> enum-type? keyset?)]
   [enum-type-predicate-name (-> enum-type? interned-symbol?)]
   [enum-type-discriminator-name (-> enum-type? interned-symbol?)]
   [enum-type-selector-name (-> enum-type? interned-symbol?)]
@@ -27,7 +27,7 @@
 ;@------------------------------------------------------------------------------
 
 (define-tuple-type enum-type
-  (name cases predicate-name discriminator-name selector-name)
+  (name constants predicate-name discriminator-name selector-name)
   #:omit-root-binding)
 
 (define (enum-type name fields
@@ -44,4 +44,4 @@
                          discriminator-name
                          selector-name))
 
-(define (enum-type-size type) (keyset-size (enum-type-cases type)))
+(define (enum-type-size type) (keyset-size (enum-type-constants type)))

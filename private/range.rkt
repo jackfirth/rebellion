@@ -146,13 +146,13 @@
   [range-comparator (-> range? comparator?)]
   [unbounded? predicate/c]
   [unbounded unbounded?]
-  [range-bound-type? predicate/c]
-  [inclusive range-bound-type?]
-  [exclusive range-bound-type?]
+  [bound-type? predicate/c]
+  [inclusive bound-type?]
+  [exclusive bound-type?]
   [range-bound? predicate/c]
-  [range-bound (-> any/c range-bound-type? range-bound?)]
+  [range-bound (-> any/c bound-type? range-bound?)]
   [range-bound-endpoint (-> range-bound? any/c)]
-  [range-bound-type (-> range-bound? range-bound-type?)]
+  [range-bound-type (-> range-bound? bound-type?)]
   [inclusive-bound (-> any/c range-bound?)]
   [exclusive-bound (-> any/c range-bound?)]))
 
@@ -176,7 +176,7 @@
 
 (define-singleton-type unbounded)
 
-(define-enum-type range-bound-type (inclusive exclusive))
+(define-enum-type bound-type (inclusive exclusive))
 
 (define-tuple-type inclusive-bound (endpoint))
 (define-tuple-type exclusive-bound (endpoint))

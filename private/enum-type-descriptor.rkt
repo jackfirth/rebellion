@@ -119,16 +119,17 @@
   (define type (enum-descriptor-type descriptor))
   (define name (enum-type-name type))
   (define prefix (string-append "#<" (symbol->string name) ":"))
-  (define cases (enum-type-cases type))
-  (define case-strings
+  (define constants (enum-type-constants type))
+  (define constant-strings
     (vector->immutable-vector
-     (for/vector #:length (keyset-size cases)
-       ([case (in-keyset cases)])
-       (keyword->immutable-string case))))
+     (for/vector #:length (keyset-size constants)
+       ([constant (in-keyset constants)])
+       (keyword->immutable-string constant))))
   (define discriminator (enum-descriptor-discriminator descriptor))
   (λ (this out mode)
     (write-string prefix out)
-    (write-string (immutable-vector-ref case-strings (discriminator this)) out)
+    (write-string
+     (immutable-vector-ref constant-strings (discriminator this)) out)
     (write-string ">" out)
     (void)))
 
@@ -145,11 +146,12 @@
   (make-delegating-equal+hash (enum-descriptor-discriminator descriptor)))
 
 (define (default-enum-object-name descriptor)
-  (define cases (enum-type-cases (enum-descriptor-type descriptor)))
+  (define constants (enum-type-constants (enum-descriptor-type descriptor)))
   (define names
     (vector->immutable-vector
-     (for/vector #:length (keyset-size cases) ([case (in-keyset cases)])
-       (string->symbol (keyword->string case)))))
+     (for/vector #:length (keyset-size constants)
+       ([constant (in-keyset constants)])
+       (string->symbol (keyword->string constant)))))
   (define discriminator (enum-descriptor-discriminator descriptor))
   (λ (this) (immutable-vector-ref names (discriminator this))))
 
