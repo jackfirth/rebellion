@@ -163,7 +163,7 @@
   (define impersonated-without-props
     (make-comparator impersonated-function #:name (object-name comparator)))
   (object-impersonate impersonated-without-props descriptor:comparator
-                         #:properties properties))
+                      #:properties properties))
 
 (module+ test
   (test-case (name-string comparator-impersonate)
