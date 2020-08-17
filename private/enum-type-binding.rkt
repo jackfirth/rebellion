@@ -7,7 +7,11 @@
  (contract-out
   [enum-binding? predicate/c]
   [enum-binding-type (-> enum-binding? enum-type?)]
-  [enum-binding-descriptor (-> enum-binding? identifier?)]))
+  [enum-binding-constants (-> enum-binding? (set/c identifier?))]
+  [enum-binding-descriptor (-> enum-binding? identifier?)]
+  [enum-binding-predicate (-> enum-binding? identifier?)]
+  [enum-binding-selector (-> enum-binding? identifier?)]
+  [enum-binding-discriminator (-> enum-binding? identifier?)]))
 
 (module+ private-constructor
   (provide

@@ -30,7 +30,7 @@
   (name constants predicate-name discriminator-name selector-name)
   #:omit-root-binding)
 
-(define (enum-type name fields
+(define (enum-type name constants
                    #:predicate-name [predicate-name* #f]
                    #:discriminator-name [discriminator-name* #f]
                    #:selector-name [selector-name* #f])
@@ -39,7 +39,7 @@
     (or discriminator-name* (format-symbol "discriminator:~a" name)))
   (define selector-name (or selector-name* (format-symbol "selector:~a" name)))
   (constructor:enum-type name
-                         fields
+                         constants
                          predicate-name
                          discriminator-name
                          selector-name))
