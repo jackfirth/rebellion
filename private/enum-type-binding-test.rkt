@@ -1,13 +1,8 @@
 #lang racket/base
 
 (module+ test
-  (require (for-syntax racket/base
-                       rebellion/collection/keyset
-                       rebellion/private/enum-type-binding
-                       rebellion/type/enum)
-           racket/set
+  (require (for-syntax rebellion/private/enum-type-binding)
            rackunit
-           rebellion/collection/keyset
            rebellion/type/enum
            syntax/parse/define))
 
@@ -25,8 +20,12 @@
     (check-equal? (tester direction) 'direction))
   
   (test-case "enum-id.constant"
-    (define-simple-macro (tester enum:enum-id) (set enum.constant ...))
-    (check-equal? (tester direction) (set up down left right)))
+    (define-simple-macro (tester enum:enum-id) (list enum.constant ...))
+    (check-equal? (tester direction) (list down left right up)))
+
+  (test-case "enum-id.constant-name"
+    (define-simple-macro (tester enum:enum-id) (list enum.constant-name ...))
+    (check-equal? (tester direction) (list 'down 'left 'right 'up)))
   
   (test-case "enum-id.predicate"
     (define-simple-macro (tester enum:enum-id) enum.predicate)

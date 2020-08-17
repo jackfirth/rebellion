@@ -69,7 +69,9 @@
     #:with selector (enum-binding-selector (attribute binding.value))
     #:with discriminator (enum-binding-discriminator (attribute binding.value))
     #:with (constant ...)
-    (sequence->list (enum-binding-constants (attribute binding.value)))
+    (sort (sequence->list (enum-binding-constants (attribute binding.value)))
+          symbol<?
+          #:key syntax-e)
     #:with (constant-name ...)
     (for/list ([name (in-keyset (enum-type-constants (attribute type)))])
       #`'#,(string->symbol (keyword->string name)))))
