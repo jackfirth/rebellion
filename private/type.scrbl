@@ -54,7 +54,7 @@ modules, such as @racketmodname[rebellion/type/record] and @racketmodname[
  rebellion/type/tuple]. Each module is meant for working with a specific kind of
 data type. However, all of these modules have a few things in common.
 
-@subsection{Nominal v.s. Structural Types}
+@subsection[#:tag "nominal"]{Nominal v.s. Structural Types}
 
 Any type created in @racketmodname[rebellion/type] is a @deftech{nominal type},
 not a @deftech{structural type}. This means creating a new type, such as with
