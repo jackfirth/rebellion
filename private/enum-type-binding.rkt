@@ -25,8 +25,7 @@
          #:selector identifier?
          enum-binding?)])))
 
-(require (for-template racket/base
-                       rebellion/type/enum/descriptor)
+(require (for-template racket/base)
          racket/sequence
          racket/set
          rebellion/collection/keyset
@@ -52,16 +51,18 @@
 
 (define-syntax-class enum-id
   #:attributes
-  (type name
-        [constant 1]
-        [constant-name 1]
-        predicate
-        selector
-        discriminator
-        descriptor)
+  (type
+   name
+   [constant 1]
+   [constant-name 1]
+   predicate
+   selector
+   discriminator
+   descriptor)
 
   (pattern binding
     #:declare binding (static enum-binding? "a static enum binding")
+    #:cut
     #:attr type (enum-binding-type (attribute binding.value))
     #:with name #`'#,(enum-type-name (attribute type))
     #:with descriptor (enum-binding-descriptor (attribute binding.value))

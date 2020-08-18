@@ -4,7 +4,12 @@
 
 (require (for-syntax racket/base
                      racket/sequence
-                     racket/syntax)
+                     racket/syntax
+                     rebellion/collection/keyset/low-dependency
+                     (submod rebellion/private/record-type-binding
+                             private-constructor)
+                     rebellion/type/record/base
+                     syntax/transformer)
          racket/match
          rebellion/collection/keyset/low-dependency
          rebellion/type/record/base
@@ -39,10 +44,19 @@
                 #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)])
                 #:name "#:predicate-name option")
      (~optional
+      (~seq #:descriptor-name descriptor:id)
+      #:defaults ([descriptor (format-id #'id "descriptor:~a" #'id #:subs? #t)])
+      #:name "#:descriptor-name option")
+     (~optional
       (~seq #:constructor-name constructor:id)
       #:defaults
       ([constructor (format-id #'id "constructor:~a" #'id #:subs? #t)])
       #:name "#:constructor-name option")
+     (~optional
+      (~seq #:accessor-name accessor:id)
+      #:defaults
+      ([accessor (format-id #'id "accessor:~a" #'id #:subs? #t)])
+      #:name "#:accessor-name option")
      (~optional
       (~seq #:pattern-name pattern:id)
       #:defaults ([pattern (format-id #'id "pattern:~a" #'id #:subs? #t)])
@@ -57,12 +71,20 @@
   #:with root-binding
   (if (attribute omit-root-binding-kw)
       #'(begin)
-      #'(define-match-expander id
-          (syntax-parser
-            [(_ (~alt (~optional (~seq fields.keyword fields.id)) ...)
-                (... ...))
-             #'(pattern (... (~? (~@ fields.keyword fields.id))) ...)])
-          (make-rename-transformer #'constructor)))
+      #'(define-syntax id
+          (record-binding
+           #:type
+           (record-type
+            'id fields.keys
+            #:predicate-name 'predicate
+            #:constructor-name 'constructor)
+           #:descriptor #'descriptor
+           #:predicate #'predicate
+           #:constructor #'constructor
+           #:accessor #'accessor
+           #:field-accessors (list #'field-accessor ...)
+           #:pattern #'pattern
+           #:macro (make-variable-like-transformer #'constructor))))
   (begin
     (define type
       (record-type 'id fields.keys
@@ -72,11 +94,13 @@
       (make-record-implementation type #:property-maker prop-maker))
     (define predicate (record-descriptor-predicate descriptor))
     (define constructor (record-descriptor-constructor descriptor))
+    (define accessor (record-descriptor-accessor descriptor))
     (define field-accessor
       (make-record-field-accessor descriptor fields.position))
     ...
     (define-match-expander pattern
       (syntax-parser
+        #:track-literals
         [(_ (~alt (~optional (~seq fields.keyword fields.id)) ...) (... ...))
          #'(? predicate ((... ~?) (app field-accessor fields.id)) ...)]))
     root-binding))
