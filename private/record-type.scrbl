@@ -98,6 +98,8 @@ obvious order to those pieces.
      [(color #:red r #:blue b)
       (list r b)]))}
 
+@section{Record Type Information}
+
 @defproc[(record-type? [v any/c]) boolean?]{
  A predicate for @tech{record types}.}
 
@@ -106,13 +108,54 @@ obvious order to those pieces.
                       [#:predicate-name predicate-name (or/c symbol? #f) #f]
                       [#:constructor-name constructor-name (or/c symbol? #f) #f]
                       [#:accessor-name accessor-name (or/c symbol? #f) #f])
-         record-type?]
+         record-type?]{
+ Constructs a @tech{record type} named @racket[name] with @racket[fields] as its
+ field names. The optional @racket[predicate-name], @racket[constructor-name],
+ and @racket[accessor-name] arguments control the result of @racket[object-name]
+ on the functions implementing the type. They default to
+ @racket[name]@racketidfont{?}, @racketidfont{constructor:}@racket[name], and
+ @racketidfont{accessor:}@racket[name] respectively. This function only
+ constructs the information representing a record type; to implement the type,
+ use @racket[make-record-implementation].}
 
-@defproc[(record-type-name [type record-type?]) symbol?]
-@defproc[(record-type-fields [type record-type?]) keyset?]
-@defproc[(record-type-predicate-name [type record-type?]) (or/c symbol? #f)]
-@defproc[(record-type-constructor-name [type record-type?]) (or/c symbol? #f)]
-@defproc[(record-type-accessor-name [type record-type?]) (or/c symbol? #f)]
+@deftogether[[
+ @defproc[(record-type-name [type record-type?]) symbol?]
+ @defproc[(record-type-fields [type record-type?]) keyset?]
+ @defproc[(record-type-predicate-name [type record-type?]) (or/c symbol? #f)]
+ @defproc[(record-type-constructor-name [type record-type?]) (or/c symbol? #f)]
+ @defproc[(record-type-accessor-name [type record-type?]) (or/c symbol? #f)]]]{
+ Accessors for the various components of a @tech{record type}.}
+
+@section{Record Type Descriptors}
+
+Record types are implemented using structs, where the fields of the struct are
+always sorted by name. The @tech{type descriptor} for a @tech{record type}
+contains two functions that implement the type:
+
+@itemlist[
+ @item{A @deftech{record constructor} that accepts a mandatory keyword argument
+  for each field of the record type and constructs a record instance.}
+
+ @item{A @deftech{record accessor} that accepts an instance of the record type
+  and an integer field index, then returns the value of the corresponding field.
+  Record fields are always sorted alphabetically, and the field index
+  corresponding to a given field name can be retrieved from the record type
+  using the @racket[record-type-fields] @tech{keyset}.}]
+
+These functions can be used to dynamically construct and inspect instances of
+arbitrary record types at runtime, assuming their record descriptor is
+initialized. Note that the descriptor contains a single accessor function that
+can access any field in the record: the per-field accessors created by
+@racket[define-record-type] are merely convenient wrappers around this accessor.
+
+@defproc[(record-descriptor? [v any/c]) boolean?]{
+ A predicate for record @tech{type descriptors}.}
+
+@defproc[(initialized-record-descriptor? [v any/c]) boolean?]{
+ A predicate for initialized record @tech{type descriptors}.}
+
+@defproc[(uninitialized-record-descriptor? [v any/c]) boolean?]{
+ A predicate for uninitialized record @tech{type descriptors}.}
 
 @defproc[(make-record-implementation
           [type record-type?]
@@ -121,32 +164,75 @@ obvious order to those pieces.
            (-> uninitialized-record-descriptor?
                (listof (cons/c struct-type-property? any/c)))
            default-record-properties])
-         initialized-record-descriptor?]
+         initialized-record-descriptor?]{
+ Implements @racket[type] and returns a @tech{type descriptor} for the new
+ implementation. The @racket[inspector] argument behaves the same as in
+ @racket[make-struct-type], although there are no transparent or prefab record
+ types. The @racket[prop-maker] argument is similar to the corresponding
+ argument of @racket[make-struct-implementation]. By default, record types are
+ created with properties that make them print like transparent structures,
+ except field names are included --- see @racket[default-record-properties] for
+ details.}
 
-@defproc[(record-descriptor? [v any/c]) boolean?]
-@defproc[(initialized-record-descriptor? [v any/c]) boolean?]
-@defproc[(uninitialized-record-descriptor? [v any/c]) boolean?]
-
-@defproc[(record-descriptor-type [descriptor record-descriptor?]) record-type?]
+@defproc[(record-descriptor-type [descriptor record-descriptor?]) record-type?]{
+ Returns the @tech{record type} that @racket[descriptor] implements.}
 
 @defproc[(record-descriptor-predicate [descriptor record-descriptor?])
-         (-> any/c boolean?)]
+         (-> any/c boolean?)]{
+ Returns a predicate that returns true when given any record instance created by
+ @racket[descriptor]. The predicate is specific to @racket[descriptor] --- it
+ will not return true for record instances created by any other record
+ descriptors, even if they're different implementations of the same record type
+ as @racket[descriptor]. This is because record types are @tech{nominal types}.}
 
 @defproc[(record-descriptor-constructor [descriptor record-descriptor?])
-         procedure?]
+         procedure?]{
+ Returns the @tech{record constructor} of the record type implementation
+ represented by @racket[descriptor]. The constructor accepts one mandatory
+ keyword argument for each field in the record type and returns an instance of
+ the record type.}
 
 @defproc[(record-descriptor-accessor [descriptor record-descriptor?])
-         (-> (record-descriptor-predicate descriptor) natural? any/c)]
+         (-> (record-descriptor-predicate descriptor) natural? any/c)]{
+ Returns the @tech{record accessor} of the record type implementation
+ represented by @racket[descriptor]. The accessor accepts two arguments: a
+ record instance created by @racket[descriptor], and a nonnegative integer less
+ than the number of fields in the record type. The accessor returns the value of
+ the corresponding field in the instance. To access fields by name, first
+ determine the integer index of the field name using the @tech{keyset} returned
+ by @racket[record-type-fields]. See also @racket[make-record-field-accessor] to
+ construct a field-specific accessor function.}
 
 @defproc[(make-record-field-accessor [descriptor record-descriptor?]
                                      [field natural?])
-         (-> (record-descriptor-predicate descriptor) any/c)]
+         (-> (record-descriptor-predicate descriptor) any/c)]{
+ Constructs a function that accepts an instance of the record type implemented
+ by @racket[descriptor] and returns the value of the field at position
+ @racket[field] in the record.}
 
 @defproc[(default-record-properties [descriptor record-descriptor?])
-         (listof (cons/c struct-type-property? any/c))]
+         (listof (cons/c struct-type-property? any/c))]{
+ Returns implementations of @racket[prop:equal+hash] and
+ @racket[prop:custom-write] suitable for most @tech{record types}. This function
+ is called by @racket[make-record-implementation] when no @racket[_prop-maker]
+ argument is supplied.}
 
 @defproc[(default-record-equal+hash [descriptor record-descriptor?])
-         equal+hash/c]
+         equal+hash/c]{
+ Builds an equality-checking function, a hashing function, and a secondary
+ hashing function suitable for use with @racket[prop:equal+hash], each of which
+ operate on record instances created by @racket[descriptor]. Two instances are
+ equal if and only if the fields of one instance are equal to the fields of the
+ other. This function is used by @racket[default-record-properties] to implement
+ @racket[prop:equal+hash].}
 
 @defproc[(default-record-custom-write [descriptor record-descriptor?])
-         custom-write-function/c]
+         custom-write-function/c]{
+ Builds a @tech{custom write implementation} that prints record instances
+ created by @racket[descriptor] in a manner similar to transparent Racket
+ structs, except field values are prefixed by field names. Field names are
+ printed as keywords, and fields are always printed in alphabetic order by name.
+ Pretty printing is supported: the pretty printer will insert linebreaks between
+ fields if needed, and it will keep field names and field values on the same
+ line. This function is used by @racket[default-record-properties] to implement
+ @racket[prop:custom-write].}
