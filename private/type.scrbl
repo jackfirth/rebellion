@@ -1,6 +1,7 @@
 #lang scribble/manual
 
 @(require (for-label racket/base
+                     rebellion/type/enum
                      rebellion/type/record
                      rebellion/type/singleton
                      rebellion/type/tuple
