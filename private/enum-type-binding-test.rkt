@@ -1,7 +1,7 @@
 #lang racket/base
 
 (module+ test
-  (require (for-syntax rebellion/private/enum-type-binding)
+  (require (for-syntax rebellion/type/enum/binding)
            rackunit
            rebellion/type/enum
            syntax/parse/define))
