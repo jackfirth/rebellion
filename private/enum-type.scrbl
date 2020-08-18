@@ -137,7 +137,7 @@ related constants, such as primary colors and directions.
  default to @racket[name]@racketidfont{?},
  @racketidfont{discriminator:}@racket[name], and
  @racketidfont{selector:}@racket[name] respectively. This function only
- constructs the information representing a tuple type; to implement the type,
+ constructs the information representing an enum type; to implement the type,
  use @racket[make-enum-implementation].
 
  @(examples
