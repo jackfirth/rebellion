@@ -184,7 +184,7 @@ can access any field in the record: the per-field accessors created by
  Returns the @tech{record type} that @racket[descriptor] implements.}
 
 @defproc[(record-descriptor-predicate [descriptor record-descriptor?])
-         (-> any/c boolean?)]{
+         predicate/c]{
  Returns a predicate that returns true when given any record instance created by
  @racket[descriptor]. The predicate is specific to @racket[descriptor] --- it
  will not return true for record instances created by any other record
