@@ -103,7 +103,7 @@
   (maker type predicate selector discriminator))
 
 (define (enum-type->tuple-type type)
-  (tuple-type (enum-type-name type) 1
+  (tuple-type (enum-type-name type) (list 'index)
               #:predicate-name (enum-type-predicate-name type)
               #:constructor-name (enum-type-selector-name type)))
 

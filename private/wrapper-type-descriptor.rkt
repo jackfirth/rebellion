@@ -68,7 +68,7 @@
          #:property-maker [prop-maker default-wrapper-properties]
          #:inspector [inspector (current-inspector)])
   (define tuple-impl-type
-    (tuple-type (wrapper-type-name type) 1
+    (tuple-type (wrapper-type-name type) (list 'value)
                 #:predicate-name (wrapper-type-predicate-name type)
                 #:constructor-name (wrapper-type-constructor-name type)))
   (define (tuple-impl-prop-maker tuple-impl)

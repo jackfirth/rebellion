@@ -4,7 +4,11 @@
 
 (require (for-syntax racket/base
                      racket/sequence
-                     racket/syntax)
+                     racket/syntax
+                     (submod rebellion/private/tuple-type-binding
+                             private-constructor)
+                     rebellion/type/tuple/base
+                     syntax/transformer)
          racket/match
          rebellion/type/tuple/base
          rebellion/type/tuple/descriptor
@@ -22,19 +26,33 @@
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
      (~optional
+      (~seq #:descriptor-name descriptor:id)
+      #:defaults ([descriptor (format-id #'id "descriptor:~a" #'id #:subs? #t)])
+      #:name "#:descriptor-name option")
+     (~optional
+      (~seq #:predicate-name predicate:id)
+      #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)])
+      #:name "#:predicate-name option")
+     (~optional
       (~seq #:constructor-name constructor:id)
       #:defaults
-      ([constructor (format-id #'id "constructor:~a" #'id #:subs? #t)]))
-     (~optional (~seq #:predicate-name predicate:id)
-                #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)]))
-     (~optional (~seq #:property-maker property-maker:expr)
-                #:defaults ([property-maker #'default-tuple-properties]))
+      ([constructor (format-id #'id "constructor:~a" #'id #:subs? #t)])
+      #:name "#:constructor-name option")
+     (~optional
+      (~seq #:accessor-name accessor:id)
+      #:defaults
+      ([accessor (format-id #'id "accessor:~a" #'id #:subs? #t)])
+      #:name "#:accessor-name option")
      (~optional
       (~seq #:pattern-name pattern:id)
-      #:defaults ([pattern (format-id #'id "pattern:~a" #'id #:subs? #t)])))
+      #:defaults ([pattern (format-id #'id "pattern:~a" #'id #:subs? #t)])
+      #:name "#:pattern-name option")
+     (~optional
+      (~seq #:property-maker property-maker:expr)
+      #:defaults ([property-maker #'default-tuple-properties])
+      #:name "#:property-maker option"))
     ...)
   #:do [(define size (length (syntax->list #'(field ...))))]
-  #:with quoted-size #`(quote #,size)
   #:with (field-accessor ...)
   (for/list ([field-id (in-syntax #'(field ...))])
     (format-id field-id "~a-~a" #'id field-id #:subs? #t))
@@ -42,21 +60,32 @@
   #:with root-binding
   (if (attribute omit-root-binding-kw)
       #'(begin)
-      #'(...
-         (define-match-expander id
-           (syntax-parser [(_ rest ...) #'(pattern rest ...)])
-           (make-rename-transformer #'constructor))))
+      #'(define-syntax id
+          (tuple-binding
+           #:type
+           (tuple-type
+            'id (list 'field ...)
+            #:constructor-name 'constructor
+            #:predicate-name 'predicate)
+           #:descriptor #'descriptor
+           #:predicate #'predicate
+           #:constructor #'constructor
+           #:accessor #'accessor
+           #:field-accessors (list #'field-accessor ...)
+           #:pattern #'pattern
+           #:macro (make-variable-like-transformer #'constructor))))
   (begin
     (define descriptor
       (make-tuple-implementation
-       (tuple-type 'id quoted-size
+       (tuple-type 'id (list 'field ...)
                    #:constructor-name 'constructor
                    #:predicate-name 'predicate)
        #:property-maker property-maker))
     (define constructor (tuple-descriptor-constructor descriptor))
     (define predicate (tuple-descriptor-predicate descriptor))
+    (define accessor (tuple-descriptor-accessor descriptor))
     (define field-accessor
-      (make-tuple-field-accessor descriptor field-position 'field))
+      (make-tuple-field-accessor descriptor field-position))
     ...
     (define-match-expander pattern
       (syntax-parser

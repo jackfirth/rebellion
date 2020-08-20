@@ -111,28 +111,32 @@ represent a single logical thing, and there is an obvious order to those pieces.
 
 @defproc[
  (tuple-type [name interned-symbol?]
-             [size natural?]
+             [fields (sequence/c interned-symbol?)]
              [#:predicate-name predicate-name (or/c interned-symbol? #f) #f]
              [#:constructor-name constructor-name (or/c interned-symbol? #f) #f]
              [#:accessor-name accessor-name (or/c interned-symbol? #f) #f])
  tuple-type?]{
- Constructs a @tech{tuple type} of size @racket[size] and named @racket[name].
- The optional @racket[predicate-name], @racket[constructor-name], and @racket[
- accessor-name] arguments control the result of @racket[object-name] on the
- functions implementing the type. If not provided, @racket[predicate-name]
- defaults to @racket[name]@racketidfont{?}, @racket[constructor-name] defaults
- to @racket[name], and @racket[accessor-name] defaults to @racket[
- name]@racketidfont{-ref}. Two tuple types constructed with the same arguments
- are @racket[equal?]. To make an implementation of a tuple type, see @racket[
- make-tuple-implementation].}
+ Constructs a @tech{tuple type} named @racket[name] and with fields named
+ @racket[fields]. The optional @racket[predicate-name],
+ @racket[constructor-name], and @racket[accessor-name] arguments control the
+ result of @racket[object-name] on the functions implementing the type. If not
+ provided, @racket[predicate-name] defaults to @racket[name]@racketidfont{?},
+ @racket[constructor-name] defaults to @racket[name], and @racket[accessor-name]
+ defaults to @racket[name]@racketidfont{-ref}. Two tuple types constructed with
+ the same arguments are @racket[equal?]. To make an implementation of a tuple
+ type, see @racket[make-tuple-implementation].}
 
 @deftogether[[
  @defproc[(tuple-type-name [type tuple-type?]) interned-symbol?]
- @defproc[(tuple-type-size [type tuple-type?]) natural?]
+ @defproc[(tuple-type-fields [type tuple-type?])
+          (vectorof interned-symbol? #:immutable #t)]
  @defproc[(tuple-type-predicate-name [type tuple-type?]) interned-symbol?]
  @defproc[(tuple-type-constructor-name [type tuple-type?]) interned-symbol?]
  @defproc[(tuple-type-accessor-name [type tuple-type?]) interned-symbol?]]]{
  Accessors for the various fields of a @tech{tuple type}.}
+
+@defproc[(tuple-type-size [type tuple-type?]) natural?]{
+ Returns the number of fields in @racket[type].}
 
 @section{Tuple Type Descriptors}
 
@@ -183,25 +187,21 @@ represent a single logical thing, and there is an obvious order to those pieces.
  @(examples
    #:eval (make-evaluator) #:once
    (define point-descriptor
-     (make-tuple-implementation (tuple-type 'point 2)))
+     (make-tuple-implementation (tuple-type 'point (list 'x 'y))))
    (define point (tuple-descriptor-constructor point-descriptor))
-   (define point-x (make-tuple-field-accessor point-descriptor 0 'x))
-   (define point-y (make-tuple-field-accessor point-descriptor 1 'y))
+   (define point-x (make-tuple-field-accessor point-descriptor 0))
+   (define point-y (make-tuple-field-accessor point-descriptor 1))
    (point 42 888)
    (point-x (point 42 888))
    (point-y (point 42 888)))}
 
 @defproc[
  (make-tuple-field-accessor [descriptor tuple-descriptor?]
-                            [pos natural?]
-                            [name (or/c interned-symbol? #f)
-                             (symbol->string (format "field~a" pos))])
+                            [pos natural?])
  (-> (tuple-descriptor-predicate descriptor) any/c)]{
  Builds a field accessor function that returns the @racket[pos] field of
- instances of the @tech{tuple type} implemented by @racket[descriptor]. If
- @racket[name] is provided, it is used to derive the name of the function for
- debugging purposes. See @racket[make-tuple-implementation] for usage
- examples.}
+ instances of the @tech{tuple type} implemented by @racket[descriptor]. See
+ @racket[make-tuple-implementation] for usage examples.}
 
 @defproc[
  (default-tuple-properties [descriptor uninitialized-tuple-descriptor?])

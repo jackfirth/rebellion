@@ -157,11 +157,8 @@
 ;@------------------------------------------------------------------------------
 ;; media
 
-(define type:media (tuple-type 'media 2))
-(define index:media:type 0)
-(define index:media:bytes 1)
+(define type:media (tuple-type 'media (list 'type 'bytes)))
 (define descriptor:media (make-tuple-implementation type:media))
-
 (define media (tuple-descriptor-constructor descriptor:media))
 (define media? (tuple-descriptor-predicate descriptor:media))
 
@@ -169,11 +166,10 @@
 ;;   definition macros so this isn't necessary anymore
 (define media-get-type
   (procedure-rename
-   (make-tuple-field-accessor descriptor:media index:media:type 'type)
+   (make-tuple-field-accessor descriptor:media 0)
    'media-get-type))
 
-(define media-bytes
-  (make-tuple-field-accessor descriptor:media index:media:bytes 'bytes))
+(define media-bytes (make-tuple-field-accessor descriptor:media 1))
 
 (module+ test
   (test-case "media"

@@ -78,7 +78,8 @@
 
 (define (record-type->tuple-type type)
   (tuple-type (record-type-name type)
-              (keyset-size (record-type-fields type))
+              (for/list ([field (in-keyset (record-type-fields type))])
+                (string->symbol (keyword->string field)))
               #:predicate-name (record-type-predicate-name type)
               #:constructor-name (record-type-constructor-name type)
               #:accessor-name (record-type-accessor-name type)))
