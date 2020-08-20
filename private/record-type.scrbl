@@ -244,8 +244,8 @@ can access any field in the record: the per-field accessors created by
 @section{Record Type Bindings}
 @defmodule[rebellion/type/record/binding]
 
-An @deftech{record type binding} is a @tech{type binding} for
-@tech{record types}. Record type bindings contain compile-time information about
+A @deftech{record type binding} is a @tech{type binding} for a
+@tech{record type}. Record type bindings contain compile-time information about
 the record type's name and fields, as well as runtime bindings for its
 predicate, @tech{type descriptor}, and other runtime components. To extract an
 record type binding bound by @racket[define-record-type], use the
