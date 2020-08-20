@@ -15,7 +15,6 @@
          [pos (desc)
               (and/c natural?
                      (</c (tuple-type-size (tuple-descriptor-type desc))))])
-        ([field-name symbol?])
         [_ (desc) (-> (tuple-descriptor-predicate desc) any/c)])]
   [tuple-descriptor? (-> any/c boolean?)]
   [tuple-descriptor-accessor (-> tuple-descriptor? (-> any/c natural? any/c))]
@@ -217,11 +216,11 @@
    #:constructor (get-constructor descriptor)
    #:accessor (get-accessor descriptor)))
 
-(define (make-tuple-field-accessor descriptor pos [field-name* #f])
+(define (make-tuple-field-accessor descriptor pos)
   (define type (tuple-descriptor-type descriptor))
   (define accessor (tuple-descriptor-accessor descriptor))
   (define name (tuple-type-name type))
-  (define field-name (or field-name* (string->symbol (format "field~a" pos))))
+  (define field-name (vector-ref (tuple-type-fields type) pos))
   (define field-accessor-name (string->symbol (format "~a-~a" name field-name)))
   (procedure-rename (λ (this) (accessor this pos)) field-accessor-name))
 
@@ -236,12 +235,12 @@
 
 (module+ test
   (test-case "make-tuple-implementation"
-    (define point-type (tuple-type 'point 2))
+    (define point-type (tuple-type 'point (list 'x 'y)))
     (define point-descriptor (make-tuple-implementation point-type))
     (define point (tuple-descriptor-constructor point-descriptor))
     (define point? (tuple-descriptor-predicate point-descriptor))
-    (define point-x (make-tuple-field-accessor point-descriptor 0 'x))
-    (define point-y (make-tuple-field-accessor point-descriptor 1 'y))
+    (define point-x (make-tuple-field-accessor point-descriptor 0))
+    (define point-y (make-tuple-field-accessor point-descriptor 1))
     (define p (point 42 1000))
     (check-pred point? p)
     (check-equal? p (point 42 1000))

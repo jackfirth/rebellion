@@ -137,7 +137,8 @@
 
 (define (object-type->tuple-type type)
   (tuple-type (object-type-name type)
-              (object-type-size type)
+              (for/list ([field (object-type-fields type)])
+                (string->symbol (keyword->string field)))
               #:predicate-name (object-type-predicate-name type)
               #:constructor-name (object-type-constructor-name type)
               #:accessor-name (object-type-accessor-name type)))

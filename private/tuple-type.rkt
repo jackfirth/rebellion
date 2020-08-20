@@ -34,7 +34,6 @@
       #:defaults ([pattern (format-id #'id "pattern:~a" #'id #:subs? #t)])))
     ...)
   #:do [(define size (length (syntax->list #'(field ...))))]
-  #:with quoted-size #`(quote #,size)
   #:with (field-accessor ...)
   (for/list ([field-id (in-syntax #'(field ...))])
     (format-id field-id "~a-~a" #'id field-id #:subs? #t))
@@ -49,14 +48,14 @@
   (begin
     (define descriptor
       (make-tuple-implementation
-       (tuple-type 'id quoted-size
+       (tuple-type 'id (list 'field ...)
                    #:constructor-name 'constructor
                    #:predicate-name 'predicate)
        #:property-maker property-maker))
     (define constructor (tuple-descriptor-constructor descriptor))
     (define predicate (tuple-descriptor-predicate descriptor))
     (define field-accessor
-      (make-tuple-field-accessor descriptor field-position 'field))
+      (make-tuple-field-accessor descriptor field-position))
     ...
     (define-match-expander pattern
       (syntax-parser

@@ -64,7 +64,7 @@
     (prop-maker
      (uninitialized-singleton-descriptor #:type type #:predicate predicate)))
   (define type/tuple
-    (tuple-type (singleton-type-name type) 0
+    (tuple-type (singleton-type-name type) (list)
                 #:predicate-name (singleton-type-predicate-name type)))
   (define descriptor
     (make-tuple-implementation type/tuple
