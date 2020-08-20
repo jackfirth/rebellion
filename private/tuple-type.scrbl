@@ -11,6 +11,7 @@
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/tuple
+                     rebellion/type/tuple/binding
                      rebellion/type/struct
                      syntax/parse/define)
           (submod rebellion/private/scribble-cross-document-tech doc)
