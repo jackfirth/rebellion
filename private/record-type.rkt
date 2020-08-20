@@ -40,9 +40,10 @@
   (define-record-type id:id fields:record-fields
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
-     (~optional (~seq #:predicate-name predicate:id)
-                #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)])
-                #:name "#:predicate-name option")
+     (~optional
+      (~seq #:predicate-name predicate:id)
+      #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)])
+      #:name "#:predicate-name option")
      (~optional
       (~seq #:descriptor-name descriptor:id)
       #:defaults ([descriptor (format-id #'id "descriptor:~a" #'id #:subs? #t)])
@@ -60,10 +61,11 @@
      (~optional
       (~seq #:pattern-name pattern:id)
       #:defaults ([pattern (format-id #'id "pattern:~a" #'id #:subs? #t)])
-      #:name "#:constructor-name option")
-     (~optional (~seq #:property-maker prop-maker:expr)
-                #:defaults ([prop-maker #'default-record-properties])
-                #:name "#:property-maker option"))
+      #:name "#:pattern-name option")
+     (~optional
+      (~seq #:property-maker prop-maker:expr)
+      #:defaults ([prop-maker #'default-record-properties])
+      #:name "#:property-maker option"))
     ...)
   #:with (field-accessor ...)
   (for/list ([field-id-stx (in-syntax #'(fields.id ...))])
