@@ -8,6 +8,8 @@
                      racket/match
                      rebellion/base/symbol
                      rebellion/collection/keyset
+                     rebellion/custom-write
+                     rebellion/equal+hash
                      rebellion/type/enum
                      rebellion/type/enum/binding
                      rebellion/type/tuple

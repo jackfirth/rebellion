@@ -21,22 +21,16 @@
 
 (begin-for-syntax
   (define-syntax-class singleton-id
-    #:attributes (default-name default-predicate-name default-descriptor-name)
+    #:attributes (default-predicate-name default-descriptor-name)
     (pattern id:id
       #:do [(define (format-singleton-id fmt)
               (format-id #'id fmt #'id #:subs? #t))]
-      #:with default-name #'id
       #:with default-predicate-name (format-singleton-id "~a?")
       #:with default-descriptor-name (format-singleton-id "descriptor:~a"))))
 
 (define-simple-macro
   (define-singleton-type id:singleton-id
     (~alt
-     (~optional
-      (~seq #:name name:id)
-      #:name "#:name option"
-      #:defaults ([name #'id.default-name]))
-
      (~optional
       (~seq #:descriptor-name descriptor:id)
       #:name "#:descriptor-name option"
@@ -61,14 +55,14 @@
   (begin
     (define descriptor
       (make-singleton-implementation
-       (singleton-type 'name #:predicate-name 'predicate)
+       (singleton-type 'id #:predicate-name 'predicate)
        #:inspector inspector
        #:property-maker prop-maker))
     (define predicate (singleton-descriptor-predicate descriptor))
     (define instance (singleton-descriptor-instance descriptor))
-    (define-syntax name
+    (define-syntax id
       (singleton-binding
-       #:type (singleton-type 'name #:predicate-name 'predicate)
+       #:type (singleton-type 'id #:predicate-name 'predicate)
        #:descriptor #'descriptor
        #:predicate #'predicate
        #:instance #'instance
