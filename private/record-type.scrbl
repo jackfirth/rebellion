@@ -5,6 +5,8 @@
                      racket/match
                      racket/math
                      rebellion/collection/keyset
+                     rebellion/custom-write
+                     rebellion/equal+hash
                      rebellion/type/record
                      rebellion/type/record/binding
                      rebellion/type/struct
@@ -147,7 +149,7 @@ contains two functions that implement the type:
   using the @racket[record-type-fields] @tech{keyset}.}]
 
 These functions can be used to dynamically construct and inspect instances of
-arbitrary record types at runtime, assuming their record descriptor is
+arbitrary record types at runtime, assuming the type's descriptor is
 initialized. Note that the descriptor contains a single accessor function that
 can access any field in the record: the per-field accessors created by
 @racket[define-record-type] are merely convenient wrappers around this accessor.
@@ -244,10 +246,10 @@ can access any field in the record: the per-field accessors created by
 @section{Record Type Bindings}
 @defmodule[rebellion/type/record/binding]
 
-An @deftech{record type binding} is a @tech{type binding} for
-@tech{record types}. Record type bindings contain compile-time information about
+A @deftech{record type binding} is a @tech{type binding} for a
+@tech{record type}. Record type bindings contain compile-time information about
 the record type's name and fields, as well as runtime bindings for its
-predicate, @tech{type descriptor}, and other runtime components. To extract an
+predicate, @tech{type descriptor}, and other runtime components. To extract a
 record type binding bound by @racket[define-record-type], use the
 @racket[record-id] @syntax-tech{syntax class}.
 

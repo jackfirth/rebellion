@@ -260,7 +260,7 @@ alphabetical order.
 @section{Enum Type Bindings}
 @defmodule[rebellion/type/enum/binding]
 
-An @deftech{enum type binding} is a @tech{type binding} for @tech{enum types}.
+An @deftech{enum type binding} is a @tech{type binding} for an @tech{enum type}.
 Enum type bindings contain compile-time information about the enum type's name
 and values, as well as runtime bindings for its predicate,
 @tech{type descriptor}, and other runtime components. To extract an enum type

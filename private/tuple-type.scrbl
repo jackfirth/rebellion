@@ -11,9 +11,12 @@
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/tuple
-                     rebellion/type/struct)
+                     rebellion/type/tuple/binding
+                     rebellion/type/struct
+                     syntax/parse/define)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-index-attribute doc)
           scribble/examples)
 
 @(define make-evaluator
@@ -23,7 +26,8 @@
                    'racket/match
                    'racket/math
                    'racket/pretty
-                   'rebellion/type/tuple)
+                   'rebellion/type/tuple
+                   'syntax/parse/define)
     #:private (list 'racket/base)))
 
 @title{Tuple Types}
@@ -140,6 +144,23 @@ represent a single logical thing, and there is an obvious order to those pieces.
 
 @section{Tuple Type Descriptors}
 
+The @tech{type descriptor} for a @tech{tuple type} contains two functions that
+implement the type:
+
+@itemlist[
+ @item{A @deftech{tuple constructor} that accepts one argument for each field of
+  the tuple type and constructs a tuple instance.}
+
+ @item{A @deftech{tuple accessor} that accepts an instance of the tuple type
+  and an integer field index, then returns the value of the corresponding
+  field.}]
+
+These functions can be used to dynamically construct and inspect instances of
+arbitrary tuple types at runtime, assuming the type's descriptor is initialized.
+Note that the descriptor contains a single accessor function that can access any
+field in the tuple: the per-field accessors created by
+@racket[define-tuple-type] are merely convenient wrappers around this accessor.
+
 @defproc[(tuple-descriptor? [v any/c]) boolean?]{
  A predicate for @tech{type descriptors} of @tech{tuple types}.}
 
@@ -152,18 +173,6 @@ represent a single logical thing, and there is an obvious order to those pieces.
  the implementations of those functions won't exist until then. Initialization
  of a descriptor completes when @racket[make-tuple-implementation]
  returns.}
-
-@deftogether[[
- @defproc[(tuple-descriptor-type [descriptor tuple-descriptor?]) tuple-type?]
- @defproc[(tuple-descriptor-predicate [descriptor tuple-descriptor?])
-          (-> any/c boolean?)]
- @defproc[(tuple-descriptor-constructor [descriptor tuple-descriptor?])
-          procedure?]
- @defproc[(tuple-descriptor-accessor [descriptor tuple-descriptor?])
-          (-> (tuple-descriptor-predicate descriptor) natural? any/c)]]]{
- Accessors for the various fields of a tuple @tech{type descriptor}.}
-
-@section{Dynamically Implementing Tuple Types}
 
 @defproc[
  (make-tuple-implementation
@@ -195,6 +204,33 @@ represent a single logical thing, and there is an obvious order to those pieces.
    (point-x (point 42 888))
    (point-y (point 42 888)))}
 
+@defproc[(tuple-descriptor-type [descriptor tuple-descriptor?]) tuple-type?]{
+ Returns the @tech{tuple type} that @racket[descriptor] implements.}
+
+@defproc[(tuple-descriptor-predicate [descriptor tuple-descriptor?])
+         (-> any/c boolean?)]{
+ Returns a predicate that returns true when given any tuple instance created by
+ @racket[descriptor]. The predicate is specific to @racket[descriptor] --- it
+ will not return true for tuple instances created by any other tuple
+ descriptors, even if they're different implementations of the same tuple type
+ as @racket[descriptor]. This is because tuple types are @tech{nominal types}.}
+
+@defproc[(tuple-descriptor-constructor [descriptor tuple-descriptor?])
+         procedure?]{
+ Returns the @tech{tuple constructor} of the tuple type implementation
+ represented by @racket[descriptor]. The constructor accepts one argument for
+ each field in the tuple type and returns an instance of the tuple type.}
+
+@defproc[(tuple-descriptor-accessor [descriptor tuple-descriptor?])
+         (-> (tuple-descriptor-predicate descriptor) natural? any/c)]{
+ Returns the @tech{tuple accessor} of the tuple type implementation
+ represented by @racket[descriptor]. The accessor accepts two arguments: a
+ tuple instance created by @racket[descriptor], and a nonnegative integer less
+ than the number of fields in the tuple type. The accessor returns the value of
+ the corresponding field in the instance. See also
+ @racket[make-tuple-field-accessor] to construct a field-specific accessor
+ function.}
+
 @defproc[
  (make-tuple-field-accessor [descriptor tuple-descriptor?]
                             [pos natural?])
@@ -203,9 +239,8 @@ represent a single logical thing, and there is an obvious order to those pieces.
  instances of the @tech{tuple type} implemented by @racket[descriptor]. See
  @racket[make-tuple-implementation] for usage examples.}
 
-@defproc[
- (default-tuple-properties [descriptor uninitialized-tuple-descriptor?])
- (listof (cons/c struct-type-property? any/c))]{
+@defproc[(default-tuple-properties [descriptor tuple-descriptor?])
+         (listof (cons/c struct-type-property? any/c))]{
  Returns implementations of @racket[prop:equal+hash] and @racket[
  prop:custom-write] suitable for most @tech{tuple types}. This function is
  called by @racket[make-tuple-implementation] when no @racket[_prop-maker]
@@ -217,7 +252,9 @@ represent a single logical thing, and there is an obvious order to those pieces.
  hashing function suitable for use with @racket[prop:equal+hash], each of which
  operate on instances of @racket[descriptor]. All fields in @racket[descriptor]
  are compared and hashed by the returned procedures. This causes @racket[equal?]
- to behave roughly the same as it does on transparent structure types.
+ to behave roughly the same as it does on transparent structure types. This
+ function is used by @racket[default-tuple-properties] to implement
+ @racket[prop:equal+hash].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -232,7 +269,9 @@ represent a single logical thing, and there is an obvious order to those pieces.
          custom-write-function/c]{
  Constructs a @tech{custom write implementation} that prints instances of the
  @tech{tuple type} described by @racket[descriptor] in a manner similar to the
- way that @racket[make-constructor-style-printer] prints values.
+ way that @racket[make-constructor-style-printer] prints values. This function
+ is used by @racket[default-tuple-properties] to implement
+ @racket[prop:custom-write].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -245,6 +284,92 @@ represent a single logical thing, and there is an obvious order to those pieces.
    (point 1 2)
    (parameterize ([pretty-print-columns 10])
      (pretty-print (point 100000000000000 200000000000000))))}
+
+@section{Tuple Type Bindings}
+@defmodule[rebellion/type/tuple/binding]
+
+A @deftech{tuple type binding} is a @tech{type binding} for a @tech{tuple type}.
+Tuple type bindings contain compile-time information about the tuple type's name
+and fields, as well as runtime bindings for its predicate,
+@tech{type descriptor}, and other runtime components. To extract a tuple type
+binding bound by @racket[define-tuple-type], use the @racket[tuple-id]
+@syntax-tech{syntax class}.
+
+@defproc[(tuple-binding? [v any/c]) boolean?]{
+ A predicate for @tech{tuple type bindings}.}
+
+@defidform[#:kind "syntax class" tuple-id]{
+ A @syntax-tech{syntax class} for @tech{tuple type bindings} bound by
+ @racket[define-tuple-type]. This class matches any @tech/reference{identifier}
+ bound with @racket[define-syntax] to a value satisfying the
+ @racket[tuple-binding?] predicate, similar to the @racket[static] syntax
+ class. Upon a successful match, the @racket[tuple-id] class defines the
+ following attributes:
+ @itemlist[
+
+ @item{@index-attribute[tuple-id type] --- an attribute bound to a compile-time
+   @racket[tuple-type?] value describing the type.}
+
+ @item{@index-attribute[tuple-id name] --- a pattern variable bound to the tuple
+   type's name, as a quoted symbol.}
+
+ @item{@index-attribute[tuple-id field-name ...] --- a pattern variable bound to
+   the tuple's field names, as quoted symbols.}
+
+ @item{@index-attribute[tuple-id descriptor] --- a pattern variable bound to the
+   tuple type's runtime @tech{type descriptor}.}
+
+ @item{@index-attribute[tuple-id predicate] --- a pattern variable bound to the
+   tuple type's runtime type predicate.}
+
+ @item{@index-attribute[tuple-id constructor] --- a pattern variable bound to
+   the tuple type's runtime @tech{tuple constructor}.}
+
+ @item{@index-attribute[tuple-id accessor] --- a pattern variable bound to the
+   tuple type's runtime @tech{tuple accessor}.}
+
+ @item{@index-attribute[tuple-id field-accessor ...] --- a pattern variable
+   bound to the tuple type's per-field runtime field accessors.}]
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (require (for-syntax rebellion/type/tuple/binding))
+    
+    (define-simple-macro (tuple-field-names tuple:tuple-id)
+      (list tuple.field-name ...))
+
+    (define-tuple-type point (x y z))
+
+    (tuple-field-names point)))}
+
+@defproc[(tuple-binding-type [binding tuple-binding?]) tuple-type?]{
+ Returns the @tech{tuple type} that @racket[binding] is for. When a tuple type
+ binding is bound with @racket[define-syntax], this can be used at compile-time
+ to obtain information about the name and fields of the tuple type.}
+
+@defproc[(tuple-binding-descriptor [binding tuple-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{type descriptor}
+ for the tuple type bound by @racket[binding]. When a tuple type binding is
+ bound with @racket[define-syntax], this can be used in macro-generated code to
+ work with tuple types dynamically.}
+
+@defproc[(tuple-binding-predicate [binding tuple-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the predicate for the tuple
+ type bound by @racket[binding].}
+
+@defproc[(tuple-binding-constructor [binding tuple-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{tuple constructor}
+ for the tuple type bound by @racket[binding].}
+
+@defproc[(tuple-binding-accessor [binding tuple-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{tuple accessor}
+ for the tuple type bound by @racket[binding].}
+
+@defproc[(tuple-binding-field-accessors [binding tuple-binding?])
+         (vectorof identifier #:immutable #t)]{
+ Returns a vector of identifiers that are bound at runtime to the per-field
+ accessors of the tuple type bound by @racket[binding].}
 
 @section{Tuple Chaperones and Impersonators}
 

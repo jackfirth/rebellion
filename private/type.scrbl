@@ -2,6 +2,7 @@
 
 @(require (for-label racket/base
                      rebellion/type/enum
+                     rebellion/type/enum/binding
                      rebellion/type/record
                      rebellion/type/singleton
                      rebellion/type/tuple
