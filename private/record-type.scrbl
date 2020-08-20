@@ -6,15 +6,19 @@
                      racket/math
                      rebellion/collection/keyset
                      rebellion/type/record
-                     rebellion/type/struct)
+                     rebellion/type/record/binding
+                     rebellion/type/struct
+                     syntax/parse/define)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-index-attribute doc)
           scribble/examples)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/match
-                   'rebellion/type/record)
+                   'rebellion/type/record
+                   'syntax/parse/define)
     #:private (list 'racket/base)))
 
 @title{Record Types}
@@ -236,3 +240,90 @@ can access any field in the record: the per-field accessors created by
  fields if needed, and it will keep field names and field values on the same
  line. This function is used by @racket[default-record-properties] to implement
  @racket[prop:custom-write].}
+
+@section{Record Type Bindings}
+@defmodule[rebellion/type/record/binding]
+
+An @deftech{record type binding} is a @tech{type binding} for
+@tech{record types}. Record type bindings contain compile-time information about
+the record type's name and fields, as well as runtime bindings for its
+predicate, @tech{type descriptor}, and other runtime components. To extract an
+record type binding bound by @racket[define-record-type], use the
+@racket[record-id] @syntax-tech{syntax class}.
+
+@defproc[(record-binding? [v any/c]) boolean?]{
+ A predicate for @tech{record type bindings}.}
+
+@defidform[#:kind "syntax class" record-id]{
+ A @syntax-tech{syntax class} for @tech{record type bindings} bound by
+ @racket[define-record-type]. This class matches any @tech/reference{identifier}
+ bound with @racket[define-syntax] to a value satisfying the
+ @racket[record-binding?] predicate, similar to the @racket[static] syntax
+ class. Upon a successful match, the @racket[record-id] class defines the
+ following attributes:
+
+ @itemlist[
+
+ @item{@index-attribute[record-id type] --- an attribute bound to a compile-time
+   @racket[record-type?] value describing the type.}
+
+ @item{@index-attribute[record-id name] --- a pattern variable bound to the
+   record type's name, as a quoted symbol.}
+
+ @item{@index-attribute[record-id field-name ...] --- a pattern variable bound
+   to the record's field names, as quoted symbols.}
+
+ @item{@index-attribute[record-id descriptor] --- a pattern variable bound to
+   the record type's runtime @tech{type descriptor}.}
+
+ @item{@index-attribute[record-id predicate] --- a pattern variable bound to the
+   record type's runtime type predicate.}
+
+ @item{@index-attribute[record-id constructor] --- a pattern variable bound to
+   the record type's runtime @tech{record constructor}.}
+
+ @item{@index-attribute[record-id accessor] --- a pattern variable bound to the
+   record type's runtime @tech{record accessor}.}
+
+ @item{@index-attribute[record-id field-accessor ...] --- a pattern variable
+   bound to the record type's per-field runtime field accessors.}]
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (require (for-syntax rebellion/type/record/binding))
+    
+    (define-simple-macro (record-field-names record:record-id)
+      (list record.field-name ...))
+
+    (define-record-type email (subject author body))
+
+    (record-field-names email)))}
+
+@defproc[(record-binding-type [binding record-binding?]) record-type?]{
+ Returns the @tech{record type} that @racket[binding] is for. When a record type
+ binding is bound with @racket[define-syntax], this can be used at compile-time
+ to obtain information about the name and fields of the record type.}
+
+@defproc[(record-binding-descriptor [binding record-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{type descriptor}
+ for the record type bound by @racket[binding]. When a record type binding is
+ bound with @racket[define-syntax], this can be used in macro-generated code to
+ work with record types dynamically.}
+
+@defproc[(record-binding-predicate [binding record-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the predicate for the record
+ type bound by @racket[binding].}
+
+@defproc[(record-binding-constructor [binding record-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{record constructor}
+ for the record type bound by @racket[binding].}
+
+@defproc[(record-binding-accessor [binding record-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{record accessor}
+ for the record type bound by @racket[binding].}
+
+@defproc[(record-binding-field-accessors [binding record-binding?])
+         (vectorof identifier #:immutable #t)]{
+ Returns a vector of identifiers that are bound at runtime to the per-field
+ accessors of the record type bound by @racket[binding].}
