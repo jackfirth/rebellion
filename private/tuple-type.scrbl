@@ -153,18 +153,6 @@ represent a single logical thing, and there is an obvious order to those pieces.
  of a descriptor completes when @racket[make-tuple-implementation]
  returns.}
 
-@deftogether[[
- @defproc[(tuple-descriptor-type [descriptor tuple-descriptor?]) tuple-type?]
- @defproc[(tuple-descriptor-predicate [descriptor tuple-descriptor?])
-          (-> any/c boolean?)]
- @defproc[(tuple-descriptor-constructor [descriptor tuple-descriptor?])
-          procedure?]
- @defproc[(tuple-descriptor-accessor [descriptor tuple-descriptor?])
-          (-> (tuple-descriptor-predicate descriptor) natural? any/c)]]]{
- Accessors for the various fields of a tuple @tech{type descriptor}.}
-
-@section{Dynamically Implementing Tuple Types}
-
 @defproc[
  (make-tuple-implementation
   [type tuple-type?]
@@ -203,9 +191,18 @@ represent a single logical thing, and there is an obvious order to those pieces.
  instances of the @tech{tuple type} implemented by @racket[descriptor]. See
  @racket[make-tuple-implementation] for usage examples.}
 
-@defproc[
- (default-tuple-properties [descriptor uninitialized-tuple-descriptor?])
- (listof (cons/c struct-type-property? any/c))]{
+@deftogether[[
+ @defproc[(tuple-descriptor-type [descriptor tuple-descriptor?]) tuple-type?]
+ @defproc[(tuple-descriptor-predicate [descriptor tuple-descriptor?])
+          (-> any/c boolean?)]
+ @defproc[(tuple-descriptor-constructor [descriptor tuple-descriptor?])
+          procedure?]
+ @defproc[(tuple-descriptor-accessor [descriptor tuple-descriptor?])
+          (-> (tuple-descriptor-predicate descriptor) natural? any/c)]]]{
+ Accessors for the various fields of a tuple @tech{type descriptor}.}
+
+@defproc[(default-tuple-properties [descriptor tuple-descriptor?])
+         (listof (cons/c struct-type-property? any/c))]{
  Returns implementations of @racket[prop:equal+hash] and @racket[
  prop:custom-write] suitable for most @tech{tuple types}. This function is
  called by @racket[make-tuple-implementation] when no @racket[_prop-maker]
@@ -217,7 +214,9 @@ represent a single logical thing, and there is an obvious order to those pieces.
  hashing function suitable for use with @racket[prop:equal+hash], each of which
  operate on instances of @racket[descriptor]. All fields in @racket[descriptor]
  are compared and hashed by the returned procedures. This causes @racket[equal?]
- to behave roughly the same as it does on transparent structure types.
+ to behave roughly the same as it does on transparent structure types. This
+ function is used by @racket[default-tuple-properties] to implement
+ @racket[prop:equal+hash].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -232,7 +231,9 @@ represent a single logical thing, and there is an obvious order to those pieces.
          custom-write-function/c]{
  Constructs a @tech{custom write implementation} that prints instances of the
  @tech{tuple type} described by @racket[descriptor] in a manner similar to the
- way that @racket[make-constructor-style-printer] prints values.
+ way that @racket[make-constructor-style-printer] prints values. This function
+ is used by @racket[default-tuple-properties] to implement
+ @racket[prop:custom-write].
 
  @(examples
    #:eval (make-evaluator) #:once
