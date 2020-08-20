@@ -104,7 +104,5 @@
     #:with constructor (record-binding-constructor (attribute binding.value))
     #:with accessor (record-binding-accessor (attribute binding.value))
     #:with (field-accessor ...)
-    (sequence->list (record-binding-field-accessors (attribute binding.value)))
-    #|
-|#
-    ))
+    (sequence->list
+     (record-binding-field-accessors (attribute binding.value)))))
