@@ -7,9 +7,12 @@
                      rebellion/base/symbol
                      rebellion/custom-write
                      rebellion/equal+hash
-                     rebellion/type/wrapper)
+                     rebellion/type/wrapper
+                     rebellion/type/wrapper/binding
+                     syntax/parse/define)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-index-attribute doc)
           scribble/examples)
 
 @(define make-evaluator
@@ -17,7 +20,8 @@
     #:public (list 'racket/contract/base
                    'racket/contract/region
                    'racket/match
-                   'rebellion/type/wrapper)
+                   'rebellion/type/wrapper
+                   'syntax/parse/define)
     #:private (list 'racket/base)))
 
 @title{Wrapper Types}
@@ -214,3 +218,79 @@ initialized.
  @tech{wrapper type} described by @racket[descriptor] in a manner similar to
  transparent structures. This function is used by
  @racket[default-wrapper-properties] to implement @racket[prop:custom-write].}
+
+@section{Wrapper Type Bindings}
+@defmodule[rebellion/type/wrapper/binding]
+
+A @deftech{wrapper type binding} is a @tech{type binding} for a
+@tech{wrapper type}. Wrapper type bindings contain compile-time information
+about the wrapper type's name and runtime bindings for its predicate,
+@tech{type descriptor}, and other runtime components. To extract a wrapper type
+binding bound by @racket[define-wrapper-type], use the @racket[wrapper-id]
+@syntax-tech{syntax class}.
+
+@defproc[(wrapper-binding? [v any/c]) boolean?]{
+ A predicate for @tech{wrapper type bindings}.}
+
+@defidform[#:kind "syntax class" wrapper-id]{
+ A @syntax-tech{syntax class} for @tech{wrapper type bindings} bound by
+ @racket[define-wrapper-type]. This class matches any
+ @tech/reference{identifier} bound with @racket[define-syntax] to a value
+ satisfying the @racket[wrapper-binding?] predicate, similar to the
+ @racket[static] syntax
+ class. Upon a successful match, the @racket[wrapper-id] class defines the
+ following attributes:
+ @itemlist[
+
+ @item{@index-attribute[wrapper-id type] --- an attribute bound to a
+   compile-time @racket[wrapper-type?] value describing the type.}
+
+ @item{@index-attribute[wrapper-id name] --- a pattern variable bound to the
+   wrapper type's name, as a quoted symbol.}
+
+ @item{@index-attribute[wrapper-id descriptor] --- a pattern variable bound to
+   the wrapper type's runtime @tech{type descriptor}.}
+
+ @item{@index-attribute[wrapper-id predicate] --- a pattern variable bound to
+   the wrapper type's runtime type predicate.}
+
+ @item{@index-attribute[wrapper-id constructor] --- a pattern variable bound to
+   the wrapper type's runtime @tech{wrapper constructor}.}
+
+ @item{@index-attribute[wrapper-id accessor] --- a pattern variable bound to the
+   wrapper type's runtime @tech{wrapper accessor}.}]
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (require (for-syntax rebellion/type/wrapper/binding))
+    
+    (define-simple-macro (wrapper-predicate wrapper:wrapper-id)
+      wrapper.predicate)
+
+    (define-wrapper-type fahrenheit)
+
+    (wrapper-predicate fahrenheit)))}
+
+@defproc[(wrapper-binding-type [binding wrapper-binding?]) wrapper-type?]{
+ Returns the @tech{wrapper type} that @racket[binding] is for. When a wrapper
+ type binding is bound with @racket[define-syntax], this can be used at
+ compile-time to retrieve the name of the wrapper type.}
+
+@defproc[(wrapper-binding-descriptor [binding wrapper-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{type descriptor}
+ for the wrapper type bound by @racket[binding]. When a wrapper type binding is
+ bound with @racket[define-syntax], this can be used in macro-generated code to
+ work with wrapper types dynamically.}
+
+@defproc[(wrapper-binding-predicate [binding wrapper-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the predicate for the wrapper
+ type bound by @racket[binding].}
+
+@defproc[(wrapper-binding-constructor [binding wrapper-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the
+ @tech{wrapper constructor} for the wrapper type bound by @racket[binding].}
+
+@defproc[(wrapper-binding-accessor [binding wrapper-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{wrapper accessor}
+ for the wrapper type bound by @racket[binding].}
