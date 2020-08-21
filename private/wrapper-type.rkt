@@ -3,7 +3,11 @@
 (provide define-wrapper-type)
 
 (require (for-syntax racket/base
-                     racket/syntax)
+                     racket/syntax
+                     (submod rebellion/private/wrapper-type-binding
+                             private-constructor)
+                     rebellion/type/wrapper/base
+                     syntax/transformer)
          racket/match
          rebellion/type/wrapper/base
          rebellion/type/wrapper/descriptor
@@ -20,47 +24,70 @@
   (define-wrapper-type id:id
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
-     (~optional (~seq #:predicate-name predicate-name:id)
-                #:defaults ([predicate-name (format-id #'id "~a?" #'id)])
-                #:name "#:predicate-name option")
+
      (~optional
-      (~seq #:constructor-name constructor-name:id)
-      #:defaults ([constructor-name (format-id #'id "constructor:~a" #'id)])
+      (~seq #:descriptor-name descriptor:id)
+      #:defaults ([descriptor (format-id #'id "descriptor:~a" #'id)])
+      #:name "#:descriptor-name option")
+
+     (~optional
+      (~seq #:predicate-name predicate:id)
+      #:defaults ([predicate (format-id #'id "~a?" #'id)])
+      #:name "#:predicate-name option")
+     
+     (~optional
+      (~seq #:constructor-name constructor:id)
+      #:defaults ([constructor (format-id #'id "constructor:~a" #'id)])
       #:name "#:constructor-name option")
-     (~optional (~seq #:accessor-name accessor-name:id)
-                #:defaults ([accessor-name
-                             (format-id #'id "~a-value" #'id)])
-                #:name "#:accessor-name option")
+     
      (~optional
-      (~seq #:pattern-name pattern-name:id)
-      #:defaults ([pattern-name (format-id #'id "pattern:~a" #'id)])
+      (~seq #:accessor-name accessor:id)
+      #:defaults ([accessor (format-id #'id "~a-value" #'id)])
+      #:name "#:accessor-name option")
+     
+     (~optional
+      (~seq #:pattern-name pattern:id)
+      #:defaults ([pattern (format-id #'id "pattern:~a" #'id)])
       #:name "#:pattern-name option")
-     (~optional (~seq #:property-maker prop-maker:expr)
-                #:defaults ([prop-maker #'default-wrapper-properties])
-                #:name "#:property-maker option"))
+     
+     (~optional
+      (~seq #:property-maker prop-maker:expr)
+      #:defaults ([prop-maker #'default-wrapper-properties])
+      #:name "#:property-maker option"))
     ...)
   #:with root-binding
   (if (attribute omit-root-binding-kw)
       #'(begin)
-      #'(...
-         (define-match-expander id
-           (syntax-parser [(_ value-pattern) #'(pattern-name value-pattern)])
-           (make-rename-transformer #'constructor-name))))
+      #'(define-syntax id
+          (wrapper-binding
+           #:type
+           (wrapper-type
+            'id
+            #:constructor-name 'constructor
+            #:predicate-name 'predicate
+            #:accessor-name 'accessor)
+           #:descriptor #'descriptor
+           #:predicate #'predicate
+           #:constructor #'constructor
+           #:accessor #'accessor
+           #:pattern #'pattern
+           #:macro (make-variable-like-transformer #'constructor))))
   (begin
-    (define type
-      (wrapper-type 'id
-                    #:predicate-name 'predicate-name
-                    #:constructor-name 'constructor-name
-                    #:accessor-name 'accessor-name))
     (define descriptor
-      (make-wrapper-implementation type #:property-maker prop-maker))
-    (define predicate-name (wrapper-descriptor-predicate descriptor))
-    (define constructor-name (wrapper-descriptor-constructor descriptor))
-    (define accessor-name (wrapper-descriptor-accessor descriptor))
-    (define-match-expander pattern-name
+      (make-wrapper-implementation
+       (wrapper-type
+        'id
+        #:predicate-name 'predicate
+        #:constructor-name 'constructor
+        #:accessor-name 'accessor)
+       #:property-maker prop-maker))
+    (define predicate (wrapper-descriptor-predicate descriptor))
+    (define constructor (wrapper-descriptor-constructor descriptor))
+    (define accessor (wrapper-descriptor-accessor descriptor))
+    (define-match-expander pattern
       (syntax-parser
         [(_ value-pattern)
-         #'(? predicate-name (app accessor-name value-pattern))]))
+         #'(? predicate (app accessor value-pattern))]))
     root-binding))
 
 (module+ test
