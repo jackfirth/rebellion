@@ -17,8 +17,7 @@
   [wrapper-descriptor-predicate (-> wrapper-descriptor? predicate/c)]
   [wrapper-descriptor-accessor (-> wrapper-descriptor? (-> any/c any/c))]
   [default-wrapper-properties
-   (-> uninitialized-wrapper-descriptor?
-       (listof (cons/c struct-type-property? any/c)))]
+   (-> wrapper-descriptor? (listof (cons/c struct-type-property? any/c)))]
   [default-wrapper-equal+hash (-> wrapper-descriptor? equal+hash/c)]
   [default-wrapper-custom-write
    (-> wrapper-descriptor? custom-write-function/c)]))
