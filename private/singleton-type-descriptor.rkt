@@ -16,10 +16,13 @@
   [singleton-descriptor-instance (-> initialized-singleton-descriptor? any/c)]
   [singleton-descriptor-predicate (-> singleton-descriptor? predicate/c)]
   [default-singleton-properties
-   (-> uninitialized-singleton-descriptor?
-       (listof (cons/c struct-type-property? any/c)))]))
+   (-> singleton-descriptor? (listof (cons/c struct-type-property? any/c)))]
+  [default-singleton-custom-write
+   (-> singleton-descriptor? custom-write-function/c)]
+  [default-singleton-object-name (-> singleton-descriptor? object-name/c)]))
 
-(require rebellion/custom-write
+(require racket/math
+         rebellion/custom-write
          rebellion/equal+hash
          rebellion/type/singleton/base
          rebellion/type/tuple)
@@ -112,3 +115,5 @@
 
 (define (singleton-descriptor-instance descriptor)
   (initialized-singleton-descriptor-instance descriptor))
+
+(define object-name/c (or/c natural? (-> any/c any/c)))

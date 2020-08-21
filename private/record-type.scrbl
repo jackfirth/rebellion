@@ -298,9 +298,9 @@ record type binding bound by @racket[define-record-type], use the
     (define-simple-macro (record-field-names record:record-id)
       (list record.field-name ...))
 
-    (define-record-type email (subject author body))
+    (define-record-type email (subject author body)))
 
-    (record-field-names email)))}
+   (record-field-names email))}
 
 @defproc[(record-binding-type [binding record-binding?]) record-type?]{
  Returns the @tech{record type} that @racket[binding] is for. When a record type

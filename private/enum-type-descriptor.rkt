@@ -26,11 +26,10 @@
         [_ (descriptor)
            (-> (enum-descriptor-predicate descriptor)
                (enum-index/c descriptor))])]
-  [default-enum-properties (-> uninitialized-enum-descriptor? properties/c)]
-  [default-enum-custom-write
-   (-> uninitialized-enum-descriptor? custom-write-function/c)]
-  [default-enum-equal+hash (-> uninitialized-enum-descriptor? equal+hash/c)]
-  [default-enum-object-name (-> uninitialized-enum-descriptor? object-name/c)]))
+  [default-enum-properties (-> enum-descriptor? properties/c)]
+  [default-enum-custom-write (-> enum-descriptor? custom-write-function/c)]
+  [default-enum-equal+hash (-> enum-descriptor? equal+hash/c)]
+  [default-enum-object-name (-> enum-descriptor? object-name/c)]))
 
 (require racket/math
          rebellion/base/generative-token
