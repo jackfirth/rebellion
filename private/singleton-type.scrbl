@@ -7,15 +7,19 @@
                      rebellion/base/symbol
                      rebellion/custom-write
                      rebellion/equal+hash
-                     rebellion/type/singleton)
+                     rebellion/type/singleton
+                     syntax/parse/define)
+          (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-index-attribute doc)
           scribble/examples)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/contract/base
                    'racket/contract/region
-                   'rebellion/type/singleton)
+                   'rebellion/type/singleton
+                   'syntax/parse/define)
     #:private (list 'racket/base)))
 
 @title{Singleton Types}
@@ -166,3 +170,74 @@ initialized, can be used to retrieve the singleton instance.
  @racket[object-name] to return the name of the instance when used on the
  singleton instance created by @racket[descriptor]. This function is used by
  @racket[default-singleton-properties] to implement @racket[prop:object-name].}
+
+@section{Singleton Type Bindings}
+@defmodule[rebellion/type/singleton/binding]
+
+A @deftech{singleton type binding} is a @tech{type binding} for a
+@tech{singleton type}. Singleton type bindings contain compile-time information
+about the singleton type's name, as well as runtime bindings for its predicate,
+@tech{type descriptor}, and instance. To extract a singleton type binding bound
+by @racket[define-singleton-type], use the @racket[singleton-id]
+@syntax-tech{syntax class}.
+
+@defproc[(singleton-binding? [v any/c]) boolean?]{
+ A predicate for @tech{singleton type bindings}.}
+
+@defidform[#:kind "syntax class" singleton-id]{
+ A @syntax-tech{syntax class} for @tech{singleton type bindings} bound by
+ @racket[define-singleton-type]. This class matches any
+ @tech/reference{identifier} bound with @racket[define-syntax] to a value
+ satisfying the @racket[singleton-binding?] predicate, similar to the
+ @racket[static] syntax class. Upon a successful match, the
+ @racket[singleton-id] class defines the following attributes:
+
+ @itemlist[
+
+ @item{@index-attribute[singleton-id type] --- an attribute bound to a
+   compile-time @racket[singleton-type?] value describing the type.}
+
+ @item{@index-attribute[singleton-id name] --- a pattern variable bound to the
+   singleton type's name, as a quoted symbol.}
+
+ @item{@index-attribute[singleton-id descriptor] --- a pattern variable bound to
+   the singleton type's runtime @tech{type descriptor}.}
+
+ @item{@index-attribute[singleton-id predicate] --- a pattern variable bound to
+   the singleton type's runtime type predicate.}
+
+ @item{@index-attribute[singleton-id instance] --- a pattern variable bound to
+   the singleton type's runtime singleton instance.}]
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (require (for-syntax rebellion/type/singleton/binding))
+    
+    (define-simple-macro (singleton-predicate singleton:singleton-id)
+      singleton.predicate)
+
+    (define-singleton-type null))
+
+   (singleton-predicate null))}
+
+@defproc[(singleton-binding-type [binding singleton-binding?]) singleton-type?]{
+ Returns the @tech{singleton type} that @racket[binding] is for. When a
+ singleton type binding is bound with @racket[define-syntax], this can be used
+ at compile-time to obtain information about the name of the singleton type.}
+
+@defproc[(singleton-binding-descriptor [binding singleton-binding?])
+         identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{type descriptor}
+ for the singleton type bound by @racket[binding]. When a singleton type binding
+ is bound with @racket[define-syntax], this can be used in macro-generated code
+ to work with singleton types dynamically.}
+
+@defproc[(singleton-binding-predicate [binding singleton-binding?])
+         identifier?]{
+ Returns an identifier that is bound at runtime to the predicate for the
+ singleton type bound by @racket[binding].}
+
+@defproc[(singleton-binding-instance [binding singleton-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the singleton instance for
+ the singleton type bound by @racket[binding].}
