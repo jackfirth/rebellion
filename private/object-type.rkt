@@ -19,10 +19,8 @@
 
 (begin-for-syntax
   (define-syntax-class object-id
-    #:attributes (default-name
-                  default-predicate-name
-                  default-constructor-name
-                  default-descriptor-name)
+    #:attributes
+    (default-predicate-name default-constructor-name default-descriptor-name)
     (pattern id:id
       #:do [(define (derived-id fmt) (format-id #'id fmt #'id #:subs? #t))]
       #:with default-name #'id
@@ -33,26 +31,30 @@
 (define-simple-macro
   (define-object-type id:object-id (field:id ...)
     (~alt
-     (~optional (~seq #:constructor-name constructor:id)
-                #:name "#:constructor-name option"
-                #:defaults ([constructor #'id.default-constructor-name]))
+     (~optional
+      (~seq #:descriptor-name descriptor:id)
+      #:name "#:descriptor-name option"
+      #:defaults ([descriptor #'id.default-descriptor-name]))
 
-     (~optional (~seq #:predicate-name predicate:id)
-                #:name "#:predicate-name option"
-                #:defaults ([predicate #'id.default-predicate-name]))
+     (~optional
+      (~seq #:predicate-name predicate:id)
+      #:name "#:predicate-name option"
+      #:defaults ([predicate #'id.default-predicate-name]))
 
-     (~optional (~seq #:descriptor-name descriptor:id)
-                #:name "#:descriptor-name option"
-                #:defaults ([descriptor #'id.default-descriptor-name]))
+     (~optional
+      (~seq #:constructor-name constructor:id)
+      #:name "#:constructor-name option"
+      #:defaults ([constructor #'id.default-constructor-name]))
 
-     (~optional (~seq #:inspector inspector:expr)
-                #:name "#:inspector option"
-                #:defaults ([inspector #'(current-inspector)]))
+     (~optional
+      (~seq #:inspector inspector:expr)
+      #:name "#:inspector option"
+      #:defaults ([inspector #'(current-inspector)]))
 
-     (~optional (~seq #:property-maker prop-maker:expr)
-                #:name "#:property-maker option"
-                #:defaults
-                ([prop-maker #'default-object-properties])))
+     (~optional
+      (~seq #:property-maker prop-maker:expr)
+      #:name "#:property-maker option"
+      #:defaults ([prop-maker #'default-object-properties])))
     ...)
 
   #:with (field* ...) (cons (syntax-local-introduce #'name)
@@ -62,17 +64,21 @@
     (string->keyword (symbol->string (syntax-e field-stx))))
   #:with fields #'(keyset field-kw ...)
   #:with (field-accessor ...)
-  (for/list ([field-stx (in-syntax #'(field* ...))])
-    (format-id #'id "~a-~a" #'id.default-name field-stx #:subs? #t))
+  (for/list
+      ([field-stx (sort (syntax->list #'(field* ...)) symbol<? #:key syntax-e)])
+    (format-id #'id "~a-~a" #'id field-stx #:subs? #t))
+  #:with (field-index ...)
+  (for/list ([n (in-range (length (syntax->list #'(field* ...))))])
+    #`'#,n)
   (begin
-    (define type (object-type 'id.default-name fields))
     (define descriptor
-      (make-object-implementation type
-                                     #:property-maker prop-maker
-                                     #:inspector inspector))
-    (define constructor (object-descriptor-constructor descriptor))
+      (make-object-implementation
+       (object-type 'id fields)
+       #:property-maker prop-maker
+       #:inspector inspector))
     (define predicate (object-descriptor-predicate descriptor))
-    (define field-accessor (make-object-field-accessor descriptor 'field-kw))
+    (define constructor (object-descriptor-constructor descriptor))
+    (define field-accessor (make-object-field-accessor descriptor field-index))
     ...))
 
 (module+ test

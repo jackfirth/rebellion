@@ -6,6 +6,7 @@
                      racket/match
                      racket/math
                      racket/pretty
+                     racket/sequence
                      racket/struct
                      rebellion/base/symbol
                      rebellion/custom-write
