@@ -8,14 +8,17 @@
                      rebellion/collection/keyset
                      rebellion/custom-write
                      rebellion/equal+hash
-                     rebellion/type/object)
+                     rebellion/type/object
+                     syntax/parse/define)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
+          (submod rebellion/private/scribble-index-attribute doc)
           scribble/examples)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/type/object)
+    #:public (list 'rebellion/type/object
+                   'syntax/parse/define)
     #:private (list 'racket/base)))
 
 @title{Object Types}
@@ -255,6 +258,122 @@ can access any field in the object: the per-field accessors created by
  @racket[object-name] to return the name of the instance when used on object
  instances created by @racket[descriptor]. This function is used by
  @racket[default-object-properties] to implement @racket[prop:object-name].}
+
+@section{Object Type Bindings}
+@defmodule[rebellion/type/object/binding]
+
+An @deftech{object type binding} is a @tech{type binding} for an
+@tech{object type}. Object type bindings contain compile-time information about
+the object type's name and fields, as well as runtime bindings for its
+predicate, @tech{type descriptor}, and other runtime components. To extract an
+object type binding bound by @racket[define-object-type], use the
+@racket[object-id] @syntax-tech{syntax class}.
+
+@defproc[(object-binding? [v any/c]) boolean?]{
+ A predicate for @tech{object type bindings}.}
+
+@defidform[#:kind "syntax class" object-id]{
+ A @syntax-tech{syntax class} for @tech{object type bindings} bound by
+ @racket[define-object-type]. This class matches any @tech/reference{identifier}
+ bound with @racket[define-syntax] to a value satisfying the
+ @racket[object-binding?] predicate, similar to the @racket[static] syntax
+ class. Upon a successful match, the @racket[object-id] class defines the
+ following attributes:
+
+ @itemlist[
+
+ @item{@index-attribute[object-id type] --- an attribute bound to a compile-time
+   @racket[object-type?] value describing the type.}
+
+ @item{@index-attribute[object-id name] --- a pattern variable bound to the
+   object type's name, as a quoted symbol.}
+
+ @item{@index-attribute[object-id field-name ...] --- a pattern variable bound
+   to the object's field names, as quoted symbols. This includes both the object
+   type's private fields and its name field.}
+
+  @item{@index-attribute[object-id private-field-name ...] --- a pattern
+   variable bound to the object's private field names, as quoted symbols. The
+   name field is not a private field.}
+
+ @item{@index-attribute[object-id field-name] --- a pattern variable bound to
+   the object's name field, as a quoted symbol.}
+
+ @item{@index-attribute[object-id descriptor] --- a pattern variable bound to
+   the object type's runtime @tech{type descriptor}.}
+
+ @item{@index-attribute[object-id predicate] --- a pattern variable bound to the
+   object type's runtime type predicate.}
+
+ @item{@index-attribute[object-id constructor] --- a pattern variable bound to
+   the object type's runtime @tech{object constructor}.}
+
+ @item{@index-attribute[object-id accessor] --- a pattern variable bound to the
+   object type's runtime @tech{object accessor}.}
+
+ @item{@index-attribute[object-id field-accessor ...] --- a pattern variable
+   bound to the object type's per-field runtime field accessors. This includes
+   accessors for both the private fields and the name field.}
+
+ @item{@index-attribute[object-id private-accessor ...] --- a pattern variable
+   bound to the object type's per-field runtime private field accessors. This
+   does not include an accessor for the name field.}
+
+ @item{@index-attribute[object-id name-accessor] --- a pattern variable
+   bound to the object type's name field accessor.}]
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (require (for-syntax rebellion/type/object/binding))
+    
+    (define-simple-macro (object-accessors object:object-id)
+      (list object.field-accessor ...))
+
+    (define-object-type folder (accumulator initial-state)))
+
+   (object-accessors folder))}
+
+@defproc[(object-binding-type [binding object-binding?]) object-type?]{
+ Returns the @tech{object type} that @racket[binding] is for. When an object
+ type binding is bound with @racket[define-syntax], this can be used at
+ compile-time to obtain information about the name and fields of the object
+ type.}
+
+@defproc[(object-binding-descriptor [binding object-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{type descriptor}
+ for the object type bound by @racket[binding]. When an object type binding is
+ bound with @racket[define-syntax], this can be used in macro-generated code to
+ work with object types dynamically.}
+
+@defproc[(object-binding-predicate [binding object-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the predicate for the object
+ type bound by @racket[binding].}
+
+@defproc[(object-binding-constructor [binding object-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{object constructor}
+ for the object type bound by @racket[binding].}
+
+@defproc[(object-binding-accessor [binding object-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the @tech{object accessor}
+ for the object type bound by @racket[binding].}
+
+@defproc[(object-binding-field-accessors [binding object-binding?])
+         (vectorof identifier? #:immutable #t)]{
+ Returns a vector of identifiers that are bound at runtime to the per-field
+ accessors of the object type bound by @racket[binding]. This includes accessors
+ for both the private fields and the name field.}
+
+@defproc[(object-binding-private-accessors [binding object-binding?])
+         (vectorof identifier? #:immutable #t)]{
+ Returns a vector of identifiers that are bound at runtime to the per-field
+ accessors of the object type bound by @racket[binding]. Unlike
+ @racket[object-binding-field-accessors], this does not include an accessor for
+ the name field.}
+
+@defproc[(object-binding-name-accessor [binding object-binding?]) identifier?]{
+ Returns an identifier that is bound at runtime to the accessor or the name
+ field of the object type bound by @racket[binding].}
 
 @section{Object Type Chaperones and Impersonators}
 

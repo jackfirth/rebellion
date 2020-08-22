@@ -326,6 +326,6 @@ record type binding bound by @racket[define-record-type], use the
  for the record type bound by @racket[binding].}
 
 @defproc[(record-binding-field-accessors [binding record-binding?])
-         (vectorof identifier #:immutable #t)]{
+         (vectorof identifier? #:immutable #t)]{
  Returns a vector of identifiers that are bound at runtime to the per-field
  accessors of the record type bound by @racket[binding].}

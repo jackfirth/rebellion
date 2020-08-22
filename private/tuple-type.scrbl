@@ -368,7 +368,7 @@ binding bound by @racket[define-tuple-type], use the @racket[tuple-id]
  for the tuple type bound by @racket[binding].}
 
 @defproc[(tuple-binding-field-accessors [binding tuple-binding?])
-         (vectorof identifier #:immutable #t)]{
+         (vectorof identifier? #:immutable #t)]{
  Returns a vector of identifiers that are bound at runtime to the per-field
  accessors of the tuple type bound by @racket[binding].}
 
