@@ -24,8 +24,7 @@
   [default-object-custom-write
    (-> object-descriptor? custom-write-function/c)]
   [default-object-name-property (-> object-descriptor? natural?)]
-  [make-object-field-accessor
-   (-> object-descriptor? keyword? procedure?)]
+  [make-object-field-accessor (-> object-descriptor? natural? procedure?)]
   [object-impersonate
    (->i #:chaperone
         ([instance (descriptor) (object-descriptor-predicate descriptor)]
@@ -175,11 +174,11 @@
 (define (default-object-name-property descriptor)
   (object-type-object-name-field (object-descriptor-type descriptor)))
 
-(define (make-object-field-accessor descriptor field)
+(define (make-object-field-accessor descriptor position)
   (define type (object-descriptor-type descriptor))
   (define accessor (object-descriptor-accessor descriptor))
   (define fields (object-type-fields type))
-  (define position (keyset-index-of fields field))
+  (define field (keyset-ref fields position))
   (define name
     (string->symbol
      (format "~a-~a" (object-type-name type) (keyword->string field))))
