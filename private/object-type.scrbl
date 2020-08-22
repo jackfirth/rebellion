@@ -96,17 +96,14 @@ object types in Rebellion include @tech{converters}, @tech{comparators},
 @defproc[(object-type
           [name interned-symbol?]
           [fields keyset?]
-          [#:object-name-field name-field natural?
-           (keyset-index-of fields '#:name)]
+          [#:name-field name-field keyword? '#:name]
           [#:constructor-name constructor-name (or/c interned-symbol? #f) #f]
           [#:predicate-name predicate-name (or/c interned-symbol? #f) #f]
           [#:accessor-name accessor-name (or/c interned-symbol? #f) #f])
          object-type?]{
  Constructs an @tech{object type} named @racket[name] and with fields named
- @racket[fields]. If @racket[name-field] is given, it indicates which field in
- @racket[fields] should be used to store the names of instances of the type. If
- @racket[name-field] is not given, it is assumed that @racket[fields] contains
- the keyword @racket[#:name] and that field is used to store names of instances.
+ @racket[fields], with @racket[name-field] used to store the names of instances
+ of the type.
 
  The optional @racket[predicate-name], @racket[constructor-name], and
  @racket[accessor-name] arguments control the result of @racket[object-name] on
@@ -118,14 +115,30 @@ object types in Rebellion include @tech{converters}, @tech{comparators},
  This function only constructs the information representing an object type; to
  implement the type, use @racket[make-object-implementation].}
 
-@deftogether[[
- @defproc[(object-type-name [type object-type?]) interned-symbol?]
- @defproc[(object-type-fields [type object-type?]) keyset?]
- @defproc[(object-type-object-name-field [type object-type?]) natural?]
- @defproc[(object-type-constructor-name [type object-type?]) interned-symbol?]
- @defproc[(object-type-predicate-name [type object-type?]) interned-symbol?]
- @defproc[(object-type-accessor-name [type object-type?]) interned-symbol?]]]{
- Accessors for the various components of an @tech{object type}.}
+@defproc[(object-type-name [type object-type?]) interned-symbol?]{
+ Returns the name of @racket[type].}
+
+@defproc[(object-type-fields [type object-type?]) keyset?]{
+ Returns the set of fields in @racket[type], including the name field.}
+
+@defproc[(object-type-private-fields [type object-type?]) keyset?]{
+ Returns the set of fields in @racket[type] that are hidden from users --- that
+ is, every field except for the name field.}
+
+@defproc[(object-type-name-field [type object-type?]) keyword?]{
+ Returns the name field of @racket[type].}
+
+@defproc[(object-type-name-field-position [type object-type?]) natural?]{
+ Returns the position of the name field of @racket[type].}
+
+@defproc[(object-type-constructor-name [type object-type?]) interned-symbol?]{
+ Returns the name of the constructor for @racket[type].}
+
+@defproc[(object-type-predicate-name [type object-type?]) interned-symbol?]{
+ Returns the name of the predicate for @racket[type].}
+
+@defproc[(object-type-accessor-name [type object-type?]) interned-symbol?]{
+ Returns the name of the accessor for @racket[type].}
 
 @defproc[(object-type-size [type object-type?]) natural?]{
  Returns the number of fields (include the name field) in @racket[type].}
