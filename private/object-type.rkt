@@ -4,7 +4,11 @@
 
 (require (for-syntax racket/base
                      racket/sequence
-                     racket/syntax)
+                     racket/syntax
+                     rebellion/collection/keyset/low-dependency
+                     (submod rebellion/private/object-type-binding
+                             private-constructor)
+                     rebellion/type/object/base)
          rebellion/collection/keyset/low-dependency
          rebellion/type/object/base
          rebellion/type/object/descriptor
@@ -20,16 +24,19 @@
 (begin-for-syntax
   (define-syntax-class object-id
     #:attributes
-    (default-predicate-name default-constructor-name default-descriptor-name)
+    (default-descriptor-name
+     default-predicate-name
+     default-constructor-name
+     default-accessor-name)
     (pattern id:id
       #:do [(define (derived-id fmt) (format-id #'id fmt #'id #:subs? #t))]
-      #:with default-name #'id
+      #:with default-descriptor-name (derived-id "descriptor:~a")
       #:with default-predicate-name (derived-id "~a?")
       #:with default-constructor-name (derived-id "make-~a")
-      #:with default-descriptor-name (derived-id "descriptor:~a"))))
+      #:with default-accessor-name (derived-id "~a-ref"))))
 
 (define-simple-macro
-  (define-object-type id:object-id (field:id ...)
+  (define-object-type id:object-id (private-field:id ...)
     (~alt
      (~optional
       (~seq #:descriptor-name descriptor:id)
@@ -47,6 +54,11 @@
       #:defaults ([constructor #'id.default-constructor-name]))
 
      (~optional
+      (~seq #:accessor-name accessor:id)
+      #:name "#:accessor-name option"
+      #:defaults ([accessor #'id.default-accessor-name]))
+
+     (~optional
       (~seq #:inspector inspector:expr)
       #:name "#:inspector option"
       #:defaults ([inspector #'(current-inspector)]))
@@ -57,29 +69,40 @@
       #:defaults ([prop-maker #'default-object-properties])))
     ...)
 
-  #:with (field* ...) (cons (syntax-local-introduce #'name)
-                            (syntax->list #'(field ...)))
+  #:with (field ...)
+  (cons (syntax-local-introduce #'name) (syntax->list #'(private-field ...)))
   #:with (field-kw ...)
-  (for/list ([field-stx (in-syntax #'(field* ...))])
+  (for/list ([field-stx (in-syntax #'(field ...))])
     (string->keyword (symbol->string (syntax-e field-stx))))
   #:with fields #'(keyset field-kw ...)
   #:with (field-accessor ...)
   (for/list
-      ([field-stx (sort (syntax->list #'(field* ...)) symbol<? #:key syntax-e)])
+      ([field-stx (sort (syntax->list #'(field ...)) symbol<? #:key syntax-e)])
     (format-id #'id "~a-~a" #'id field-stx #:subs? #t))
   #:with (field-index ...)
-  (for/list ([n (in-range (length (syntax->list #'(field* ...))))])
-    #`'#,n)
+  (for/list ([n (in-range (length (syntax->list #'(field ...))))]) #`'#,n)
   (begin
     (define descriptor
       (make-object-implementation
-       (object-type 'id fields)
+       (object-type
+        'id fields #:predicate-name 'predicate #:constructor-name 'constructor)
        #:property-maker prop-maker
        #:inspector inspector))
     (define predicate (object-descriptor-predicate descriptor))
     (define constructor (object-descriptor-constructor descriptor))
+    (define accessor (object-descriptor-accessor descriptor))
     (define field-accessor (make-object-field-accessor descriptor field-index))
-    ...))
+    ...
+    (define-syntax id
+      (object-binding
+       #:type
+       (object-type
+        'id fields #:predicate-name 'predicate #:constructor-name 'constructor)
+       #:descriptor #'descriptor
+       #:predicate #'predicate
+       #:constructor #'constructor
+       #:accessor #'accessor
+       #:field-accessors (list #'field-accessor ...)))))
 
 (module+ test
   (test-case "define-object-type"
