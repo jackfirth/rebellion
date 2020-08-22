@@ -97,22 +97,22 @@
 (define (tuple-constructor->object-constructor constructor type)
   (define fields (object-type-fields type))
   (define size (keyset-size fields))
-  (define name-field-position (object-type-object-name-field type))
-  (define name-field (keyset-ref fields name-field-position))
-  (define required-fields (keyset-remove fields name-field))
+  (define name-position (object-type-name-field-position type))
+  (define private-fields (object-type-private-fields type))
   (define (positional-keyword-constructor kws vs)
-    (apply constructor
-           (if (equal? (length kws) size)
-               vs
-               (let-values ([(vs-before-name vs-after-name)
-                             (split-at vs name-field-position)])
-                 (append vs-before-name (list #f) vs-after-name)))))
+    (define args
+      (cond
+        [(equal? (length kws) size) vs]
+        [else
+         (define-values (before-name after-name) (split-at vs name-position))
+         (append before-name (list #f) after-name)]))
+    (apply constructor args))
   (define arity-unchecked-constructor
     (make-keyword-procedure positional-keyword-constructor))
   (define unnamed-constructor
     (procedure-reduce-keyword-arity arity-unchecked-constructor
                                     0
-                                    (keyset->list required-fields)
+                                    (keyset->list private-fields)
                                     (keyset->list fields)))
   (procedure-rename unnamed-constructor
                     (object-type-constructor-name type)))
@@ -155,11 +155,10 @@
    type))
 
 (define (default-object-properties descriptor)
-  (list (cons prop:equal+hash (default-object-equal+hash descriptor))
-        (cons prop:custom-write
-              (default-object-custom-write descriptor))
-        (cons prop:object-name
-              (default-object-name-property descriptor))))
+  (list
+   (cons prop:equal+hash (default-object-equal+hash descriptor))
+   (cons prop:custom-write (default-object-custom-write descriptor))
+   (cons prop:object-name (default-object-name-property descriptor))))
 
 (define (default-object-equal+hash descriptor)
   (define accessor (object-descriptor-accessor descriptor))
@@ -167,12 +166,11 @@
   (make-accessor-based-equal+hash accessor size))
 
 (define (default-object-custom-write descriptor)
-  (define type-name
-    (object-type-name (object-descriptor-type descriptor)))
+  (define type-name (object-type-name (object-descriptor-type descriptor)))
   (make-named-object-custom-write type-name))
 
 (define (default-object-name-property descriptor)
-  (object-type-object-name-field (object-descriptor-type descriptor)))
+  (object-type-name-field-position (object-descriptor-type descriptor)))
 
 (define (make-object-field-accessor descriptor position)
   (define type (object-descriptor-type descriptor))
