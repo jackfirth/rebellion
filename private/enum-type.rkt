@@ -1,6 +1,7 @@
 #lang racket/base
 
-(provide define-enum-type)
+(provide define-enum-type
+         enum-out)
 
 (require (for-syntax racket/base
                      racket/provide-transform

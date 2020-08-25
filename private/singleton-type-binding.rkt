@@ -47,10 +47,10 @@
 (define-syntax-class singleton-id
   #:attributes (type name descriptor predicate instance)
 
-  (pattern
-      (~var
-       binding (static singleton-binding? "a static singleton-binding? value"))
-    #:cut
+  (pattern binding
+    #:declare binding
+    (static singleton-binding? "a static singleton-binding? value")
+
     #:attr type (singleton-binding-type (attribute binding.value))
     #:with name #`'#,(singleton-type-name (attribute type))
     #:with descriptor (singleton-binding-descriptor (attribute binding.value))

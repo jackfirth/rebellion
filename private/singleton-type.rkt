@@ -1,12 +1,16 @@
 #lang racket/base
 
-(provide define-singleton-type)
+(provide define-singleton-type
+         singleton-out)
 
 (require (for-syntax racket/base
+                     racket/provide-transform
                      racket/syntax
                      (submod rebellion/private/singleton-type-binding
                              private-constructor)
                      rebellion/type/singleton/base
+                     rebellion/type/singleton/binding
+                     syntax/parse
                      syntax/transformer)
          rebellion/type/singleton/base
          rebellion/type/singleton/descriptor
@@ -15,31 +19,24 @@
 (module+ test
   (require (submod "..")
            racket/format
-           rackunit))
+           rackunit
+           rebellion/private/static-name))
 
 ;@------------------------------------------------------------------------------
 
-(begin-for-syntax
-  (define-syntax-class singleton-id
-    #:attributes (default-predicate-name default-descriptor-name)
-    (pattern id:id
-      #:do [(define (format-singleton-id fmt)
-              (format-id #'id fmt #'id #:subs? #t))]
-      #:with default-predicate-name (format-singleton-id "~a?")
-      #:with default-descriptor-name (format-singleton-id "descriptor:~a"))))
-
 (define-simple-macro
-  (define-singleton-type id:singleton-id
+  (define-singleton-type id:id
     (~alt
      (~optional
       (~seq #:descriptor-name descriptor:id)
       #:name "#:descriptor-name option"
-      #:defaults ([descriptor #'id.default-descriptor-name]))
+      #:defaults
+      ([descriptor (format-id #'id "descriptor:~a" #'id #:subs? #t)]))
 
      (~optional
       (~seq #:predicate-name predicate:id)
       #:name "#:predicate-name option"
-      #:defaults ([predicate #'id.default-predicate-name]))
+      #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)]))
 
      (~optional
       (~seq #:inspector inspector:expr)
@@ -69,7 +66,7 @@
        #:macro (make-variable-like-transformer #'instance)))))
 
 (module+ test
-  (test-case "define-singleton-type"
+  (test-case (name-string define-singleton-type)
     (define-singleton-type foo)
     (check-pred foo? foo)
     (check-false (foo? 'foo))
@@ -77,3 +74,15 @@
     (check-equal? (~a foo) "#<foo>")
     (check-equal? (~v foo) "#<foo>")
     (check-equal? (~s foo) "#<foo>")))
+
+(define-syntax singleton-out
+  (make-provide-transformer
+   (λ (provide-spec modes)
+     (syntax-parse provide-spec
+       [(_ singleton:singleton-id)
+        (expand-export
+         #'(combine-out singleton singleton.predicate) modes)]))))
+
+(module+ test
+  (provide (singleton-out null))
+  (define-singleton-type null))

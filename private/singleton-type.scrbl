@@ -8,6 +8,7 @@
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/singleton
+                     rebellion/type/singleton/binding
                      syntax/parse/define)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -70,6 +71,10 @@ of the constant causes a compile error rather than a silent bug at runtime.
 
    infinity
    (infinity? infinity))}
+
+@defform[#:kind "provide transformer" (singleton-out singleton)]{
+ Provides @racket[singleton], which must be a @racket[singleton-id], along with
+ its predicate.}
 
 @section{Singleton Type Information}
 
