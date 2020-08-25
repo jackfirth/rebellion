@@ -11,6 +11,8 @@
   [record-binding-predicate (-> record-binding? identifier?)]
   [record-binding-constructor (-> record-binding? identifier?)]
   [record-binding-accessor (-> record-binding? identifier?)]
+  [record-binding-fields
+   (-> record-binding? (vectorof identifier? #:immutable #t))]
   [record-binding-field-accessors
    (-> record-binding? (vectorof identifier? #:immutable #t))]))
 
@@ -23,6 +25,7 @@
          #:predicate identifier?
          #:constructor identifier?
          #:accessor identifier?
+         #:fields (sequence/c identifier?)
          #:field-accessors (sequence/c identifier?)
          #:pattern identifier?
          #:macro (-> syntax? syntax?)
@@ -44,6 +47,7 @@
    predicate
    constructor
    accessor
+   fields
    field-accessors
    pattern
    macro)
@@ -64,9 +68,12 @@
          #:predicate predicate
          #:constructor constructor
          #:accessor accessor
+         #:fields fields
          #:field-accessors field-accessors
          #:pattern pattern
          #:macro macro)
+  (define field-vector
+    (vector->immutable-vector (for/vector ([field fields]) field)))
   (define field-accessor-vector
     (vector->immutable-vector
      (for/vector ([field-accessor field-accessors]) field-accessor)))
@@ -76,6 +83,7 @@
    predicate
    constructor
    accessor
+   field-vector
    field-accessor-vector
    pattern
    macro))
@@ -84,25 +92,34 @@
   #:attributes
   (type
    name
-   [field-name 1]
    descriptor
    predicate
    constructor
    accessor
+   [field 1]
+   [field-name 1]
+   [field-keyword 1]
    [field-accessor 1])
 
   (pattern binding
     #:declare binding (static record-binding? "a static record-binding? value")
-    #:cut
     #:attr type (record-binding-type (attribute binding.value))
     #:with name #`'#,(record-type-name (attribute type))
-    #:with (field-name ...)
-    (for/list ([field-kw (in-keyset (record-type-fields (attribute type)))])
-      #`'#,(string->symbol (keyword->string field-kw)))
     #:with descriptor (record-binding-descriptor (attribute binding.value))
     #:with predicate (record-binding-predicate (attribute binding.value))
     #:with constructor (record-binding-constructor (attribute binding.value))
     #:with accessor (record-binding-accessor (attribute binding.value))
+
+    #:with (field ...)
+    (sequence->list (record-binding-fields (attribute binding.value)))
+
+    #:with (field-name ...)
+    (for/list ([field-kw (in-keyset (record-type-fields (attribute type)))])
+      #`'#,(string->symbol (keyword->string field-kw)))
+
+    #:with (field-keyword ...)
+    (sequence->list (record-type-fields (attribute type)))
+    
     #:with (field-accessor ...)
     (sequence->list
      (record-binding-field-accessors (attribute binding.value)))))

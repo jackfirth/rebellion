@@ -11,6 +11,8 @@
   [tuple-binding-predicate (-> tuple-binding? identifier?)]
   [tuple-binding-constructor (-> tuple-binding? identifier?)]
   [tuple-binding-accessor (-> tuple-binding? identifier?)]
+  [tuple-binding-fields
+   (-> tuple-binding? (vectorof identifier? #:immutable #t))]
   [tuple-binding-field-accessors
    (-> tuple-binding? (vectorof identifier? #:immutable #t))]))
 
@@ -23,6 +25,7 @@
          #:predicate identifier?
          #:constructor identifier?
          #:accessor identifier?
+         #:fields (sequence/c identifier?)
          #:field-accessors (sequence/c identifier?)
          #:pattern identifier?
          #:macro (-> syntax? syntax?)
@@ -43,6 +46,7 @@
    predicate
    constructor
    accessor
+   fields
    field-accessors
    pattern
    macro)
@@ -63,9 +67,12 @@
          #:predicate predicate
          #:constructor constructor
          #:accessor accessor
+         #:fields fields
          #:field-accessors field-accessors
          #:pattern pattern
          #:macro macro)
+  (define field-vector
+    (vector->immutable-vector (for/vector ([field fields]) field)))
   (define field-accessor-vector
     (vector->immutable-vector
      (for/vector ([field-accessor field-accessors]) field-accessor)))
@@ -75,6 +82,7 @@
    predicate
    constructor
    accessor
+   field-vector
    field-accessor-vector
    pattern
    macro))
@@ -83,24 +91,29 @@
   #:attributes
   (type
    name
-   [field-name 1]
    descriptor
    predicate
    constructor
    accessor
+   [field 1]
+   [field-name 1]
    [field-accessor 1])
 
   (pattern binding
     #:declare binding (static tuple-binding? "a static tuple-binding? value")
-    #:cut
     #:attr type (tuple-binding-type (attribute binding.value))
     #:with name #`'#,(tuple-type-name (attribute type))
-    #:with (field-name ...)
-    (for/list ([field-name (in-vector (tuple-type-fields (attribute type)))])
-      #`'#,field-name)
     #:with descriptor (tuple-binding-descriptor (attribute binding.value))
     #:with predicate (tuple-binding-predicate (attribute binding.value))
     #:with constructor (tuple-binding-constructor (attribute binding.value))
     #:with accessor (tuple-binding-accessor (attribute binding.value))
+
+    #:with (field ...)
+    (sequence->list (tuple-binding-fields (attribute binding.value)))
+    
+    #:with (field-name ...)
+    (for/list ([field-name (in-vector (tuple-type-fields (attribute type)))])
+      #`'#,field-name)
+
     #:with (field-accessor ...)
     (sequence->list (tuple-binding-field-accessors (attribute binding.value)))))

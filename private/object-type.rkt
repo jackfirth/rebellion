@@ -70,14 +70,16 @@
     ...)
 
   #:with (field ...)
-  (cons (syntax-local-introduce #'name) (syntax->list #'(private-field ...)))
+  (sort (cons (syntax-local-introduce #'name)
+              (syntax->list #'(private-field ...)))
+        symbol<?
+        #:key syntax-e)
   #:with (field-kw ...)
   (for/list ([field-stx (in-syntax #'(field ...))])
     (string->keyword (symbol->string (syntax-e field-stx))))
   #:with fields #'(keyset field-kw ...)
   #:with (field-accessor ...)
-  (for/list
-      ([field-stx (sort (syntax->list #'(field ...)) symbol<? #:key syntax-e)])
+  (for/list ([field-stx (in-syntax #'(field ...))])
     (format-id #'id "~a-~a" #'id field-stx #:subs? #t))
   #:with (field-index ...)
   (for/list ([n (in-range (length (syntax->list #'(field ...))))]) #`'#,n)
@@ -102,6 +104,7 @@
        #:predicate #'predicate
        #:constructor #'constructor
        #:accessor #'accessor
+       #:fields (list #'field ...)
        #:field-accessors (list #'field-accessor ...)))))
 
 (module+ test

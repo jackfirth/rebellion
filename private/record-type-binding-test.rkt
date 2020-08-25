@@ -19,10 +19,6 @@
     (define-simple-macro (tester record:record-id) record.name)
     (check-equal? (tester widget) 'widget))
 
-  (test-case "record-id.field-name"
-    (define-simple-macro (tester record:record-id) (list record.field-name ...))
-    (check-equal? (tester widget) (list 'description 'price 'weight)))
-
   (test-case "record-id.descriptor"
     (define-simple-macro (tester record:record-id) record.descriptor)
     (check-equal? (tester widget) descriptor:widget))
@@ -38,6 +34,19 @@
   (test-case "record-id.accessor"
     (define-simple-macro (tester record:record-id) record.accessor)
     (check-equal? (tester widget) accessor:widget))
+
+  (test-case "record-id.field"
+    (define-simple-macro (tester record:record-id) (list 'record.field ...))
+    (check-equal? (tester widget) (list 'description 'price 'weight)))
+
+  (test-case "record-id.field-name"
+    (define-simple-macro (tester record:record-id) (list record.field-name ...))
+    (check-equal? (tester widget) (list 'description 'price 'weight)))
+
+  (test-case "record-id.field-keyword"
+    (define-simple-macro (tester record:record-id)
+      (list 'record.field-keyword ...))
+    (check-equal? (tester widget) (list '#:description '#:price '#:weight)))
 
   (test-case "record-id.field-accessor"
     (define-simple-macro (tester record:record-id)
