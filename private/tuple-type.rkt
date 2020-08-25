@@ -71,6 +71,7 @@
            #:predicate #'predicate
            #:constructor #'constructor
            #:accessor #'accessor
+           #:fields (list #'field ...)
            #:field-accessors (list #'field-accessor ...)
            #:pattern #'pattern
            #:macro (make-variable-like-transformer #'constructor))))

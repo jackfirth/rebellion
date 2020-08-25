@@ -272,9 +272,6 @@ record type binding bound by @racket[define-record-type], use the
  @item{@index-attribute[record-id name] --- a pattern variable bound to the
    record type's name, as a quoted symbol.}
 
- @item{@index-attribute[record-id field-name ...] --- a pattern variable bound
-   to the record's field names, as quoted symbols.}
-
  @item{@index-attribute[record-id descriptor] --- a pattern variable bound to
    the record type's runtime @tech{type descriptor}.}
 
@@ -286,6 +283,15 @@ record type binding bound by @racket[define-record-type], use the
 
  @item{@index-attribute[record-id accessor] --- a pattern variable bound to the
    record type's runtime @tech{record accessor}.}
+
+ @item{@index-attribute[record-id field ...] --- a pattern variable bound
+   to the record's fields, as plain identifiers.}
+
+ @item{@index-attribute[record-id field-name ...] --- a pattern variable bound
+   to the record's field names, as quoted symbols.}
+
+ @item{@index-attribute[record-id field-keyword ...] --- a pattern variable
+   bound to the record's field names, as keywords.}
 
  @item{@index-attribute[record-id field-accessor ...] --- a pattern variable
    bound to the record type's per-field runtime field accessors.}]
@@ -324,6 +330,11 @@ record type binding bound by @racket[define-record-type], use the
 @defproc[(record-binding-accessor [binding record-binding?]) identifier?]{
  Returns an identifier that is bound at runtime to the @tech{record accessor}
  for the record type bound by @racket[binding].}
+
+@defproc[(record-binding-fields [binding record-binding?])
+         (vectorof identifier? #:immutable #t)]{
+ Returns a vector of the identifiers used for the fields of the record type
+ bound by @racket[binding].}
 
 @defproc[(record-binding-field-accessors [binding record-binding?])
          (vectorof identifier? #:immutable #t)]{

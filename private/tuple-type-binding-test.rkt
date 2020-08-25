@@ -19,10 +19,6 @@
     (define-simple-macro (tester tuple:tuple-id) tuple.name)
     (check-equal? (tester widget) 'widget))
 
-  (test-case "tuple-id.field-name"
-    (define-simple-macro (tester tuple:tuple-id) (list tuple.field-name ...))
-    (check-equal? (tester widget) (list 'price 'weight 'description)))
-
   (test-case "tuple-id.descriptor"
     (define-simple-macro (tester tuple:tuple-id) tuple.descriptor)
     (check-equal? (tester widget) descriptor:widget))
@@ -38,6 +34,14 @@
   (test-case "tuple-id.accessor"
     (define-simple-macro (tester tuple:tuple-id) tuple.accessor)
     (check-equal? (tester widget) accessor:widget))
+
+  (test-case "tuple-id.field"
+    (define-simple-macro (tester tuple:tuple-id) (list 'tuple.field ...))
+    (check-equal? (tester widget) (list 'price 'weight 'description)))
+
+  (test-case "tuple-id.field-name"
+    (define-simple-macro (tester tuple:tuple-id) (list tuple.field-name ...))
+    (check-equal? (tester widget) (list 'price 'weight 'description)))
 
   (test-case "tuple-id.field-accessor"
     (define-simple-macro (tester tuple:tuple-id)

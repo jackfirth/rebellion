@@ -288,17 +288,6 @@ object type binding bound by @racket[define-object-type], use the
  @item{@index-attribute[object-id name] --- a pattern variable bound to the
    object type's name, as a quoted symbol.}
 
- @item{@index-attribute[object-id field-name ...] --- a pattern variable bound
-   to the object's field names, as quoted symbols. This includes both the object
-   type's private fields and its name field.}
-
-  @item{@index-attribute[object-id private-field-name ...] --- a pattern
-   variable bound to the object's private field names, as quoted symbols. The
-   name field is not a private field.}
-
- @item{@index-attribute[object-id field-name] --- a pattern variable bound to
-   the object's name field, as a quoted symbol.}
-
  @item{@index-attribute[object-id descriptor] --- a pattern variable bound to
    the object type's runtime @tech{type descriptor}.}
 
@@ -311,13 +300,46 @@ object type binding bound by @racket[define-object-type], use the
  @item{@index-attribute[object-id accessor] --- a pattern variable bound to the
    object type's runtime @tech{object accessor}.}
 
+ @item{@index-attribute[object-id field ...] --- a pattern variable bound to the
+   object's field identifiers. This includes both the object type's private
+   fields and its name field.}
+
+ @item{@index-attribute[object-id field-name ...] --- a pattern variable bound
+   to the object's field names, as quoted symbols. This includes both the object
+   type's private fields and its name field.}
+
+ @item{@index-attribute[object-id field-keywords ...] --- a pattern variable
+   bound to the object's field names, as keywords. This includes both the object
+   type's private fields and its name field.}
+
  @item{@index-attribute[object-id field-accessor ...] --- a pattern variable
    bound to the object type's per-field runtime field accessors. This includes
    accessors for both the private fields and the name field.}
 
+ @item{@index-attribute[object-id private-field ...] --- a pattern variable
+   bound to the object's private field identifiers. The name field is not a
+   private field.}
+
+ @item{@index-attribute[object-id private-field-name ...] --- a pattern variable
+   bound to the object's private field names, as quoted symbols. The name field
+   is not a private field.}
+
+ @item{@index-attribute[object-id private-field-keyword ...] --- a pattern
+   variable bound to the object's private field names, as keywords. The name
+   field is not a private field.}
+
  @item{@index-attribute[object-id private-accessor ...] --- a pattern variable
    bound to the object type's per-field runtime private field accessors. This
    does not include an accessor for the name field.}
+
+ @item{@index-attribute[object-id name-field] --- a pattern variable bound to
+   the object's name field identifier.}
+
+ @item{@index-attribute[object-id name-field-name] --- a pattern variable bound
+   to the object's name field, as a quoted symbol.}
+
+ @item{@index-attribute[object-id name-field-keyword] --- a pattern variable
+   bound to the object's name field, as a keyword.}
 
  @item{@index-attribute[object-id name-accessor] --- a pattern variable
    bound to the object type's name field accessor.}]
@@ -358,11 +380,23 @@ object type binding bound by @racket[define-object-type], use the
  Returns an identifier that is bound at runtime to the @tech{object accessor}
  for the object type bound by @racket[binding].}
 
+@defproc[(object-binding-fields [binding object-binding?])
+         (vectorof identifier? #:immutable #t)]{
+ Returns a vector of the identifiers used for the fields of the object type
+ bound by @racket[binding]. This includes both the private fields and the name
+ field.}
+
 @defproc[(object-binding-field-accessors [binding object-binding?])
          (vectorof identifier? #:immutable #t)]{
  Returns a vector of identifiers that are bound at runtime to the per-field
  accessors of the object type bound by @racket[binding]. This includes accessors
  for both the private fields and the name field.}
+
+@defproc[(object-binding-private-fields [binding object-binding?])
+         (vectorof identifier? #:immutable #t)]{
+ Returns a vector of the identifiers used for the private fields of the object
+ type bound by @racket[binding]. Unlike @racket[object-binding-fields], this
+ does not include the name field.}
 
 @defproc[(object-binding-private-accessors [binding object-binding?])
          (vectorof identifier? #:immutable #t)]{
@@ -370,6 +404,10 @@ object type binding bound by @racket[define-object-type], use the
  accessors of the object type bound by @racket[binding]. Unlike
  @racket[object-binding-field-accessors], this does not include an accessor for
  the name field.}
+
+@defproc[(object-binding-name-field [binding object-binding?]) identifier?]{
+ Returns an identifier for the name field of the object type bound by
+ @racket[binding].}
 
 @defproc[(object-binding-name-accessor [binding object-binding?]) identifier?]{
  Returns an identifier that is bound at runtime to the accessor or the name

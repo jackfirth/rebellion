@@ -84,6 +84,7 @@
            #:predicate #'predicate
            #:constructor #'constructor
            #:accessor #'accessor
+           #:fields (list #'fields.id ...)
            #:field-accessors (list #'field-accessor ...)
            #:pattern #'pattern
            #:macro (make-variable-like-transformer #'constructor))))

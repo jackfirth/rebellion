@@ -314,9 +314,6 @@ binding bound by @racket[define-tuple-type], use the @racket[tuple-id]
  @item{@index-attribute[tuple-id name] --- a pattern variable bound to the tuple
    type's name, as a quoted symbol.}
 
- @item{@index-attribute[tuple-id field-name ...] --- a pattern variable bound to
-   the tuple's field names, as quoted symbols.}
-
  @item{@index-attribute[tuple-id descriptor] --- a pattern variable bound to the
    tuple type's runtime @tech{type descriptor}.}
 
@@ -328,6 +325,12 @@ binding bound by @racket[define-tuple-type], use the @racket[tuple-id]
 
  @item{@index-attribute[tuple-id accessor] --- a pattern variable bound to the
    tuple type's runtime @tech{tuple accessor}.}
+
+ @item{@index-attribute[tuple-id field ...] --- a pattern variable bound to
+   the tuple's field identifiers.}
+
+ @item{@index-attribute[tuple-id field-name ...] --- a pattern variable bound to
+   the tuple's field names, as quoted symbols.}
 
  @item{@index-attribute[tuple-id field-accessor ...] --- a pattern variable
    bound to the tuple type's per-field runtime field accessors.}]
@@ -366,6 +369,11 @@ binding bound by @racket[define-tuple-type], use the @racket[tuple-id]
 @defproc[(tuple-binding-accessor [binding tuple-binding?]) identifier?]{
  Returns an identifier that is bound at runtime to the @tech{tuple accessor}
  for the tuple type bound by @racket[binding].}
+
+@defproc[(tuple-binding-fields [binding tuple-binding?])
+         (vectorof identifier? #:immutable #t)]{
+ Returns a vector of the field identifiers for the tuple type bound by
+ @racket[binding].}
 
 @defproc[(tuple-binding-field-accessors [binding tuple-binding?])
          (vectorof identifier? #:immutable #t)]{
