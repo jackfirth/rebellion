@@ -104,6 +104,25 @@ obvious order to those pieces.
      [(color #:red r #:blue b)
       (list r b)]))}
 
+@defform[
+ (define-record-setter record-id maybe-id)
+ #:grammar ([maybe-id (code:line) (code:line id)])]{
+ Creates a setter function named @racket[id] for the record type bound by
+ @racket[record-id]. If @racket[id] is not given, it defaults to
+ @racket[record-id]@racketidfont{-set}. The setter function accepts an instance
+ of the record type and an optional keyword argument for each field, then
+ returns an updated instance with each field set to the value of the
+ corresponding keyword argument.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-record-type color (red green blue))
+    (define-record-setter color)
+    (define yellow  (color #:red 0 #:green 255 #:blue 255)))
+
+   (color-set yellow #:red 255 #:green 0))}
+
 @section{Record Type Information}
 
 @defproc[(record-type? [v any/c]) boolean?]{

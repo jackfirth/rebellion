@@ -1,17 +1,20 @@
 #lang racket/base
 
-(provide define-record-type)
+(provide define-record-setter
+         define-record-type)
 
 (require (for-syntax racket/base
                      racket/sequence
                      racket/syntax
                      rebellion/collection/keyset/low-dependency
+                     rebellion/private/record-type-binding
                      (submod rebellion/private/record-type-binding
                              private-constructor)
                      rebellion/type/record/base
                      syntax/transformer)
          racket/match
          rebellion/collection/keyset/low-dependency
+         rebellion/private/static-name
          rebellion/type/record/base
          rebellion/type/record/descriptor
          syntax/parse/define)
@@ -109,20 +112,52 @@
     root-binding))
 
 (module+ test
-  (define-record-type person (name age favorite-color))
-  (define ted (person #:name "Ted" #:age 42 #:favorite-color 'grey))
-  (check-equal? ted (person #:age 42 #:name "Ted" #:favorite-color 'grey))
-  (check-equal? (person-name ted) "Ted")
-  (check-equal? (person-age ted) 42)
-  (check-equal? (person-favorite-color ted) 'grey)
-  (check-true (person? ted))
-  (check-match ted (person #:age 42))
-  (check-match ted (person #:name (? string?) #:favorite-color 'grey))
-  (define-record-type plant (name))
-  (check-false (person? (plant #:name "Cactus")))
-  (check-equal? (~a ted)
-                "#<person: #:age 42 #:favorite-color grey #:name Ted>")
-  (check-equal? (~v ted)
-                "(person #:age 42 #:favorite-color 'grey #:name \"Ted\")")
-  (check-equal? (~s ted)
-                "#<person: #:age 42 #:favorite-color grey #:name \"Ted\">"))
+  (test-case (name-string define-record-type)
+    (define-record-type person (name age favorite-color))
+    (define ted (person #:name "Ted" #:age 42 #:favorite-color 'grey))
+    (check-equal? ted (person #:age 42 #:name "Ted" #:favorite-color 'grey))
+    (check-equal? (person-name ted) "Ted")
+    (check-equal? (person-age ted) 42)
+    (check-equal? (person-favorite-color ted) 'grey)
+    (check-true (person? ted))
+    (check-match ted (person #:age 42))
+    (check-match ted (person #:name (? string?) #:favorite-color 'grey))
+    (define-record-type plant (name))
+    (check-false (person? (plant #:name "Cactus")))
+    (check-equal?
+     (~a ted) "#<person: #:age 42 #:favorite-color grey #:name Ted>")
+    (check-equal?
+     (~v ted) "(person #:age 42 #:favorite-color 'grey #:name \"Ted\")")
+    (check-equal?
+     (~s ted) "#<person: #:age 42 #:favorite-color grey #:name \"Ted\">")))
+
+
+(define-simple-macro
+  (define-record-setter record:record-id
+    (~optional
+     setter:id
+     #:defaults ([setter (format-id #'record "~a-set" #'record #:subs? #t)])))
+  (define (setter instance
+                  (~@ record.field-keyword
+                      [record.field (record.field-accessor instance)]) ...)
+    (record.constructor (~@ record.field-keyword record.field) ...)))
+
+(module+ test
+  (test-case (name-string define-record-setter)
+    (define-record-type person (name age favorite-color))
+    (define-record-setter person)
+    (define ted (person #:name "Ted" #:age 42 #:favorite-color 'grey))
+    (check-equal?
+     (person-set ted #:name "Joe")
+     (person #:name "Joe" #:age 42 #:favorite-color 'grey))
+    (check-equal? (person-set ted) ted)
+    (check-equal?
+     (person-set ted #:name "Joe" #:age 0 #:favorite-color 'white)
+     (person #:name "Joe" #:age 0 #:favorite-color 'white))
+
+    (test-case "name collision"
+      (define-record-type tester (instance))
+      (define-record-setter tester)
+      (check-equal?
+       (tester-set (tester #:instance 1) #:instance 2) (tester #:instance 2))
+      (check-equal? (tester-set (tester #:instance 1)) (tester #:instance 1)))))
