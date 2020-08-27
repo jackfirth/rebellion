@@ -288,6 +288,10 @@ record type binding bound by @racket[define-record-type], use the
  @item{@index-attribute[record-id type] --- an attribute bound to a compile-time
    @racket[record-type?] value describing the type.}
 
+ @item{@index-attribute[record-id binding] --- an attribute bound to the
+   compile-time @racket[record-binding?] value extracted from the matched
+   identifier.}
+
  @item{@index-attribute[record-id name] --- a pattern variable bound to the
    record type's name, as a quoted symbol.}
 

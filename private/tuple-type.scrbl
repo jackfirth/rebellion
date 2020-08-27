@@ -311,6 +311,10 @@ binding bound by @racket[define-tuple-type], use the @racket[tuple-id]
  @item{@index-attribute[tuple-id type] --- an attribute bound to a compile-time
    @racket[tuple-type?] value describing the type.}
 
+ @item{@index-attribute[tuple-id binding] --- an attribute bound to the
+   compile-time @racket[tuple-binding?] value extracted from the matched
+   identifier.}
+
  @item{@index-attribute[tuple-id name] --- a pattern variable bound to the tuple
    type's name, as a quoted symbol.}
 

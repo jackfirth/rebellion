@@ -245,6 +245,10 @@ binding bound by @racket[define-wrapper-type], use the @racket[wrapper-id]
  @item{@index-attribute[wrapper-id type] --- an attribute bound to a
    compile-time @racket[wrapper-type?] value describing the type.}
 
+ @item{@index-attribute[wrapper-id binding] --- an attribute bound to the
+   compile-time @racket[wrapper-binding?] value extracted from the matched
+   identifier.}
+
  @item{@index-attribute[wrapper-id name] --- a pattern variable bound to the
    wrapper type's name, as a quoted symbol.}
 

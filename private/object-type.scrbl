@@ -9,6 +9,7 @@
                      rebellion/custom-write
                      rebellion/equal+hash
                      rebellion/type/object
+                     rebellion/type/object/binding
                      syntax/parse/define)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -284,6 +285,10 @@ object type binding bound by @racket[define-object-type], use the
 
  @item{@index-attribute[object-id type] --- an attribute bound to a compile-time
    @racket[object-type?] value describing the type.}
+
+ @item{@index-attribute[object-id binding] --- an attribute bound to the
+   compile-time @racket[object-binding?] value extracted from the matched
+   identifier.}
 
  @item{@index-attribute[object-id name] --- a pattern variable bound to the
    object type's name, as a quoted symbol.}

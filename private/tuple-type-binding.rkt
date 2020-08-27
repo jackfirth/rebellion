@@ -90,6 +90,7 @@
 (define-syntax-class tuple-id
   #:attributes
   (type
+   binding
    name
    descriptor
    predicate
@@ -99,21 +100,22 @@
    [field-name 1]
    [field-accessor 1])
 
-  (pattern binding
-    #:declare binding (static tuple-binding? "a static tuple-binding? value")
-    #:attr type (tuple-binding-type (attribute binding.value))
+  (pattern binding-id
+    #:declare binding-id (static tuple-binding? "a static tuple-binding? value")
+    #:attr binding (attribute binding-id.value)
+    #:attr type (tuple-binding-type (attribute binding))
     #:with name #`'#,(tuple-type-name (attribute type))
-    #:with descriptor (tuple-binding-descriptor (attribute binding.value))
-    #:with predicate (tuple-binding-predicate (attribute binding.value))
-    #:with constructor (tuple-binding-constructor (attribute binding.value))
-    #:with accessor (tuple-binding-accessor (attribute binding.value))
+    #:with descriptor (tuple-binding-descriptor (attribute binding))
+    #:with predicate (tuple-binding-predicate (attribute binding))
+    #:with constructor (tuple-binding-constructor (attribute binding))
+    #:with accessor (tuple-binding-accessor (attribute binding))
 
     #:with (field ...)
-    (sequence->list (tuple-binding-fields (attribute binding.value)))
+    (sequence->list (tuple-binding-fields (attribute binding)))
     
     #:with (field-name ...)
     (for/list ([field-name (in-vector (tuple-type-fields (attribute type)))])
       #`'#,field-name)
 
     #:with (field-accessor ...)
-    (sequence->list (tuple-binding-field-accessors (attribute binding.value)))))
+    (sequence->list (tuple-binding-field-accessors (attribute binding)))))

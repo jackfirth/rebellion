@@ -202,6 +202,10 @@ by @racket[define-singleton-type], use the @racket[singleton-id]
  @item{@index-attribute[singleton-id type] --- an attribute bound to a
    compile-time @racket[singleton-type?] value describing the type.}
 
+ @item{@index-attribute[singleton-id binding] --- an attribute bound to the
+   compile-time @racket[singleton-binding?] value extracted from the matched
+   identifier.}
+
  @item{@index-attribute[singleton-id name] --- a pattern variable bound to the
    singleton type's name, as a quoted symbol.}
 

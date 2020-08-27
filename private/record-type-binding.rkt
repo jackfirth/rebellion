@@ -91,6 +91,7 @@
 (define-syntax-class record-id
   #:attributes
   (type
+   binding
    name
    descriptor
    predicate
@@ -101,17 +102,20 @@
    [field-keyword 1]
    [field-accessor 1])
 
-  (pattern binding
-    #:declare binding (static record-binding? "a static record-binding? value")
-    #:attr type (record-binding-type (attribute binding.value))
+  (pattern binding-id
+    #:declare binding-id
+    (static record-binding? "a static record-binding? value")
+    
+    #:attr binding (attribute binding-id.value)
+    #:attr type (record-binding-type (attribute binding))
     #:with name #`'#,(record-type-name (attribute type))
-    #:with descriptor (record-binding-descriptor (attribute binding.value))
-    #:with predicate (record-binding-predicate (attribute binding.value))
-    #:with constructor (record-binding-constructor (attribute binding.value))
-    #:with accessor (record-binding-accessor (attribute binding.value))
+    #:with descriptor (record-binding-descriptor (attribute binding))
+    #:with predicate (record-binding-predicate (attribute binding))
+    #:with constructor (record-binding-constructor (attribute binding))
+    #:with accessor (record-binding-accessor (attribute binding))
 
     #:with (field ...)
-    (sequence->list (record-binding-fields (attribute binding.value)))
+    (sequence->list (record-binding-fields (attribute binding)))
 
     #:with (field-name ...)
     (for/list ([field-kw (in-keyset (record-type-fields (attribute type)))])
@@ -122,4 +126,4 @@
     
     #:with (field-accessor ...)
     (sequence->list
-     (record-binding-field-accessors (attribute binding.value)))))
+     (record-binding-field-accessors (attribute binding)))))
