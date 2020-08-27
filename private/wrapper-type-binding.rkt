@@ -59,15 +59,16 @@
    type descriptor predicate constructor accessor pattern macro))
 
 (define-syntax-class wrapper-id
-  #:attributes (type name descriptor predicate constructor accessor)
+  #:attributes (type binding name descriptor predicate constructor accessor)
 
-  (pattern binding
-    #:declare binding
+  (pattern binding-id
+    #:declare binding-id
     (static wrapper-binding? "a static wrapper-binding? value")
-    #:cut
-    #:attr type (wrapper-binding-type (attribute binding.value))
+
+    #:attr binding (attribute binding-id.value)
+    #:attr type (wrapper-binding-type (attribute binding))
     #:with name #`'#,(wrapper-type-name (attribute type))
-    #:with descriptor (wrapper-binding-descriptor (attribute binding.value))
-    #:with predicate (wrapper-binding-predicate (attribute binding.value))
-    #:with constructor (wrapper-binding-constructor (attribute binding.value))
-    #:with accessor (wrapper-binding-accessor (attribute binding.value))))
+    #:with descriptor (wrapper-binding-descriptor (attribute binding))
+    #:with predicate (wrapper-binding-predicate (attribute binding))
+    #:with constructor (wrapper-binding-constructor (attribute binding))
+    #:with accessor (wrapper-binding-accessor (attribute binding))))

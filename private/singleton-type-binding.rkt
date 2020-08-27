@@ -45,14 +45,15 @@
   (constructor:singleton-binding type descriptor predicate instance macro))
 
 (define-syntax-class singleton-id
-  #:attributes (type name descriptor predicate instance)
+  #:attributes (type binding name descriptor predicate instance)
 
-  (pattern binding
-    #:declare binding
+  (pattern binding-id
+    #:declare binding-id
     (static singleton-binding? "a static singleton-binding? value")
 
-    #:attr type (singleton-binding-type (attribute binding.value))
+    #:attr binding (attribute binding-id.value)
+    #:attr type (singleton-binding-type (attribute binding))
     #:with name #`'#,(singleton-type-name (attribute type))
-    #:with descriptor (singleton-binding-descriptor (attribute binding.value))
-    #:with predicate (singleton-binding-predicate (attribute binding.value))
-    #:with instance (singleton-binding-instance (attribute binding.value))))
+    #:with descriptor (singleton-binding-descriptor (attribute binding))
+    #:with predicate (singleton-binding-predicate (attribute binding))
+    #:with instance (singleton-binding-instance (attribute binding))))

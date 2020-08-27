@@ -285,6 +285,10 @@ binding bound by @racket[define-enum-type], use the @racket[enum-id]
  @item{@index-attribute[enum-id type] --- an attribute bound to a compile-time
    @racket[enum-type?] value describing the type.}
 
+ @item{@index-attribute[enum-id binding] --- an attribute bound to the
+   compile-time @racket[enum-binding?] value extracted from the matched
+   identifier.}
+
  @item{@index-attribute[enum-id name] --- a pattern variable bound to the enum
    type's name, as a quoted symbol.}
 

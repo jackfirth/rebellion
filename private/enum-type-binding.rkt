@@ -52,6 +52,7 @@
 (define-syntax-class enum-id
   #:attributes
   (type
+   binding
    name
    [constant 1]
    [constant-name 1]
@@ -60,17 +61,17 @@
    discriminator
    descriptor)
 
-  (pattern binding
-    #:declare binding (static enum-binding? "a static enum binding")
-    #:cut
-    #:attr type (enum-binding-type (attribute binding.value))
+  (pattern binding-id
+    #:declare binding-id (static enum-binding? "a static enum binding")
+    #:attr binding (attribute binding-id.value)
+    #:attr type (enum-binding-type (attribute binding))
     #:with name #`'#,(enum-type-name (attribute type))
-    #:with descriptor (enum-binding-descriptor (attribute binding.value))
-    #:with predicate (enum-binding-predicate (attribute binding.value))
-    #:with selector (enum-binding-selector (attribute binding.value))
-    #:with discriminator (enum-binding-discriminator (attribute binding.value))
+    #:with descriptor (enum-binding-descriptor (attribute binding))
+    #:with predicate (enum-binding-predicate (attribute binding))
+    #:with selector (enum-binding-selector (attribute binding))
+    #:with discriminator (enum-binding-discriminator (attribute binding))
     #:with (constant ...)
-    (sort (sequence->list (enum-binding-constants (attribute binding.value)))
+    (sort (sequence->list (enum-binding-constants (attribute binding)))
           symbol<?
           #:key syntax-e)
     #:with (constant-name ...)

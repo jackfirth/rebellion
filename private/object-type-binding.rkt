@@ -112,6 +112,7 @@
 (define-syntax-class object-id
   #:attributes
   (type
+   binding
    name
    descriptor
    predicate
@@ -130,17 +131,20 @@
    name-field-keyword
    name-accessor)
 
-  (pattern binding
-    #:declare binding (static object-binding? "a static object-binding? value")
-    #:attr type (object-binding-type (attribute binding.value))
+  (pattern binding-id
+    #:declare binding-id
+    (static object-binding? "a static object-binding? value")
+
+    #:attr binding (attribute binding-id.value)
+    #:attr type (object-binding-type (attribute binding))
     #:with name #`'#,(object-type-name (attribute type))
-    #:with descriptor (object-binding-descriptor (attribute binding.value))
-    #:with predicate (object-binding-predicate (attribute binding.value))
-    #:with constructor (object-binding-constructor (attribute binding.value))
-    #:with accessor (object-binding-accessor (attribute binding.value))
+    #:with descriptor (object-binding-descriptor (attribute binding))
+    #:with predicate (object-binding-predicate (attribute binding))
+    #:with constructor (object-binding-constructor (attribute binding))
+    #:with accessor (object-binding-accessor (attribute binding))
 
     #:with (field ...)
-    (sequence->list (object-binding-fields (attribute binding.value)))
+    (sequence->list (object-binding-fields (attribute binding)))
 
     #:with (field-name ...)
     (for/list ([field-kw (in-keyset (object-type-fields (attribute type)))])
@@ -151,11 +155,10 @@
     (sequence->list (object-type-fields (attribute type)))
 
     #:with (field-accessor ...)
-    (sequence->list
-     (object-binding-field-accessors (attribute binding.value)))
+    (sequence->list (object-binding-field-accessors (attribute binding)))
 
     #:with (private-field ...)
-    (sequence->list (object-binding-private-fields (attribute binding.value)))
+    (sequence->list (object-binding-private-fields (attribute binding)))
 
     #:with (private-field-name ...)
     (for/list
@@ -166,16 +169,13 @@
     (sequence->list (object-type-private-fields (attribute type)))
 
     #:with (private-accessor ...)
-    (sequence->list
-     (object-binding-private-accessors (attribute binding.value)))
+    (sequence->list (object-binding-private-accessors (attribute binding)))
 
-    #:with name-field (object-binding-name-field (attribute binding.value))
+    #:with name-field (object-binding-name-field (attribute binding))
 
     #:with name-field-name
     #`'#,(string->symbol
           (keyword->string (object-type-name-field (attribute type))))
 
     #:with name-field-keyword (object-type-name-field (attribute type))
-
-    #:with name-accessor
-    (object-binding-name-accessor (attribute binding.value))))
+    #:with name-accessor (object-binding-name-accessor (attribute binding))))
