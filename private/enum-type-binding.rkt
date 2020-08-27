@@ -7,7 +7,8 @@
  (contract-out
   [enum-binding? predicate/c]
   [enum-binding-type (-> enum-binding? enum-type?)]
-  [enum-binding-constants (-> enum-binding? (set/c identifier?))]
+  [enum-binding-constants
+   (-> enum-binding? (vectorof identifier? #:immutable #t))]
   [enum-binding-descriptor (-> enum-binding? identifier?)]
   [enum-binding-predicate (-> enum-binding? identifier?)]
   [enum-binding-selector (-> enum-binding? identifier?)]
@@ -45,9 +46,10 @@
                       #:predicate predicate
                       #:discriminator discriminator
                       #:selector selector)
-  (define constant-set (for/set ([c constants]) c))
+  (define constant-vector
+    (vector->immutable-vector (for/vector ([c constants]) c)))
   (constructor:enum-binding
-   type constant-set descriptor predicate discriminator selector))
+   type constant-vector descriptor predicate discriminator selector))
 
 (define-syntax-class enum-id
   #:attributes
@@ -70,10 +72,10 @@
     #:with predicate (enum-binding-predicate (attribute binding))
     #:with selector (enum-binding-selector (attribute binding))
     #:with discriminator (enum-binding-discriminator (attribute binding))
+
     #:with (constant ...)
-    (sort (sequence->list (enum-binding-constants (attribute binding)))
-          symbol<?
-          #:key syntax-e)
+    (sequence->list (enum-binding-constants (attribute binding)))
+
     #:with (constant-name ...)
     (for/list ([name (in-keyset (enum-type-constants (attribute type)))])
       #`'#,(string->symbol (keyword->string name)))))
