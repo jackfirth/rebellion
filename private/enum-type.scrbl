@@ -1,8 +1,6 @@
 #lang scribble/manual
 
-@(require (for-syntax racket/base
-                      racket/symbol)
-          (for-label racket/base
+@(require (for-label racket/base
                      racket/contract/base
                      racket/contract/region
                      racket/match
@@ -327,11 +325,12 @@ binding bound by @racket[define-enum-type], use the @racket[enum-id]
  binding is bound with @racket[define-syntax], this can be used at compile-time
  to obtain information about the size and names of the enum type.}
 
-@defproc[(enum-binding-constants [binding enum-binding?]) (set/c identifier?)]{
- Returns a set of identifiers bound at runtime to the constants of the enum type
- bound by @racket[binding]. When an enum type binding is bound with
+@defproc[(enum-binding-constants [binding enum-binding?])
+         (vectorof identifier? #:immutable #t)]{
+ Returns a vector of identifiers bound at runtime to the constants of the enum
+ type bound by @racket[binding]. When an enum type binding is bound with
  @racket[define-syntax], this can be used by macros to generate a list of the
- enum's constants in code.}
+ enum's constants in code. The returned identifiers are sorted alphabetically.}
 
 @defproc[(enum-binding-descriptor [binding enum-binding?]) identifier?]{
  Returns an identifier that is bound at runtime to the @tech{type descriptor}

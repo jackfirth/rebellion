@@ -6,7 +6,6 @@
 (require (for-syntax racket/base
                      racket/provide-transform
                      racket/sequence
-                     racket/set
                      racket/syntax
                      rebellion/collection/keyset/low-dependency
                      rebellion/type/enum/base
@@ -83,10 +82,10 @@
       #:name "#:property-maker option"))
     ...)
   (begin
-    (define type
-      (enum-type 'id constants.names #:predicate-name 'predicate))
     (define descriptor
-      (make-enum-implementation type #:property-maker prop-maker))
+      (make-enum-implementation
+       (enum-type 'id constants.names #:predicate-name 'predicate)
+       #:property-maker prop-maker))
     (define predicate (enum-descriptor-predicate descriptor))
     (define discriminator (enum-descriptor-discriminator descriptor))
     (define selector (enum-descriptor-selector descriptor))
@@ -95,7 +94,7 @@
     (define-syntax id
       (enum-binding
        #:type (enum-type 'id constants.names #:predicate-name 'predicate)
-       #:constants (set #'constants.id ...)
+       #:constants (list #'constants.id ...)
        #:descriptor #'descriptor
        #:predicate #'predicate
        #:discriminator #'discriminator
