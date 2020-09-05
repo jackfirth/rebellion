@@ -225,7 +225,6 @@
     (check-equal? (~v p) "(point 42 1000)")
     (check-equal? (~a p) "#<point: 42 1000>")
     (check-equal? (~s p) "#<point: 42 1000>")
-    (check-equal? (~v point-descriptor) "#<initialized-tuple-descriptor:point>")
     (check-equal? (~v point) "#<procedure:constructor:point>")
     (check-equal? (~v point?) "#<procedure:point?>")
     (check-equal? (~v point-x) "#<procedure:point-x>")
