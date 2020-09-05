@@ -64,41 +64,60 @@ represent a single logical thing, and there is an obvious order to those pieces.
  #:grammar
  ([option
    #:omit-root-binding
-   (code:line #:constructor-name constructor-id)
+   (code:line #:descriptor-name descriptor-id)
    (code:line #:predicate-name predicate-id)
+   (code:line #:constructor-name constructor-id)
+   (code:line #:accessor-name accessor-id)
    (code:line #:pattern-name pattern-id)
-   (code:line #:property-maker prop-maker-expr)])
+   (code:line #:property-maker prop-maker-expr)
+   (code:line #:inspector inspector-expr)])
 
  #:contracts
  ([prop-maker-expr
    (-> uninitialized-tuple-descriptor?
-       (listof (cons/c struct-type-property? any/c)))])]{
+       (listof (cons/c struct-type-property? any/c)))]
+  [inspector-expr inspector?])]{
  Creates a new @tech{tuple type} named @racket[id] and binds the following
  identifiers:
 
  @itemlist[
- @item{@racket[constructor-id], which defaults to @racketidfont{
-    constructor:}@racket[id] --- a constructor function that accepts one
-   positional argument for each @racket[field-id] and returns an instance of the
-   created type.}
+ @item{@racket[constructor-id], which defaults to
+   @racketidfont{constructor:}@racket[id] --- a @tech{tuple constructor} that
+   accepts one positional argument for each @racket[field-id] and returns an
+   instance of the created type.}
 
  @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
    a predicate function that returns @racket[#t] when given instances of the
    created type and returns @racket[#f] otherwise.}
 
  @item{@racket[id]@racketidfont{-}@racket[field-id] for each @racket[field-id]
-   --- an accessor function that returns the value for @racket[field-id] when
-   given an instance of the created type.}
+   --- a field accessor function that returns the value for @racket[field-id]
+   when given an instance of the created type.}
+
+ @item{@racket[accessor-id], which defaults @racketidfont{accessor:}@racket[id]
+   --- a @tech{tuple accessor} that accepts an instance of the created type and
+   an integer indicating which field to access, then returns the value of that
+   field.}
+
+ @item{@racket[descriptor-id], which defaults to
+   @racketidfont{descriptor:}@racket[id] --- the @tech{type descriptor} for the
+   created type.}
 
  @item{@racket[pattern-id], which defaults to @racketidfont{pattern:}@racket[id]
    --- a @tech/reference{match expander} that deconstructs instances of the
    created type and matches each field against a subpattern}]
 
  Additionally, unless @racket[#:omit-root-binding] is specified, the original
- @racket[id] is bound to @racket[pattern-id] when used in match patterns and to
+ @racket[id] is bound to a @tech{tuple type binding} for the created type. The
+ binding behaves like @racket[pattern-id] when used in match patterns and like
  @racket[constructor-id] when used as an expression. Use @racket[
  #:omit-root-binding] when you want control over what @racket[id] is bound to,
  such as when creating a smart constructor.
+
+ The @racket[prop-maker-expr] is used to add structure type properties to the
+ created type, and @racket[inspector-expr] is used to determine the
+ @tech/reference{inspector} that will control the created type. See
+ @racket[make-tuple-implementation] for more information about these parameters.
  
  @(examples
    #:eval (make-evaluator) #:once
@@ -126,10 +145,11 @@ represent a single logical thing, and there is an obvious order to those pieces.
  @racket[constructor-name], and @racket[accessor-name] arguments control the
  result of @racket[object-name] on the functions implementing the type. If not
  provided, @racket[predicate-name] defaults to @racket[name]@racketidfont{?},
- @racket[constructor-name] defaults to @racket[name], and @racket[accessor-name]
- defaults to @racket[name]@racketidfont{-ref}. Two tuple types constructed with
- the same arguments are @racket[equal?]. To make an implementation of a tuple
- type, see @racket[make-tuple-implementation].}
+ @racket[constructor-name] defaults to @racketidfont{constructor:}@racket[name],
+ and @racket[accessor-name] defaults to @racketidfont{accessor:}@racket[name].
+ Two tuple types constructed with the same arguments are @racket[equal?]. To
+ make an implementation of a tuple type, see
+ @racket[make-tuple-implementation].}
 
 @deftogether[[
  @defproc[(tuple-type-name [type tuple-type?]) interned-symbol?]

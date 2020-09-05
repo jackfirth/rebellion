@@ -48,22 +48,43 @@ of the constant causes a compile error rather than a silent bug at runtime.
 
 @defform[
  (define-singleton-type id singleton-option ...)
- #:grammar ([singleton-option
-             (code:line #:predicate-name predicate-id)
-             (code:line #:inspector inspector)
-             (code:line #:property-maker property-maker)])
- #:contracts ([inspector inspector?]
-              [property-maker
-               (-> uninitialized-singleton-descriptor?
-                   (listof (cons/c struct-type-property? any/c)))])]{
+ #:grammar
+ ([singleton-option
+   #:omit-root-binding
+   (code:line #:descriptor-name descriptor-id)
+   (code:line #:predicate-name predicate-id)
+   (code:line #:instance-name instance-id)
+   (code:line #:property-maker prop-maker-expr)
+   (code:line #:inspector inspector-expr)])
+ #:contracts
+ ([prop-maker-expr
+   (-> uninitialized-singleton-descriptor?
+       (listof (cons/c struct-type-property? any/c)))]
+  [inspector-expr inspector?])]{
  Creates a @tech{singleton type} and binds the following identifiers:
 
  @itemlist[
- @item{@racket[id] --- the unique instance of the created type.}
+ @item{@racket[instance-id], which defaults to
+   @racketidfont{instance:}@racket[id] --- the unique instance of the created
+   type.}
 
  @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
    a predicate that returns @racket[#t] when given the singleton instance and
-   false for all other values.}]
+   false for all other values.}
+ 
+ @item{@racket[descriptor-id], which defaults to
+   @racketidfont{descriptor:}@racket[id] --- the @tech{type descriptor} for the
+   created type.}]
+
+  Additionally, unless @racket[#:omit-root-binding] is specified, the original
+ @racket[id] is bound to a @tech{singleton type binding} for the created type.
+ The binding behaves like @racket[instance-id] when used as an expression.
+ 
+ The @racket[prop-maker-expr] is used to add structure type properties to the
+ created type, and @racket[inspector-expr] is used to determine the
+ @tech/reference{inspector} that will control the created type. See
+ @racket[make-singleton-implementation] for more information about these
+ parameters.
 
  @(examples
    #:eval (make-evaluator) #:once

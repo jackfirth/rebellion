@@ -12,11 +12,13 @@
   [singleton-type-predicate-name (-> singleton-type? interned-symbol?)]))
 
 (require rebellion/base/symbol
+         rebellion/private/type-naming
          rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
 
 (define-tuple-type singleton-type (name predicate-name) #:omit-root-binding)
 
-(define (singleton-type name #:predicate-name [pred-name #f])
-  (constructor:singleton-type name pred-name))
+(define (singleton-type name #:predicate-name [predicate-name* #f])
+  (define predicate-name (or predicate-name* (default-predicate-name name)))
+  (constructor:singleton-type name predicate-name))

@@ -59,12 +59,14 @@ distinguished.
    (code:line #:constructor-name constructor-id)
    (code:line #:accessor-name accessor-id)
    (code:line #:pattern-name pattern-id)
-   (code:line #:property-maker prop-maker-expr)])
+   (code:line #:property-maker prop-maker-expr)
+   (code:line #:inspector inspector-expr)])
 
  #:contracts
  ([prop-maker-expr
    (-> uninitialized-wrapper-descriptor?
-       (listof (cons/c struct-type-property? any/c)))])]{
+       (listof (cons/c struct-type-property? any/c)))]
+  [inspector-expr inspector?])]{
  Creates a new @tech{wrapper type} named @racket[id] and binds the following
  identifiers:
 
@@ -73,23 +75,34 @@ distinguished.
    a predicate function that returns @racket[#t] when given instances of the
    created type and returns @racket[#f] otherwise.}
   
- @item{@racket[constructor-id], which defaults to @racketidfont{
-    constructor:}@racket[id] --- a constructor function that wraps a value and
-   returns an instance of the created type.}
+ @item{@racket[constructor-id], which defaults to
+   @racketidfont{constructor:}@racket[id] --- a @tech{wrapper constructor} that
+   wraps a value and returns an instance of the created type.}
 
  @item{@racket[accessor-id], which defaults to @racket[id]@racketidfont{-value}
-   --- an accessor function that unwraps instances of the created type and
+   --- a @tech{wrapper accessor} that unwraps instances of the created type and
    returns their underlying value.}
+
+ @item{@racket[descriptor-id], which defaults to
+   @racketidfont{descriptor:}@racket[id] --- the @tech{type descriptor} for the
+   created type.}
 
  @item{@racket[pattern-id], which defaults to @racketidfont{pattern:}@racket[id]
    --- a @tech/reference{match expander} that unwraps instances of the created
    type and matches their contents against a subpattern.}]
 
  Additionally, unless @racket[#:omit-root-binding] is specified, the original
- @racket[id] is bound to @racket[pattern-id] when used in match patterns and to
- @racket[constructor-id] when used as an expression. Use @racket[
- #:omit-root-binding] when you want control over what @racket[id] is bound to,
- such as when creating a smart constructor.
+ @racket[id] is bound to a @tech{wrapper type binding} for the created type. The
+ binding behaves like @racket[pattern-id] when used in match patterns and like
+ @racket[constructor-id] when used as an expression. Use
+ @racket[#:omit-root-binding] when you want control over what @racket[id] is
+ bound to, such as when creating a smart constructor.
+ 
+ The @racket[prop-maker-expr] is used to add structure type properties to the
+ created type, and @racket[inspector-expr] is used to determine the
+ @tech/reference{inspector} that will control the created type. See
+ @racket[make-wrapper-implementation] for more information about these
+ parameters.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -116,10 +129,10 @@ distinguished.
  @racket[accessor-name] arguments control the result of @racket[object-name] on
  the functions implementing the type. If not provided, @racket[predicate-name]
  defaults to @racket[name]@racketidfont{?}, @racket[constructor-name] defaults
- to @racket[name], and @racket[accessor-name] defaults to
- @racket[name]@racketidfont{-value}. Two wrapper types constructed with the same
- arguments are @racket[equal?]. To make an implementation of a wrapper type, see
- @racket[make-wrapper-implementation].}
+ to @racketidfont{constructor:}@racket[name], and @racket[accessor-name]
+ defaults to @racket[name]@racketidfont{-value}. Two wrapper types constructed
+ with the same arguments are @racket[equal?]. To make an implementation of a
+ wrapper type, see @racket[make-wrapper-implementation].}
 
 @deftogether[[
  @defproc[(wrapper-type-name [type wrapper-type?]) interned-symbol?]

@@ -16,8 +16,8 @@
   [wrapper-type-predicate-name (-> wrapper-type? interned-symbol?)]
   [wrapper-type-accessor-name (-> wrapper-type? interned-symbol?)]))
 
-(require racket/syntax
-         rebellion/base/symbol
+(require rebellion/base/symbol
+         rebellion/private/type-naming
          rebellion/type/record)
 
 ;@------------------------------------------------------------------------------
@@ -33,6 +33,6 @@
          #:accessor-name [accessor-name #f])
   (constructor:wrapper-type
    #:name name
-   #:predicate-name (or predicate-name (format-symbol "~a?" name))
-   #:constructor-name (or constructor-name name)
-   #:accessor-name (or accessor-name (format-symbol "~a-value" name))))
+   #:predicate-name (or predicate-name (default-predicate-name name))
+   #:constructor-name (or constructor-name (default-constructor-name name))
+   #:accessor-name (or accessor-name (default-unwrapping-accessor-name name))))

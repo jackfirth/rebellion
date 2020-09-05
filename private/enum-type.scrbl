@@ -58,20 +58,52 @@ related constants, such as primary colors and directions.
 
 @defform[
  (define-enum-type id (constant-id ...) enum-option ...)
- #:grammar ([enum-option
-             (code:line #:predicate-name predicate-id)
-             (code:line #:property-maker property-maker)])
- #:contracts ([property-maker
-               (-> uninitialized-enum-descriptor?
-                   (listof (cons/c struct-type-property? any/c)))])]{
- Creates an @tech{enum type} named @racket[id]. Each @racket[constant-id] is
- bound to a constant, and @racket[predicate-id] is bound to a predicate that
- returns @racket[#t] when given any of the constants and returns @racket[#f] for
- all other values. At compile-time, @racket[id] is bound to static information
- about the enum type which can be extracted with @racket[enum-id].
+ #:grammar
+ ([enum-option
+   #:omit-root-binding
+   (code:line #:descriptor-name descriptor-id)
+   (code:line #:predicate-name predicate-id)
+   (code:line #:discriminator-name discriminator-id)
+   (code:line #:selector-name selector-id)
+   (code:line #:property-maker prop-maker-expr)
+   (code:line #:inspector inspector-expr)])
+ #:contracts
+ ([prop-maker-expr
+   (-> uninitialized-enum-descriptor?
+       (listof (cons/c struct-type-property? any/c)))]
+  [inspector-expr inspector?])]{
+ Creates an @tech{enum type} named @racket[id] and binds the following
+ identifiers:
 
- If @racket[#:predicate-name] is not given, then @racket[predicate-id] defaults
- to @racket[id]@racketidfont{?}.
+ @itemlist[
+ @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
+   a predicate function that returns @racket[#t] when given instances of the
+   created enum type and returns @racket[#f] otherwise.}
+
+ @item{Each @racket[constant-id] is bound to a constant instance of the created
+   enum type.}
+
+ @item{@racket[discriminator-id], which defaults to
+   @racketidfont{discriminator:}@racket[id] --- an @tech{enum discriminator}
+   that accepts instances of the enum type and returns the integer corresponding
+   to that instance.}
+
+ @item{@racket[selector-id], which defaults to
+   @racketidfont{selector:}@racket[id] --- an @tech{enum selector} that accepts
+   integers and returns the instance of the enum type corresponding to that
+   integer.}
+ 
+ @item{@racket[descriptor-id], which defaults to
+   @racketidfont{descriptor:}@racket[id] --- the @tech{type descriptor} for the
+   created type.}]
+
+ Additionally, unless @racket[#:omit-root-binding] is specified, the original
+ @racket[id] is bound to an @tech{enum type binding} for the created type.
+ 
+ The @racket[prop-maker-expr] is used to add structure type properties to the
+ created type, and @racket[inspector-expr] is used to determine the
+ @tech/reference{inspector} that will control the created type. See
+ @racket[make-enum-implementation] for more information about these parameters.
 
  @(examples
    #:eval (make-evaluator) #:once

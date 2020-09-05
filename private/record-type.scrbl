@@ -52,23 +52,27 @@ obvious order to those pieces.
  #:grammar
  ([option
    #:omit-root-binding
-   (code:line #:constructor-name constructor-id)
+   (code:line #:descriptor-name descriptor-id)
    (code:line #:predicate-name predicate-id)
+   (code:line #:constructor-name constructor-id)
+   (code:line #:accessor-name accessor-id)
    (code:line #:pattern-name pattern-id)
-   (code:line #:property-maker prop-maker-expr)])
+   (code:line #:property-maker prop-maker-expr)
+   (code:line #:inspector inspector-expr)])
  
  #:contracts
  ([prop-maker-expr
    (-> uninitialized-record-descriptor?
-       (listof (cons/c struct-type-property? any/c)))])]{
+       (listof (cons/c struct-type-property? any/c)))]
+  [inspector-expr inspector?])]{
  Creates a new @tech{record type} named @racket[id] and binds the following
  identifiers:
 
  @itemlist[
- @item{@racket[constructor-id], which defaults to @racketidfont{
-    constructor:}@racket[id] --- a constructor function that accepts one
-   mandatory keyword argument for each @racket[field-id] and returns an instance
-   of the created type.}
+ @item{@racket[constructor-id], which defaults to
+   @racketidfont{constructor:}@racket[id] --- a @tech{record constructor} that
+   accepts one mandatory keyword argument for each @racket[field-id] and returns
+   an instance of the created type.}
 
  @item{@racket[predicate-id], which defaults to @racket[id]@racketidfont{?} ---
    a predicate function that returns @racket[#t] when given instances of the
@@ -78,6 +82,15 @@ obvious order to those pieces.
    --- an accessor function that returns the value for @racket[field-id] when
    given an instance of the created type.}
 
+ @item{@racket[accessor-id], which defaults @racketidfont{accessor:}@racket[id]
+   --- a @tech{record accessor} that accepts an instance of the created type and
+   an integer indicating which field to access, then returns the value of that
+   field.}
+
+ @item{@racket[descriptor-id], which defaults to
+   @racketidfont{descriptor:}@racket[id] --- the @tech{type descriptor} for the
+   created type.}
+
  @item{@racket[pattern-id], which defaults to @racketidfont{pattern:}@racket[id]
    --- a @tech/reference{match expander} that accepts one optional keyword and
    subpattern pair for each field and deconstructs instances of the created
@@ -85,10 +98,17 @@ obvious order to those pieces.
    for that field is given).}]
 
  Additionally, unless @racket[#:omit-root-binding] is specified, the original
- @racket[id] is bound to @racket[pattern-id] when used in match patterns and to
- @racket[constructor-id] when used as an expression. Use @racket[
- #:omit-root-binding] when you want control over what @racket[id] is bound to,
- such as when creating a smart constructor.
+ @racket[id] is bound to a @tech{record type binding} for the created type. The
+ binding behaves like @racket[pattern-id] when used in match patterns and like
+ @racket[constructor-id] when used as an expression. Use
+ @racket[#:omit-root-binding] when you want control over what @racket[id] is
+ bound to, such as when creating a smart constructor.
+ 
+ The @racket[prop-maker-expr] is used to add structure type properties to the
+ created type, and @racket[inspector-expr] is used to determine the
+ @tech/reference{inspector} that will control the created type. See
+ @racket[make-record-implementation] for more information about these
+ parameters.
 
  @(examples
    #:eval (make-evaluator) #:once

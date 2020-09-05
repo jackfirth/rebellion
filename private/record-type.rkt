@@ -5,16 +5,15 @@
 
 (require (for-syntax racket/base
                      racket/sequence
-                     racket/syntax
                      rebellion/collection/keyset/low-dependency
-                     rebellion/private/record-type-binding
                      (submod rebellion/private/record-type-binding
                              private-constructor)
+                     rebellion/private/type-naming
                      rebellion/type/record/base
+                     rebellion/type/record/binding
                      syntax/transformer)
          racket/match
          rebellion/collection/keyset/low-dependency
-         rebellion/private/static-name
          rebellion/type/record/base
          rebellion/type/record/descriptor
          syntax/parse/define)
@@ -22,7 +21,8 @@
 (module+ test
   (require (submod "..")
            racket/format
-           rackunit))
+           rackunit
+           rebellion/private/static-name))
 
 ;@------------------------------------------------------------------------------
 
@@ -43,36 +43,47 @@
   (define-record-type id:id fields:record-fields
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
-     (~optional
-      (~seq #:predicate-name predicate:id)
-      #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)])
-      #:name "#:predicate-name option")
+
      (~optional
       (~seq #:descriptor-name descriptor:id)
-      #:defaults ([descriptor (format-id #'id "descriptor:~a" #'id #:subs? #t)])
+      #:defaults ([descriptor (default-descriptor-identifier #'id)])
       #:name "#:descriptor-name option")
+     
+     (~optional
+      (~seq #:predicate-name predicate:id)
+      #:defaults ([predicate (default-predicate-identifier #'id)])
+      #:name "#:predicate-name option")
+     
      (~optional
       (~seq #:constructor-name constructor:id)
-      #:defaults
-      ([constructor (format-id #'id "constructor:~a" #'id #:subs? #t)])
+      #:defaults ([constructor (default-constructor-identifier #'id)])
       #:name "#:constructor-name option")
+     
      (~optional
       (~seq #:accessor-name accessor:id)
-      #:defaults
-      ([accessor (format-id #'id "accessor:~a" #'id #:subs? #t)])
+      #:defaults ([accessor (default-accessor-identifier #'id)])
       #:name "#:accessor-name option")
+     
      (~optional
       (~seq #:pattern-name pattern:id)
-      #:defaults ([pattern (format-id #'id "pattern:~a" #'id #:subs? #t)])
+      #:defaults ([pattern (default-pattern-identifier #'id)])
       #:name "#:pattern-name option")
+
+     (~optional
+      (~seq #:inspector inspector:expr)
+      #:name "#:inspector option"
+      #:defaults ([inspector #'(current-inspector)]))
+     
      (~optional
       (~seq #:property-maker prop-maker:expr)
       #:defaults ([prop-maker #'default-record-properties])
       #:name "#:property-maker option"))
     ...)
+  
   #:with (field-accessor ...)
   (for/list ([field-id-stx (in-syntax #'(fields.id ...))])
-    (format-id #'id "~a-~a" #'id field-id-stx #:subs? #t))
+    (default-field-accessor-identifier #'id field-id-stx))
+
   #:with root-binding
   (if (attribute omit-root-binding-kw)
       #'(begin)
@@ -82,7 +93,8 @@
            (record-type
             'id fields.keys
             #:predicate-name 'predicate
-            #:constructor-name 'constructor)
+            #:constructor-name 'constructor
+            #:accessor-name 'accessor)
            #:descriptor #'descriptor
            #:predicate #'predicate
            #:constructor #'constructor
@@ -91,13 +103,17 @@
            #:field-accessors (list #'field-accessor ...)
            #:pattern #'pattern
            #:macro (make-variable-like-transformer #'constructor))))
+  
   (begin
-    (define type
-      (record-type 'id fields.keys
-                   #:predicate-name 'predicate
-                   #:constructor-name 'constructor))
     (define descriptor
-      (make-record-implementation type #:property-maker prop-maker))
+      (make-record-implementation
+       (record-type
+        'id fields.keys
+        #:predicate-name 'predicate
+        #:constructor-name 'constructor
+        #:accessor-name 'accessor)
+       #:inspector inspector
+       #:property-maker prop-maker))
     (define predicate (record-descriptor-predicate descriptor))
     (define constructor (record-descriptor-constructor descriptor))
     (define accessor (record-descriptor-accessor descriptor))
@@ -135,8 +151,7 @@
 (define-simple-macro
   (define-record-setter record:record-id
     (~optional
-     setter:id
-     #:defaults ([setter (format-id #'record "~a-set" #'record #:subs? #t)])))
+     setter:id #:defaults ([setter (default-setter-identifier #'record)])))
   (define (setter instance
                   (~@ record.field-keyword
                       [record.field (record.field-accessor instance)]) ...)

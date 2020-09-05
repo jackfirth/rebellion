@@ -33,7 +33,7 @@
 
   (test-case "object-id.accessor"
     (define-simple-macro (tester object:object-id) object.accessor)
-    (check-equal? (tester widget) widget-ref))
+    (check-equal? (tester widget) accessor:widget))
 
   (test-case "object-id.field"
     (define-simple-macro (tester object:object-id) (list 'object.field ...))

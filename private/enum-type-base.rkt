@@ -19,9 +19,9 @@
   [enum-type-size (-> enum-type? natural?)]))
 
 (require racket/math
-         racket/syntax
          rebellion/base/symbol
          rebellion/collection/keyset/low-dependency
+         rebellion/private/type-naming
          rebellion/type/tuple)
 
 ;@------------------------------------------------------------------------------
@@ -34,10 +34,10 @@
                    #:predicate-name [predicate-name* #f]
                    #:discriminator-name [discriminator-name* #f]
                    #:selector-name [selector-name* #f])
-  (define predicate-name (or predicate-name* (format-symbol "~a?" name)))
+  (define predicate-name (or predicate-name* (default-predicate-name name)))
   (define discriminator-name
-    (or discriminator-name* (format-symbol "discriminator:~a" name)))
-  (define selector-name (or selector-name* (format-symbol "selector:~a" name)))
+    (or discriminator-name* (default-discriminator-name name)))
+  (define selector-name (or selector-name* (default-selector-name name)))
   (constructor:enum-type name
                          constants
                          predicate-name
