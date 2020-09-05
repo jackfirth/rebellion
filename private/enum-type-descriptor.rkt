@@ -112,7 +112,8 @@
   (define object-name (default-enum-object-name descriptor))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)
-        (cons prop:object-name object-name)))
+        (cons prop:object-name object-name)
+        (cons prop:custom-print-quotable 'never)))
 
 (define (default-enum-custom-write descriptor)
   (define type (enum-descriptor-type descriptor))

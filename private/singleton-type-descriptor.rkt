@@ -92,7 +92,8 @@
 (define (default-singleton-properties descriptor)
   (list (cons prop:object-name (default-singleton-object-name descriptor))
         (cons prop:equal+hash (make-singleton-equal+hash))
-        (cons prop:custom-write (default-singleton-custom-write descriptor))))
+        (cons prop:custom-write (default-singleton-custom-write descriptor))
+        (cons prop:custom-print-quotable 'never)))
 
 ;@------------------------------------------------------------------------------
 

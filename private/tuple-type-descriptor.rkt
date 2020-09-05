@@ -85,7 +85,8 @@
 
 (define (default-tuple-properties descriptor)
   (list (cons prop:equal+hash (default-tuple-equal+hash descriptor))
-        (cons prop:custom-write (default-tuple-custom-write descriptor))))
+        (cons prop:custom-write (default-tuple-custom-write descriptor))
+        (cons prop:custom-print-quotable 'never)))
 
 ;@------------------------------------------------------------------------------
 
