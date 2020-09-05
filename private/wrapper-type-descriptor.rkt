@@ -113,4 +113,5 @@
 
 (define (default-wrapper-properties descriptor)
   (list (cons prop:equal+hash (default-wrapper-equal+hash descriptor))
-        (cons prop:custom-write (default-wrapper-custom-write descriptor))))
+        (cons prop:custom-write (default-wrapper-custom-write descriptor))
+        (cons prop:custom-print-quotable 'never)))

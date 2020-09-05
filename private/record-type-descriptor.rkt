@@ -106,7 +106,8 @@
   (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write (default-record-custom-write descriptor))
   (list (cons prop:equal+hash equal+hash)
-        (cons prop:custom-write custom-write)))
+        (cons prop:custom-write custom-write)
+        (cons prop:custom-print-quotable 'never)))
 
 (define (default-record-equal+hash descriptor)
   (define accessor (record-descriptor-accessor descriptor))

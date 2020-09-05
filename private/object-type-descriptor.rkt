@@ -158,7 +158,8 @@
   (list
    (cons prop:equal+hash (default-object-equal+hash descriptor))
    (cons prop:custom-write (default-object-custom-write descriptor))
-   (cons prop:object-name (default-object-name-property descriptor))))
+   (cons prop:object-name (default-object-name-property descriptor))
+   (cons prop:custom-print-quotable 'never)))
 
 (define (default-object-equal+hash descriptor)
   (define accessor (object-descriptor-accessor descriptor))
