@@ -153,8 +153,8 @@ build on top of the Rebellion type libraries. If you are interested in such a
 project please reach out to the Rebellion project owners, we'd love to hear
 more!
 
-@include-section[(lib "rebellion/private/record-type.scrbl")]
 @include-section[(lib "rebellion/private/tuple-type.scrbl")]
+@include-section[(lib "rebellion/private/record-type.scrbl")]
 @include-section[(lib "rebellion/private/enum-type.scrbl")]
 @include-section[(lib "rebellion/private/singleton-type.scrbl")]
 @include-section[(lib "rebellion/private/wrapper-type.scrbl")]

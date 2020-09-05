@@ -23,9 +23,9 @@
   [object-type-size (-> object-type? natural?)]))
 
 (require racket/math
-         racket/syntax
          rebellion/base/symbol
          rebellion/collection/keyset/low-dependency
+         rebellion/private/type-naming
          rebellion/type/record)
 
 ;@------------------------------------------------------------------------------
@@ -49,15 +49,10 @@
    #:name name
    #:fields all-fields
    #:name-field-position (keyset-index-of all-fields name-field)
-   #:constructor-name (or constructor-name (default-constructor-name name))
+   #:constructor-name
+   (or constructor-name (default-opaque-constructor-name name))
    #:accessor-name (or accessor-name (default-accessor-name name))
    #:predicate-name (or predicate-name (default-predicate-name name))))
-
-(define (default-constructor-name type-name)
-  (format-symbol "make-~a" type-name))
-
-(define (default-accessor-name type-name) (format-symbol "~a-ref" type-name))
-(define (default-predicate-name type-name) (format-symbol "~a?" type-name))
 
 (define (object-type-name-field type)
   (keyset-ref (object-type-fields type) (object-type-name-field-position type)))

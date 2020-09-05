@@ -44,22 +44,25 @@ object types in Rebellion include @tech{converters}, @tech{comparators},
  (define-object-type id (field-id ...) option ...)
  #:grammar
  ([option
+   #:omit-root-binding
    (code:line #:descriptor-name descriptor-id)
    (code:line #:predicate-name predicate-id)
    (code:line #:constructor-name constructor-id)
    (code:line #:accessor-name accessor-id)
-   (code:line #:property-maker prop-maker-expr)])
+   (code:line #:property-maker prop-maker-expr)
+   (code:line #:inspector inspector-expr)])
  #:contracts
  ([prop-maker-expr
    (-> uninitialized-object-descriptor?
-       (listof (cons/c struct-type-property? any/c)))])]{
+       (listof (cons/c struct-type-property? any/c)))]
+  [inspector-expr inspector?])]{
  Creates a new @tech{object type} named @racket[id] and binds the following
  identifiers:
 
  @itemlist[
  @item{@racket[constructor-id], which defaults to
-   @racketidfont{make-}@racket[id] --- a constructor function that accepts one
-   mandatory keyword argument for each @racket[field-id] and one optional
+   @racketidfont{make-}@racket[id] --- an @tech{object constructor} that accepts
+   one mandatory keyword argument for each @racket[field-id] and one optional
    @racket[#:name] argument, then constructs an instance with the given name.
    The name argument must be either an interned symbol or false (the default).
    If the name argument is false, then the constructed instance is anonymous and
@@ -70,8 +73,27 @@ object types in Rebellion include @tech{converters}, @tech{comparators},
    created type and returns @racket[#f] otherwise.}
 
  @item{@racket[id]@racketidfont{-}@racket[field-id] for each @racket[field-id]
-   --- an accessor function that returns the value for @racket[field-id] when
-   given an instance of the created type.}]
+   (including the automatically-added @racket[_name] field) --- a field accessor
+   function that returns the value for @racket[field-id] when given an instance
+   of the created type.}
+
+ @item{@racket[accessor-id], which defaults @racketidfont{accessor:}@racket[id]
+   --- an @tech{object accessor} that accepts an instance of the created type
+   and an integer indicating which field to access, then returns the value of
+   that field.}
+
+ @item{@racket[descriptor-id], which defaults to
+   @racketidfont{descriptor:}@racket[id] --- the @tech{type descriptor} for the
+   created type.}]
+
+ Additionally, unless @racket[#:omit-root-binding] is specified, the original
+ @racket[id] is bound to an @tech{object type binding} for the created type.
+ 
+ The @racket[prop-maker-expr] is used to add structure type properties to the
+ created type, and @racket[inspector-expr] is used to determine the
+ @tech/reference{inspector} that will control the created type. See
+ @racket[make-object-implementation] for more information about these
+ parameters.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -114,7 +136,7 @@ object types in Rebellion include @tech{converters}, @tech{comparators},
  the functions implementing the type. If not provided, @racket[predicate-name]
  defaults to @racket[name]@racketidfont{?}, @racket[constructor-name] defaults
  to @racketidfont{make-}@racket[name], and @racket[accessor-name] defaults to
- @racket[name]@racketidfont{-ref}.
+ @racketidfont{accessor:}@racket[name].
 
  This function only constructs the information representing an object type; to
  implement the type, use @racket[make-object-implementation].}

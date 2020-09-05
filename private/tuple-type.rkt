@@ -4,7 +4,7 @@
 
 (require (for-syntax racket/base
                      racket/sequence
-                     racket/syntax
+                     rebellion/private/type-naming
                      (submod rebellion/private/tuple-type-binding
                              private-constructor)
                      rebellion/type/tuple/base
@@ -24,39 +24,53 @@
 (define-simple-macro
   (define-tuple-type id:id (field:id ...)
     (~alt
+
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
+
      (~optional
       (~seq #:descriptor-name descriptor:id)
-      #:defaults ([descriptor (format-id #'id "descriptor:~a" #'id #:subs? #t)])
+      #:defaults ([descriptor (default-descriptor-identifier #'id)])
       #:name "#:descriptor-name option")
+     
      (~optional
       (~seq #:predicate-name predicate:id)
-      #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)])
+      #:defaults ([predicate (default-predicate-identifier #'id)])
       #:name "#:predicate-name option")
+     
      (~optional
       (~seq #:constructor-name constructor:id)
-      #:defaults
-      ([constructor (format-id #'id "constructor:~a" #'id #:subs? #t)])
+      #:defaults ([constructor (default-constructor-identifier #'id)])
       #:name "#:constructor-name option")
+     
      (~optional
       (~seq #:accessor-name accessor:id)
-      #:defaults
-      ([accessor (format-id #'id "accessor:~a" #'id #:subs? #t)])
+      #:defaults ([accessor (default-accessor-identifier #'id)])
       #:name "#:accessor-name option")
+     
      (~optional
       (~seq #:pattern-name pattern:id)
-      #:defaults ([pattern (format-id #'id "pattern:~a" #'id #:subs? #t)])
+      #:defaults ([pattern (default-pattern-identifier #'id)])
       #:name "#:pattern-name option")
+
+     (~optional
+      (~seq #:inspector inspector:expr)
+      #:name "#:inspector option"
+      #:defaults ([inspector #'(current-inspector)]))
+     
      (~optional
       (~seq #:property-maker property-maker:expr)
       #:defaults ([property-maker #'default-tuple-properties])
       #:name "#:property-maker option"))
     ...)
+  
   #:do [(define size (length (syntax->list #'(field ...))))]
+
   #:with (field-accessor ...)
   (for/list ([field-id (in-syntax #'(field ...))])
-    (format-id field-id "~a-~a" #'id field-id #:subs? #t))
+    (default-field-accessor-identifier #'id field-id))
+  
   #:with (field-position ...) (build-list size (λ (n) #`(quote #,n)))
+
   #:with root-binding
   (if (attribute omit-root-binding-kw)
       #'(begin)
@@ -65,8 +79,9 @@
            #:type
            (tuple-type
             'id (list 'field ...)
-            #:constructor-name 'constructor
-            #:predicate-name 'predicate)
+            #:predicate-name 'predicate
+            #:accessor-name 'accessor
+            #:constructor-name 'constructor)
            #:descriptor #'descriptor
            #:predicate #'predicate
            #:constructor #'constructor
@@ -75,12 +90,16 @@
            #:field-accessors (list #'field-accessor ...)
            #:pattern #'pattern
            #:macro (make-variable-like-transformer #'constructor))))
+  
   (begin
     (define descriptor
       (make-tuple-implementation
-       (tuple-type 'id (list 'field ...)
-                   #:constructor-name 'constructor
-                   #:predicate-name 'predicate)
+       (tuple-type
+        'id (list 'field ...)
+        #:predicate-name 'predicate
+        #:accessor-name 'accessor
+        #:constructor-name 'constructor)
+       #:inspector inspector
        #:property-maker property-maker))
     (define constructor (tuple-descriptor-constructor descriptor))
     (define predicate (tuple-descriptor-predicate descriptor))

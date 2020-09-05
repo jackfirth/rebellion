@@ -8,6 +8,7 @@
                      racket/syntax
                      (submod rebellion/private/singleton-type-binding
                              private-constructor)
+                     rebellion/private/type-naming
                      rebellion/type/singleton/base
                      rebellion/type/singleton/binding
                      syntax/parse
@@ -27,16 +28,22 @@
 (define-simple-macro
   (define-singleton-type id:id
     (~alt
+     (~optional (~and #:omit-root-binding omit-root-binding-kw))
+     
      (~optional
       (~seq #:descriptor-name descriptor:id)
       #:name "#:descriptor-name option"
-      #:defaults
-      ([descriptor (format-id #'id "descriptor:~a" #'id #:subs? #t)]))
+      #:defaults ([descriptor (default-descriptor-identifier #'id)]))
 
      (~optional
       (~seq #:predicate-name predicate:id)
       #:name "#:predicate-name option"
-      #:defaults ([predicate (format-id #'id "~a?" #'id #:subs? #t)]))
+      #:defaults ([predicate (default-predicate-identifier #'id)]))
+
+     (~optional
+      (~seq #:instance-name instance:id)
+      #:name "#:instance-name option"
+      #:defaults ([instance (default-instance-identifier #'id)]))
 
      (~optional
       (~seq #:inspector inspector:expr)
@@ -46,9 +53,20 @@
      (~optional
       (~seq #:property-maker prop-maker:expr)
       #:name "#:property-maker option"
-      #:defaults
-      ([prop-maker #'default-singleton-properties])))
+      #:defaults ([prop-maker #'default-singleton-properties])))
     ...)
+
+  #:with root-binding
+  (if (attribute omit-root-binding-kw)
+      #'(begin)
+      #'(define-syntax id
+          (singleton-binding
+           #:type (singleton-type 'id #:predicate-name 'predicate)
+           #:descriptor #'descriptor
+           #:predicate #'predicate
+           #:instance #'instance
+           #:macro (make-variable-like-transformer #'instance))))
+  
   (begin
     (define descriptor
       (make-singleton-implementation
@@ -57,13 +75,7 @@
        #:property-maker prop-maker))
     (define predicate (singleton-descriptor-predicate descriptor))
     (define instance (singleton-descriptor-instance descriptor))
-    (define-syntax id
-      (singleton-binding
-       #:type (singleton-type 'id #:predicate-name 'predicate)
-       #:descriptor #'descriptor
-       #:predicate #'predicate
-       #:instance #'instance
-       #:macro (make-variable-like-transformer #'instance)))))
+    root-binding))
 
 (module+ test
   (test-case (name-string define-singleton-type)

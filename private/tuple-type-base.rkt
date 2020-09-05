@@ -22,8 +22,8 @@
 (require racket/list
          racket/math
          racket/sequence
-         racket/syntax
-         rebellion/base/symbol)
+         rebellion/base/symbol
+         rebellion/private/type-naming)
 
 ;@------------------------------------------------------------------------------
 
@@ -40,27 +40,22 @@
          #:accessor-name [accessor-name* #f])
   (define field-vector
     (vector->immutable-vector (for/vector ([field fields]) field)))
-  (check-field-names-unique field-vector)
-  (define predicate-name
-    (or predicate-name* (default-tuple-predicate-name name)))
-  (define constructor-name (or constructor-name* name))
-  (define accessor-name (or accessor-name* (default-tuple-accessor-name name)))
+  (check-field-names-unique field-vector name)
+  (define predicate-name (or predicate-name* (default-predicate-name name)))
+  (define constructor-name
+    (or constructor-name* (default-constructor-name name)))
+  (define accessor-name (or accessor-name* (default-accessor-name name)))
   (constructor:tuple-type
    name field-vector predicate-name constructor-name accessor-name))
 
 (define (tuple-type-size type)
   (vector-length (tuple-type-fields type)))
 
-(define (check-field-names-unique names)
+(define (check-field-names-unique names type-name)
   (define duplicate (check-duplicates (vector->list names)))
   (when duplicate
     (raise-arguments-error
      'tuple-type
      "duplicate field names are not allowed in tuple types"
-     "duplicate name" duplicate)))
-
-(define (default-tuple-predicate-name type-name)
-  (format-symbol "~a?" type-name))
-
-(define (default-tuple-accessor-name type-name)
-  (format-symbol "~a-ref" type-name))
+     "duplicate name" duplicate
+     "tuple type" type-name)))

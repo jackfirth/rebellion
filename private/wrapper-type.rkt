@@ -3,7 +3,7 @@
 (provide define-wrapper-type)
 
 (require (for-syntax racket/base
-                     racket/syntax
+                     rebellion/private/type-naming
                      (submod rebellion/private/wrapper-type-binding
                              private-constructor)
                      rebellion/type/wrapper/base
@@ -16,7 +16,8 @@
 (module+ test
   (require (submod "..")
            racket/format
-           rackunit))
+           rackunit
+           rebellion/private/static-name))
 
 ;@------------------------------------------------------------------------------
 
@@ -27,34 +28,40 @@
 
      (~optional
       (~seq #:descriptor-name descriptor:id)
-      #:defaults ([descriptor (format-id #'id "descriptor:~a" #'id)])
+      #:defaults ([descriptor (default-descriptor-identifier #'id)])
       #:name "#:descriptor-name option")
 
      (~optional
       (~seq #:predicate-name predicate:id)
-      #:defaults ([predicate (format-id #'id "~a?" #'id)])
+      #:defaults ([predicate (default-predicate-identifier #'id)])
       #:name "#:predicate-name option")
      
      (~optional
       (~seq #:constructor-name constructor:id)
-      #:defaults ([constructor (format-id #'id "constructor:~a" #'id)])
+      #:defaults ([constructor (default-constructor-identifier #'id)])
       #:name "#:constructor-name option")
      
      (~optional
       (~seq #:accessor-name accessor:id)
-      #:defaults ([accessor (format-id #'id "~a-value" #'id)])
+      #:defaults ([accessor (default-unwrapping-accessor-identifier #'id)])
       #:name "#:accessor-name option")
      
      (~optional
       (~seq #:pattern-name pattern:id)
-      #:defaults ([pattern (format-id #'id "pattern:~a" #'id)])
+      #:defaults ([pattern (default-pattern-identifier #'id)])
       #:name "#:pattern-name option")
+
+     (~optional
+      (~seq #:inspector inspector:expr)
+      #:name "#:inspector option"
+      #:defaults ([inspector #'(current-inspector)]))
      
      (~optional
       (~seq #:property-maker prop-maker:expr)
       #:defaults ([prop-maker #'default-wrapper-properties])
       #:name "#:property-maker option"))
     ...)
+  
   #:with root-binding
   (if (attribute omit-root-binding-kw)
       #'(begin)
@@ -72,6 +79,7 @@
            #:accessor #'accessor
            #:pattern #'pattern
            #:macro (make-variable-like-transformer #'constructor))))
+  
   (begin
     (define descriptor
       (make-wrapper-implementation
@@ -80,6 +88,7 @@
         #:predicate-name 'predicate
         #:constructor-name 'constructor
         #:accessor-name 'accessor)
+       #:inspector inspector
        #:property-maker prop-maker))
     (define predicate (wrapper-descriptor-predicate descriptor))
     (define constructor (wrapper-descriptor-constructor descriptor))
@@ -91,7 +100,7 @@
     root-binding))
 
 (module+ test
-  (test-case "integration-test"
+  (test-case (name-string define-wrapper-type)
     (define-wrapper-type seconds)
     (check-equal? (seconds 10) (seconds 10))
     (check-not-equal? (seconds 10) (seconds 25))
@@ -102,7 +111,7 @@
     (check-match (seconds 10) (seconds (? number?)))
     (check-match (seconds 10) (pattern:seconds (? number?)))
 
-    (test-case "omit-root-binding option"
+    (test-case "should allow omitting the root binding"
       (define-wrapper-type minutes #:omit-root-binding)
       (define (minutes x) (constructor:minutes x))
       (check-match (minutes 30) (pattern:minutes (? number?))))))
