@@ -40,12 +40,9 @@
 
 (require racket/math
          racket/struct
-         rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
-         rebellion/equal+hash/struct
          rebellion/private/impersonation
-         rebellion/private/struct-definition-util
          rebellion/type/tuple/base
          rebellion/type/struct)
 
@@ -55,19 +52,6 @@
            rackunit))
 
 ;@------------------------------------------------------------------------------
-
-(define (make-descriptor-style-properties descriptor)
-  (define accessor (struct-descriptor-accessor descriptor))
-  (define type-name (struct-descriptor-name descriptor))
-  (define prefix (string-append "#<" (symbol->string type-name) ":"))
-  (define equal+hash (make-struct-equal+hash descriptor))
-  (define (get-name this) (symbol->string (tuple-type-name (accessor this 0))))
-  (define (custom-write this out _)
-    (write-string prefix out)
-    (write-string (get-name this) out)
-    (write-string ">" out))
-  (list (cons prop:equal+hash equal+hash)
-        (cons prop:custom-write custom-write)))
 
 (define (default-tuple-equal+hash descriptor)
   (define accessor (tuple-descriptor-accessor descriptor))
@@ -90,60 +74,51 @@
 
 ;@------------------------------------------------------------------------------
 
-(define fields:uninitialized-tuple-descriptor
-  (keyset #:type #:predicate #:constructor #:accessor))
+(define (write-descriptor this out _)
+  (define name (object-name this))
+  (write-string "#<tuple-descriptor:" out)
+  (write-string (symbol->string name) out)
+  (write-string ">" out)
+  (void))
 
-(define fields:initialized-tuple-descriptor
-  (keyset #:type #:predicate #:constructor #:accessor #:backing-struct-type))
+(struct initialized-tuple-descriptor
+  (type predicate constructor accessor backing-struct-type)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:initialized-tuple-descriptor
 
-(define descriptor:uninitialized-tuple-descriptor
-  (make-struct-implementation
-   #:name 'uninitialized-tuple-descriptor
-   #:immutable-fields (keyset-size fields:uninitialized-tuple-descriptor)
-   #:constructor-name 'constructor:uninitialized-tuple-descriptor
-   #:property-maker make-descriptor-style-properties))
+  #:property prop:object-name
+  (λ (this) (tuple-type-name (initialized-tuple-descriptor-type this)))
 
-(define descriptor:initialized-tuple-descriptor
-  (make-struct-implementation
-   #:name 'initialized-tuple-descriptor
-   #:immutable-fields (keyset-size fields:initialized-tuple-descriptor)
-   #:constructor-name 'constructor:initialized-tuple-descriptor
-   #:property-maker make-descriptor-style-properties))
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
 
-(define uninitialized-tuple-descriptor?
-  (struct-descriptor-predicate descriptor:uninitialized-tuple-descriptor))
-
-(define constructor:uninitialized-tuple-descriptor
-  (struct-descriptor-constructor descriptor:uninitialized-tuple-descriptor))
-
-(define (uninitialized-tuple-descriptor #:type type
-                                        #:predicate predicate
-                                        #:constructor constructor
-                                        #:accessor accessor)
-  (constructor:uninitialized-tuple-descriptor
-   type predicate constructor accessor))
-
-(define-struct-field-accessors uninitialized-tuple-descriptor
+(struct uninitialized-tuple-descriptor
   (type predicate constructor accessor)
-  #:descriptor descriptor:uninitialized-tuple-descriptor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:uninitialized-tuple-descriptor
 
-(define initialized-tuple-descriptor?
-  (struct-descriptor-predicate descriptor:initialized-tuple-descriptor))
+  #:property prop:object-name
+  (λ (this) (tuple-type-name (uninitialized-tuple-descriptor-type this)))
 
-(define constructor:initialized-tuple-descriptor
-  (struct-descriptor-constructor descriptor:initialized-tuple-descriptor))
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
 
-(define (initialized-tuple-descriptor #:type type
-                                      #:backing-struct-type struct-type
-                                      #:predicate predicate
-                                      #:constructor constructor
-                                      #:accessor accessor)
+(define (initialized-tuple-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor
+         #:backing-struct-type struct-type)
   (constructor:initialized-tuple-descriptor
    type predicate constructor accessor struct-type))
 
-(define-struct-field-accessors initialized-tuple-descriptor
-  (type predicate constructor accessor backing-struct-type)
-  #:descriptor descriptor:initialized-tuple-descriptor)
+(define (uninitialized-tuple-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor)
+  (constructor:uninitialized-tuple-descriptor
+   type predicate constructor accessor))
 
 ;@------------------------------------------------------------------------------
 

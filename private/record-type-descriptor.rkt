@@ -34,11 +34,52 @@
 
 (define properties/c (listof (cons/c struct-type-property? any/c)))
 
-(define-tuple-type initialized-record-descriptor
-  (type predicate constructor accessor))
 
-(define-tuple-type uninitialized-record-descriptor
-  (type predicate constructor accessor))
+(define (write-descriptor this out _)
+  (define name (object-name this))
+  (write-string "#<record-descriptor:" out)
+  (write-string (symbol->string name) out)
+  (write-string ">" out)
+  (void))
+
+(struct initialized-record-descriptor
+  (type predicate constructor accessor backing-tuple-descriptor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:initialized-record-descriptor
+
+  #:property prop:object-name
+  (λ (this) (record-type-name (initialized-record-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(struct uninitialized-record-descriptor
+  (type predicate constructor accessor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:uninitialized-record-descriptor
+
+  #:property prop:object-name
+  (λ (this) (record-type-name (uninitialized-record-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(define (initialized-record-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor
+         #:backing-tuple-descriptor tuple-descriptor)
+  (constructor:initialized-record-descriptor
+   type predicate constructor accessor tuple-descriptor))
+
+(define (uninitialized-record-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor)
+  (constructor:uninitialized-record-descriptor
+   type predicate constructor accessor))
 
 (define (record-descriptor? v)
   (or (initialized-record-descriptor? v) (uninitialized-record-descriptor? v)))
@@ -72,8 +113,8 @@
     (prop-maker (tuple-descriptor->record-descriptor descriptor type)))
   (define descriptor
     (make-tuple-implementation (record-type->tuple-type type)
-                                    #:inspector inspector
-                                    #:property-maker tuple-prop-maker))
+                               #:inspector inspector
+                               #:property-maker tuple-prop-maker))
   (tuple-descriptor->record-descriptor descriptor type))
 
 (define (record-type->tuple-type type)
@@ -100,7 +141,18 @@
      (procedure-reduce-keyword-arity raw-constructor 0 fields fields)
      (object-name tuple-constructor)))
   (define accessor (tuple-descriptor-accessor descriptor))
-  (maker type predicate constructor accessor))
+  (if (initialized-tuple-descriptor? descriptor)
+      (initialized-record-descriptor
+       #:type type
+       #:predicate predicate
+       #:constructor constructor
+       #:accessor accessor
+       #:backing-tuple-descriptor descriptor)
+      (uninitialized-record-descriptor
+       #:type type
+       #:predicate predicate
+       #:constructor constructor
+       #:accessor accessor)))
 
 (define (default-record-properties descriptor)
   (define equal+hash (default-record-equal+hash descriptor))

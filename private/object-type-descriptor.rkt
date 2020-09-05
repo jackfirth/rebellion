@@ -46,27 +46,51 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (make-object-properties descriptor)
-  (define type (record-descriptor-type descriptor))
-  (define type-name (record-type-name type))
-  (define type-field (keyset-index-of (record-type-fields type) '#:type))
-  (define accessor (record-descriptor-accessor descriptor))
-  (define (name-getter this) (object-type-name (accessor this type-field)))
-  (define custom-write
-    (make-named-object-custom-write type-name #:name-getter name-getter))
-  (list (cons prop:equal+hash (default-record-equal+hash descriptor))
-        (cons prop:custom-write custom-write)
-        (cons prop:object-name name-getter)))
+(define (write-descriptor this out _)
+  (define name (object-name this))
+  (write-string "#<object-descriptor:" out)
+  (write-string (symbol->string name) out)
+  (write-string ">" out)
+  (void))
 
-(define-record-type initialized-object-descriptor
-  (type backing-tuple-descriptor constructor accessor predicate)
-  #:constructor-name make-initialized-object-descriptor
-  #:property-maker make-object-properties)
+(struct initialized-object-descriptor
+  (type predicate constructor accessor backing-tuple-descriptor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:initialized-object-descriptor
 
-(define-record-type uninitialized-object-descriptor
-  (type constructor accessor predicate)
-  #:constructor-name make-uninitialized-object-descriptor
-  #:property-maker make-object-properties)
+  #:property prop:object-name
+  (λ (this) (object-type-name (initialized-object-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(struct uninitialized-object-descriptor
+  (type predicate constructor accessor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:uninitialized-object-descriptor
+
+  #:property prop:object-name
+  (λ (this) (object-type-name (uninitialized-object-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(define (initialized-object-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor
+         #:backing-tuple-descriptor tuple-descriptor)
+  (constructor:initialized-object-descriptor
+   type predicate constructor accessor tuple-descriptor))
+
+(define (uninitialized-object-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor)
+  (constructor:uninitialized-object-descriptor
+   type predicate constructor accessor))
 
 (define (object-descriptor? v)
   (or (initialized-object-descriptor? v)
@@ -122,13 +146,13 @@
     (tuple-constructor->object-constructor
      (tuple-descriptor-constructor descriptor) type))
   (if (initialized-tuple-descriptor? descriptor)
-      (make-initialized-object-descriptor
+      (initialized-object-descriptor
        #:type type
        #:constructor constructor
        #:predicate (tuple-descriptor-predicate descriptor)
        #:accessor (tuple-descriptor-accessor descriptor)
        #:backing-tuple-descriptor descriptor)
-      (make-uninitialized-object-descriptor
+      (uninitialized-object-descriptor
        #:type type
        #:constructor constructor
        #:predicate (tuple-descriptor-predicate descriptor)

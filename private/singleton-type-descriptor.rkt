@@ -29,29 +29,46 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (make-singleton-properties descriptor)
-  (define accessor (tuple-descriptor-accessor descriptor))
-  (define type-name (tuple-type-name (tuple-descriptor-type descriptor)))
-  (define (object-name this) (singleton-type-name (accessor this 0)))
-  (list (cons prop:object-name object-name)
-        (cons prop:custom-write (make-named-object-custom-write type-name))))
+(define (write-descriptor this out _)
+  (define name (object-name this))
+  (write-string "#<singleton-descriptor:" out)
+  (write-string (symbol->string name) out)
+  (write-string ">" out)
+  (void))
 
-(define-tuple-type initialized-singleton-descriptor
-  (type instance predicate)
-  #:omit-root-binding
-  #:property-maker make-singleton-properties)
+(struct initialized-singleton-descriptor
+  (type predicate instance backing-tuple-descriptor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:initialized-singleton-descriptor
 
-(define (initialized-singleton-descriptor #:type type
-                                          #:instance instance
-                                          #:predicate predicate)
-  (constructor:initialized-singleton-descriptor type instance predicate))
+  #:property prop:object-name
+  (λ (this) (singleton-type-name (initialized-singleton-descriptor-type this)))
 
-(define-tuple-type uninitialized-singleton-descriptor
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(struct uninitialized-singleton-descriptor
   (type predicate)
-  #:omit-root-binding
-  #:property-maker make-singleton-properties)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:uninitialized-singleton-descriptor
 
-(define (uninitialized-singleton-descriptor #:type type #:predicate predicate)
+  #:property prop:object-name
+  (λ (this) (singleton-type-name (uninitialized-singleton-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(define (initialized-singleton-descriptor
+         #:type type
+         #:predicate predicate
+         #:instance instance
+         #:backing-tuple-descriptor tuple-descriptor)
+  (constructor:initialized-singleton-descriptor
+   type predicate instance tuple-descriptor))
+
+(define (uninitialized-singleton-descriptor
+         #:type type
+         #:predicate predicate)
   (constructor:uninitialized-singleton-descriptor type predicate))
 
 (define (singleton-descriptor? v)
@@ -74,9 +91,11 @@
                                #:property-maker make-tuple-props))
   (define instance ((tuple-descriptor-constructor descriptor)))
   (define pred (tuple-descriptor-predicate descriptor))
-  (initialized-singleton-descriptor #:type type
-                                    #:instance instance
-                                    #:predicate pred))
+  (initialized-singleton-descriptor
+   #:type type
+   #:instance instance
+   #:predicate pred
+   #:backing-tuple-descriptor descriptor))
 
 (define (default-singleton-custom-write descriptor)
   (define name (singleton-type-name (singleton-descriptor-type descriptor)))

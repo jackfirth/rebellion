@@ -32,11 +32,51 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-record-type initialized-wrapper-descriptor
-  (type predicate constructor accessor))
+(define (write-descriptor this out _)
+  (define name (object-name this))
+  (write-string "#<wrapper-descriptor:" out)
+  (write-string (symbol->string name) out)
+  (write-string ">" out)
+  (void))
 
-(define-record-type uninitialized-wrapper-descriptor
-  (type predicate constructor accessor))
+(struct initialized-wrapper-descriptor
+  (type predicate constructor accessor backing-tuple-descriptor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:initialized-wrapper-descriptor
+
+  #:property prop:object-name
+  (λ (this) (wrapper-type-name (initialized-wrapper-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(struct uninitialized-wrapper-descriptor
+  (type predicate constructor accessor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:uninitialized-wrapper-descriptor
+
+  #:property prop:object-name
+  (λ (this) (wrapper-type-name (uninitialized-wrapper-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(define (initialized-wrapper-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor
+         #:backing-tuple-descriptor tuple-descriptor)
+  (constructor:initialized-wrapper-descriptor
+   type predicate constructor accessor tuple-descriptor))
+
+(define (uninitialized-wrapper-descriptor
+         #:type type
+         #:predicate predicate
+         #:constructor constructor
+         #:accessor accessor)
+  (constructor:uninitialized-wrapper-descriptor
+   type predicate constructor accessor))
 
 (define (wrapper-descriptor? v)
   (or (uninitialized-wrapper-descriptor? v)
@@ -90,7 +130,8 @@
    #:type type
    #:predicate (tuple-descriptor-predicate tuple-impl)
    #:constructor (tuple-descriptor-constructor tuple-impl)
-   #:accessor (procedure-rename accessor (wrapper-type-accessor-name type))))
+   #:accessor (procedure-rename accessor (wrapper-type-accessor-name type))
+   #:backing-tuple-descriptor tuple-impl))
 
 (define (make-delegating-equal+hash delegate-extractor)
   (define token (make-generative-token))

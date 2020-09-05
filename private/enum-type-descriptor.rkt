@@ -45,11 +45,51 @@
 
 (define properties/c (listof (cons/c struct-type-property? any/c)))
 
-(define-tuple-type initialized-enum-descriptor
-  (type predicate selector discriminator))
+(define (write-descriptor this out _)
+  (define name (object-name this))
+  (write-string "#<enum-descriptor:" out)
+  (write-string (symbol->string name) out)
+  (write-string ">" out)
+  (void))
 
-(define-tuple-type uninitialized-enum-descriptor
-  (type predicate selector discriminator))
+(struct initialized-enum-descriptor
+  (type predicate selector discriminator backing-tuple-descriptor)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:initialized-enum-descriptor
+
+  #:property prop:object-name
+  (λ (this) (enum-type-name (initialized-enum-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(struct uninitialized-enum-descriptor
+  (type predicate selector discriminator)
+  #:omit-define-syntaxes
+  #:constructor-name constructor:uninitialized-enum-descriptor
+
+  #:property prop:object-name
+  (λ (this) (enum-type-name (uninitialized-enum-descriptor-type this)))
+
+  #:property prop:custom-write write-descriptor
+  #:property prop:custom-print-quotable 'never)
+
+(define (initialized-enum-descriptor
+         #:type type
+         #:predicate predicate
+         #:selector selector
+         #:discriminator discriminator
+         #:backing-tuple-descriptor tuple-descriptor)
+  (constructor:initialized-enum-descriptor
+   type predicate selector discriminator tuple-descriptor))
+
+(define (uninitialized-enum-descriptor
+         #:type type
+         #:predicate predicate
+         #:selector selector
+         #:discriminator discriminator)
+  (constructor:uninitialized-enum-descriptor
+   type predicate selector discriminator))
 
 (define (enum-descriptor? v)
   (or (initialized-enum-descriptor? v) (uninitialized-enum-descriptor? v)))
@@ -99,7 +139,18 @@
     (procedure-rename
      (λ (instance) (tuple-accessor instance 0))
      (enum-type-discriminator-name type)))
-  (maker type predicate selector discriminator))
+  (if (initialized-tuple-descriptor? descriptor)
+      (initialized-enum-descriptor
+       #:type type
+       #:predicate predicate
+       #:selector selector
+       #:discriminator discriminator
+       #:backing-tuple-descriptor descriptor)
+      (uninitialized-enum-descriptor
+       #:type type
+       #:predicate predicate
+       #:selector selector
+       #:discriminator discriminator)))
 
 (define (enum-type->tuple-type type)
   (tuple-type (enum-type-name type) (list 'index)
