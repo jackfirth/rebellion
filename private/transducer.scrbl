@@ -147,6 +147,36 @@ early, before the input sequence is fully consumed.
               (batching (reducer-limit into-list 4))
               #:into into-list))}
 
+@defproc[(windowing [window-size exact-positive-integer?]
+                    [#:into window-reducer reducer? into-list])
+         transducer?]{
+ Constructs a @tech{transducer} that groups the elements of the transduced
+ sequence into sliding windows of size @racket[window-size]. Each window
+ contains @racket[window-size] elements that were adjacent in the original
+ sequence, and the window "slides" one element to the right at a time.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 1 2 3 4 5)
+              (windowing 3)
+              #:into into-list))
+
+ If @racket[window-reducer] is provided, it is used to reduce each window. By
+ default each window's elements are collected into a list. Only full windows are
+ reduced and emitted downstream: if @racket[window-reducer] finishes early for a
+ window, before consuming @racket[window-size] elements, the reduction result is
+ not emitted downstream until after enough elements are consumed from the
+ transduced sequence to verify that the result corresponds to a full window.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "hello world"
+              (windowing 3 #:into into-string)
+              #:into into-list)
+   (transduce "hello world"
+              (windowing 3 #:into (into-index-of #\w))
+              #:into into-list))}
+
 @defthing[enumerating (transducer/c any/c enumerated?)]{
  A transducer that emits each element along with its position in the sequence,
  as an @racket[enumerated?] value.
