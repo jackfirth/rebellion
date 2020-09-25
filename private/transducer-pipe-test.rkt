@@ -3,10 +3,13 @@
 (module+ test
   (require rackunit
            rebellion/base/immutable-string
+           rebellion/base/impossible-function
+           rebellion/base/variant
            rebellion/collection/list
            rebellion/private/static-name
            rebellion/streaming/reducer
-           rebellion/streaming/transducer))
+           rebellion/streaming/transducer
+           rebellion/streaming/transducer/testing))
 
 (module+ test
   (test-case (name-string transducer-pipe)
@@ -39,4 +42,40 @@
                          (append-mapping number->immutable-string)))
       (define inputs (in-naturals))
       (define expected "0-4-16-36-64-100-144-196-256-324")
-      (check-equal? (transduce inputs piped #:into into-string) expected))))
+      (check-equal? (transduce inputs piped #:into into-string) expected))
+
+    (define (emitting value)
+      (define emit-state (variant #:emit #false))
+      (define em (emission emit-state value))
+      (make-transducer
+       #:starter (λ () emit-state)
+       #:consumer (λ (state element) (error "impossible"))
+       #:emitter (λ (_) em)
+       #:half-closer (λ (_) (variant #:finish #false))
+       #:half-closed-emitter impossible
+       #:finisher void))
+
+    (define (half-closed-emitting value)
+      (define emit-state (variant #:half-closed-emit #false))
+      (define em (half-closed-emission emit-state value))
+      (make-transducer
+       #:starter (λ () emit-state)
+       #:consumer (λ (state element) (error "impossible"))
+       #:emitter impossible
+       #:half-closer impossible
+       #:half-closed-emitter (λ (_) em)
+       #:finisher void))
+
+    (test-case "half closed upstream emisisons makes downstream half closed"
+      (define piped
+        (observing-transduction-events
+         (transducer-pipe (half-closed-emitting #\a)
+                          (taking 3))))
+      (define inputs (in-naturals))
+      (define expected
+        (list start-event
+              (half-closed-emit-event #\a)
+              (half-closed-emit-event #\a)
+              (half-closed-emit-event #\a)
+              finish-event))
+      (check-equal? (transduce inputs piped #:into into-list) expected))))
