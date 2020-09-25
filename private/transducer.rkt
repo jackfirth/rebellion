@@ -18,18 +18,19 @@
 
 (require racket/bool
          racket/list
+         racket/match
          racket/math
          racket/sequence
          rebellion/base/impossible-function
          rebellion/base/option
-         rebellion/base/pair
          rebellion/base/variant
          rebellion/collection/list
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
          rebellion/streaming/transducer/composition
-         rebellion/type/record)
+         rebellion/type/record
+         rebellion/type/tuple)
 
 (module+ test
   (require (submod "..")
@@ -383,6 +384,8 @@
                              #:into into-list)
                   (list 1 2 3 1 2 3 4 5 1 2))))
 
+(define-tuple-type taking-emit-state (remaining last-value))
+
 (define/name (taking amount)
   (make-transducer
    #:starter
@@ -394,11 +397,10 @@
      (define remaining (sub1 amount))
      (if (zero? remaining)
          (variant #:half-closed-emit v)
-         (variant #:emit (pair remaining v))))
+         (variant #:emit (taking-emit-state remaining v))))
    #:emitter
    (λ (state)
-     (define amount (pair-first state))
-     (define v (pair-second state))
+     (match-define (taking-emit-state amount v) state)
      (emission (variant #:consume amount) v))
    #:half-closer (λ (_) stateless-finish)
    #:half-closed-emitter (λ (v) (half-closed-emission stateless-finish v))

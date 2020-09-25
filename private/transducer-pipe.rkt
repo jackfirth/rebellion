@@ -10,6 +10,7 @@
 (require racket/bool
          racket/contract/region
          racket/list
+         racket/match
          rebellion/base/impossible-function
          rebellion/base/variant
          rebellion/collection/immutable-vector
@@ -53,13 +54,27 @@
    downstream-state))
 
 (define (emit-pipe-state? v)
-  (and (pipe-state? v)
-       (variant-tagged-as? (pipe-state-downstream-state v) '#:emit)))
+  (cond
+    [(not (pipe-state? v)) #false]
+    [else
+     (define upstream (pipe-state-upstream-state v))
+     (define downstream (pipe-state-downstream-state v))
+     (and (variant-tagged-as? downstream '#:emit)
+          (or (not (variant? upstream))
+              (and (not (variant-tagged-as? upstream '#:half-closed-emit))
+                   (not (variant-tagged-as? upstream '#:finish)))))]))
 
 (define (half-closed-emit-pipe-state? v)
-  (and (pipe-state? v)
-       (variant-tagged-as? (pipe-state-downstream-state v)
-                           '#:half-closed-emit)))
+  (cond
+    [(not (pipe-state? v)) #false]
+    [else
+     (define upstream (pipe-state-upstream-state v))
+     (define downstream (pipe-state-downstream-state v))
+     (or (variant-tagged-as? downstream '#:half-closed-emit)
+         (and (variant-tagged-as? downstream '#:emit)
+              (variant? upstream)
+              (or (variant-tagged-as? upstream '#:half-closed-emit)
+                  (variant-tagged-as? upstream '#:finish))))]))
 
 (define (finish-pipe-state? v)
   (and (pipe-state? v)
@@ -212,18 +227,27 @@
   (define upstream-state (pipe-state-upstream-state state))
   (define downstream (pipe-state-downstream-transducer state))
   (define downstream-state (pipe-state-downstream-state state))
+  (define downstream-emitter (transducer-emitter downstream))
   (define downstream-half-closed-emitter
     (transducer-half-closed-emitter downstream))
-  (define downstream-emission
-    (downstream-half-closed-emitter (variant-value downstream-state)))
-  (define next-downstream-state
-    (half-closed-emission-state downstream-emission))
-  (half-closed-emission (tag-pipe-state
-                         (pipe-state #:upstream-transducer upstream
-                                     #:upstream-state upstream-state
-                                     #:downstream-transducer downstream
-                                     #:downstream-state next-downstream-state))
-                        (half-closed-emission-value downstream-emission)))
+  (define (build-emission next-downstream-state emitted-value)
+    (half-closed-emission
+     (tag-pipe-state
+      (pipe-state
+       #:upstream-transducer upstream
+       #:upstream-state upstream-state
+       #:downstream-transducer downstream
+       #:downstream-state next-downstream-state))
+     emitted-value))
+  (match downstream-state
+    [(variant #:emit s)
+     (define em (downstream-emitter s))
+     (build-emission (emission-state em) (emission-value em))]
+    [(variant #:half-closed-emit s)
+     (define em (downstream-half-closed-emitter s))
+     (build-emission
+      (half-closed-emission-state em)
+      (half-closed-emission-value em))]))
 
 (define (pipe-finish state)
   (define downstream (pipe-state-downstream-transducer state))
