@@ -8,4 +8,5 @@ rebellion/private/transducer-deduplicating
 rebellion/private/transducer-enumerating
 rebellion/private/transducer-reducer
 rebellion/private/transducer-sorting
+rebellion/private/transducer-taking-maxima
 rebellion/private/transducer-windowing
