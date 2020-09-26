@@ -228,6 +228,41 @@ early, before the input sequence is fully consumed.
               (taking-while char-alphabetic?)
               #:into into-string))}
 
+@deftogether[[
+ @defproc[
+ (taking-maxima
+  [comparator comparator? real<=>] [#:key key-function (-> any/c any/c) values])
+ transducer?]
+ @defproc[
+ (taking-minima
+  [comparator comparator? real<=>] [#:key key-function (-> any/c any/c) values])
+ transducer?]]]{
+ Constructs @tech{transducers} that remove all elements from the sequence except
+ for the largest elements (called the @emph{maxima}) or the smallest elements
+ (called the @emph{minima}), respectively. If multiple values are tied for
+ largest or smallest, all of them are kept. The relative order of the maxima or
+ minima is preserved.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 2 512 3 5 512)
+              (taking-maxima)
+              #:into into-list))
+
+ Elements are compared using @racket[comparator]. If @racket[key-function] is
+ provided, then elements are not compared directly. Instead, a @emph{key} is
+ extracted from each element using @racket[key-function] and the keys of
+ elements are compared instead of the elements themselves.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list "cat" "dog" "zebra" "horse")
+              (taking-maxima string<=>)
+              #:into into-list)
+   (transduce (list "red" "yellow" "blue" "purple" "green")
+              (taking-maxima #:key string-length)
+              #:into into-list))}
+
 @defproc[(dropping [amount natural?]) transducer?]{
  Constructs a @tech{transducer} that removes the first @racket[amount] elements
  from the transduced sequence, then passes all remaining elements downstream.
