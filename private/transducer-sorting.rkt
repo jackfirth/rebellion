@@ -15,6 +15,7 @@
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
+         rebellion/private/guarded-block
          rebellion/streaming/transducer/base
          rebellion/type/record
          rebellion/type/singleton
@@ -68,44 +69,37 @@
 
 (define-record-type tree-trimming (minimum-leaves leftover-tree))
 
-(define (tree-trim-minimum possibly-unbuilt-tree comparator)
+(define/guard (tree-trim-minimum possibly-unbuilt-tree comparator)
+  (guard (partially-sorted-tree? possibly-unbuilt-tree) then
+    (partially-sorted-tree-trim-minimum possibly-unbuilt-tree comparator))
+  (define elements
+    (list-reverse (unsorted-stack-value possibly-unbuilt-tree)))
   (define tree
-    (cond
-      [(partially-sorted-tree? possibly-unbuilt-tree) possibly-unbuilt-tree]
-      [else
-       (define elements
-         (list-reverse (unsorted-stack-value possibly-unbuilt-tree)))
-       (for/fold ([built-tree empty-tree])
-                 ([element (in-list elements)])
-         (tree-insert built-tree element #:comparator comparator))]))
+    (for/fold ([built-tree empty-tree]) ([element (in-list elements)])
+      (tree-insert built-tree element #:comparator comparator)))
   (partially-sorted-tree-trim-minimum tree comparator))
 
-(define (partially-sorted-tree-trim-minimum tree comparator)
+(define/guard (partially-sorted-tree-trim-minimum tree comparator)
   (define pivot-element (partially-sorted-tree-pivot-element tree))
   (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
   (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
   (define greater-stack (partially-sorted-tree-greater-stack tree))
-  (cond
-    [(empty-tree? lesser-subtree)
-     (define leaves (list-insert (list-reverse equivalent-stack) pivot-element))
-     (define leftovers
-       (if (empty-list? greater-stack)
-           empty-tree
-           (unsorted-stack greater-stack)))
-     (tree-trimming #:minimum-leaves leaves
-                    #:leftover-tree leftovers)]
-    [else
-     (define subtree-trimming
-       (tree-trim-minimum lesser-subtree comparator))
-     (define leaves (tree-trimming-minimum-leaves subtree-trimming))
-     (define leftovers
-       (partially-sorted-tree
-        #:pivot-element pivot-element
-        #:lesser-subtree (tree-trimming-leftover-tree subtree-trimming)
-        #:equivalent-stack equivalent-stack
-        #:greater-stack greater-stack))
-     (tree-trimming #:minimum-leaves leaves
-                    #:leftover-tree leftovers)]))
+  (guard (empty-tree? lesser-subtree) then
+    (define leaves (list-insert (list-reverse equivalent-stack) pivot-element))
+    (define leftovers
+      (if (empty-list? greater-stack)
+          empty-tree
+          (unsorted-stack greater-stack)))
+    (tree-trimming #:minimum-leaves leaves #:leftover-tree leftovers))
+  (define subtree-trimming (tree-trim-minimum lesser-subtree comparator))
+  (define leaves (tree-trimming-minimum-leaves subtree-trimming))
+  (define leftovers
+    (partially-sorted-tree
+     #:pivot-element pivot-element
+     #:lesser-subtree (tree-trimming-leftover-tree subtree-trimming)
+     #:equivalent-stack equivalent-stack
+     #:greater-stack greater-stack))
+  (tree-trimming #:minimum-leaves leaves #:leftover-tree leftovers))
 
 (define (singleton-tree element)
   (partially-sorted-tree
@@ -114,36 +108,35 @@
    #:equivalent-stack empty-list
    #:greater-stack empty-list))
 
-(define (tree-insert tree element #:comparator comparator)
-  (cond
-    [(empty-tree? tree) (singleton-tree element)]
-    [else
-     (define pivot (partially-sorted-tree-pivot-element tree))
-     (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
-     (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
-     (define greater-stack (partially-sorted-tree-greater-stack tree))
-     (define comparison-to-pivot (compare comparator element pivot))
-     (cond
-       [(equal? comparison-to-pivot equivalent)
-        (partially-sorted-tree
-         #:pivot-element pivot
-         #:lesser-subtree lesser-subtree
-         #:equivalent-stack (list-insert equivalent-stack element)
-         #:greater-stack greater-stack)]
-       [(equal? comparison-to-pivot greater)
-        (partially-sorted-tree
-         #:pivot-element pivot
-         #:lesser-subtree lesser-subtree
-         #:equivalent-stack equivalent-stack
-         #:greater-stack (list-insert greater-stack element))]
-       [(equal? comparison-to-pivot lesser)
-        (define new-subtree
-          (tree-insert lesser-subtree element #:comparator comparator))
-        (partially-sorted-tree
-         #:pivot-element pivot
-         #:lesser-subtree new-subtree
-         #:equivalent-stack equivalent-stack
-         #:greater-stack greater-stack)])]))
+(define/guard (tree-insert tree element #:comparator comparator)
+  (guard (empty-tree? tree) then (singleton-tree element))
+  (define pivot (partially-sorted-tree-pivot-element tree))
+  (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
+  (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
+  (define greater-stack (partially-sorted-tree-greater-stack tree))
+  (define comparison-to-pivot (compare comparator element pivot))
+
+  (guard (equal? comparison-to-pivot equivalent) then
+    (partially-sorted-tree
+     #:pivot-element pivot
+     #:lesser-subtree lesser-subtree
+     #:equivalent-stack (list-insert equivalent-stack element)
+     #:greater-stack greater-stack))
+  
+  (guard (equal? comparison-to-pivot greater) then
+    (partially-sorted-tree
+     #:pivot-element pivot
+     #:lesser-subtree lesser-subtree
+     #:equivalent-stack equivalent-stack
+     #:greater-stack (list-insert greater-stack element)))
+  
+  (define new-subtree
+    (tree-insert lesser-subtree element #:comparator comparator))
+  (partially-sorted-tree
+   #:pivot-element pivot
+   #:lesser-subtree new-subtree
+   #:equivalent-stack equivalent-stack
+   #:greater-stack greater-stack))
 
 (define (sorting [comparator real<=>]
                  #:key [key-function values]
@@ -155,6 +148,7 @@
                     key-function))
 
   (define (start) (variant #:consume empty-tree))
+
   (define (consume state element)
     (define next-state
       (cond
@@ -170,10 +164,12 @@
          (raise-arguments-error 'sorting "expected a tree"
                                 "actual previous state" state)]))
     (variant #:consume next-state))
-  (define (half-close tree)
-    (cond
-      [(empty-tree? tree) (variant #:finish #f)]
-      [else (variant #:half-closed-emit tree)]))
+  
+  (define/guard (half-close tree)
+    (if (empty-tree? tree)
+        (variant #:finish #false)
+        (variant #:half-closed-emit tree)))
+  
   (define (half-closed-emit state)
     (define trimming
       (if (tree-trimming? state)
@@ -195,6 +191,7 @@
         [else (raise-arguments-error 'sorting "expected a tree"
                                      "actual" tree)]))
     (half-closed-emission next-state minimum))
+  
   (make-transducer
    #:starter start
    #:consumer consume

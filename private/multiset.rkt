@@ -32,6 +32,7 @@
          racket/sequence
          racket/stream
          racket/struct
+         rebellion/private/guarded-block
          rebellion/streaming/reducer
          rebellion/type/record)
 
@@ -103,13 +104,11 @@
   (define frequency (+ (multiset-frequency set element) copies))
   (multiset-set-frequency set element frequency))
 
-(define (multiset-remove set element #:copies [copies 1])
-  (cond
-    [(not (multiset-contains? set element)) set]
-    [(equal? copies +inf.0) (multiset-set-frequency set element 0)]
-    [else
-     (define frequency (max (- (multiset-frequency set element) copies) 0))
-     (multiset-set-frequency set element frequency)]))
+(define/guard (multiset-remove set element #:copies [copies 1])
+  (guard (multiset-contains? set element) else set)
+  (guard (equal? copies +inf.0) then (multiset-set-frequency set element 0))
+  (define frequency (max (- (multiset-frequency set element) copies) 0))
+  (multiset-set-frequency set element frequency))
 
 (module+ test
   (test-case "multiset-add"

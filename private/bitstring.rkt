@@ -25,6 +25,7 @@
          racket/struct
          rebellion/binary/bit
          rebellion/binary/byte
+         rebellion/private/guarded-block
          rebellion/type/tuple)
 
 (module+ test
@@ -85,12 +86,11 @@
              #:result (void))
             ([b (in-sequences (in-list bits) (in-list padding-bits))]
              [eighth-bit? (in-cycle (in-list (list #f #f #f #f #f #f #f #t)))])
-    (define next-byte (+ b (* current-byte 2)))
-    (cond [eighth-bit?
-           (bytes-set! mutable-padded-bytes current-index next-byte)
-           (values 0 (add1 current-index))]
-          [else
-           (values next-byte current-index)]))
+    (guarded-block
+      (define next-byte (+ b (* current-byte 2)))
+      (guard eighth-bit? else (values next-byte current-index))
+      (bytes-set! mutable-padded-bytes current-index next-byte)
+      (values 0 (add1 current-index))))
 
   ;; Unfortunately Racket bytestrings do not support a freeze operation, which
   ;; would let us make a mutable bytestring immutable without allocating a copy.
@@ -110,18 +110,17 @@
 (define (bitstring->padded-bytes bits) (bitstring-bytes bits))
 
 (define (bytes->bitstring bytes #:padding [padding 0])
-  (cond [(zero? padding) (constructor:bitstring bytes 0)]
-        [else
-         (define size (bytes-length bytes))
-         (define last-pos (sub1 size))
-         (define mutable-padded-bytes (make-bytes size 0))
-         (bytes-copy! mutable-padded-bytes 0
-                      bytes 0 last-pos)
-         (define last-byte (bytes-ref bytes last-pos))
-         (define padded-last-byte (byte-clear-rightmost-bits last-byte padding))
-         (bytes-set! mutable-padded-bytes last-pos padded-last-byte)
-         (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
-         (constructor:bitstring padded-bytes padding)]))
+  (guarded-block
+    (guard (positive? padding) else (constructor:bitstring bytes 0))
+    (define size (bytes-length bytes))
+    (define last-pos (sub1 size))
+    (define mutable-padded-bytes (make-bytes size 0))
+    (bytes-copy! mutable-padded-bytes 0 bytes 0 last-pos)
+    (define last-byte (bytes-ref bytes last-pos))
+    (define padded-last-byte (byte-clear-rightmost-bits last-byte padding))
+    (bytes-set! mutable-padded-bytes last-pos padded-last-byte)
+    (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
+    (constructor:bitstring padded-bytes padding)))
 
 (module+ test
   (test-case (name-string bitstring)

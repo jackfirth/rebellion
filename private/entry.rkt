@@ -28,6 +28,7 @@
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
+         rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/private/total-match
          rebellion/streaming/reducer
@@ -197,48 +198,49 @@
           #:reverse-ordered-keys (list)
           #:finished-keys (set)))
 
-(define (groups-insert g k v #:reducer value-reducer)
+(define/guard (groups-insert g k v #:reducer value-reducer)
   (define starter (reducer-starter value-reducer))
   (define consumer (reducer-consumer value-reducer))
   (define early-finisher (reducer-early-finisher value-reducer))
   (define states (groups-reducer-states g))
   (define keys (groups-reverse-ordered-keys g))
   (define finished (groups-finished-keys g))
-  (cond
-    [(set-member? finished k) g]
-    [(hash-has-key? states k)
-     (define value-state (consumer (hash-ref states k) v))
-     (cond
-       [(variant-tagged-as? value-state '#:consume)
-        (hash-set! states k (variant-value value-state))
-        g]
-       [else
-        (hash-remove! states k)
-        (define next-g
-          (groups #:reducer-states states
-                  #:reverse-ordered-keys (remove k keys)
-                  #:finished-keys (set-add finished k)))
-        (group-emission #:key k
-                        #:value (early-finisher (variant-value value-state))
-                        #:state next-g)])]
-    [else
-     (define value-state (starter))
-     (cond
-       [(variant-tagged-as? value-state '#:early-finish)
-        (define next-g
-          (groups #:reducer-states states
-                  #:reverse-ordered-keys keys
-                  #:finished-keys (set-add finished k)))
-        (group-emission #:key k
-                        #:value (early-finisher (variant-value value-state))
-                        #:state next-g)]
-       [else
-        (hash-set! states k (variant-value value-state))
-        (define intermediate-g
-          (groups #:reducer-states states
-                  #:reverse-ordered-keys (list-insert keys k)
-                  #:finished-keys finished))
-        (groups-insert intermediate-g k v #:reducer value-reducer)])]))
+  (guard (not (set-member? finished k)) else g)
+
+  (guard (not (hash-has-key? states k)) else
+    (define value-state (consumer (hash-ref states k) v))
+    (guard (variant-tagged-as? value-state '#:consume) else
+      (hash-remove! states k)
+      (define next-g
+        (groups
+         #:reducer-states states
+         #:reverse-ordered-keys (remove k keys)
+         #:finished-keys (set-add finished k)))
+      (group-emission
+       #:key k
+       #:value (early-finisher (variant-value value-state))
+       #:state next-g))
+    (hash-set! states k (variant-value value-state))
+    g)
+    
+  (define value-state (starter))
+  (guard (variant-tagged-as? value-state '#:early-finish) else
+    (hash-set! states k (variant-value value-state))
+    (define intermediate-g
+      (groups
+       #:reducer-states states
+       #:reverse-ordered-keys (list-insert keys k)
+       #:finished-keys finished))
+    (groups-insert intermediate-g k v #:reducer value-reducer))
+  (define next-g
+    (groups
+     #:reducer-states states
+     #:reverse-ordered-keys keys
+     #:finished-keys (set-add finished k)))
+  (group-emission
+   #:key k
+   #:value (early-finisher (variant-value value-state))
+   #:state next-g))
 
 (define (half-close-groups g)
   (define keys (reverse (groups-reverse-ordered-keys g)))
@@ -255,10 +257,10 @@
    #:starter (λ () (variant #:consume (make-empty-groups)))
    #:consumer
    (λ/match (g (entry k v))
-     (define next (groups-insert g k v #:reducer value-reducer))
-     (cond
-       [(groups? next) (variant #:consume next)]
-       [else (variant #:emit next)]))
+     (guarded-block
+       (define next (groups-insert g k v #:reducer value-reducer))
+       (guard (groups? next) else (variant #:emit next))
+       (variant #:consume next)))
    #:emitter
    (λ (state)
      (emission (variant #:consume (group-emission-state state))
@@ -266,10 +268,11 @@
                       (group-emission-value state))))
    #:half-closer
    (λ (g*)
-     (define g (half-close-groups g*))
-     (cond
-       [(zero? (closing-groups-size g)) (variant #:finish #f)]
-       [else (variant #:half-closed-emit g)]))
+     (guarded-block
+       (define g (half-close-groups g*))
+       (guard (positive? (closing-groups-size g)) else
+         (variant #:finish #false))
+       (variant #:half-closed-emit g)))
    #:half-closed-emitter
    (λ (g)
      (define reducer-states (closing-groups-reducer-states g))
@@ -283,9 +286,9 @@
         #:encounter-ordered-keys (list-rest keys)
         #:size (sub1 (closing-groups-size g))))
      (define next-state
-       (cond
-         [(zero? (closing-groups-size next-g)) (variant #:finish #f)]
-         [else (variant #:half-closed-emit next-g)]))
+       (if (zero? (closing-groups-size next-g))
+           (variant #:finish #false)
+           (variant #:half-closed-emit next-g)))
      (half-closed-emission next-state (entry next-key next-value)))
    #:finisher void
    #:name enclosing-function-name))

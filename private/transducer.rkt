@@ -25,6 +25,7 @@
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
+         rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
@@ -123,69 +124,73 @@
       (transducer-position-advance trans position)
       position))
 
-(define/name (transducer-position-advance trans position)
+(define/guard (transducer-position-advance trans position)
   (define consumer (transducer-consumer trans))
   (define half-closer (transducer-half-closer trans))
   (define state (transducer-position-state position))
   (define upstream-element (transducer-position-upstream-element position))
   (define upstream-generator (transducer-position-upstream-generator position))
-  (cond
-    [(false? upstream-element)
-     (define next-state (half-closer (variant-value state)))
-     (transducer-position #:state next-state
-                          #:downstream-element absent
-                          #:upstream-element upstream-element
-                          #:upstream-generator upstream-generator)]
-    [else
-     (unless (equal? (length upstream-element) 1)
-       (apply raise-result-arity-error
-              enclosing-function-name
-              1
-              "\n  in: the transduced sequence"
-              upstream-element))
-     (define next-state
-       (consumer (variant-value state) (first upstream-element)))
-     (define-values (next-upstream-element next-upstream-generator)
-       (upstream-generator))
-     (transducer-position #:state next-state
-                          #:downstream-element absent
-                          #:upstream-element next-upstream-element
-                          #:upstream-generator next-upstream-generator)]))
 
-(define/name (transducer-position-try-emit trans position)
+  (guard upstream-element else
+    (define next-state (half-closer (variant-value state)))
+    (transducer-position #:state next-state
+                         #:downstream-element absent
+                         #:upstream-element upstream-element
+                         #:upstream-generator upstream-generator))
+  
+  (unless (equal? (length upstream-element) 1)
+    (apply raise-result-arity-error
+           (name transducer-position-advance)
+           1
+           "\n  in: the transduced sequence"
+           upstream-element))
+  
+  (define next-state (consumer (variant-value state) (first upstream-element)))
+  (define-values (next-upstream-element next-upstream-generator)
+    (upstream-generator))
+  (transducer-position #:state next-state
+                       #:downstream-element absent
+                       #:upstream-element next-upstream-element
+                       #:upstream-generator next-upstream-generator))
+
+(define/guard (transducer-position-try-emit trans position)
   (define emitter (transducer-emitter trans))
   (define half-closed-emitter (transducer-half-closed-emitter trans))
   (define state (transducer-position-state position))
   (define downstream-element (transducer-position-downstream-element position))
   (define upstream-element (transducer-position-upstream-element position))
   (define upstream-generator (transducer-position-upstream-generator position))
+
   (unless (absent? downstream-element)
     (raise-argument-error
-     enclosing-function-name
+     (name transducer-position-try-emit)
      "transducer-position that is not already emitting an element downstream"
      position))
+  
   (when (variant-tagged-as? state '#:consume)
     (raise-argument-error
-     enclosing-function-name
+     (name transducer-position-try-emit)
      "cannot try emitting when in consuming position"
      position))
-  (cond
-    [(variant-tagged-as? state '#:emit)
-     (define em (emitter (variant-value state)))
-     (transducer-position #:state (emission-state em)
-                          #:downstream-element (present (emission-value em))
-                          #:upstream-element upstream-element
-                          #:upstream-generator upstream-generator)]
-    [(variant-tagged-as? state '#:half-closed-emit)
-     (define em (half-closed-emitter (variant-value state)))
-     (transducer-position
-      #:state (half-closed-emission-state em)
-      #:downstream-element (present (half-closed-emission-value em))
-      #:upstream-element upstream-element
-      #:upstream-generator upstream-generator)]
-    [else
-     ;; TODO: maybe this is where the finisher should be called?
-     position]))
+
+  (guard (variant-tagged-as? state '#:emit) then
+    (define em (emitter (variant-value state)))
+    (transducer-position
+     #:state (emission-state em)
+     #:downstream-element (present (emission-value em))
+     #:upstream-element upstream-element
+     #:upstream-generator upstream-generator))
+
+  (guard (variant-tagged-as? state '#:half-closed-emit) then
+    (define em (half-closed-emitter (variant-value state)))
+    (transducer-position
+     #:state (half-closed-emission-state em)
+     #:downstream-element (present (half-closed-emission-value em))
+     #:upstream-element upstream-element
+     #:upstream-generator upstream-generator))
+
+  ;; TODO: maybe this is where the finisher should be called?
+  position)
 
 (define (continue-with-transducer-position? pos)
   (present? (transducer-position-downstream-element pos)))

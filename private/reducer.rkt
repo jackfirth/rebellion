@@ -80,6 +80,7 @@
          rebellion/base/symbol
          rebellion/base/variant
          rebellion/private/contract-projection
+         rebellion/private/guarded-block
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/type/record
@@ -158,13 +159,13 @@
   (define consumer (reducer-consumer red))
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
-  (let loop ([tagged-state (starter)] [vs vs])
+  (define/guard (loop [tagged-state (starter)] [vs vs])
     (define state (variant-value tagged-state))
-    (cond
-      [(variant-tagged-as? tagged-state '#:early-finish)
-       (early-finisher state)]
-      [(empty? vs) (finisher state)]
-      [else (loop (consumer state (first vs)) (rest vs))])))
+    (guard (variant-tagged-as? tagged-state '#:early-finish) then
+      (early-finisher state))
+    (guard (empty? vs) else (loop (consumer state (first vs)) (rest vs)))
+    (finisher state))
+  (loop))
 
 (define/name (reduce-all red seq)
   (define starter (reducer-starter red))
@@ -172,28 +173,26 @@
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
   (define-values (first-vs generate-rest) (sequence-generate* seq))
-  (let loop ([tagged-state (starter)]
-             [sequence-position 0]
-             [first-vs first-vs]
-             [generate-rest generate-rest])
+  (define/guard (loop [tagged-state (starter)]
+                      [sequence-position 0]
+                      [first-vs first-vs]
+                      [generate-rest generate-rest])
     (define state (variant-value tagged-state))
-    (cond
-      [(variant-tagged-as? tagged-state '#:early-finish)
-       (early-finisher state)]
-      [(false? first-vs)
-       (finisher state)]
-      [(not (equal? (length first-vs) 1))
-       (apply raise-result-arity-error
-              enclosing-function-name 1
-              (format "\n  in: sequence elements at position ~a"
-                      sequence-position)
-              first-vs)]
-      [else
-       (define-values (next-vs next-generate-rest) (generate-rest))
-       (loop (consumer state (first first-vs))
-             (add1 sequence-position)
-             next-vs
-             next-generate-rest)])))
+    (guard (variant-tagged-as? tagged-state '#:early-finish) then
+      (early-finisher state))
+    (guard (false? first-vs) then (finisher state))
+    (guard (equal? (length first-vs) 1) else
+      (apply raise-result-arity-error
+             enclosing-function-name 1
+             (format "\n  in: sequence elements at position ~a"
+                     sequence-position)
+             first-vs))
+    (define-values (next-vs next-generate-rest) (generate-rest))
+    (loop (consumer state (first first-vs))
+          (add1 sequence-position)
+          next-vs
+          next-generate-rest))
+  (loop))
 
 (module+ test
   (test-case (name-string reduce)
@@ -253,7 +252,7 @@
                   #:name (object-name reducer)))
   
   (object-impersonate impersonated-without-props descriptor:reducer
-                         #:properties properties))
+                      #:properties properties))
 
 (module+ test
   (test-case (name-string reducer-impersonate)
@@ -391,33 +390,28 @@
   (define original-finisher (reducer-finisher red))
   (define original-early-finisher (reducer-early-finisher red))
 
-  (define (start)
+  (define/guard (start)
     (define original (original-starter))
-    (cond
-      [(zero? amount)
-       (variant #:early-finish
-                (limited-result (variant-value original)))]
-      [(variant-tagged-as? original '#:consume)
-       (define state
-         (limited-state #:amount-left amount
-                        #:original-state (variant-value original)))
-       (variant #:consume state)]
-      [else
-       (variant #:early-finsih (original-result (variant-value original)))]))
+    (guard (zero? amount) then
+      (variant #:early-finish (limited-result (variant-value original))))
+    (guard (variant-tagged-as? original '#:consume) else
+      (variant #:early-finsih (original-result (variant-value original))))
+    (define state
+      (limited-state #:amount-left amount
+                     #:original-state (variant-value original)))
+    (variant #:consume state))
 
-  (define (consume state element)
+  (define/guard (consume state element)
     (define next-state
       (original-consumer (limited-state-original-state state) element))
     (define next-amount (sub1 (limited-state-amount-left state)))
-    (cond
-      [(variant-tagged-as? next-state '#:early-finish)
-       (variant #:early-finish (original-result (variant-value next-state)))]
-      [(zero? next-amount)
-       (variant #:early-finish (limited-result (variant-value next-state)))]
-      [else
-       (variant #:consume
-                (limited-state #:amount-left next-amount
-                               #:original-state (variant-value next-state)))]))
+    (guard (variant-tagged-as? next-state '#:early-finish) then
+      (variant #:early-finish (original-result (variant-value next-state))))
+    (guard (zero? next-amount) then
+      (variant #:early-finish (limited-result (variant-value next-state))))
+    (variant #:consume
+             (limited-state #:amount-left next-amount
+                            #:original-state (variant-value next-state))))
 
   (define (finish state)
     (original-finisher (limited-state-original-state state)))
@@ -711,17 +705,14 @@
    #:starter (λ () (variant #:consume absent))
    #:consumer
    (λ (best-candidate elem)
-     (define key (key-function elem))
-     (cond
-       [(absent? best-candidate)
-        (variant #:consume (present (candidate #:element elem #:key key)))]
-       [else
-        (define best-key
-          (candidate-key (present-value best-candidate)))
-        (cond
-          [(equal? (compare comparator best-key key) lesser)
-           (variant #:consume (present (candidate #:element elem #:key key)))]
-          [else (variant #:consume best-candidate)])]))
+     (guarded-block
+       (define key (key-function elem))
+       (guard (present? best-candidate) else
+         (variant #:consume (present (candidate #:element elem #:key key))))
+       (define best-key (candidate-key (present-value best-candidate)))
+       (guard (equal? (compare comparator best-key key) lesser) else
+         (variant #:consume best-candidate))
+       (variant #:consume (present (candidate #:element elem #:key key)))))
    #:finisher (λ (best) (option-map best candidate-element))
    #:early-finisher values
    #:name enclosing-function-name))

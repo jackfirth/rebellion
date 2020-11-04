@@ -21,6 +21,7 @@
 
 (require racket/math
          rebellion/base/option
+         rebellion/private/guarded-block
          rebellion/streaming/reducer)
 
 (module+ test
@@ -42,11 +43,11 @@
 (define (list-contains? lst v) (not (not (member v lst))))
 
 (define (list-ref-safe lst pos)
-  (let loop ([lst lst] [pos pos])
-    (cond
-      [(empty-list? lst) absent]
-      [(zero? pos) (present (list-first lst))]
-      [else (loop (list-rest lst) (sub1 pos))])))
+  (define/guard (loop lst pos)
+    (guard (nonempty-list? lst) else absent)
+    (guard (zero? pos) else (loop (list-rest lst) (sub1 pos)))
+    (present (list-first lst)))
+  (loop lst pos))
 
 (define into-list
   (make-effectful-fold-reducer list-insert

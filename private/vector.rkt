@@ -18,6 +18,7 @@
          racket/set
          rebellion/collection/vector/builder
          rebellion/collection/immutable-vector
+         rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/streaming/reducer)
 
@@ -41,42 +42,31 @@
                                build-mutable-vector
                                #:name (name into-mutable-vector)))
 
-(define/name (into-vector #:size [size +inf.0])
-  (cond
-    [(equal? size +inf.0) into-unlimited-vector]
-    [else
-     (define (make-builder) (make-vector-builder #:expected-size size))
-     (define unlimited
-       (make-effectful-fold-reducer vector-builder-add
-                                    make-builder
-                                    build-vector
-                                    #:name enclosing-function-name))
-     (reducer-limit unlimited size)]))
+(define/guard (into-vector #:size [size +inf.0])
+  (guard (equal? size +inf.0) then into-unlimited-vector)
+  (define (make-builder) (make-vector-builder #:expected-size size))
+  (define unlimited
+    (make-effectful-fold-reducer
+     vector-builder-add make-builder build-vector #:name (name into-vector)))
+  (reducer-limit unlimited size))
 
-(define/name (into-mutable-vector #:size [size +inf.0])
-  (cond
-    [(equal? size +inf.0) into-unlimited-mutable-vector]
-    [else
-     (define (make-builder) (make-vector-builder #:expected-size size))
-     (define unlimited
-       (make-effectful-fold-reducer vector-builder-add
-                                    make-builder
-                                    build-mutable-vector
-                                    #:name enclosing-function-name))
-     (reducer-limit unlimited size)]))
+(define/guard (into-mutable-vector #:size [size +inf.0])
+  (guard (equal? size +inf.0) then into-unlimited-mutable-vector)
+  (define (make-builder) (make-vector-builder #:expected-size size))
+  (define unlimited
+    (make-effectful-fold-reducer
+     vector-builder-add make-builder build-mutable-vector
+     #:name (name into-mutable-vector)))
+  (reducer-limit unlimited size))
 
-(define (sequence->vector seq)
-  (cond
-    [(vector? seq)
-     (cond
-       [(immutable? seq) seq]
-       [else (vector->immutable-vector seq)])]
-    [(list? seq)
-     (vector->immutable-vector (list->vector seq))]
-    [(set? seq)
-     (vector->immutable-vector
-      (for/vector #:length (set-count seq) ([v seq]) v))]
-    [(vector->immutable-vector (for/vector ([v seq]) v))]))
+(define/guard (sequence->vector seq)
+  (guard (vector? seq) then
+    (if (immutable? seq) seq (vector->immutable-vector seq)))
+  (guard (list? seq) then (vector->immutable-vector (list->vector seq)))
+  (guard (set? seq) then
+    (vector->immutable-vector
+     (for/vector #:length (set-count seq) ([v seq]) v)))
+  (vector->immutable-vector (for/vector ([v seq]) v)))
 
 (module+ test
   (test-case "into-vector"

@@ -28,6 +28,7 @@
          racket/fixnum
          rebellion/base/symbol
          rebellion/private/static-name
+         rebellion/private/guarded-block
          syntax/parse/define)
 
 (module+ test
@@ -60,21 +61,21 @@
   (atomic-fixnum-compare-and-set! num expected (fx+ expected amount)))
 
 (define/name (atomic-fixnum-compare-and-exchange! num expected replacement)
-  (define x (atomic-fixnum-get num))
-  (cond
-    [(not (eq? x expected)) x]
-    [(atomic-fixnum-compare-and-set! num expected replacement) x]
-    [else
-     (log-atomic-fixnum-contention num)
-     (atomic-fixnum-compare-and-exchange! num expected replacement)]))
+  (guarded-block
+    (define x (atomic-fixnum-get num))
+    (guard (eq? x expected) else x)
+    (guard (atomic-fixnum-compare-and-set! num expected replacement) else
+      (log-atomic-fixnum-contention num)
+      (atomic-fixnum-compare-and-exchange! num expected replacement))
+    x))
 
 (define/name (atomic-fixnum-get-then-set! num replacement)
-  (define x (atomic-fixnum-get num))
-  (cond
-    [(atomic-fixnum-compare-and-set! num x replacement) x]
-    [else
-     (log-atomic-fixnum-contention num)
-     (atomic-fixnum-get-then-set! num replacement)]))
+  (guarded-block
+    (define x (atomic-fixnum-get num))
+    (guard (atomic-fixnum-compare-and-set! num x replacement) else
+      (log-atomic-fixnum-contention num)
+      (atomic-fixnum-get-then-set! num replacement))
+    x))
 
 (define/name (atomic-fixnum-add! num amount)
   (define x (atomic-fixnum-get num))
@@ -83,21 +84,21 @@
     (atomic-fixnum-add! num amount)))
 
 (define/name (atomic-fixnum-get-then-add! num amount)
-  (define x (atomic-fixnum-get num))
-  (cond
-    [(atomic-fixnum-compare-and-add! num x amount) x]
-    [else
-     (log-atomic-fixnum-contention num)
-     (atomic-fixnum-get-then-add! num amount)]))
+  (guarded-block
+    (define x (atomic-fixnum-get num))
+    (guard (atomic-fixnum-compare-and-add! num x amount) else
+      (log-atomic-fixnum-contention num)
+      (atomic-fixnum-get-then-add! num amount))
+    x))
 
 (define/name (atomic-fixnum-add-then-get! num amount)
-  (define x (atomic-fixnum-get num))
-  (define x* (fx+ x amount))
-  (cond
-    [(atomic-fixnum-compare-and-set! num x x*) x*]
-    [else
-     (log-atomic-fixnum-contention num)
-     (atomic-fixnum-add-then-get! num amount)]))
+  (guarded-block
+    (define x (atomic-fixnum-get num))
+    (define x* (fx+ x amount))
+    (guard (atomic-fixnum-compare-and-set! num x x*) else
+      (log-atomic-fixnum-contention num)
+      (atomic-fixnum-add-then-get! num amount))
+    x*))
 
 (define/name (atomic-fixnum-update! num updater)
   (define x (atomic-fixnum-get num))
@@ -106,21 +107,21 @@
     (atomic-fixnum-update! num updater)))
 
 (define/name (atomic-fixnum-get-then-update! num updater)
-  (define x (atomic-fixnum-get num))
-  (cond
-    [(atomic-fixnum-compare-and-set! num x (updater x)) x]
-    [else
-     (log-atomic-fixnum-contention num)
-     (atomic-fixnum-get-then-update! num updater)]))
+  (guarded-block
+    (define x (atomic-fixnum-get num))
+    (guard (atomic-fixnum-compare-and-set! num x (updater x)) else
+      (log-atomic-fixnum-contention num)
+      (atomic-fixnum-get-then-update! num updater))
+    x))
 
 (define/name (atomic-fixnum-update-then-get! num updater)
-  (define x (atomic-fixnum-get num))
-  (define x* (updater x))
-  (cond
-    [(atomic-fixnum-compare-and-set! num x x*) x*]
-    [else
-     (log-atomic-fixnum-contention num)
-     (atomic-fixnum-update-then-get! num updater)]))
+  (guarded-block
+    (define x (atomic-fixnum-get num))
+    (define x* (updater x))
+    (guard (atomic-fixnum-compare-and-set! num x x*) else
+      (log-atomic-fixnum-contention num)
+      (atomic-fixnum-update-then-get! num updater))
+    x*))
 
 (module+ test
 
