@@ -13,6 +13,7 @@
          rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
+         rebellion/private/guarded-block
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
@@ -25,14 +26,13 @@
    #:starter (λ () (variant #:consume (set)))
    #:consumer
    (λ (encountered v)
-     (define k (key-function v))
-     (cond
-       [(set-member? encountered k) (variant #:consume encountered)]
-       [else
-        (define state
-          (emit-state #:previously-encountered (set-add encountered k)
-                      #:novel-element v))
-        (variant #:emit state)]))
+     (guarded-block
+       (define k (key-function v))
+       (guard (set-member? encountered k) then (variant #:consume encountered))
+       (define state
+         (emit-state #:previously-encountered (set-add encountered k)
+                     #:novel-element v))
+       (variant #:emit state)))
    #:emitter
    (λ (state)
      (define encountered (emit-state-previously-encountered state))
@@ -50,18 +50,17 @@
    #:starter (λ () (variant #:consume absent))
    #:consumer
    (λ (previous v)
-     (define k (key-function v))
-     (cond
-       [(absent? previous)
-        (variant #:emit
-                 (consecutive-emit-state #:previous-key (present k)
-                                         #:novel-element v))]
-       [(equal? (present-value previous) k)
-        (variant #:consume previous)]
-       [else
-        (variant #:emit
-                 (consecutive-emit-state #:previous-key (present k)
-                                         #:novel-element v))]))
+     (guarded-block
+       (define k (key-function v))
+       (guard (present? previous) else
+         (variant #:emit
+                  (consecutive-emit-state #:previous-key (present k)
+                                          #:novel-element v)))
+       (guard (equal? (present-value previous) k) then
+         (variant #:consume previous))
+       (variant #:emit
+                (consecutive-emit-state #:previous-key (present k)
+                                        #:novel-element v))))
    #:emitter
    (λ (state)
      (define previous (consecutive-emit-state-previous-key state))

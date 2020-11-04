@@ -43,6 +43,7 @@
          rebellion/collection/entry
          rebellion/collection/multiset
          rebellion/collection/keyset
+         rebellion/private/guarded-block
          rebellion/private/spliced-printing-entry
          rebellion/streaming/reducer
          rebellion/type/record)
@@ -65,11 +66,10 @@
 (define set-coercible/c
   (or/c set? multiset? (sequence/c any/c)))
 
-(define (sequence->set seq)
-  (cond
-    [(set? seq) seq]
-    [(multiset? seq) (multiset-unique-elements seq)]
-    [else (for/set ([v seq]) v)]))
+(define/guard (sequence->set seq)
+  (guard (set? seq) then seq)
+  (guard (multiset? seq) then (multiset-unique-elements seq))
+  (for/set ([v seq]) v))
 
 (define (make-multidict-properties descriptor)
   (define type (record-descriptor-type descriptor))
@@ -173,28 +173,23 @@
             ([v (in-immutable-set (set-delta-missing-elements delta))])
     (hash-set h v (set-add (hash-ref h v (set)) k))))
 
-(define (multidict-add dict k v)
+(define/guard (multidict-add dict k v)
   (define old-vs (multidict-ref dict k))
-  (cond
-    [(set-member? old-vs v) dict]
-    [else
-     (define delta
-       (set-delta #:extra-elements (set) #:missing-elements (set v)))
-     (multidict-replace-values dict k (set-add old-vs v)
-                               #:precomputed-value-set-delta delta)]))
+  (guard (set-member? old-vs v) then dict)
+  (define delta
+    (set-delta #:extra-elements (set) #:missing-elements (set v)))
+  (multidict-replace-values dict k (set-add old-vs v)
+                            #:precomputed-value-set-delta delta))
 
 (define (multidict-add-entry dict e)
   (multidict-add dict (entry-key e) (entry-value e)))
 
-(define (multidict-remove dict k v)
+(define/guard (multidict-remove dict k v)
   (define old-vs (multidict-ref dict k))
-  (cond
-    [(set-member? old-vs v)
-     (define delta
-       (set-delta #:extra-elements (set v) #:missing-elements (set)))
-     (multidict-replace-values dict k (set-remove old-vs v)
-                               #:precomputed-value-set-delta delta)]
-    [else dict]))
+  (guard (set-member? old-vs v) else dict)
+  (define delta (set-delta #:extra-elements (set v) #:missing-elements (set)))
+  (multidict-replace-values
+   dict k (set-remove old-vs v) #:precomputed-value-set-delta delta))
 
 (define (multidict-remove-entry dict e)
   (multidict-remove dict (entry-key e) (entry-value e)))

@@ -23,13 +23,12 @@
 
         #:pre/name (lower-bound upper-bound cmp)
         "lower endpoint must be less than or equal to upper endpoint"
-        (strict-cond
-          [(unbounded? lower-bound) #t]
-          [(unbounded? upper-bound) #t]
-          [else
-           (define lower (range-bound-endpoint lower-bound))
-           (define upper (range-bound-endpoint upper-bound))
-           (not (equal? (compare (default-real<=> cmp) lower upper) greater))])
+        (guarded-block
+          (guard (unbounded? lower-bound) then #true)
+          (guard (unbounded? upper-bound) then #true)
+          (define lower (range-bound-endpoint lower-bound))
+          (define upper (range-bound-endpoint upper-bound))
+          (not (equal? (compare (default-real<=> cmp) lower upper) greater)))
 
         #:pre/name (lower-bound upper-bound)
         "equal endpoints cannot both be exclusive"
@@ -158,6 +157,7 @@
 
 (require racket/bool
          rebellion/base/comparator
+         rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/private/strict-cond
          rebellion/type/enum
@@ -185,9 +185,9 @@
   (or (inclusive-bound? v) (exclusive-bound? v)))
 
 (define (range-bound endpoint type)
-  (strict-cond
-    [(equal? type inclusive) (inclusive-bound endpoint)]
-    [else (exclusive-bound endpoint)]))
+  (if (equal? type inclusive)
+      (inclusive-bound endpoint)
+      (exclusive-bound endpoint)))
 
 (define (range-bound-type bound)
   (if (inclusive-bound? bound) inclusive exclusive))
@@ -242,28 +242,26 @@
     [(lower-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
 
 (define/name (cut<=> base-comparator)
-  (define (cmp left right)
-    (strict-cond
-      [(and (bottom-cut? left) (bottom-cut? right)) equivalent]
-      [(bottom-cut? left) lesser]
-      [(bottom-cut? right) greater]
-      [(and (top-cut? left) (top-cut? right)) equivalent]
-      [(top-cut? left) greater]
-      [(top-cut? right) lesser]
-      [else
-       (define result
-         (compare base-comparator
-                  (intermediate-cut-value left)
-                  (intermediate-cut-value right)))
-       (strict-cond
-         [(or (equal? result lesser) (equal? result greater)) result]
-         [(and (lower-cut? left) (lower-cut? right)) equivalent]
-         [(lower-cut? left) lesser]
-         [(lower-cut? right) greater]
-         [(and (middle-cut? left) (middle-cut? right)) equivalent]
-         [(middle-cut? left) lesser]
-         [(middle-cut? right) greater]
-         [else equivalent])]))
+  (define/guard (cmp left right)
+    (guard (and (bottom-cut? left) (bottom-cut? right)) then equivalent)
+    (guard (bottom-cut? left) then lesser)
+    (guard (bottom-cut? right) then greater)
+    (guard (and (top-cut? left) (top-cut? right)) then equivalent)
+    (guard (top-cut? left) then greater)
+    (guard (top-cut? right) then lesser)
+    (define result
+      (compare
+       base-comparator
+       (intermediate-cut-value left)
+       (intermediate-cut-value right)))
+    (guard (or (equal? result lesser) (equal? result greater)) then result)
+    (guard (and (lower-cut? left) (lower-cut? right)) then equivalent)
+    (guard (lower-cut? left) then lesser)
+    (guard (lower-cut? right) then greater)
+    (guard (and (middle-cut? left) (middle-cut? right)) then equivalent)
+    (guard (middle-cut? left) then lesser)
+    (guard (middle-cut? right) then greater)
+    equivalent)
   (make-comparator cmp #:name enclosing-function-name))
 
 (define (range-contains? rng v)
@@ -457,17 +455,15 @@
        (xor (inclusive-bound? (range-lower-bound range))
             (inclusive-bound? (range-upper-bound range)))))
 
-(define (nonempty-range? range)
-  (cond
-    [(range? range) #t]
-    [else
-     (define lower (range-lower-bound range))
-     (define upper (range-upper-bound range))
-     (or (unbounded? lower)
-         (unbounded? upper)
-         (and (inclusive-bound? lower) (inclusive-bound? upper))
-         (not (equal? (range-bound-endpoint lower)
-                      (range-bound-endpoint upper))))]))
+(define/guard (nonempty-range? range)
+  (guard (range? range) else #false)
+  (define lower (range-lower-bound range))
+  (define upper (range-upper-bound range))
+  (or (unbounded? lower)
+      (unbounded? upper)
+      (and (inclusive-bound? lower) (inclusive-bound? upper))
+      (not (equal? (range-bound-endpoint lower)
+                   (range-bound-endpoint upper)))))
 
 (define (range-encloses? outer inner)
   (define outer-lower (range-lower-cut outer))

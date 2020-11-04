@@ -11,7 +11,8 @@
         [_ sequence?])]))
 
 (require racket/math
-         racket/sequence)
+         racket/sequence
+         rebellion/private/guarded-block)
 
 (module+ test
   (require (submod "..")
@@ -19,16 +20,14 @@
 
 ;@------------------------------------------------------------------------------
 
-(define (subsequence sequence start [end #f])
-  (cond
-    [end
-     (define limit (- end start))
-     (define indexed-tail
-       (sequence-map cons (in-indexed (sequence-tail sequence start))))
-     (define indexed-subsequence
-       (stop-before indexed-tail (λ (pair) (>= (cdr pair) limit))))
-     (sequence-map car indexed-subsequence)]
-    [else (sequence-tail sequence start)]))
+(define/guard (subsequence sequence start [end #false])
+  (guard end else (sequence-tail sequence start))
+  (define limit (- end start))
+  (define indexed-tail
+    (sequence-map cons (in-indexed (sequence-tail sequence start))))
+  (define indexed-subsequence
+    (stop-before indexed-tail (λ (pair) (>= (cdr pair) limit))))
+  (sequence-map car indexed-subsequence))
 
 (module+ test
   (test-case "subsequence"

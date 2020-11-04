@@ -14,11 +14,12 @@
   [octet-stream->bitstring (-> octet-stream? bitstring?)]
   [octet-stream->media (-> octet-stream? media?)]))
 
-(require rebellion/binary/bitstring
+(require rebellion/base/immutable-string
+         rebellion/binary/bitstring
          rebellion/binary/immutable-bytes
          rebellion/collection/record
-         rebellion/base/immutable-string
          rebellion/media
+         rebellion/private/guarded-block
          rebellion/type/tuple)
 
 (module+ test
@@ -55,12 +56,12 @@
   (define bstr (media-bytes m))
   (define type (media-get-type m))
   (define padding
-    (cond [(application/octet-stream? type)
-           (define params (media-type-parameters type))
-           (if (record-contains-key? params '#:padding)
-               (string->number (record-ref params '#:padding))
-               0)]
-          [else 0]))
+    (guarded-block
+      (guard (application/octet-stream? type) else 0)
+      (define params (media-type-parameters type))
+      (if (record-contains-key? params '#:padding)
+          (string->number (record-ref params '#:padding))
+          0)))
   (octet-stream bstr #:padding padding))
 
 (define (octet-stream->media octets)

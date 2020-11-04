@@ -38,6 +38,7 @@
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
+         rebellion/private/guarded-block
          rebellion/private/impersonation
          rebellion/type/record
          rebellion/type/object/base
@@ -125,11 +126,10 @@
   (define private-fields (object-type-private-fields type))
   (define (positional-keyword-constructor kws vs)
     (define args
-      (cond
-        [(equal? (length kws) size) vs]
-        [else
-         (define-values (before-name after-name) (split-at vs name-position))
-         (append before-name (list #f) after-name)]))
+      (guarded-block
+        (guard (equal? (length kws) size) then vs)
+        (define-values (before-name after-name) (split-at vs name-position))
+        (append before-name (list #false) after-name)))
     (apply constructor args))
   (define arity-unchecked-constructor
     (make-keyword-procedure positional-keyword-constructor))

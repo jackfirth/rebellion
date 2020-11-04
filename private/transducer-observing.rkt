@@ -21,6 +21,7 @@
   [half-closed-emit-event-value (-> half-closed-emit-event? any/c)]))
 
 (require rebellion/base/variant
+         rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/private/transducer-contract
          rebellion/streaming/transducer/base
@@ -111,25 +112,22 @@
     (define event (materialized-transduction-step-event step))
     (define original-state (materialized-transduction-step-original-state step))
     (define next-state
-      (cond
-        [(variant? original-state)
-         (case (variant-tag original-state)
-           [(#:half-closed-emit)
-            (define em
-              (original-half-closed-emitter (variant-value original-state)))
-            (define next-step
-              (materialized-transduction-step
-               #:event (half-closed-emit-event (half-closed-emission-value em))
-               #:original-state (half-closed-emission-state em)))
-            (variant #:half-closed-emit next-step)]
-           [else
-            (original-finisher (variant-value original-state))
-            (define next-step
-              (materialized-transduction-step
-               #:event finish-event
-               #:original-state #f))
-            (variant #:half-closed-emit next-step)])]
-        [else (variant #:finish #f)]))
+      (guarded-block
+        (guard (variant? original-state) else (variant #:finish #false))
+        (guard (equal? (variant-tag original-state) '#:half-closed-emit) else
+          (original-finisher (variant-value original-state))
+          (define next-step
+            (materialized-transduction-step
+             #:event finish-event
+             #:original-state #false))
+          (variant #:half-closed-emit next-step))
+        (define em
+          (original-half-closed-emitter (variant-value original-state)))
+        (define next-step
+          (materialized-transduction-step
+           #:event (half-closed-emit-event (half-closed-emission-value em))
+           #:original-state (half-closed-emission-state em)))
+        (variant #:half-closed-emit next-step)))
     (half-closed-emission next-state event))
   
   (make-transducer

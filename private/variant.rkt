@@ -22,6 +22,7 @@
          racket/string
          racket/struct
          rebellion/private/contract-projection
+         rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/type/tuple)
 
@@ -141,11 +142,10 @@
 (define (build-variant-contract-first-order-test case-keywords case-contracts)
   (define first-order-case-tests (map contract-first-order case-contracts))
   (λ (first-order-test v)
-    (cond
-      [(not (variant? v)) #false]
-      [else
-       (define index (index-of case-keywords (variant-tag v)))
-       (and index ((list-ref first-order-case-tests index) v))])))
+    (guarded-block
+      (guard (variant? v) else #false)
+      (define index (index-of case-keywords (variant-tag v)))
+      (and index ((list-ref first-order-case-tests index) v)))))
 
 (define (assert-variant-tag var tags blame #:missing-party missing-party)
   (define tail (member (variant-tag var) tags))

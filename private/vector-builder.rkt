@@ -23,6 +23,7 @@
          racket/vector
          rebellion/collection/immutable-vector
          rebellion/collection/list
+         rebellion/private/guarded-block
          rebellion/private/static-name)
 
 (module+ test
@@ -41,15 +42,15 @@
 (define/name unused-vector-builder/c
   (flat-contract-with-explanation
    (λ (v)
-     (cond
-       [(not (vector-builder? v))
-        (define template '(expected: "vector-builder?" given: "~e"))
-        (λ (blame) (raise-blame-error blame v template v))]
-       [(not (positive? (vector-builder-uses-remaining v)))
-        (define template
-          '("this builder has already been used\n  builder: ~e"))
-        (λ (blame) (raise-blame-error blame v template v))]
-       [else #t]))
+     (guarded-block
+       (guard (vector-builder? v) else
+         (define template '(expected: "vector-builder?" given: "~e"))
+         (λ (blame) (raise-blame-error blame v template v)))
+       (guard (positive? (vector-builder-uses-remaining v)) else
+         (define template
+           '("this builder has already been used\n  builder: ~e"))
+         (λ (blame) (raise-blame-error blame v template v)))
+       #true))
    #:name enclosing-variable-name))
 
 (define (make-vector-builder [initial-contents empty-list]
@@ -61,16 +62,14 @@
   (for ([v initial-contents] [i (in-naturals)]) (vector-set! contents i v))
   (constructor:vector-builder 1 2 contents initial-position))
 
-(define (vector-builder-mark-used-once builder)
+(define/guard (vector-builder-mark-used-once builder)
   (define new-uses (sub1 (vector-builder-uses-remaining builder)))
   (set-vector-builder-uses-remaining! builder new-uses)
-  (cond
-    [(zero? new-uses)
-     (define next-total (vector-builder-next-total-uses builder))
-     (define contents (vector-builder-contents builder))
-     (define position (vector-builder-position builder))
-     (constructor:vector-builder next-total (* next-total 2) contents position)]
-    [else builder]))
+  (guard (zero? new-uses) else builder)
+  (define next-total (vector-builder-next-total-uses builder))
+  (define contents (vector-builder-contents builder))
+  (define position (vector-builder-position builder))
+  (constructor:vector-builder next-total (* next-total 2) contents position))
 
 (define (vector-builder-add builder . vs)
   (define len (length vs))

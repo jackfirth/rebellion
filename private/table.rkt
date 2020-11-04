@@ -26,6 +26,7 @@
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
+         rebellion/private/guarded-block
          rebellion/private/markup
          rebellion/private/static-name
          rebellion/streaming/reducer
@@ -150,32 +151,31 @@
                  #:columns empty-keyset
                  #:lists (make-vector 0 #f)))
 
-(define (table-builder-add builder record)
+(define/guard (table-builder-add builder record)
   (define size (table-builder-size builder))
   (define columns (table-builder-columns builder))
   (define lists (table-builder-lists builder))
-  (cond [(zero? size)
-         (define lists
-           (for/vector #:length (record-size record)
-             ([v (in-vector (record-values record))])
-             (list v)))
-         (table-builder #:size 1
-                        #:columns (record-keywords record)
-                        #:lists lists)]
-        [else
-         (unless (equal? columns (record-keywords record))
-           (define msg "record contains different keys than previous records")
-           (raise-arguments-error (name into-table)
-                                  msg
-                                  "record" record
-                                  "previous-keys" columns))
-         (for ([lst (in-vector lists)]
-               [i (in-naturals)])
-           (define kw (keyset-ref columns i))
-           (vector-set! lists i (cons (record-ref record kw) lst)))
-         (table-builder #:size (add1 size)
-                        #:columns columns
-                        #:lists lists)]))
+  (guard (zero? size) then
+    (define lists
+      (for/vector #:length (record-size record)
+        ([v (in-vector (record-values record))])
+        (list v)))
+    (table-builder #:size 1
+                   #:columns (record-keywords record)
+                   #:lists lists))
+  (unless (equal? columns (record-keywords record))
+    (define msg "record contains different keys than previous records")
+    (raise-arguments-error (name into-table)
+                           msg
+                           "record" record
+                           "previous-keys" columns))
+  (for ([lst (in-vector lists)]
+        [i (in-naturals)])
+    (define kw (keyset-ref columns i))
+    (vector-set! lists i (cons (record-ref record kw) lst)))
+  (table-builder #:size (add1 size)
+                 #:columns columns
+                 #:lists lists))
 
 (define (build-table builder)
   (define size (table-builder-size builder))
