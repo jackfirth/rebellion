@@ -139,7 +139,7 @@
             (byte 1 1 1 1 1 1 0 1)
             (byte 1 1 1 1 1 1 1 0)))
     (for ([x (in-range 256)]
-          #:when #t
+          #:when #true
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
       (check-equal? (byte-ref (byte-and x pattern) i) 0))
@@ -162,7 +162,7 @@
             (byte 0 0 0 0 0 0 1 0)
             (byte 0 0 0 0 0 0 0 1)))
     (for ([x (in-range 256)]
-          #:when #t
+          #:when #true
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
         (check-equal? (byte-ref (byte-or x pattern) i) 1)))
@@ -214,7 +214,7 @@
             (byte 1 1 1 1 1 1 0 1)
             (byte 1 1 1 1 1 1 1 0)))
     (for ([x (in-range 256)]
-          #:when #t
+          #:when #true
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
       (check-equal? (byte-ref (byte-nand x pattern) i) 1))
@@ -237,7 +237,7 @@
             (byte 0 0 0 0 0 0 1 0)
             (byte 0 0 0 0 0 0 0 1)))
     (for ([x (in-range 256)]
-          #:when #t
+          #:when #true
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
       (check-equal? (byte-ref (byte-nor x pattern) i) 0))
@@ -267,7 +267,7 @@
 (module+ test
   (test-case (name-string in-byte)
     (for ([x (in-range 256)]
-          #:when #t
+          #:when #true
           [b (in-byte x)]
           [i (in-range 8)])
       (check-equal? b (byte-ref x i))))

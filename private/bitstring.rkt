@@ -53,7 +53,7 @@
        (for/list
            ([byte (in-bytes bytes)]
             [n (in-naturals)]
-            #:when #t
+            #:when #true
             [bit (in-range
                   (if (equal? n (sub1 num-bytes))
                       (- 8 padding)
@@ -85,7 +85,11 @@
              [current-index 0]
              #:result (void))
             ([b (in-sequences (in-list bits) (in-list padding-bits))]
-             [eighth-bit? (in-cycle (in-list (list #f #f #f #f #f #f #f #t)))])
+             [eighth-bit?
+              (in-cycle
+               (in-list
+                (list
+                 #false #false #false #false #false #false #false #true)))])
     (guarded-block
       (define next-byte (+ b (* current-byte 2)))
       (guard eighth-bit? else (values next-byte current-index))

@@ -8,11 +8,11 @@
   [compare (-> comparator? any/c any/c comparison?)]
   [make-comparator
    (->* ((-> any/c any/c comparison?))
-        (#:name (or/c interned-symbol? #f))
+        (#:name (or/c interned-symbol? #false))
         comparator?)]
   [comparator-map
    (->* (comparator? (-> any/c any/c))
-        (#:name (or/c interned-symbol? #f))
+        (#:name (or/c interned-symbol? #false))
         comparator?)]
   [comparator-reverse
    (-> comparator? comparator?)]
@@ -25,7 +25,7 @@
   [comparable-real? predicate/c]
   [comparator-impersonate
    (->* (comparator?)
-        (#:operand-guard (or/c (-> any/c any/c) #f)
+        (#:operand-guard (or/c (-> any/c any/c) #false)
          #:properties impersonator-property-hash/c
          #:comparison-marks (and/c hash? immutable?)
          #:chaperone? boolean?)
@@ -60,7 +60,7 @@
 
 (define (comparison? v) (or (lesser? v) (greater? v) (equivalent? v)))
 
-(define (make-comparator function* #:name [name #f])
+(define (make-comparator function* #:name [name #false])
   (define function
     (if (equal? (procedure-arity function*) 2)
         function*
@@ -70,7 +70,7 @@
 (define (compare comparator left right)
   ((comparator-function comparator) left right))
 
-(define (comparator-map comparator mapper #:name [name #f])
+(define (comparator-map comparator mapper #:name [name #false])
   (define func (comparator-function comparator))
   (define (wrapped-func left right) (func (mapper left) (mapper right)))
   (make-comparator wrapped-func #:name name))
@@ -149,7 +149,7 @@
   (values (argument-guard left) (argument-guard right)))
 
 (define (comparator-impersonate comparator
-                                #:operand-guard [guard #f]
+                                #:operand-guard [guard #false]
                                 #:properties [properties (hash)]
                                 #:comparison-marks [marks (hash)]
                                 #:chaperone? [chaperone? (not guard)])
@@ -173,7 +173,7 @@
     (define chaperoned
       (comparator-impersonate real<=>
                               #:operand-guard ensure-integer
-                              #:chaperone? #t))
+                              #:chaperone? #true))
     (check-equal? (compare chaperoned 5 8) (compare real<=> 5 8))
     (check-exn exn:fail:contract? (λ () (compare chaperoned 5 7.5)))
     (check-equal? chaperoned real<=>)
@@ -190,7 +190,8 @@
   (define operand-projection (contract-late-neg-projection operand-contract))
   (define chaperone? (chaperone-contract? operand-contract))
   (define (projection blame)
-    (define operand-blame (blame-add-context blame "an operand of" #:swap? #t))
+    (define operand-blame
+      (blame-add-context blame "an operand of" #:swap? #true))
     (define late-neg-operand-guard (operand-projection operand-blame))
     (λ (v missing-party)
       (assert-satisfies v comparator? blame #:missing-party missing-party)

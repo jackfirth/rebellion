@@ -70,7 +70,7 @@ with equality unless otherwise stated.
 
 @defproc[(comparator-map [comparator comparator?]
                          [f (-> any/c any/c)]
-                         [#:name name (or/c interned-symbol? #f) #f])
+                         [#:name name (or/c interned-symbol? #false) #false])
          comparator?]{
  Wraps @racket[comparator] as a @tech{comparator} that first calls @racket[f] on
  both of its inputs before comparing them. Beware that this often creates a
@@ -85,7 +85,7 @@ with equality unless otherwise stated.
             (circle #:color 'blue #:radius 8)))}
 
 @defproc[(make-comparator [function (-> any/c any/c comparison?)]
-                          [#:name name (or/c interned-symbol? #f) #f])
+                          [#:name name (or/c interned-symbol? #false) #false])
          comparator?]{
  Constructs a @tech{comparator} named @racket[name] that compares values by
  calling @racket[function]. Most users should use @racket[comparator-map] to
@@ -200,9 +200,9 @@ with equality unless otherwise stated.
 
 @defproc[(comparator-impersonate
           [comparator comparator?]
-          [#:operand-guard operand-guard (or/c (-> any/c any/c #f)) #f]
+          [#:operand-guard operand-guard (or/c (-> any/c any/c #false)) #false]
           [#:properties properties
-           (hash/c impersonator-property? any/c #:immutable #t)
+           (hash/c impersonator-property? any/c #:immutable #true)
            empty-hash]
           [#:comparison-marks marks immutable-hash? empty-hash]
           [#:chaperone? chaperone? boolean? (false? operand-guard)])
@@ -227,7 +227,7 @@ with equality unless otherwise stated.
     (define printing-real<=>
       (comparator-impersonate real<=>
                               #:operand-guard (λ (x) (printf "Got ~a\n" x) x)
-                              #:chaperone? #t)))
+                              #:chaperone? #true)))
 
    (compare printing-real<=> 4 8)
    (chaperone-of? printing-real<=> real<=>))}

@@ -113,7 +113,7 @@ key-value pairs.
    (association-list-values (association-list 'a 1 'b 2 'a 3 'b 4)))}
 
 @defproc[(association-list-entries [assoc association-list?])
-         (vectorof entry? #:immutable #t)]{
+         (vectorof entry? #:immutable #true)]{
  Returns all key-value mappings in @racket[assoc], as an immutable vector of
  @tech{entries}. The same ordering guarantees as @racket[
  association-list-values] apply to the returned entries.
@@ -124,8 +124,8 @@ key-value pairs.
 
 @defproc[(association-list-contains-key? [assoc association-list?] [k any/c])
          boolean?]{
- Returns @racket[#t] if @racket[assoc] contains any mappings for the key
- @racket[k], returns @racket[#f] otherwise.
+ Returns @racket[#true] if @racket[assoc] contains any mappings for the key
+ @racket[k], returns @racket[#false] otherwise.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -135,8 +135,8 @@ key-value pairs.
 
 @defproc[(association-list-contains-value? [assoc association-list?] [v any/c])
          boolean?]{
- Returns @racket[#t] if @racket[assoc] contains any mappings with the value
- @racket[v], returns @racket[#f] otherwise.
+ Returns @racket[#true] if @racket[assoc] contains any mappings with the value
+ @racket[v], returns @racket[#false] otherwise.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -146,8 +146,8 @@ key-value pairs.
 
 @defproc[(association-list-contains-entry? [assoc association-list?] [e entry?])
          boolean?]{
- Returns @racket[#t] if @racket[assoc] contains a mapping equal to @racket[e],
- returns @racket[#f] otherwise.
+ Returns @racket[#true] if @racket[assoc] contains a mapping equal to
+ @racket[e], returns @racket[#false] otherwise.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -158,7 +158,7 @@ key-value pairs.
 
 @defproc[(association-list->hash [assoc association-list?])
          (hash/c any/c nonempty-immutable-vector?
-                 #:immutable #t)]{
+                 #:immutable #true)]{
  Converts @racket[assoc] into a hash table mapping keys to immutable vectors of
  their values.
 

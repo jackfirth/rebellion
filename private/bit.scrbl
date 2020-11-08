@@ -33,5 +33,5 @@ A @deftech{bit} is either zero or one. Eight bits form a @tech{byte}, and a
 
  @(examples
    #:eval (make-evaluator) #:once
-   (boolean->bit #t)
-   (boolean->bit #f))}
+   (boolean->bit #true)
+   (boolean->bit #false))}
