@@ -53,7 +53,7 @@ a single time. Converters are typically named in the pattern
 @defproc[(make-converter
           [forward-function (-> any/c any/c)]
           [backward-function (-> any/c any/c)]
-          [#:name name (or/c interned-symbol? #f) #f])
+          [#:name name (or/c interned-symbol? #false) #false])
          converter?]{
  Constructs a @tech{converter} named @racket[name] that uses
  @racket[forward-function] and @racket[backward-function] to convert values.

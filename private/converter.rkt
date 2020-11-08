@@ -6,7 +6,8 @@
  (contract-out
   [converter? predicate/c]
   [make-converter
-   (->* ((-> any/c any/c) (-> any/c any/c)) (#:name (or/c interned-symbol? #f))
+   (->* ((-> any/c any/c) (-> any/c any/c))
+        (#:name (or/c interned-symbol? #false))
         converter?)]
   [convert-forward (-> converter? any/c any/c)]
   [convert-backward (-> converter? any/c any/c)]
@@ -18,7 +19,7 @@
   [symbol<->keyword (converter/c symbol? keyword?)]
   [converter-pipe (-> converter? ... converter?)]
   [converter-flip
-   (->* (converter?) (#:name (or/c interned-symbol? #f)) converter?)]))
+   (->* (converter?) (#:name (or/c interned-symbol? #false)) converter?)]))
 
 (require racket/bool
          racket/contract/combinator
@@ -49,7 +50,7 @@
   #:constructor-name constructor:converter)
 
 
-(define (make-converter forward-function backward-function #:name [name #f])
+(define (make-converter forward-function backward-function #:name [name #false])
   (constructor:converter
    #:forward-function (fix-arity forward-function)
    #:backward-function (fix-arity backward-function)
@@ -74,10 +75,10 @@
 
 (define (converter-impersonate
          converter
-         #:domain-input-guard [domain-input-guard #f]
-         #:domain-output-guard [domain-output-guard #f]
-         #:range-input-guard [range-input-guard #f]
-         #:range-output-guard [range-output-guard #f]
+         #:domain-input-guard [domain-input-guard #false]
+         #:domain-output-guard [domain-output-guard #false]
+         #:range-input-guard [range-input-guard #false]
+         #:range-output-guard [range-output-guard #false]
          #:properties [properties (hash)]
          #:forward-marks [forward-marks (hash)]
          #:backward-marks [backward-marks (hash)]
@@ -125,13 +126,14 @@
   (define (projection blame)
     (define domain-input-blame
       (blame-add-context blame "an input in the converter domain of"
-                         #:swap? #t))
+                         #:swap? #true))
     (define domain-output-blame
       (blame-add-context blame "an output in the converter domain of"))
     (define range-output-blame
       (blame-add-context blame "an output in the converter range of"))
     (define range-input-blame
-      (blame-add-context blame "an input in the converter range of" #:swap? #t))
+      (blame-add-context
+       blame "an input in the converter range of" #:swap? #true))
     (define late-neg-domain-input-guard (domain-projection domain-input-blame))
     (define late-neg-range-output-guard (range-projection range-output-blame))
     (define late-neg-range-input-guard (range-projection range-input-blame))

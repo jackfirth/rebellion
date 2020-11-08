@@ -44,51 +44,51 @@
   (test-case (name-string atomic-boolean-compare-and-exchange!)
 
     (test-case "stay false"
-      (define bool (make-atomic-boolean #f))
-      (check-false (atomic-boolean-compare-and-exchange! bool #t #f))
+      (define bool (make-atomic-boolean #false))
+      (check-false (atomic-boolean-compare-and-exchange! bool #true #false))
       (check-false (atomic-boolean-get bool))
-      (check-false (atomic-boolean-compare-and-exchange! bool #f #f))
+      (check-false (atomic-boolean-compare-and-exchange! bool #false #false))
       (check-false (atomic-boolean-get bool)))
 
     (test-case "stay true"
-      (define bool (make-atomic-boolean #t))
-      (check-true (atomic-boolean-compare-and-exchange! bool #f #t))
+      (define bool (make-atomic-boolean #true))
+      (check-true (atomic-boolean-compare-and-exchange! bool #false #true))
       (check-true (atomic-boolean-get bool))
-      (check-true (atomic-boolean-compare-and-exchange! bool #t #t))
+      (check-true (atomic-boolean-compare-and-exchange! bool #true #true))
       (check-true (atomic-boolean-get bool)))
 
     (test-case "set false to true"
-      (define bool (make-atomic-boolean #f))
-      (check-false (atomic-boolean-compare-and-exchange! bool #t #t))
+      (define bool (make-atomic-boolean #false))
+      (check-false (atomic-boolean-compare-and-exchange! bool #true #true))
       (check-false (atomic-boolean-get bool))
-      (check-false (atomic-boolean-compare-and-exchange! bool #f #t))
+      (check-false (atomic-boolean-compare-and-exchange! bool #false #true))
       (check-true (atomic-boolean-get bool)))
 
     (test-case "set true to false"
-      (define bool (make-atomic-boolean #t))
-      (check-true (atomic-boolean-compare-and-exchange! bool #f #f))
+      (define bool (make-atomic-boolean #true))
+      (check-true (atomic-boolean-compare-and-exchange! bool #false #false))
       (check-true (atomic-boolean-get bool))
-      (check-true (atomic-boolean-compare-and-exchange! bool #t #f))
+      (check-true (atomic-boolean-compare-and-exchange! bool #true #false))
       (check-false (atomic-boolean-get bool))))
 
   (test-case (name-string atomic-boolean-get-then-set!)
 
     (test-case "stay false"
-      (define bool (make-atomic-boolean #f))
-      (check-false (atomic-boolean-get-then-set! bool #f))
+      (define bool (make-atomic-boolean #false))
+      (check-false (atomic-boolean-get-then-set! bool #false))
       (check-false (atomic-boolean-get bool)))
 
     (test-case "stay true"
-      (define bool (make-atomic-boolean #t))
-      (check-true (atomic-boolean-get-then-set! bool #t))
+      (define bool (make-atomic-boolean #true))
+      (check-true (atomic-boolean-get-then-set! bool #true))
       (check-true (atomic-boolean-get bool)))
 
     (test-case "set false to true"
-      (define bool (make-atomic-boolean #f))
-      (check-false (atomic-boolean-get-then-set! bool #t))
+      (define bool (make-atomic-boolean #false))
+      (check-false (atomic-boolean-get-then-set! bool #true))
       (check-true (atomic-boolean-get bool)))
 
     (test-case "set true to false"
-      (define bool (make-atomic-boolean #t))
-      (check-true (atomic-boolean-get-then-set! bool #f))
+      (define bool (make-atomic-boolean #true))
+      (check-true (atomic-boolean-get-then-set! bool #false))
       (check-false (atomic-boolean-get bool)))))

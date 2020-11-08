@@ -7,7 +7,7 @@
   [custom-write-mode/c flat-contract?]
   [custom-write-function/c chaperone-contract?]
   [make-named-object-custom-write
-   (->* (symbol?) (#:name-getter (-> any/c (or/c symbol? #f)))
+   (->* (symbol?) (#:name-getter (-> any/c (or/c symbol? #false)))
         custom-write-function/c)]))
 
 ;@------------------------------------------------------------------------------

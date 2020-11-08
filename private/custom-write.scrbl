@@ -34,12 +34,13 @@ must satisfy the @racket[custom-write-function/c] contract.
 
 @defthing[custom-write-mode/c flat-contract?
           #:value (or/c boolean? 0 1)]{
- A @tech/reference{contract} describing the @racket[_mode] argument to functions matching
- @racket[custom-write-function/c]. See @racket[gen:custom-write] for details.}
+ A @tech/reference{contract} describing the @racket[_mode] argument to functions
+ matching @racket[custom-write-function/c]. See @racket[gen:custom-write] for
+ details.}
 
 @defproc[(make-named-object-custom-write
           [type-name symbol?]
-          [#:name-getter get-name (-> any/c (or/c symbol? #f)) object-name])
+          [#:name-getter get-name (-> any/c (or/c symbol? #false)) object-name])
          custom-write-function/c]{
  Constructs a @tech{custom write implementation} that prints values as opaque,
  unreadable, named objects, similar to the way functions are printed.
@@ -52,4 +53,4 @@ must satisfy the @racket[custom-write-function/c] contract.
 
    (person 'alyssa)
    (person 'jared)
-   (person #f))}
+   (person #false))}

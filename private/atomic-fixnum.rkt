@@ -6,7 +6,7 @@
  (contract-out
   [atomic-fixnum? predicate/c]
   [make-atomic-fixnum
-   (->* (fixnum?) (#:name (or/c interned-symbol? #f)) atomic-fixnum?)]
+   (->* (fixnum?) (#:name (or/c interned-symbol? #false)) atomic-fixnum?)]
   [atomic-fixnum-get (-> atomic-fixnum? fixnum?)]
   [rename set-atomic-fixnum-get! atomic-fixnum-set!
           (-> atomic-fixnum? fixnum? void?)]
@@ -54,7 +54,7 @@
 (define (atomic-fixnum-compare-and-set! num expected replacement)
   (unsafe-struct*-cas! num 0 expected replacement))
 
-(define (make-atomic-fixnum initial-value #:name [name #f])
+(define (make-atomic-fixnum initial-value #:name [name #false])
   (constructor:atomic-fixnum initial-value name))
 
 (define (atomic-fixnum-compare-and-add! num expected amount)

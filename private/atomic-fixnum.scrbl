@@ -56,8 +56,9 @@ operation again. This is a form of Optimistic Concurrency Control (OCC).
 @defproc[(atomic-fixnum? [v any/c]) boolean?]{
  A predicate for @tech{atomic fixnums}.}
 
-@defproc[(make-atomic-fixnum [initial-value fixnum?]
-                             [#:name name (or/c interned-symbol? #f) #f])
+@defproc[(make-atomic-fixnum
+          [initial-value fixnum?]
+          [#:name name (or/c interned-symbol? #false) #false])
          atomic-fixnum?]{
  Constructs a new @tech{atomic fixnum} named @racket[name] and set to @racket[
  initial-value]. Providing a @racket[name] is recommended for debugging and

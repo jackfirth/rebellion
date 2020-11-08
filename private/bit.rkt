@@ -25,5 +25,5 @@
     (check-false (bit->boolean 0))
     (check-true (bit->boolean 1)))
   (test-case (name-string boolean->bit)
-    (check-equal? (boolean->bit #f) 0)
-    (check-equal? (boolean->bit #t) 1)))
+    (check-equal? (boolean->bit #false) 0)
+    (check-equal? (boolean->bit #true) 1)))

@@ -12,12 +12,12 @@
   [association-list-unique-keys (-> association-list? set?)]
   [association-list-values (-> association-list? immutable-vector?)]
   [association-list-entries
-   (-> association-list? (vectorof entry? #:immutable #t #:flat? #t))]
+   (-> association-list? (vectorof entry? #:immutable #true #:flat? #true))]
   [association-list->hash
    (-> association-list?
        (hash/c any/c nonempty-immutable-vector?
-               #:immutable #t
-               #:flat? #t))]
+               #:immutable #true
+               #:flat? #true))]
   [association-list-contains-key? (-> association-list? any/c boolean?)]
   [association-list-contains-value? (-> association-list? any/c boolean?)]
   [association-list-contains-entry? (-> association-list? entry? boolean?)]
