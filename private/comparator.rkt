@@ -22,6 +22,7 @@
   [equivalent comparison?]
   [real<=> (comparator/c comparable-real?)]
   [string<=> (comparator/c immutable-string?)]
+  [char<=> (comparator/c char?)]
   [comparable-real? predicate/c]
   [comparator-impersonate
    (->* (comparator?)
@@ -96,6 +97,11 @@
            [else greater]))
    #:name enclosing-variable-name))
 
+(define/name char<=>
+  (make-comparator
+   (λ (c1 c2) (cond [(char<? c1 c2) lesser] [(equal? c1 c2) equivalent] [else greater]))
+   #:name enclosing-variable-name))
+
 (module+ test
   (test-case (name-string real<=>)
     (check-equal? (compare real<=> 4 5.2) lesser)
@@ -130,6 +136,11 @@
       (check-equal? (compare real<=> +inf.f +inf.0) equivalent)
       (check-equal? (compare real<=> -inf.0 -inf.f) equivalent)
       (check-equal? (compare real<=> -inf.f -inf.0) equivalent)))
+
+  (test-case (name-string char<=>)
+    (check-equal? (compare char<=> #\e #\s) lesser)
+    (check-equal? (compare char<=> #\e #\a) greater)
+    (check-equal? (compare char<=> #\e #\e) equivalent))
 
   (test-case (name-string string<=>)
     (check-equal? (compare string<=> "apple" "banana") lesser)
