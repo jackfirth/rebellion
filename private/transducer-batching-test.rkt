@@ -76,4 +76,9 @@
       (check-equal? (transduce empty-list trans #:into into-list)
                     (list start-event
                           half-close-event
-                          finish-event)))))
+                          finish-event)))
+
+    (test-case "should be composable with other transducers"
+      (define trans (batching into-list))
+      (define actual (transduce (in-range 10) trans (mapping length) #:into into-list))
+      (check-equal? actual (list 10)))))
