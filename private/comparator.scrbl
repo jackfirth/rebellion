@@ -160,6 +160,19 @@ with equality unless otherwise stated.
    (compare string<=> "aardvark" "zebra")
    (eval:error (compare string<=> "aardvark" (make-string 5 #\z))))}
 
+@defthing[char<=> (comparator/c char?)]{
+ A @tech{comparator} that compares characters. Comparisons are consistent with the order imposed by
+ @racket[char<?].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare char<=> #\a #\z))}
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare string<=> "aardvark" "zebra")
+   (eval:error (compare string<=> "aardvark" (make-string 5 #\z))))}
+
 @section{Comparison Constants}
 
 @defproc[(comparison? [v any/c]) boolean?]{
