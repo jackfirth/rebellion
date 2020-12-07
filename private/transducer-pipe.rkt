@@ -210,11 +210,15 @@
   (define upstream-half-closer (transducer-half-closer upstream))
   (define next-upstream-state
     (upstream-half-closer (variant-value upstream-state)))
-  (tag-pipe-state
-   (pipe-state #:upstream-transducer upstream
-               #:upstream-state next-upstream-state
-               #:downstream-transducer downstream
-               #:downstream-state downstream-state)))
+  (change-emit-to-half-closed-emit
+   (tag-pipe-state
+    (pipe-state #:upstream-transducer upstream
+                #:upstream-state next-upstream-state
+                #:downstream-transducer downstream
+                #:downstream-state downstream-state))))
+
+(define (change-emit-to-half-closed-emit state)
+  (if (variant-tagged-as? state '#:emit) (variant #:half-closed-emit (variant-value state)) state))
 
 (define (pipe-half-closed-emit state)
   (define upstream (pipe-state-upstream-transducer state))
