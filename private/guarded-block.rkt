@@ -6,13 +6,19 @@
 
 (provide define/guard
          guard
+         guard-match
          guarded-block
          then)
 
 (require (for-syntax racket/base
                      syntax/parse
                      syntax/parse/lib/function-header)
+         racket/match
          syntax/parse/define)
+
+(module+ test
+  (require (submod "..")
+           rackunit))
 
 ;@------------------------------------------------------------------------------
 
@@ -58,3 +64,34 @@
 
 (define-simple-macro (define/guard header:function-header body:expr ...+)
   (define header (guarded-begin body ...)))
+
+(define-syntax-parser guard-match
+  #:literals (then else)
+  [(_ pattern subject:expr then success-body ...+)
+   #'(begin
+       (define subject-matched? (match subject [pattern #true] [_ #false]))
+       (guard subject-matched? then
+         (match-define pattern subject)
+         success-body ...))]
+  [(_ pattern subject:expr else failure-body ...+)
+   #'(begin
+       (define subject-matched? (match subject [pattern #true] [_ #false]))
+       (guard subject-matched? else failure-body ...)
+       (match-define pattern subject))])
+
+(module+ test
+  (test-case "guard-match"
+
+    (test-case "then branch"
+      (define/guard (f opt)
+        (guard-match (? number? x) opt then (format "x = ~a" x))
+        "failed")
+      (check-equal? (f "not a number") "failed")
+      (check-equal? (f 5) "x = 5"))
+
+    (test-case "else branch"
+      (define/guard (f opt)
+        (guard-match (? number? x) opt else "failed")
+        (format "x = ~a" x))
+      (check-equal? (f "not a number") "failed")
+      (check-equal? (f 5) "x = 5"))))
