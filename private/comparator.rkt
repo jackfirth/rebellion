@@ -7,15 +7,11 @@
   [comparator? predicate/c]
   [compare (-> comparator? any/c any/c comparison?)]
   [make-comparator
-   (->* ((-> any/c any/c comparison?))
-        (#:name (or/c interned-symbol? #false))
-        comparator?)]
+   (->* ((-> any/c any/c comparison?)) (#:name (or/c interned-symbol? #false)) comparator?)]
   [comparator-map
-   (->* (comparator? (-> any/c any/c))
-        (#:name (or/c interned-symbol? #false))
-        comparator?)]
-  [comparator-reverse
-   (-> comparator? comparator?)]
+   (->* (comparator? (-> any/c any/c)) (#:name (or/c interned-symbol? #false)) comparator?)]
+  [comparator-reverse (-> comparator? comparator?)]
+  [comparator-of-constants (-> any/c ... comparator?)]
   [comparison? predicate/c]
   [lesser comparison?]
   [greater comparison?]
@@ -23,6 +19,8 @@
   [real<=> (comparator/c comparable-real?)]
   [string<=> (comparator/c immutable-string?)]
   [char<=> (comparator/c char?)]
+  [symbol<=> (comparator/c symbol?)]
+  [interned-symbol<=> (comparator/c interned-symbol?)]
   [comparable-real? predicate/c]
   [comparator-impersonate
    (->* (comparator?)
@@ -34,6 +32,8 @@
   [comparator/c (-> contract? contract?)]))
 
 (require racket/contract/combinator
+         racket/list
+         racket/set
          rebellion/base/immutable-string
          rebellion/base/symbol
          rebellion/private/contract-projection
@@ -81,6 +81,28 @@
   (define (wrapped-func left right) (func right left))
   (make-comparator wrapped-func))
 
+(define (has-duplicates? lst)
+  (not (equal? (set-count (list->set lst)) (length lst))))
+
+(define/name (comparator-of-constants . ascending-constants)
+  (when (has-duplicates? ascending-constants)
+    (define duplicate (check-duplicates ascending-constants))
+    (raise-arguments-error
+     enclosing-function-name
+     "contract violation;\n constants must be unique to prevent ambiguity"
+     "constants" ascending-constants
+     "duplicate" duplicate))
+  (make-comparator
+   (λ (x y)
+     (define i (index-of ascending-constants x))
+     (define j (index-of ascending-constants y))
+     (unless i
+       (raise-argument-error enclosing-function-name (format "one of ~v" ascending-constants) x))
+     (unless j
+       (raise-argument-error enclosing-function-name (format "one of ~v" ascending-constants) y))
+     (compare real<=> i j))
+   #:name enclosing-function-name))
+
 (define (comparable-real? v) (and (real? v) (not (equal? v +nan.0))))
 
 (define/name real<=>
@@ -100,6 +122,21 @@
 (define/name char<=>
   (make-comparator
    (λ (c1 c2) (cond [(char<? c1 c2) lesser] [(equal? c1 c2) equivalent] [else greater]))
+   #:name enclosing-variable-name))
+
+(define/name symbol<=>
+  (make-comparator
+   (λ (s1 s2)
+     (cond
+       [(eq? s1 s2) equivalent]
+       [(symbol<? s1 s2) lesser]
+       [(symbol<? s2 s1) greater]
+       [else equivalent]))
+   #:name enclosing-variable-name))
+
+(define/name interned-symbol<=>
+  (make-comparator
+   (λ (s1 s2) (cond [(eq? s1 s2) equivalent] [(symbol<? s1 s2) lesser] [else greater]))
    #:name enclosing-variable-name))
 
 (module+ test
@@ -146,12 +183,48 @@
     (check-equal? (compare string<=> "apple" "banana") lesser)
     (check-equal? (compare string<=> "apple" "aardvark") greater)
     (check-equal? (compare string<=> "apple" "apple") equivalent))
+
+  (test-case (name-string symbol<=>)
+    (check-equal? (compare symbol<=> 'apple 'banana) lesser)
+    (check-equal? (compare symbol<=> 'apple 'aardvark) greater)
+    (check-equal? (compare symbol<=> 'apple 'apple) equivalent)
+    (check-equal? (compare symbol<=> 'apple (string->unreadable-symbol "apple")) equivalent)
+    (check-equal? (compare symbol<=> 'apple (string->uninterned-symbol "apple")) equivalent))
+
+  (test-case (name-string interned-symbol<=>)
+    (check-equal? (compare interned-symbol<=> 'apple 'banana) lesser)
+    (check-equal? (compare interned-symbol<=> 'apple 'aardvark) greater)
+    (check-equal? (compare interned-symbol<=> 'apple 'apple) equivalent)
+    (check-exn
+     exn:fail:contract?
+     (λ () (compare interned-symbol<=> 'apple (string->unreadable-symbol "apple"))))
+    (check-exn
+     exn:fail:contract?
+     (λ () (compare interned-symbol<=> 'apple (gensym 'apple)))))
   
   (test-case (name-string comparator-reverse)
     (define reversed (comparator-reverse real<=>))
     (check-equal? (compare reversed 1 2) greater)
     (check-equal? (compare reversed 2 1) lesser)
-    (check-equal? (compare reversed 1 1) equivalent)))
+    (check-equal? (compare reversed 1 1) equivalent))
+
+  (test-case (name-string comparator-of-constants)
+    (define size<=> (comparator-of-constants 'small 'medium 'large))
+    (check-equal? (compare size<=> 'small 'medium) lesser)
+    (check-equal? (compare size<=> 'small 'large) lesser)
+    (check-equal? (compare size<=> 'medium 'large) lesser)
+    (check-equal? (compare size<=> 'medium 'small) greater)
+    (check-equal? (compare size<=> 'large 'small) greater)
+    (check-equal? (compare size<=> 'large 'medium) greater)
+    (check-equal? (compare size<=> 'medium 'medium) equivalent)
+    (check-exn exn:fail:contract? (λ () (compare size<=> 'small 'short)))
+    (check-exn #rx"expected: one of '\\(small medium large\\)" (λ () (compare size<=> 'small 'short)))
+    (check-exn #rx"given: 'short" (λ () (compare size<=> 'small 'short)))
+    (check-exn exn:fail:contract? (λ () (comparator-of-constants 'small 'medium 'small)))
+    (check-exn #rx"'small" (λ () (comparator-of-constants 'small 'medium 'small)))
+    (check-exn
+     #rx"'\\(small medium small\\)" (λ () (comparator-of-constants 'small 'medium 'small)))
+    (check-exn exn:fail:contract? (λ () (comparator-of-constants #false #false)))))
 
 ;@------------------------------------------------------------------------------
 ;; Contracts
