@@ -8,9 +8,12 @@
                      rebellion/base/immutable-string
                      rebellion/base/symbol
                      rebellion/collection/hash
+                     rebellion/collection/list
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer
-                     rebellion/type/record)
+                     rebellion/type/enum
+                     rebellion/type/record
+                     rebellion/type/tuple)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
@@ -20,9 +23,12 @@
     #:public (list 'racket/contract/base
                    'racket/contract/region
                    'rebellion/base/comparator
+                   'rebellion/collection/list
                    'rebellion/streaming/reducer
                    'rebellion/streaming/transducer
-                   'rebellion/type/record)
+                   'rebellion/type/enum
+                   'rebellion/type/record
+                   'rebellion/type/tuple)
     #:private (list 'racket/base)))
 
 @title{Comparators}
@@ -125,6 +131,31 @@ with equality unless otherwise stated.
    #:eval (make-evaluator) #:once
    (compare real<=> 2 5)
    (compare (comparator-reverse real<=>) 2 5))}
+
+@defproc[(comparator-chain
+          [comparator comparator?] ...+ [#:name name (or/c interned-symbol? #false) #false])
+         comparator?]{
+ Chains each @racket[comparator] together into a single comparator named @racket[name] that compares
+ values using the leftmost @racket[comparator] first, with each next comparator used to break ties in
+ the previous comparator.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-enum-type gem-type (opal ruby diamond))
+    (define-tuple-type gemstone (type weight))
+    (define gemstone-by-type<=>
+      (comparator-map (comparator-of-constants opal ruby diamond) gemstone-type))
+    (define gemstone-by-weight<=> (comparator-map real<=> gemstone-weight)))
+
+   (transduce (list (gemstone diamond 3)
+                    (gemstone ruby 5)
+                    (gemstone diamond 8)
+                    (gemstone opal 2)
+                    (gemstone ruby 14)
+                    (gemstone opal 12))
+              (sorting (comparator-chain gemstone-by-type<=> gemstone-by-weight<=>))
+              #:into into-list))}
 
 @section{Predefined Comparators}
 
