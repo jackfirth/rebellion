@@ -68,6 +68,18 @@ with equality unless otherwise stated.
 
 @section{Constructing Comparators}
 
+@defproc[(comparator-of-constants [constant any/c] ...) comparator?]{
+ Constructs a @tech{comparator} that compares only the given @racket[constant]s using @racket[equal?].
+ The order the constants are given in is interpreted as ascending order. Each @racket[constant] must
+ be unique, otherwise a contract exception is raised.
+
+ @(examples
+   #:eval (make-evaluator)
+   (eval:no-prompt (define size<=> (comparator-of-constants 'small 'medium 'large)))
+   (compare size<=> 'small 'large)
+   (compare size<=> 'medium 'medium)
+   (eval:error (compare size<=> 'small 'big)))}
+
 @defproc[(comparator-map [comparator comparator?]
                          [f (-> any/c any/c)]
                          [#:name name (or/c interned-symbol? #false) #false])
@@ -168,10 +180,28 @@ with equality unless otherwise stated.
    #:eval (make-evaluator) #:once
    (compare char<=> #\a #\z))}
 
+@defthing[symbol<=> (comparator/c symbol?)]{
+ A @tech{comparator} that lexicographically compares symbols. Symbols are equivalent if they contain
+ the same characters. Note that this comparator is @tech{inconsistent with equality}, because symbols
+ that print the same are not necessarily equal, due to the existence of unreadable and uninterned
+ symbols. If only interned symbols need to be compared, use @racket[interned-symbol<=>] to ensure
+ comparisons are consistent with equality.
+
  @(examples
    #:eval (make-evaluator) #:once
-   (compare string<=> "aardvark" "zebra")
-   (eval:error (compare string<=> "aardvark" (make-string 5 #\z))))}
+   (compare symbol<=> 'aardvark 'zebra)
+   (compare symbol<=> 'aardvark 'aardvark)
+   (compare symbol<=> 'aardvark (string->uninterned-symbol "aardvark")))}
+
+@defthing[interned-symbol<=> (comparator/c interned-symbol?)]{
+ A @tech{comparator} that lexicographically compares interned symbols. Unreadable symbols and
+ uninterned symbols are disallowed to ensure the comparator is @tech{consistent with equality} without
+ imposing an arbitrary order between unequal symbols that print the same.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare interned-symbol<=> 'aardvark 'zebra)
+   (eval:error (compare interned-symbol<=> 'aardvark (gensym 'zebra))))}
 
 @section{Comparison Constants}
 
