@@ -11,6 +11,7 @@
   [comparator-map
    (->* (comparator? (-> any/c any/c)) (#:name (or/c interned-symbol? #false)) comparator?)]
   [comparator-reverse (-> comparator? comparator?)]
+  [comparator-chain (-> comparator? comparator? ... comparator?)]
   [comparator-of-constants (-> any/c ... comparator?)]
   [comparison? predicate/c]
   [lesser comparison?]
@@ -80,6 +81,16 @@
   (define func (comparator-function comparator))
   (define (wrapped-func left right) (func right left))
   (make-comparator wrapped-func))
+
+(define (comparator-chain #:name [name 'chained] . comparators)
+  (make-comparator
+   (λ (x y)
+     (define chain-result
+       (for/or ([comparator (in-list comparators)])
+         (define result (compare comparator x y))
+         (and (not (equal? result equivalent)) result)))
+     (or chain-result equivalent))
+   #:name name))
 
 (define (has-duplicates? lst)
   (not (equal? (set-count (list->set lst)) (length lst))))
@@ -207,6 +218,19 @@
     (check-equal? (compare reversed 1 2) greater)
     (check-equal? (compare reversed 2 1) lesser)
     (check-equal? (compare reversed 1 1) equivalent))
+
+  (test-case (name-string comparator-chain)
+    (struct gemstone (type weight) #:transparent)
+    (define gemstone<=>
+      (comparator-chain
+       (comparator-map (comparator-of-constants 'opal 'ruby) gemstone-type)
+       (comparator-map real<=> gemstone-weight)))
+    (check-equal? (compare gemstone<=> (gemstone 'opal 5) (gemstone 'opal 5)) equivalent)
+    (check-equal? (compare gemstone<=> (gemstone 'opal 5) (gemstone 'opal 3)) greater)
+    (check-equal? (compare gemstone<=> (gemstone 'opal 5) (gemstone 'opal 8)) lesser)
+    (check-equal? (compare gemstone<=> (gemstone 'opal 5) (gemstone 'ruby 5)) lesser)
+    (check-equal? (compare gemstone<=> (gemstone 'opal 5) (gemstone 'ruby 3)) lesser)
+    (check-equal? (compare gemstone<=> (gemstone 'opal 5) (gemstone 'ruby 8)) lesser))
 
   (test-case (name-string comparator-of-constants)
     (define size<=> (comparator-of-constants 'small 'medium 'large))
