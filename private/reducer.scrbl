@@ -15,6 +15,7 @@
                      rebellion/collection/hash
                      rebellion/collection/list
                      rebellion/streaming/reducer
+                     rebellion/streaming/transducer
                      rebellion/type/record)
           (submod rebellion/private/scribble-evaluator-factory doc)
           (submod rebellion/private/scribble-cross-document-tech doc)
@@ -31,6 +32,7 @@
                    'rebellion/base/variant
                    'rebellion/collection/list
                    'rebellion/streaming/reducer
+                   'rebellion/streaming/transducer
                    'rebellion/type/record)
     #:private (list 'racket/base)))
 
@@ -223,6 +225,35 @@ before the sequence is fully consumed.
            (gemstone #:color 'blue #:weight 7)
            (gemstone #:color 'green #:weight 3)
            (gemstone #:color 'yellow #:weight 7)))}
+
+@defproc[(into-sorted?
+          [comparator comparator? real<=>]
+          [#:key key-function (-> any/c any/c) values]
+          [#:descending? descending? boolean? #false]
+          [#:strict? strict? boolean? #false])
+         (reducer/c any/c boolean?)]{
+ Constructs a @tech{reducer} that determines whether the reduced sequence is sorted in ascending order
+ (or descending order, if @racket[descending?] is true) according to @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator)
+   (transduce (list 1 2 3 4 5) #:into (into-sorted?)))
+
+ If @racket[key-function] is provided, it is applied to each element to extract a key and the keys
+ are compared instead of the elements themselves.
+
+ @(examples
+   #:eval (make-evaluator)
+   (transduce (list "cat" "dog" "horse" "zebra") #:into (into-sorted? #:key string-length)))
+
+ If @racket[strict?] is true, the elements must be @emph{strictly} ascending or descending --- that
+ is, the reducer returns false for sequences where adjacent elements are equivalent according to
+ @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator)
+   (transduce (list 1 2 2 3) #:into (into-sorted?))
+   (transduce (list 1 2 2 3) #:into (into-sorted? #:strict? #true)))}
 
 @defthing[into-string (reducer/c char? immutable-string?)]{
  A @tech{reducer} that collects a sequence of individual characters into an
