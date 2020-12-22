@@ -41,10 +41,11 @@
   [into-all-match? (-> predicate/c (reducer/c any/c boolean?))]
   [into-none-match? (-> predicate/c (reducer/c any/c boolean?))]
   [into-for-each (-> (-> any/c void?) (reducer/c any/c void?))]
-  [into-max
-   (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
-  [into-min
-   (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
+  [into-max (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
+  [into-min (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
+  [into-sorted?
+   (->* () (comparator? #:key (-> any/c any/c) #:descending? boolean? #:strict? boolean?)
+        (reducer/c any/c boolean?))]
   [into-string (reducer/c char? immutable-string?)]
   [into-line (reducer/c char? immutable-string?)]
   [join-into-string
@@ -73,6 +74,7 @@
          racket/bool
          racket/contract/combinator
          racket/list
+         racket/match
          racket/math
          rebellion/base/comparator
          rebellion/base/immutable-string
@@ -738,3 +740,61 @@
   
   (test-case (name-string into-min)
     (check-equal? (reduce (into-min) 4 8 2 16) (present 2))))
+
+(define/name (into-sorted? [comparator real<=>]
+                      #:key [key-function values]
+                      #:descending? [descending? #false]
+                      #:strict? [strict? #false])
+  (define expected-result?
+    (cond
+      [(and descending? strict?) (λ (result) (equal? result greater))]
+      [descending? (λ (result) (not (equal? result lesser)))]
+      [strict? (λ (result) (equal? result lesser))]
+      [else (λ (result) (not (equal? result greater)))]))
+  (make-reducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer
+   (λ (previous-key element)
+     (define next-key (key-function element))
+     (match previous-key
+       [(== absent) (variant #:consume (present next-key))]
+       [(present previous)
+        (if (expected-result? (compare comparator previous next-key))
+            (variant #:consume (present next-key))
+            (variant #:early-finish #false))]))
+   #:early-finisher (λ (_) #false)
+   #:finisher (λ (_) #true)
+   #:name enclosing-function-name))
+
+(module+ test
+  (test-case (name-string into-sorted?)
+    (test-case "defaults"
+      (check-true (reduce (into-sorted?) 1 2 3 4 5))
+      (check-true (reduce (into-sorted?) 1 2 3 3 4 4 5))
+      (check-false (reduce (into-sorted?) 1 2 5 4 3))
+      (check-true (reduce (into-sorted?) 1))
+      (check-true (reduce (into-sorted?))))
+
+    (test-case "strictly ascending"
+      (define reducer (into-sorted? #:strict? #true))
+      (check-true (reduce reducer 1 2 3 4 5))
+      (check-false (reduce reducer 1 2 3 3 4 4 5))
+      (check-false (reduce reducer 1 2 5 4 3))
+      (check-true (reduce reducer 1))
+      (check-true (reduce reducer)))
+
+    (test-case "descending"
+      (define reducer (into-sorted? #:descending? #true))
+      (check-true (reduce reducer 5 4 3 2 1))
+      (check-true (reduce reducer 5 4 3 3 2 2 1))
+      (check-false (reduce reducer 5 4 1 2 3))
+      (check-true (reduce reducer 1))
+      (check-true (reduce reducer)))
+
+    (test-case "strictly descending"
+      (define reducer (into-sorted? #:descending? #true #:strict? #true))
+      (check-true (reduce reducer 5 4 3 2 1))
+      (check-false (reduce reducer 5 4 3 3 2 2 1))
+      (check-false (reduce reducer 5 4 1 2 3))
+      (check-true (reduce reducer 1))
+      (check-true (reduce reducer)))))
