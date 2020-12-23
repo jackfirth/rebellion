@@ -263,6 +263,24 @@ early, before the input sequence is fully consumed.
               (taking-maxima #:key string-length)
               #:into into-list))}
 
+@defproc[(taking-duplicates [#:key key-function (-> any/c any/c) values]) transducer?]{
+ Constructs a @tech{transducer} that keeps only the duplicate elements of the transduced sequence.
+ The first time an element occurs, it is removed from the sequence. Subsequent occurrences of that
+ element are emitted downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "hello world" (taking-duplicates) #:into into-string))
+
+ If @racket[key-function] is provided, then it is used to extract a key from each element and only
+ elements with duplicate keys are emitted downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list "red" "yellow" "blue" "purple" "green")
+              (taking-duplicates #:key string-length)
+              #:into into-list))}
+
 @defproc[(dropping [amount natural?]) transducer?]{
  Constructs a @tech{transducer} that removes the first @racket[amount] elements
  from the transduced sequence, then passes all remaining elements downstream.
