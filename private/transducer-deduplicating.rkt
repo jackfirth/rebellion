@@ -7,9 +7,7 @@
   [deduplicating (->* () (#:key (-> any/c any/c)) transducer?)]
   [deduplicating-consecutive (->* () (#:key (-> any/c any/c)) transducer?)]))
 
-(require racket/contract/region
-         racket/set
-         rebellion/base/equivalence-relation
+(require racket/set
          rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
