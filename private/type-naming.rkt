@@ -22,7 +22,9 @@
   [default-field-accessor-identifier (-> identifier? identifier? identifier?)]
   [default-unwrapping-accessor-name (-> interned-symbol? interned-symbol?)]
   [default-unwrapping-accessor-identifier (-> identifier? identifier?)]
-  [default-instance-identifier (-> identifier? identifier?)]))
+  [default-instance-identifier (-> identifier? identifier?)]
+  [default-renamer-identifier (-> identifier? identifier?)]
+  [default-renamer-name (-> interned-symbol? interned-symbol?)]))
 
 (require racket/syntax
          rebellion/base/symbol)
@@ -61,3 +63,5 @@
   (format-one-id "~a-value" id))
 
 (define (default-instance-identifier id) (format-one-id "instance:~a" id))
+(define (default-renamer-identifier id) (format-one-id "~a-rename" id))
+(define (default-renamer-name name) (format-symbol "~a-rename" name))
