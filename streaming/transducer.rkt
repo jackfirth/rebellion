@@ -1,13 +1,13 @@
 #lang reprovide
 rebellion/streaming/transducer/base
 rebellion/streaming/transducer/composition
-rebellion/private/transducer
-rebellion/private/transducer-batching
-rebellion/private/transducer-contract
-rebellion/private/transducer-deduplicating
-rebellion/private/transducer-enumerating
-rebellion/private/transducer-reducer
-rebellion/private/transducer-sorting
-rebellion/private/transducer-taking-duplicates
-rebellion/private/transducer-taking-maxima
-rebellion/private/transducer-windowing
+rebellion/streaming/transducer/private
+rebellion/streaming/transducer/private/batching
+rebellion/streaming/transducer/private/contract
+rebellion/streaming/transducer/private/deduplicating
+rebellion/streaming/transducer/private/enumerating
+rebellion/streaming/transducer/private/reducer
+rebellion/streaming/transducer/private/sorting
+rebellion/streaming/transducer/private/taking-duplicates
+rebellion/streaming/transducer/private/taking-maxima
+rebellion/streaming/transducer/private/windowing
