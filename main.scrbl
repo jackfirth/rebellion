@@ -18,7 +18,7 @@ they're using.
 @include-section[(lib "rebellion/base.scrbl")]
 @include-section[(lib "rebellion/private/type.scrbl")]
 @include-section[(lib "rebellion/private/streaming.scrbl")]
-@include-section[(lib "rebellion/private/collection.scrbl")]
+@include-section[(lib "rebellion/collection.scrbl")]
 @include-section[(lib "rebellion/private/concurrency.scrbl")]
 @include-section[(lib "rebellion/binary.scrbl")]
 @include-section[(lib "rebellion/private/module.scrbl")]
