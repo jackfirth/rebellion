@@ -21,5 +21,5 @@ they're using.
 @include-section[(lib "rebellion/collection.scrbl")]
 @include-section[(lib "rebellion/concurrency.scrbl")]
 @include-section[(lib "rebellion/binary.scrbl")]
-@include-section[(lib "rebellion/private/module.scrbl")]
-@include-section[(lib "rebellion/private/other.scrbl")]
+@include-section[(lib "rebellion/module.scrbl")]
+@include-section[(lib "rebellion/other.scrbl")]
