@@ -101,8 +101,11 @@ before the sequence is fully consumed.
    (reduce-all into-count "hello world"))}
 
 @defthing[into-first (reducer/c any/c option?)]{
- A @tech{reducer} that returns an @tech{option} of the first element it reduces,
- or @racket[absent] if the reduced sequence is empty.
+ A @tech{reducer} that returns an @tech{option} of the first element it reduces, or @racket[absent]
+ if the reduced sequence is empty. If you know the reduced sequence will never contain more than one
+ element, prefer using @racket[into-option] so that a sequence with unexpectedly many elements results
+ in a contract error. Furthermore, if you know the sequence will always contain exactly one element
+ then prefer using @racket[into-only-element].
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -116,6 +119,26 @@ before the sequence is fully consumed.
    #:eval (make-evaluator) #:once
    (transduce "hello world" #:into nonempty-into-first)
    (eval:error (transduce "" #:into nonempty-into-first)))}
+
+@defthing[into-option (reducer/c any/c option?)]{
+ A @tech{reducer} that reduces sequences of zero or one elements into @tech{options}. If a reduced
+ sequence has more than one element, a contract error is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 4) #:into into-option)
+   (transduce empty-list #:into into-option)
+   (eval:error (transduce (list 4 7) #:into into-option)))}
+
+@defthing[into-only-element reducer?]{
+ A @tech{reducer} that reduces a sequence of exactly one element into that element. If the reduced
+ sequence is empty, or if the reduced sequence contains multiple elements, a contract error is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 4) #:into into-only-element)
+   (eval:error (transduce (list 4 7) #:into into-only-element))
+   (eval:error (transduce empty-list #:into into-only-element)))}
 
 @defthing[into-last (reducer/c any/c option?)]{
  A @tech{reducer} that returns an @tech{option} of the last element it reduces,

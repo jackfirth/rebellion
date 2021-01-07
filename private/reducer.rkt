@@ -34,6 +34,8 @@
   [into-count (reducer/c any/c number?)]
   [into-first (reducer/c any/c option?)]
   [into-last (reducer/c any/c option?)]
+  [into-option (reducer/c any/c option?)]
+  [into-only-element reducer?]
   [into-nth (-> natural? (reducer/c any/c option?))]
   [into-index-of (-> any/c (reducer/c any/c (option/c natural?)))]
   [into-index-where (-> predicate/c (reducer/c any/c (option/c natural?)))]
@@ -709,15 +711,57 @@
    #:early-finisher values
    #:name enclosing-variable-name))
 
+(define/guard (nonempty-into-last-finish state)
+  (guard-match (present last-element) state else
+    (raise-arguments-error (name nonempty-into-last) "expected at least one element"))
+  last-element)
+
 (define/name nonempty-into-last
   (make-reducer
    #:starter (λ () (variant #:consume absent))
    #:consumer (λ (_ element) (variant #:consume (present element)))
-   #:finisher
-   (λ (state)
-     (match state
-       [(== absent) (raise-arguments-error enclosing-variable-name "expected at least one element")]
-       [(present last-element) last-element]))
+   #:finisher nonempty-into-last-finish
+   #:early-finisher values
+   #:name enclosing-variable-name))
+
+(define/guard (into-option-consume previous element)
+  (guard-match (present first) previous then
+    (raise-arguments-error
+     (name into-option)
+     "expected at most one element"
+     "first element" first
+     "second element" element))
+  (variant #:consume (present element)))
+
+(define/name into-option
+  (make-reducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer into-option-consume
+   #:finisher values
+   #:early-finisher values
+   #:name enclosing-variable-name))
+
+(define/guard (into-only-element-consume previous element)
+  (guard-match (present first) previous then
+    (raise-arguments-error
+     (name into-only-element)
+     "expected exactly one element, but multiple elements were received"
+     "first element" first
+     "second element" element))
+  (variant #:consume (present element)))
+
+(define/guard (into-only-element-finish result-option)
+  (guard-match (present result) result-option else
+    (raise-arguments-error
+     (name into-only-element)
+     "expected exactly one element, but zero elements were received"))
+  result)
+
+(define/name into-only-element
+  (make-reducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer into-only-element-consume
+   #:finisher into-only-element-finish
    #:early-finisher values
    #:name enclosing-variable-name))
 
@@ -726,13 +770,39 @@
     (check-equal? (reduce nonempty-into-first 1) 1)
     (check-equal? (reduce nonempty-into-first 1 2 3) 1)
     (check-exn exn:fail:contract? (λ () (reduce nonempty-into-first)))
+    (check-exn #rx"nonempty-into-first:" (λ () (reduce nonempty-into-first)))
     (check-exn #rx"expected at least one element" (λ () (reduce nonempty-into-first))))
 
   (test-case (name-string nonempty-into-last)
     (check-equal? (reduce nonempty-into-last 1) 1)
     (check-equal? (reduce nonempty-into-last 1 2 3) 3)
     (check-exn exn:fail:contract? (λ () (reduce nonempty-into-last)))
-    (check-exn #rx"expected at least one element" (λ () (reduce nonempty-into-last)))))
+    (check-exn #rx"nonempty-into-last:" (λ () (reduce nonempty-into-last)))
+    (check-exn #rx"expected at least one element" (λ () (reduce nonempty-into-last))))
+
+  (test-case (name-string into-option)
+    (check-equal? (reduce into-option) absent)
+    (check-equal? (reduce into-option 4) (present 4))
+    (check-exn exn:fail:contract? (λ () (reduce into-option 1 2)))
+    (check-exn #rx"into-option:" (λ () (reduce into-option 1 2)))
+    (check-exn #rx"expected at most one element" (λ () (reduce into-option 1 2)))
+    (check-exn #rx"first element: 1" (λ () (reduce into-option 1 2)))
+    (check-exn #rx"second element: 2" (λ () (reduce into-option 1 2))))
+
+  (test-case (name-string into-only-element)
+    (check-equal? (reduce into-only-element 4) 4)
+    (check-exn exn:fail:contract? (λ () (reduce into-only-element 1 2)))
+    (check-exn #rx"into-only-element:" (λ () (reduce into-only-element 1 2)))
+    (check-exn
+     #rx"expected exactly one element, but multiple elements were received"
+     (λ () (reduce into-only-element 1 2)))
+    (check-exn #rx"first element: 1" (λ () (reduce into-only-element 1 2)))
+    (check-exn #rx"second element: 2" (λ () (reduce into-only-element 1 2)))
+    (check-exn exn:fail:contract? (λ () (reduce into-only-element)))
+    (check-exn #rx"into-only-element:" (λ () (reduce into-only-element)))
+    (check-exn
+     #rx"expected exactly one element, but zero elements were received"
+     (λ () (reduce into-only-element)))))
 
 (define-record-type candidate (element key))
 
