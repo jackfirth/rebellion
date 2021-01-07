@@ -48,6 +48,11 @@
       #:defaults ([accessor (default-accessor-identifier #'id)]))
 
      (~optional
+      (~seq #:renamer-name renamer:id)
+      #:name "#:renamer-name option"
+      #:defaults ([renamer (default-renamer-identifier #'id)]))
+
+     (~optional
       (~seq #:inspector inspector:expr)
       #:name "#:inspector option"
       #:defaults ([inspector #'(current-inspector)]))
@@ -108,6 +113,7 @@
     (define predicate (object-descriptor-predicate descriptor))
     (define constructor (object-descriptor-constructor descriptor))
     (define accessor (object-descriptor-accessor descriptor))
+    (define renamer (make-object-renamer descriptor))
     (define field-accessor (make-object-field-accessor descriptor field-index))
     ...
     root-binding))
@@ -116,9 +122,7 @@
   (test-case (name-string define-object-type)
     (define-object-type converter (forwards backwards))
     (define string<->symbol
-      (make-converter #:forwards string->symbol
-                      #:backwards symbol->string
-                      #:name 'string<->symbol))
+      (make-converter #:forwards string->symbol #:backwards symbol->string #:name 'string<->symbol))
     (check-pred converter? string<->symbol)
     (check-pred initialized-object-descriptor? descriptor:converter)
     (check-equal? (converter-name string<->symbol) 'string<->symbol)
@@ -128,11 +132,17 @@
     (check-equal? (~a string<->symbol) "#<converter:string<->symbol>")
     (check-equal? (~v string<->symbol) "#<converter:string<->symbol>")
     (check-equal? (~s string<->symbol) "#<converter:string<->symbol>")
-    (define anonymous-converter
-      (make-converter #:forwards string->symbol
-                      #:backwards symbol->string))
-    (check-false (converter-name anonymous-converter))
-    (check-false (object-name anonymous-converter))
-    (check-equal? (~a anonymous-converter) "#<converter>")
-    (check-equal? (~v anonymous-converter) "#<converter>")
-    (check-equal? (~s anonymous-converter) "#<converter>")))
+
+    (test-case "anonymous instances of object types"
+      (define anonymous-converter
+        (make-converter #:forwards string->symbol #:backwards symbol->string))
+      (check-false (converter-name anonymous-converter))
+      (check-false (object-name anonymous-converter))
+      (check-equal? (~a anonymous-converter) "#<converter>")
+      (check-equal? (~v anonymous-converter) "#<converter>")
+      (check-equal? (~s anonymous-converter) "#<converter>"))
+
+    (test-case "object type instance renaming"
+      (define renamed (converter-rename string<->symbol 'foo<->bar))
+      (check-equal? (object-name renamed) 'foo<->bar)
+      (check-equal? (~a renamed) "#<converter:foo<->bar>"))))

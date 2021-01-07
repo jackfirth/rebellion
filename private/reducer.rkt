@@ -530,7 +530,8 @@
          #'(for*/reducer/derived original reducer clauses body ... tail-expr)]))
     (values for-comprehension for*-comprehension)))
 
-(define into-string (reducer-map into-list #:range list->immutable-string))
+(define/name into-string
+  (reducer-rename (reducer-map into-list #:range list->immutable-string) enclosing-variable-name))
 
 (define (join-into-string sep
                           #:before-first [before-first ""]
@@ -583,9 +584,7 @@
    #:early-finisher values
    #:name enclosing-function-name))
 
-;; TODO(https://github.com/jackfirth/rebellion/issues/187): this reducer should
-;;   be named into-first but there's no reducer-rename operation yet.
-(define into-first (into-nth 0))
+(define/name into-first (reducer-rename (into-nth 0) enclosing-variable-name))
 
 (define/name into-last
   (make-fold-reducer (λ (_ v) (present v)) absent

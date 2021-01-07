@@ -25,6 +25,7 @@
    (-> object-descriptor? custom-write-function/c)]
   [default-object-name-property (-> object-descriptor? natural?)]
   [make-object-field-accessor (-> object-descriptor? natural? procedure?)]
+  [make-object-renamer (-> object-descriptor? procedure?)]
   [object-impersonate
    (->i #:chaperone
         ([instance (descriptor) (object-descriptor-predicate descriptor)]
@@ -35,11 +36,13 @@
 
 (require racket/list
          racket/math
+         racket/sequence
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
          rebellion/private/guarded-block
          rebellion/private/impersonation
+         rebellion/private/type-naming
          rebellion/type/record
          rebellion/type/object/base
          rebellion/type/tuple/base
@@ -206,6 +209,20 @@
     (string->symbol
      (format "~a-~a" (object-type-name type) (keyword->string field))))
   (procedure-rename (λ (this) (accessor this position)) name))
+
+(define (make-object-renamer descriptor)
+  (define type (object-descriptor-type descriptor))
+  (define size (object-type-size type))
+  (define accessor (object-descriptor-accessor descriptor))
+  (define constructor (object-descriptor-constructor descriptor))
+  (define fields (object-type-fields type))
+  (define name-field-index (keyset-index-of fields '#:name))
+  (define field-keyword-list (sequence->list fields))
+  (define (renamer this new-name)
+    (define field-values
+      (for/list ([i (in-range size)]) (if (equal? i name-field-index) new-name (accessor this i))))
+    (keyword-apply constructor field-keyword-list field-values (list)))
+  (procedure-rename renamer (default-renamer-name (object-type-name type))))
 
 (define (object-impersonate instance descriptor
                             #:properties [props (hash)]
