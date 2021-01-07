@@ -58,7 +58,7 @@
 
 (module+ test
   (test-case "module-provided-bindings"
-    (define m 'rebellion/private/module-binding)
+    (define m 'rebellion/module/binding)
     (check-equal? (module-provided-bindings m)
                   (set
                    (module-binding m runtime-phase 'module-binding)
