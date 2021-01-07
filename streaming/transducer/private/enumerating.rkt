@@ -14,7 +14,7 @@
          rebellion/base/impossible-function
          rebellion/base/variant
          rebellion/private/static-name
-         rebellion/private/transducer-contract
+         rebellion/streaming/transducer/private/contract
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
