@@ -20,6 +20,6 @@ they're using.
 @include-section[(lib "rebellion/private/streaming.scrbl")]
 @include-section[(lib "rebellion/private/collection.scrbl")]
 @include-section[(lib "rebellion/private/concurrency.scrbl")]
-@include-section[(lib "rebellion/private/binary.scrbl")]
+@include-section[(lib "rebellion/binary.scrbl")]
 @include-section[(lib "rebellion/private/module.scrbl")]
 @include-section[(lib "rebellion/private/other.scrbl")]
