@@ -34,15 +34,21 @@
   [into-count (reducer/c any/c number?)]
   [into-first (reducer/c any/c option?)]
   [into-last (reducer/c any/c option?)]
+  [into-option (reducer/c any/c option?)]
+  [into-only-element reducer?]
   [into-nth (-> natural? (reducer/c any/c option?))]
   [into-index-of (-> any/c (reducer/c any/c (option/c natural?)))]
   [into-index-where (-> predicate/c (reducer/c any/c (option/c natural?)))]
+  [nonempty-into-first reducer?]
+  [nonempty-into-last reducer?]
   [into-any-match? (-> predicate/c (reducer/c any/c boolean?))]
   [into-all-match? (-> predicate/c (reducer/c any/c boolean?))]
   [into-none-match? (-> predicate/c (reducer/c any/c boolean?))]
   [into-for-each (-> (-> any/c void?) (reducer/c any/c void?))]
   [into-max (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
   [into-min (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
+  [nonempty-into-max (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
+  [nonempty-into-min (->* () (comparator? #:key (-> any/c any/c)) reducer?)]
   [into-sorted?
    (->* () (comparator? #:key (-> any/c any/c) #:descending? boolean? #:strict? boolean?)
         (reducer/c any/c boolean?))]
@@ -697,6 +703,107 @@
     (check-pred void? (reduce add-into-set! 1 2 3))
     (check-equal? st (mutable-set 1 2 3))))
 
+(define/name nonempty-into-first
+  (make-reducer
+   #:starter (λ () (variant #:consume #false))
+   #:consumer (λ (_ element) (variant #:early-finish element))
+   #:finisher (λ (_) (raise-arguments-error enclosing-variable-name "expected at least one element"))
+   #:early-finisher values
+   #:name enclosing-variable-name))
+
+(define/guard (nonempty-into-last-finish state)
+  (guard-match (present last-element) state else
+    (raise-arguments-error (name nonempty-into-last) "expected at least one element"))
+  last-element)
+
+(define/name nonempty-into-last
+  (make-reducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer (λ (_ element) (variant #:consume (present element)))
+   #:finisher nonempty-into-last-finish
+   #:early-finisher values
+   #:name enclosing-variable-name))
+
+(define/guard (into-option-consume previous element)
+  (guard-match (present first) previous then
+    (raise-arguments-error
+     (name into-option)
+     "expected at most one element"
+     "first element" first
+     "second element" element))
+  (variant #:consume (present element)))
+
+(define/name into-option
+  (make-reducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer into-option-consume
+   #:finisher values
+   #:early-finisher values
+   #:name enclosing-variable-name))
+
+(define/guard (into-only-element-consume previous element)
+  (guard-match (present first) previous then
+    (raise-arguments-error
+     (name into-only-element)
+     "expected exactly one element, but multiple elements were received"
+     "first element" first
+     "second element" element))
+  (variant #:consume (present element)))
+
+(define/guard (into-only-element-finish result-option)
+  (guard-match (present result) result-option else
+    (raise-arguments-error
+     (name into-only-element)
+     "expected exactly one element, but zero elements were received"))
+  result)
+
+(define/name into-only-element
+  (make-reducer
+   #:starter (λ () (variant #:consume absent))
+   #:consumer into-only-element-consume
+   #:finisher into-only-element-finish
+   #:early-finisher values
+   #:name enclosing-variable-name))
+
+(module+ test
+  (test-case (name-string nonempty-into-first)
+    (check-equal? (reduce nonempty-into-first 1) 1)
+    (check-equal? (reduce nonempty-into-first 1 2 3) 1)
+    (check-exn exn:fail:contract? (λ () (reduce nonempty-into-first)))
+    (check-exn #rx"nonempty-into-first:" (λ () (reduce nonempty-into-first)))
+    (check-exn #rx"expected at least one element" (λ () (reduce nonempty-into-first))))
+
+  (test-case (name-string nonempty-into-last)
+    (check-equal? (reduce nonempty-into-last 1) 1)
+    (check-equal? (reduce nonempty-into-last 1 2 3) 3)
+    (check-exn exn:fail:contract? (λ () (reduce nonempty-into-last)))
+    (check-exn #rx"nonempty-into-last:" (λ () (reduce nonempty-into-last)))
+    (check-exn #rx"expected at least one element" (λ () (reduce nonempty-into-last))))
+
+  (test-case (name-string into-option)
+    (check-equal? (reduce into-option) absent)
+    (check-equal? (reduce into-option 4) (present 4))
+    (check-exn exn:fail:contract? (λ () (reduce into-option 1 2)))
+    (check-exn #rx"into-option:" (λ () (reduce into-option 1 2)))
+    (check-exn #rx"expected at most one element" (λ () (reduce into-option 1 2)))
+    (check-exn #rx"first element: 1" (λ () (reduce into-option 1 2)))
+    (check-exn #rx"second element: 2" (λ () (reduce into-option 1 2))))
+
+  (test-case (name-string into-only-element)
+    (check-equal? (reduce into-only-element 4) 4)
+    (check-exn exn:fail:contract? (λ () (reduce into-only-element 1 2)))
+    (check-exn #rx"into-only-element:" (λ () (reduce into-only-element 1 2)))
+    (check-exn
+     #rx"expected exactly one element, but multiple elements were received"
+     (λ () (reduce into-only-element 1 2)))
+    (check-exn #rx"first element: 1" (λ () (reduce into-only-element 1 2)))
+    (check-exn #rx"second element: 2" (λ () (reduce into-only-element 1 2)))
+    (check-exn exn:fail:contract? (λ () (reduce into-only-element)))
+    (check-exn #rx"into-only-element:" (λ () (reduce into-only-element)))
+    (check-exn
+     #rx"expected exactly one element, but zero elements were received"
+     (λ () (reduce into-only-element)))))
+
 (define-record-type candidate (element key))
 
 (define (compute-candidate elem key-function)
@@ -722,6 +829,22 @@
 (define (into-min [comparator real<=>] #:key [key-function values])
   (into-max (comparator-reverse comparator) #:key key-function))
 
+(define/guard (check-max result-option)
+  (guard-match (present result) result-option else
+    (raise-arguments-error (name nonempty-into-max) "expected at least one element"))
+  result)
+
+(define/guard (check-min result-option)
+  (guard-match (present result) result-option else
+    (raise-arguments-error (name nonempty-into-min) "expected at least one element"))
+  result)
+
+(define (nonempty-into-max [comparator real<=>] #:key [key-function values])
+  (reducer-map (into-max comparator #:key key-function) #:range check-max))
+
+(define (nonempty-into-min [comparator real<=>] #:key [key-function values])
+  (reducer-map (into-min comparator #:key key-function) #:range check-min))
+
 (module+ test
   (test-case (name-string into-max)
     (check-equal? (reduce (into-max)) absent)
@@ -739,12 +862,26 @@
       (check-equal? (reduce max "abc" "aaa") (present "abc"))))
   
   (test-case (name-string into-min)
-    (check-equal? (reduce (into-min) 4 8 2 16) (present 2))))
+    (check-equal? (reduce (into-min) 4 8 2 16) (present 2)))
+
+  (test-case (name-string nonempty-into-max)
+    (check-equal? (reduce (nonempty-into-max) 4) 4)
+    (check-equal? (reduce (nonempty-into-max) 4 7 3 5) 7)
+    (check-exn exn:fail:contract? (λ () (reduce (nonempty-into-max))))
+    (check-exn #rx"nonempty-into-max:" (λ () (reduce (nonempty-into-max))))
+    (check-exn #rx"expected at least one element" (λ () (reduce (nonempty-into-max)))))
+
+  (test-case (name-string nonempty-into-min)
+    (check-equal? (reduce (nonempty-into-min) 4) 4)
+    (check-equal? (reduce (nonempty-into-min) 4 7 3 5) 3)
+    (check-exn exn:fail:contract? (λ () (reduce (nonempty-into-min))))
+    (check-exn #rx"nonempty-into-min:" (λ () (reduce (nonempty-into-min))))
+    (check-exn #rx"expected at least one element" (λ () (reduce (nonempty-into-min))))))
 
 (define/name (into-sorted? [comparator real<=>]
-                      #:key [key-function values]
-                      #:descending? [descending? #false]
-                      #:strict? [strict? #false])
+                           #:key [key-function values]
+                           #:descending? [descending? #false]
+                           #:strict? [strict? #false])
   (define expected-result?
     (cond
       [(and descending? strict?) (λ (result) (equal? result greater))]
