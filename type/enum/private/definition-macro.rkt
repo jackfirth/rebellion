@@ -7,9 +7,9 @@
                      racket/provide-transform
                      racket/sequence
                      rebellion/collection/keyset/low-dependency
-                     (submod rebellion/private/enum-type-binding
+                     (submod rebellion/type/enum/binding
                              private-constructor)
-                     rebellion/private/type-naming
+                     rebellion/type/private/naming
                      rebellion/type/enum/base
                      rebellion/type/enum/binding)
          rebellion/collection/keyset/low-dependency
@@ -31,7 +31,7 @@
     #:description "enum constants"
     #:attributes (names [id 1] [index 1])
     (pattern (unsorted-id:id ...)
-      
+
       #:with (id ...)
       (sort (syntax->list #'(unsorted-id ...)) symbol<? #:key syntax-e)
 
@@ -52,7 +52,7 @@
   (define-enum-type id:id constants:enum-constants
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
-     
+
      (~optional
       (~seq #:descriptor-name descriptor:id)
       #:defaults ([descriptor (default-descriptor-identifier #'id)])
@@ -62,17 +62,17 @@
       (~seq #:predicate-name predicate:id)
       #:defaults ([predicate (default-predicate-identifier #'id)])
       #:name "#:predicate-name option")
-     
+
      (~optional
       (~seq #:discriminator-name discriminator:id)
       #:defaults ([discriminator (default-discriminator-identifier #'id)])
       #:name "#:discriminator-name option")
-     
+
      (~optional
       (~seq #:selector-name selector:id)
       #:defaults ([selector (default-selector-identifier #'id)])
       #:name "#:selector-name option")
-     
+
      (~optional
       (~seq #:inspector inspector:expr)
       #:name "#:inspector option"
@@ -100,7 +100,7 @@
            #:predicate #'predicate
            #:discriminator #'discriminator
            #:selector #'selector)))
-  
+
   (begin
     (define descriptor
       (make-enum-implementation

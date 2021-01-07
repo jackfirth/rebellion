@@ -6,9 +6,9 @@
 (require (for-syntax racket/base
                      racket/provide-transform
                      racket/syntax
-                     (submod rebellion/private/singleton-type-binding
+                     (submod rebellion/type/singleton/binding
                              private-constructor)
-                     rebellion/private/type-naming
+                     rebellion/type/private/naming
                      rebellion/type/singleton/base
                      rebellion/type/singleton/binding
                      syntax/parse

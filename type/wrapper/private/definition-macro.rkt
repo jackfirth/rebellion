@@ -3,8 +3,8 @@
 (provide define-wrapper-type)
 
 (require (for-syntax racket/base
-                     rebellion/private/type-naming
-                     (submod rebellion/private/wrapper-type-binding
+                     rebellion/type/private/naming
+                     (submod rebellion/type/wrapper/binding
                              private-constructor)
                      rebellion/type/wrapper/base
                      syntax/transformer)

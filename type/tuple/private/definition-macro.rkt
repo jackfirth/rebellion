@@ -4,8 +4,8 @@
 
 (require (for-syntax racket/base
                      racket/sequence
-                     rebellion/private/type-naming
-                     (submod rebellion/private/tuple-type-binding
+                     rebellion/type/private/naming
+                     (submod rebellion/type/tuple/binding
                              private-constructor)
                      rebellion/type/tuple/base
                      syntax/transformer)

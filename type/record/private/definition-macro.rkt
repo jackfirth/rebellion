@@ -6,9 +6,9 @@
 (require (for-syntax racket/base
                      racket/sequence
                      rebellion/collection/keyset/low-dependency
-                     (submod rebellion/private/record-type-binding
+                     (submod rebellion/type/record/binding
                              private-constructor)
-                     rebellion/private/type-naming
+                     rebellion/type/private/naming
                      rebellion/type/record/base
                      rebellion/type/record/binding
                      syntax/transformer)

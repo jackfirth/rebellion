@@ -16,7 +16,7 @@ they're using.
 @table-of-contents[]
 
 @include-section[(lib "rebellion/base.scrbl")]
-@include-section[(lib "rebellion/private/type.scrbl")]
+@include-section[(lib "rebellion/type.scrbl")]
 @include-section[(lib "rebellion/streaming.scrbl")]
 @include-section[(lib "rebellion/collection.scrbl")]
 @include-section[(lib "rebellion/concurrency.scrbl")]
