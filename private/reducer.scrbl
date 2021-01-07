@@ -106,7 +106,16 @@ before the sequence is fully consumed.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (reduce-all into-first "hello world"))}
+   (transduce "hello world" #:into into-first))}
+
+@defthing[nonempty-into-first reducer?]{
+ A @tech{reducer} that returns the first element it reduces. If the reduced sequence is empty, a
+ contract error is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "hello world" #:into nonempty-into-first)
+   (eval:error (transduce "" #:into nonempty-into-first)))}
 
 @defthing[into-last (reducer/c any/c option?)]{
  A @tech{reducer} that returns an @tech{option} of the last element it reduces,
@@ -114,7 +123,16 @@ before the sequence is fully consumed.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (reduce-all into-last "hello world"))}
+   (transduce "hello world" #:into into-last))}
+
+@defthing[nonempty-into-last reducer?]{
+ A @tech{reducer} that returns the last element it reduces. If the reduced sequence is empty, a
+ contract error is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "hello world" #:into nonempty-into-last)
+   (eval:error (transduce "" #:into nonempty-into-last)))}
 
 @defproc[(into-nth [n natural?]) (reducer/c any/c option?)]{
  Constructs a @tech{reducer} that returns the @racket[n]th element it reduces,
@@ -200,31 +218,72 @@ before the sequence is fully consumed.
  @defproc[(into-min [comparator comparator? real<=>]
                     [#:key key-function (-> any/c any/c) values])
           (reducer/c any/c option?)]]]{
- Constructs a @tech{reducer} that searches the reduced sequence for either the
- greatest element or the least element, respectively. If @racket[key-function]
- is provided, it is used to extract the compared value from each element.
- Comparisons are performed with @racket[comparator] (which defaults to a
- numeric comparison). If the reduced sequence contains no values, @racket[
- absent] is returned by the constructed reducer. When the sequence contains
- equivalent but distinct maximum or minimum elements, the first of them is
+ Constructs a @tech{reducer} that searches the reduced sequence for either the greatest element or the
+ least element, respectively. If the reduced sequence contains no values, @racket[absent] is returned
+ by the constructed reducer.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 10) #:into (into-max))
+   (transduce (in-range 1 10) #:into (into-min))
+   (transduce empty-list #:into (into-max)))
+
+ Comparisons are performed with @racket[comparator] (which defaults to a numeric comparison). If
+ @racket[key-function] is provided, it is used to extract the compared value from each element. When
+ the sequence contains equivalent but distinct maximum or minimum elements, the first of them is
  returned.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (reduce-all (into-max) (in-range 1 10))
-   (reduce-all (into-min) (in-range 1 10))
-   (reduce-all (into-max) empty-list)
-
-   (reduce (into-min string<=>) "goodbye" "cruel" "world")
+   (transduce (list "goodbye" "cruel" "world") #:into (into-min string<=>))
 
    (eval:no-prompt
-    (define-record-type gemstone (color weight)))
+    (define-record-type gemstone (color weight))
+    (define gems
+      (list
+       (gemstone #:color 'red #:weight 5)
+       (gemstone #:color 'blue #:weight 7)
+       (gemstone #:color 'green #:weight 3)
+       (gemstone #:color 'yellow #:weight 7))))
    
-   (reduce (into-max #:key gemstone-weight)
-           (gemstone #:color 'red #:weight 5)
-           (gemstone #:color 'blue #:weight 7)
-           (gemstone #:color 'green #:weight 3)
-           (gemstone #:color 'yellow #:weight 7)))}
+   (transduce gems #:into (into-max #:key gemstone-weight)))}
+
+@deftogether[[
+ @defproc[(nonempty-into-max [comparator comparator? real<=>]
+                             [#:key key-function (-> any/c any/c) values])
+          reducer?]
+ @defproc[(nonempty-into-min [comparator comparator? real<=>]
+                             [#:key key-function (-> any/c any/c) values])
+          reducer?]]]{
+ Constructs a @tech{reducer} that searches the reduced sequence for either the greatest element or the
+ least element, respectively. If the reduced sequence contains no values, a contract error is raised
+ by the constructed reducer.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (in-range 1 10) #:into (nonempty-into-max))
+   (transduce (in-range 1 10) #:into (nonempty-into-min))
+   (eval:error (transduce empty-list #:into (nonempty-into-max))))
+
+ Comparisons are performed with @racket[comparator] (which defaults to a numeric comparison). If
+ @racket[key-function] is provided, it is used to extract the compared value from each element. When
+ the sequence contains equivalent but distinct maximum or minimum elements, the first of them is
+ returned.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list "goodbye" "cruel" "world") #:into (nonempty-into-min string<=>))
+
+   (eval:no-prompt
+    (define-record-type gemstone (color weight))
+    (define gems
+      (list
+       (gemstone #:color 'red #:weight 5)
+       (gemstone #:color 'blue #:weight 7)
+       (gemstone #:color 'green #:weight 3)
+       (gemstone #:color 'yellow #:weight 7))))
+   
+   (transduce gems #:into (nonempty-into-max #:key gemstone-weight)))}
 
 @defproc[(into-sorted?
           [comparator comparator? real<=>]
@@ -469,7 +528,7 @@ reducers with increasing power and complexity:
  @(examples
    #:eval (make-evaluator) #:once
    (for/reducer into-sum
-     ([char (in-string "aaa0aa00a0aa")])
+                ([char (in-string "aaa0aa00a0aa")])
      (if (char-alphabetic? char)
          1
          -1)))}
