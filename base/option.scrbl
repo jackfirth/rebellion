@@ -61,6 +61,18 @@ function, and absent values are represented by the @racket[absent] constant.
 @defthing[absent absent?]{
  The @tech{absent} constant.}
 
+@defproc[(falsey->option [falsey-value any/c]) option?]{
+ Converts @racket[falsey-value] to an @tech{option}. If @racket[falsey-value] is @racket[#false],
+ @racket[absent] is returned, otherwise @racket[falsey-value] is wrapped as a @racket[present] value.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (falsey->option 5)
+   (falsey->option #false))
+
+ Note that there is no specialized @as-index{@racket[option->falsey]} function. In order to convert
+ from an option to a falsey value, use @racket[option-get] with @racket[#false] as the default value.}
+
 @defproc[(option-case [opt option?]
                       [#:present present-handler (-> any/c any/c)]
                       [#:absent absent-handler (-> any/c)])
