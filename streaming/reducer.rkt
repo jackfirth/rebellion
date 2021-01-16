@@ -108,7 +108,7 @@
            racket/set
            rackunit))
 
-;@------------------------------------------------------------------------------
+;@----------------------------------------------------------------------------------------------------
 ;; Core APIs
 
 (define reduction-state/c (variant/c #:consume any/c #:early-finish any/c))
@@ -120,7 +120,7 @@
                       #:consumer consumer*
                       #:finisher finisher*
                       #:early-finisher early-finisher*
-                      #:name [name #f])
+                      #:name [name #false])
   (define starter
     (if (zero? (procedure-arity starter*))
         starter*
@@ -143,11 +143,11 @@
                        #:early-finisher early-finisher
                        #:name name))
 
-(define (make-fold-reducer consumer init-state #:name [name #f])
+(define (make-fold-reducer consumer init-state #:name [name #false])
   (make-effectful-fold-reducer consumer (λ () init-state) values #:name name))
 
 (define (make-effectful-fold-reducer consumer init-state-maker finisher
-                                     #:name [name #f])
+                                     #:name [name #false])
   (make-reducer #:starter (λ () (variant #:consume (init-state-maker)))
                 #:consumer (λ (s v) (variant #:consume (consumer s v)))
                 #:finisher finisher
@@ -155,12 +155,8 @@
                 #:name name))
 
 (define/name into-sum (make-fold-reducer + 0 #:name enclosing-variable-name))
-
-(define/name into-product
-  (make-fold-reducer * 1 #:name enclosing-variable-name))
-
-(define/name into-count
-  (make-fold-reducer (λ (s _) (add1 s)) 0 #:name enclosing-variable-name))
+(define/name into-product (make-fold-reducer * 1 #:name enclosing-variable-name))
+(define/name into-count (make-fold-reducer (λ (s _) (add1 s)) 0 #:name enclosing-variable-name))
 
 (define (reduce red . vs)
   (define starter (reducer-starter red))
@@ -168,11 +164,10 @@
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
   (define/guard (loop [tagged-state (starter)] [vs vs])
-    (define state (variant-value tagged-state))
-    (guard (variant-tagged-as? tagged-state '#:early-finish) then
-      (early-finisher state))
-    (guard (empty? vs) else (loop (consumer state (first vs)) (rest vs)))
-    (finisher state))
+    (guard-match (variant #:consume state) tagged-state else
+      (early-finisher (variant-value tagged-state)))
+    (guard-match (cons v next-vs) vs else (finisher state))
+    (loop (consumer state v) next-vs))
   (loop))
 
 (define/name (reduce-all red seq)
@@ -185,21 +180,16 @@
                       [sequence-position 0]
                       [first-vs first-vs]
                       [generate-rest generate-rest])
-    (define state (variant-value tagged-state))
-    (guard (variant-tagged-as? tagged-state '#:early-finish) then
-      (early-finisher state))
+    (guard-match (variant #:consume state) tagged-state else
+      (early-finisher (variant-value tagged-state)))
     (guard (false? first-vs) then (finisher state))
-    (guard (equal? (length first-vs) 1) else
+    (guard-match (list v) first-vs else
       (apply raise-result-arity-error
              enclosing-function-name 1
-             (format "\n  in: sequence elements at position ~a"
-                     sequence-position)
+             (format "\n  in: sequence elements at position ~a" sequence-position)
              first-vs))
     (define-values (next-vs next-generate-rest) (generate-rest))
-    (loop (consumer state (first first-vs))
-          (add1 sequence-position)
-          next-vs
-          next-generate-rest))
+    (loop (consumer state v) (add1 sequence-position) next-vs next-generate-rest))
   (loop))
 
 (module+ test
@@ -225,8 +215,8 @@
 
 (define (reducer-impersonate
          reducer
-         #:domain-guard [domain-guard #f]
-         #:range-guard [range-guard #f]
+         #:domain-guard [domain-guard #false]
+         #:range-guard [range-guard #false]
          #:properties [properties (hash)]
          #:chaperone?
          [chaperone? (and (false? domain-guard) (false? range-guard))])
@@ -282,7 +272,7 @@
         (set-box! counter (add1 (unbox counter)))
         v)
       (define impersonated
-        (reducer-impersonate into-list #:domain-guard guard #:chaperone? #t))
+        (reducer-impersonate into-list #:domain-guard guard #:chaperone? #true))
       (check-equal? (reduce impersonated 'a 'b 'c) (list 'a 'b 'c))
       (check-equal? (unbox counter) 3)
       (check-equal? impersonated into-list)
@@ -292,12 +282,12 @@
       (check-false (chaperone-of? into-list impersonated)))
 
     (test-case "range guard"
-      (define result (box #f))
+      (define result (box #false))
       (define (guard v)
         (set-box! result v)
         v)
       (define impersonated
-        (reducer-impersonate into-list #:range-guard guard #:chaperone? #t))
+        (reducer-impersonate into-list #:range-guard guard #:chaperone? #true))
       (check-equal? (reduce impersonated 1 2 3) (list 1 2 3))
       (check-equal? (unbox result) (list 1 2 3))
       (check-equal? impersonated into-list)
@@ -307,22 +297,15 @@
       (check-false (chaperone-of? into-list impersonated)))))
 
 (define/name (reducer/c domain-contract* range-contract*)
-  (define domain-contract
-    (coerce-contract enclosing-function-name domain-contract*))
-  (define range-contract
-    (coerce-contract enclosing-function-name range-contract*))
+  (define domain-contract (coerce-contract enclosing-function-name domain-contract*))
+  (define range-contract (coerce-contract enclosing-function-name range-contract*))
   (define contract-name
-    (build-compound-type-name enclosing-function-name
-                              domain-contract
-                              range-contract))
+    (build-compound-type-name enclosing-function-name domain-contract range-contract))
   (define domain-projection (contract-late-neg-projection domain-contract))
   (define range-projection (contract-late-neg-projection range-contract))
-  (define chaperone?
-    (and (chaperone-contract? domain-contract)
-         (chaperone-contract? range-contract)))
+  (define chaperone? (and (chaperone-contract? domain-contract) (chaperone-contract? range-contract)))
   (define (projection blame)
-    (define domain-blame
-      (blame-add-context blame "an element reduced by" #:swap? #t))
+    (define domain-blame (blame-add-context blame "an element reduced by" #:swap? #true))
     (define range-blame (blame-add-context blame "the reduction result of"))
     (define late-neg-domain-guard (domain-projection domain-blame))
     (define late-neg-range-guard (range-projection range-blame))
@@ -379,10 +362,7 @@
 
 (define (reducer-filter red pred)
   (define consumer (reducer-consumer red))
-  (define (filtering-consumer s v)
-    (if (pred v)
-        (consumer s v)
-        (variant #:consume s)))
+  (define (filtering-consumer s v) (if (pred v) (consumer s v) (variant #:consume s)))
   (make-reducer #:starter (reducer-starter red)
                 #:consumer filtering-consumer
                 #:finisher (reducer-finisher red)
@@ -400,26 +380,21 @@
 
   (define/guard (start)
     (define original (original-starter))
+    (guard-match (variant #:consume original-state) original else
+      (variant #:early-finish (original-result (variant-value original))))
     (guard (zero? amount) then
       (variant #:early-finish (limited-result (variant-value original))))
-    (guard (variant-tagged-as? original '#:consume) else
-      (variant #:early-finsih (original-result (variant-value original))))
-    (define state
-      (limited-state #:amount-left amount
-                     #:original-state (variant-value original)))
+    (define state (limited-state #:amount-left amount #:original-state original-state))
     (variant #:consume state))
 
   (define/guard (consume state element)
-    (define next-state
-      (original-consumer (limited-state-original-state state) element))
+    (define next-state (original-consumer (limited-state-original-state state) element))
     (define next-amount (sub1 (limited-state-amount-left state)))
-    (guard (variant-tagged-as? next-state '#:early-finish) then
+    (guard-match (variant #:consume next-state-value) next-state else
       (variant #:early-finish (original-result (variant-value next-state))))
     (guard (zero? next-amount) then
-      (variant #:early-finish (limited-result (variant-value next-state))))
-    (variant #:consume
-             (limited-state #:amount-left next-amount
-                            #:original-state (variant-value next-state))))
+      (variant #:early-finish (limited-result next-state-value)))
+    (variant #:consume (limited-state #:amount-left next-amount #:original-state next-state-value)))
 
   (define (finish state)
     (original-finisher (limited-state-original-state state)))
@@ -501,8 +476,7 @@
   (for*/reducer/derived original reducer-expr clauses body ... tail-expr))
 
 (define into-list
-  (reducer-map (make-fold-reducer (λ (lst v) (cons v lst)) (list))
-               #:range reverse))
+  (reducer-map (make-fold-reducer (λ (lst v) (cons v lst)) (list)) #:range reverse))
 
 (module+ test
   (test-case (name-string for/reducer)
