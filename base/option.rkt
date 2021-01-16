@@ -7,12 +7,12 @@
 (provide
  (contract-out
   [option? predicate/c]
-  [option-case
-   (-> option? #:present (-> any/c any/c) #:absent (-> any/c) any/c)]
+  [option-case (-> option? #:present (-> any/c any/c) #:absent (-> any/c) any/c)]
   [option-map (-> option? (-> any/c any/c) option?)]
   [option-filter (-> option? predicate/c option?)]
   [option-flat-map (-> option? (-> any/c option?) option?)]
   [option-get (-> option? any/c any/c)]
+  [falsey->option (-> any/c option?)]
   [in-option (-> option? (sequence/c any/c))]
   [present? predicate/c]
   [present-value (-> present? any/c)]
@@ -48,9 +48,17 @@
 (define (option-filter opt pred)
   (match opt [(present (? pred)) opt] [_ absent]))
 
-(define (option-flat-map opt f) (match opt [(present v) (f v)] [_ absent]))
-(define (option-get opt default) (match opt [(present v) v] [_ default]))
-(define (in-option opt) (match opt [(present v) (list v)] [_ '()]))
+(define (option-flat-map opt f)
+  (match opt [(present v) (f v)] [_ absent]))
+
+(define (option-get opt default)
+  (match opt [(present v) v] [_ default]))
+
+(define (falsey->option v)
+  (if v (present v) absent))
+
+(define (in-option opt)
+  (match opt [(present v) (list v)] [_ '()]))
 
 (module+ test
   (test-case "pattern matching"
@@ -75,6 +83,10 @@
   (test-case "option-get"
     (check-equal? (option-get (present 2) 100) 2)
     (check-equal? (option-get absent 100) 100))
+
+  (test-case "falsey->option"
+    (check-equal? (falsey->option 5) (present 5))
+    (check-equal? (falsey->option #false) absent))
 
   (test-case "option-case"
     (struct exn:kaboom exn:fail ())
