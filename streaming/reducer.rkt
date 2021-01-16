@@ -85,6 +85,7 @@
          rebellion/base/comparator
          rebellion/base/immutable-string
          rebellion/base/option
+         rebellion/base/option/private/guard
          rebellion/base/symbol
          rebellion/base/variant
          rebellion/private/contract-projection
@@ -686,7 +687,7 @@
    #:name enclosing-variable-name))
 
 (define/guard (nonempty-into-last-finish state)
-  (guard-match (present last-element) state else
+  (guard-present last-element state else
     (raise-arguments-error (name nonempty-into-last) "expected at least one element"))
   last-element)
 
@@ -699,7 +700,7 @@
    #:name enclosing-variable-name))
 
 (define/guard (into-option-consume previous element)
-  (guard-match (present first) previous then
+  (guard-present first previous then
     (raise-arguments-error
      (name into-option)
      "expected at most one element"
@@ -716,7 +717,7 @@
    #:name enclosing-variable-name))
 
 (define/guard (into-only-element-consume previous element)
-  (guard-match (present first) previous then
+  (guard-present first previous then
     (raise-arguments-error
      (name into-only-element)
      "expected exactly one element, but multiple elements were received"
@@ -725,7 +726,7 @@
   (variant #:consume (present element)))
 
 (define/guard (into-only-element-finish result-option)
-  (guard-match (present result) result-option else
+  (guard-present result result-option else
     (raise-arguments-error
      (name into-only-element)
      "expected exactly one element, but zero elements were received"))
@@ -804,12 +805,12 @@
   (into-max (comparator-reverse comparator) #:key key-function))
 
 (define/guard (check-max result-option)
-  (guard-match (present result) result-option else
+  (guard-present result result-option else
     (raise-arguments-error (name nonempty-into-max) "expected at least one element"))
   result)
 
 (define/guard (check-min result-option)
-  (guard-match (present result) result-option else
+  (guard-present result result-option else
     (raise-arguments-error (name nonempty-into-min) "expected at least one element"))
   result)
 
