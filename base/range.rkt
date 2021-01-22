@@ -128,6 +128,16 @@
 
         [_ boolean?])]
 
+  [range-overlaps?
+   (->i #:chaperone
+        ([range1 range?] [range2 range?])
+
+        #:pre/name (range1 range2)
+        "both ranges must use the same comparator"
+        (equal? (range-comparator range1) (range-comparator range2))
+
+        [_ boolean?])]
+
   [range-span
    (->i #:chaperone
         ([range1 range?] [range2 range?])
@@ -628,6 +638,7 @@
   (nor (equal? (compare cmp lower1 upper2) greater)
        (equal? (compare cmp lower2 upper1) greater)))
 
+
 (module+ test
   (test-case (name-string range-connected?)
     (check-true (range-connected? (closed-range 3 6) (closed-range 4 8)))
@@ -645,6 +656,49 @@
     (check-true (range-connected? (at-most-range 4) (greater-than-range 4)))
     (check-true
      (range-connected? (less-than-range 5) (greater-than-range 3)))))
+
+
+(define (range-overlaps? range1 range2)
+  (define cmp (cut<=> (range-comparator range1)))
+  (and (equal? (compare cmp (range-upper-cut range1) (range-lower-cut range2)) greater)
+       (equal? (compare cmp (range-lower-cut range1) (range-upper-cut range2)) lesser)))
+
+
+(module+ test
+  (test-case (name-string range-overlaps?)
+    (check-true (range-overlaps? (closed-range 1 5) (closed-range 2 10)))
+    (check-true (range-overlaps? (closed-range 2 10) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (closed-range 2 3)))
+    (check-true (range-overlaps? (closed-range 2 3) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (closed-range 5 10)))
+    (check-true (range-overlaps? (closed-range 5 10) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (closed-range 1 3)))
+    (check-true (range-overlaps? (closed-range 1 3) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (closed-range 3 5)))
+    (check-true (range-overlaps? (closed-range 3 5) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (open-range 1 3)))
+    (check-true (range-overlaps? (open-range 1 3) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (open-range 3 5)))
+    (check-true (range-overlaps? (open-range 3 5) (closed-range 1 5)))
+    (check-false (range-overlaps? (closed-range 1 5) (closed-range 10 20)))
+    (check-false (range-overlaps? (closed-range 10 20) (closed-range 1 5)))
+    (check-false (range-overlaps? (closed-range 1 5) (open-range 5 10)))
+    (check-false (range-overlaps? (open-range 5 10) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 10) (closed-range 1 10)))
+    (check-true (range-overlaps? (open-range 1 10) (open-range 1 10)))
+    (check-true (range-overlaps? (closed-open-range 1 10) (closed-open-range 1 10)))
+    (check-true (range-overlaps? (open-closed-range 1 10) (open-closed-range 1 10)))
+    (check-true (range-overlaps? (singleton-range 5) (singleton-range 5)))
+    (check-true (range-overlaps? (singleton-range 5) (closed-range 5 10)))
+    (check-true (range-overlaps? (closed-range 5 10) (singleton-range 5)))
+    (check-true (range-overlaps? (singleton-range 5) (closed-range 1 5)))
+    (check-true (range-overlaps? (closed-range 1 5) (singleton-range 5)))
+    (check-false (range-overlaps? (singleton-range 5) (open-range 5 10)))
+    (check-false (range-overlaps? (open-range 5 10) (singleton-range 5)))
+    (check-false (range-overlaps? (singleton-range 5) (open-range 1 5)))
+    (check-false (range-overlaps? (open-range 1 5) (singleton-range 5)))))
+
 
 ;@------------------------------------------------------------------------------
 ;; Operations
