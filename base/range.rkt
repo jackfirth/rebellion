@@ -138,6 +138,16 @@
 
         [_ range?])]
 
+  [range-gap
+   (->i #:chaperone
+        ([range1 range?] [range2 range?])
+
+        #:pre/name (range1 range2)
+        "both ranges must use the same comparator"
+        (equal? (range-comparator range1) (range-comparator range2))
+
+        [_ range?])]
+
   [range-lower-bound (-> range? (or/c range-bound? unbounded?))]
   [range-upper-bound (-> range? (or/c range-bound? unbounded?))]
   [range-lower-endpoint (-> bounded-below-range? any/c)]
@@ -156,6 +166,7 @@
   [exclusive-bound (-> any/c range-bound?)]))
 
 (require racket/bool
+         racket/match
          rebellion/base/comparator
          rebellion/private/guarded-block
          rebellion/private/static-name
@@ -638,6 +649,7 @@
 ;@------------------------------------------------------------------------------
 ;; Operations
 
+
 (define (range-span range1 range2)
   (define lower1 (range-lower-cut range1))
   (define upper1 (range-upper-cut range1))
@@ -649,6 +661,7 @@
   (range (cut->lower-bound lower)
          (cut->upper-bound upper)
          #:comparator (range-comparator range1)))
+
 
 (module+ test
   (test-case (name-string range-span)
@@ -683,6 +696,58 @@
                   (less-than-range 7))
     (check-equal? (range-span (less-than-range 7) (closed-range 2 7))
                   (at-most-range 7))))
+
+
+(define/guard (range-gap range1 range2)
+  (define cmp (cut<=> (range-comparator range1)))
+  (guard (equal? (compare cmp (range-upper-cut range1) (range-lower-cut range2)) greater) else
+    (range
+     (range-bound-flip (range-upper-bound range1))
+     (range-bound-flip (range-lower-bound range2))
+     #:comparator (range-comparator range1)))
+  (guard (equal? (compare cmp (range-lower-cut range1) (range-upper-cut range2)) lesser) else
+    (range
+     (range-bound-flip (range-upper-bound range2))
+     (range-bound-flip (range-lower-bound range1))
+     #:comparator (range-comparator range1)))
+  (raise-arguments-error
+   (name range-gap)
+   "expected non-overlapping ranges"
+   "range1" range1
+   "range2" range2))
+
+
+(define (range-bound-flip bound)
+  (match bound
+    [(== unbounded) unbounded]
+    [(inclusive-bound endpoint) (exclusive-bound endpoint)]
+    [(exclusive-bound endpoint) (inclusive-bound endpoint)]))
+
+
+(module+ test
+  (test-case (name-string range-gap)
+    (check-equal? (range-gap (closed-range 2 7) (closed-range 10 15)) (open-range 7 10))
+    (check-equal? (range-gap (closed-range 10 15) (closed-range 2 7)) (open-range 7 10))
+    (check-equal? (range-gap (less-than-range 7) (greater-than-range 10)) (closed-range 7 10))
+    (check-equal? (range-gap (greater-than-range 10) (less-than-range 7)) (closed-range 7 10))
+    (check-exn
+     #rx"expected non-overlapping ranges" (λ () (range-gap (closed-range 2 10) (closed-range 5 7))))
+    (check-exn
+     #rx"expected non-overlapping ranges" (λ () (range-gap (closed-range 5 7) (closed-range 2 10))))
+    (check-exn
+     #rx"expected non-overlapping ranges"
+     (λ () (range-gap (less-than-range 7) (greater-than-range 5))))
+    (check-exn
+     #rx"expected non-overlapping ranges"
+     (λ () (range-gap (greater-than-range 5) (less-than-range 7))))
+    (check-equal? (range-gap (closed-range 2 7) (open-range 7 10)) (open-closed-range 7 7))
+    (check-equal? (range-gap (open-range 7 10) (closed-range 2 7)) (open-closed-range 7 7))
+    (check-equal? (range-gap (open-range 2 7) (closed-range 7 10)) (closed-open-range 7 7))
+    (check-equal? (range-gap (closed-range 7 10) (open-range 2 7)) (closed-open-range 7 7))
+    (check-exn
+     #rx"expected non-overlapping ranges"
+     (λ () (range-gap (closed-range 2 7) (closed-range 7 10))))))
+
 
 ;@------------------------------------------------------------------------------
 ;; Contract helpers

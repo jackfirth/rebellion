@@ -480,13 +480,28 @@ whether the bound is inclusive or exclusive.
 
 @section{Operations on Ranges}
 
+
 @defproc[(range-span [range1 range?] [range2 range?]) range?]{
- Returns the smallest range that @tech{encloses} both @racket[range1] and
- @racket[range2]. The ranges need not be connected, but they must use the same
- @tech{comparator}. This operation is commutative, associative, and idempotent.
+ Returns the smallest range that @tech{encloses} both @racket[range1] and @racket[range2]. The ranges
+ need not be connected, but they must use the same @tech{comparator} or a contract error is raised.
+ This operation is commutative, associative, and idempotent.
 
  @(examples
    #:eval (make-evaluator) #:once
    (range-span (closed-range 2 5) (open-range 8 9))
    (range-span (less-than-range 4) (singleton-range 6))
    (range-span (open-range 2 8) (at-most-range 5)))}
+
+
+@defproc[(range-gap [range1 range?] [range2 range?]) range?]{
+ Returns the largest range that lies between @racket[range1] and @racket[range2], if such a range
+ exists. The ranges must use the same @tech{comparator} and they must not overlap, or a contract error
+ is raised. In the case of two ranges that are adjacent but do not overlap, the resulting range is
+ empty. This operation is commutative.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-gap (closed-range 2 5) (closed-range 8 9))
+   (range-gap (less-than-range 4) (singleton-range 6))
+   (range-gap (open-range 2 8) (closed-range 8 10))
+   (eval:error (range-gap (closed-range 2 8) (closed-range 8 10))))}
