@@ -437,6 +437,7 @@ whether the bound is inclusive or exclusive.
 
 @section{Querying Ranges}
 
+
 @defproc[(range-contains? [range range?] [v any/c]) boolean?]{
  Determines whether or not @racket[v] lies within @racket[range] by comparing
  @racket[v] to its bounds, using the range's @tech{comparator}.
@@ -450,6 +451,7 @@ whether the bound is inclusive or exclusive.
                     "banana")
    (range-contains? (greater-than-range "apple" #:comparator string<=>)
                     "aardvark"))}
+
 
 @defproc[(range-encloses? [range range?] [other-range range?]) boolean?]{
  Determines whether or not @racket[range] @tech{encloses} @racket[other-range].
@@ -468,6 +470,7 @@ whether the bound is inclusive or exclusive.
     (range-encloses? (greater-than-range 2)
                      (greater-than-range "apple" #:comparator string<=>))))}
 
+
 @defproc[(range-connected? [range1 range?] [range2 range?]) boolean?]{
  Determines whether or not there exists a (possibly empty) range that is @tech{
   enclose}d by both @racket[range1] and @racket[range2].
@@ -477,6 +480,18 @@ whether the bound is inclusive or exclusive.
    (range-connected? (closed-range 2 7) (open-range 3 8))
    (range-connected? (closed-range 2 5) (open-range 5 8))
    (range-connected? (open-range 2 5) (open-range 5 8)))}
+
+
+@defproc[(range-overlaps? [range1 range?] [range2 range?]) boolean?]{
+ Determines whether or not there exists a nonempty range that is @tech{enclose}d by both
+ @racket[range1] and @racket[range2].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-overlaps? (closed-range 2 7) (open-range 3 8))
+   (range-overlaps? (closed-range 2 5) (closed-range 5 8))
+   (range-overlaps? (closed-range 2 5) (open-range 5 8)))}
+
 
 @section{Operations on Ranges}
 
