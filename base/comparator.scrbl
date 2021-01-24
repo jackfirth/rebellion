@@ -193,6 +193,18 @@ with equality unless otherwise stated.
    (comparable-real? +inf.0)
    (comparable-real? +nan.0))}
 
+@defthing[natural<=> (comparator/c natural?)]{
+ A @tech{comparator} that compares natural numbers. (A natural number is an exact, nonnegative
+ integer.)
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare natural<=> 42 100)
+   (compare natural<=> 42 0)
+   (compare natural<=> 42 42)
+   (eval:error (compare natural<=> 42 100.0))
+   (eval:error (compare natural<=> 42 -10)))}
+
 @defthing[string<=> (comparator/c immutable-string?)]{
  A @tech{comparator} that lexicographically compares immutable strings. Mutable
  strings are disallowed, to prevent clients from concurrently mutating a string
