@@ -18,6 +18,7 @@
   [greater comparison?]
   [equivalent comparison?]
   [real<=> (comparator/c comparable-real?)]
+  [natural<=> (comparator/c natural?)]
   [string<=> (comparator/c immutable-string?)]
   [char<=> (comparator/c char?)]
   [symbol<=> (comparator/c symbol?)]
@@ -34,6 +35,7 @@
 
 (require racket/contract/combinator
          racket/list
+         racket/math
          racket/set
          rebellion/base/immutable-string
          rebellion/base/symbol
@@ -122,6 +124,13 @@
      (strict-cond [(< x y) lesser] [(= x y) equivalent] [(> x y) greater]))
    #:name enclosing-variable-name))
 
+(define/name natural<=>
+  (make-comparator
+   (λ (x y)
+     (define difference (- x y))
+     (strict-cond [(zero? difference) equivalent] [(positive? difference) greater] [else lesser]))
+   #:name enclosing-variable-name))
+
 (define/name string<=>
   (make-comparator
    (λ (s1 s2)
@@ -184,6 +193,11 @@
       (check-equal? (compare real<=> +inf.f +inf.0) equivalent)
       (check-equal? (compare real<=> -inf.0 -inf.f) equivalent)
       (check-equal? (compare real<=> -inf.f -inf.0) equivalent)))
+
+  (test-case (name-string natural<=>)
+    (check-equal? (compare natural<=> 4 10) lesser)
+    (check-equal? (compare natural<=> 4 0) greater)
+    (check-equal? (compare natural<=> 4 4) equivalent))
 
   (test-case (name-string char<=>)
     (check-equal? (compare char<=> #\e #\s) lesser)
