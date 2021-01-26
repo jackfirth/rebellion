@@ -128,10 +128,6 @@
   (tuple-descriptor->enum-descriptor descriptor type))
 
 (define (tuple-descriptor->enum-descriptor descriptor type)
-  (define maker
-    (if (initialized-tuple-descriptor? descriptor)
-        initialized-enum-descriptor
-        uninitialized-enum-descriptor))
   (define predicate (tuple-descriptor-predicate descriptor))
   (define selector (tuple-descriptor-constructor descriptor))
   (define tuple-accessor (tuple-descriptor-accessor descriptor))
