@@ -383,7 +383,7 @@ reducers with increasing power and complexity:
   superset of fold reducers.}
 
  @item{@racket[make-reducer] constructs general @tech{reducers}, with the full
-  power of the @tech{reduction} protocol and the ability to terminate the sequence
+  power of the @tech{reduction protocol} and the ability to terminate the sequence
   early.}]
 
 @defproc[(make-fold-reducer
