@@ -518,7 +518,8 @@ reducers with increasing power and complexity:
  Combines @racket[subreducer]s into a single reducer that applies @racket[zip-function] to the
  reduction results of the subreducers. The given @racket[zip-function] must accept as many arguments
  as there are @racket[subreducer]s. If every @racket[subreducer] finishes early, the combined reducer
- finishes early.
+ finishes early. Note that this allows multiple reducers to reduce a sequence while only iterating the
+ sequence once.
 
  @(examples
    #:eval (make-evaluator) #:once
