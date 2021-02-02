@@ -143,7 +143,7 @@
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
       (check-equal? (byte-ref (byte-and x pattern) i) 0))
-    (for* ([x (in-range 256)] [y (in-range 256)])
+    (for* ([x (in-range 0 256 4)] [y (in-range 0 256 4)])
       (check-equal? (byte-and x y) (byte-and y x)))))
 
 (define (byte-or left right)
@@ -166,7 +166,7 @@
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
         (check-equal? (byte-ref (byte-or x pattern) i) 1)))
-    (for* ([x (in-range 256)] [y (in-range 256)])
+    (for* ([x (in-range 0 256 4)] [y (in-range 0 256 4)])
       (check-equal? (byte-or x y) (byte-or y x))))
 
 (define (byte-not b)
@@ -218,7 +218,7 @@
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
       (check-equal? (byte-ref (byte-nand x pattern) i) 1))
-    (for* ([x (in-range 256)] [y (in-range 256)])
+    (for* ([x (in-range 0 256 4)] [y (in-range 0 256 4)])
       (check-equal? (byte-nand x y) (byte-nand y x)))))
 
 (define (byte-nor left right)
@@ -241,7 +241,7 @@
           [pattern (in-list test-patterns)]
           [i (in-range 8)])
       (check-equal? (byte-ref (byte-nor x pattern) i) 0))
-    (for* ([x (in-range 256)] [y (in-range 256)])
+    (for* ([x (in-range 0 256 4)] [y (in-range 0 256 4)])
       (check-equal? (byte-nor x y) (byte-nor y x)))))
 
 (define (byte-xnor left right)

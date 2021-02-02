@@ -6,8 +6,6 @@
  for/reducer
  for*/reducer
  (contract-out
-  [reducer? predicate/c]
-  [reducer/c (-> contract? contract? contract?)]
   [make-fold-reducer
    (->* ((-> any/c any/c any/c) any/c)
         (#:name (or/c interned-symbol? #f))
@@ -16,17 +14,6 @@
    (->* ((-> any/c any/c any/c) (-> any/c) (-> any/c any/c))
         (#:name (or/c interned-symbol? #f))
         reducer?)]
-  [make-reducer
-   (->* (#:starter (-> reduction-state/c)
-         #:consumer (-> any/c any/c reduction-state/c)
-         #:finisher (-> any/c any/c)
-         #:early-finisher (-> any/c any/c))
-        (#:name (or/c interned-symbol? #f))
-        reducer?)]
-  [reducer-starter (-> reducer? (-> reduction-state/c))]
-  [reducer-consumer (-> reducer? (-> any/c any/c reduction-state/c))]
-  [reducer-finisher (-> reducer? (-> any/c any/c))]
-  [reducer-early-finisher (-> reducer? (-> any/c any/c))]
   [reduce (-> reducer? any/c ... any/c)]
   [reduce-all (-> reducer? sequence? any/c)]
   [into-sum (reducer/c number? number?)]
@@ -60,19 +47,14 @@
          #:before-last immutable-string?
          #:after-last immutable-string?)
         (reducer/c immutable-string? immutable-string?))]
-  [reducer-impersonate
-   (->* (reducer?)
-        (#:domain-guard (or/c (-> any/c any/c) #f)
-         #:range-guard (or/c (-> any/c any/c) #f)
-         #:properties impersonator-property-hash/c
-         #:chaperone? boolean?)
-        reducer?)]
   [reducer-map
    (->* (reducer?)
         (#:domain (-> any/c any/c) #:range (-> any/c any/c))
         reducer?)]
   [reducer-filter (-> reducer? predicate/c reducer?)]
-  [reducer-limit (-> reducer? natural? reducer?)]))
+  [reducer-limit (-> reducer? natural? reducer?)])
+ (all-from-out rebellion/streaming/reducer/private/base)
+ (all-from-out rebellion/streaming/reducer/private/zip))
 
 (require (for-syntax racket/base
                      racket/contract/base
@@ -92,6 +74,8 @@
          rebellion/private/guarded-block
          rebellion/private/impersonation
          rebellion/private/static-name
+         rebellion/streaming/reducer/private/base
+         rebellion/streaming/reducer/private/zip
          rebellion/type/record
          rebellion/type/object
          rebellion/type/wrapper
@@ -112,37 +96,6 @@
 ;@----------------------------------------------------------------------------------------------------
 ;; Core APIs
 
-(define reduction-state/c (variant/c #:consume any/c #:early-finish any/c))
-
-(define-object-type reducer (starter consumer finisher early-finisher)
-  #:constructor-name constructor:reducer)
-
-(define (make-reducer #:starter starter*
-                      #:consumer consumer*
-                      #:finisher finisher*
-                      #:early-finisher early-finisher*
-                      #:name [name #false])
-  (define starter
-    (if (zero? (procedure-arity starter*))
-        starter*
-        (procedure-reduce-arity starter* 0)))
-  (define consumer
-    (if (equal? (procedure-arity consumer*) 2)
-        consumer*
-        (procedure-reduce-arity consumer* 2)))
-  (define finisher
-    (if (equal? (procedure-arity finisher*) 1)
-        finisher*
-        (procedure-reduce-arity finisher* 1)))
-  (define early-finisher
-    (if (equal? (procedure-arity early-finisher*) 1)
-        early-finisher*
-        (procedure-reduce-arity early-finisher* 1)))
-  (constructor:reducer #:starter starter
-                       #:consumer consumer
-                       #:finisher finisher
-                       #:early-finisher early-finisher
-                       #:name name))
 
 (define (make-fold-reducer consumer init-state #:name [name #false])
   (make-effectful-fold-reducer consumer (λ () init-state) values #:name name))
@@ -208,146 +161,6 @@
                   210)
     (check-equal? (reduce-all into-count (in-string "abcde")) 5)))
 
-;@------------------------------------------------------------------------------
-;; Contracts
-
-(define ((reducer-consumer-guard domain-guard) state element)
-  (values state (domain-guard element)))
-
-(define (reducer-impersonate
-         reducer
-         #:domain-guard [domain-guard #false]
-         #:range-guard [range-guard #false]
-         #:properties [properties (hash)]
-         #:chaperone?
-         [chaperone? (and (false? domain-guard) (false? range-guard))])
-  (define consumer (reducer-consumer reducer))
-  (define finisher (reducer-finisher reducer))
-  (define early-finisher (reducer-early-finisher reducer))
-  (define domain-chaperone? (or chaperone? (false? domain-guard)))
-  (define range-chaperone? (or chaperone? (false? range-guard)))
-
-  (define impersonated-consumer
-    (function-impersonate
-     consumer
-     #:arguments-guard (and domain-guard (reducer-consumer-guard domain-guard))
-     #:chaperone? domain-chaperone?))
-
-  (define impersonated-finisher
-    (function-impersonate finisher
-                          #:results-guard range-guard
-                          #:chaperone? range-chaperone?))
-  
-  (define impersonated-early-finisher
-    (function-impersonate early-finisher
-                          #:results-guard range-guard
-                          #:chaperone? range-chaperone?))
-  
-  (define impersonated-without-props
-    (make-reducer #:starter (reducer-starter reducer)
-                  #:consumer impersonated-consumer
-                  #:finisher impersonated-finisher
-                  #:early-finisher impersonated-early-finisher
-                  #:name (object-name reducer)))
-  
-  (object-impersonate impersonated-without-props descriptor:reducer
-                      #:properties properties))
-
-(module+ test
-  (test-case (name-string reducer-impersonate)
-    (test-case "properties only"
-      (define reducer (into-all-match? even?))
-      (define properties (hash impersonator-prop:contracted 'foo))
-      (define impersonated
-        (reducer-impersonate reducer #:properties properties))
-      (check-equal? (value-contract impersonated) 'foo)
-      (check-equal? impersonated reducer)
-      (check impersonator-of? impersonated reducer)
-      (check impersonator-of? reducer impersonated)
-      (check chaperone-of? impersonated reducer)
-      (check chaperone-of? reducer impersonated))
-    
-    (test-case "domain guard"
-      (define counter (box 0))
-      (define (guard v)
-        (set-box! counter (add1 (unbox counter)))
-        v)
-      (define impersonated
-        (reducer-impersonate into-list #:domain-guard guard #:chaperone? #true))
-      (check-equal? (reduce impersonated 'a 'b 'c) (list 'a 'b 'c))
-      (check-equal? (unbox counter) 3)
-      (check-equal? impersonated into-list)
-      (check impersonator-of? impersonated into-list)
-      (check-false (impersonator-of? into-list impersonated))
-      (check chaperone-of? impersonated into-list)
-      (check-false (chaperone-of? into-list impersonated)))
-
-    (test-case "range guard"
-      (define result (box #false))
-      (define (guard v)
-        (set-box! result v)
-        v)
-      (define impersonated
-        (reducer-impersonate into-list #:range-guard guard #:chaperone? #true))
-      (check-equal? (reduce impersonated 1 2 3) (list 1 2 3))
-      (check-equal? (unbox result) (list 1 2 3))
-      (check-equal? impersonated into-list)
-      (check impersonator-of? impersonated into-list)
-      (check-false (impersonator-of? into-list impersonated))
-      (check chaperone-of? impersonated into-list)
-      (check-false (chaperone-of? into-list impersonated)))))
-
-(define/name (reducer/c domain-contract* range-contract*)
-  (define domain-contract (coerce-contract enclosing-function-name domain-contract*))
-  (define range-contract (coerce-contract enclosing-function-name range-contract*))
-  (define contract-name
-    (build-compound-type-name enclosing-function-name domain-contract range-contract))
-  (define domain-projection (contract-late-neg-projection domain-contract))
-  (define range-projection (contract-late-neg-projection range-contract))
-  (define chaperone? (and (chaperone-contract? domain-contract) (chaperone-contract? range-contract)))
-  (define (projection blame)
-    (define domain-blame (blame-add-context blame "an element reduced by" #:swap? #true))
-    (define range-blame (blame-add-context blame "the reduction result of"))
-    (define late-neg-domain-guard (domain-projection domain-blame))
-    (define late-neg-range-guard (range-projection range-blame))
-    (λ (v missing-party)
-      (assert-satisfies v reducer? blame #:missing-party missing-party)
-      (define props
-        (hash impersonator-prop:contracted the-contract
-              impersonator-prop:blame (cons blame missing-party)))
-      (define (domain-guard v) (late-neg-domain-guard v missing-party))
-      (define (range-guard v) (late-neg-range-guard v missing-party))
-      (reducer-impersonate v
-                           #:domain-guard domain-guard
-                           #:range-guard range-guard
-                           #:chaperone? chaperone?
-                           #:properties props)))
-  (define the-contract
-    ((if chaperone? make-chaperone-contract make-contract)
-     #:name contract-name
-     #:first-order reducer?
-     #:late-neg-projection projection))
-  the-contract)
-
-(module+ test
-  (test-case (name-string reducer/c)
-    (test-case "should enforce the domain contract on sequence elements"
-      (define/contract reducer (reducer/c number? any/c) into-list)
-      (check-not-exn (λ () (reduce reducer 1 2 3)))
-      (define (bad) (reduce reducer 1 2 'foo 3))
-      (check-exn exn:fail:contract:blame? bad)
-      (check-exn #rx"expected: number\\?" bad)
-      (check-exn #rx"given: 'foo" bad)
-      (check-exn #rx"an element reduced by" bad))
-
-    (test-case "should enforce the range contract on reduction results"
-      (define/contract reducer (reducer/c any/c integer?) into-sum)
-      (check-not-exn (λ () (reduce reducer 1 2 3)))
-      (define (bad) (reduce reducer 1 2 3.5))
-      (check-exn exn:fail:contract:blame? bad)
-      (check-exn #rx"promised: integer\\?" bad)
-      (check-exn #rx"produced: 6\\.5" bad)
-      (check-exn #rx"the reduction result of" bad))))
 
 ;@------------------------------------------------------------------------------
 ;; Non-core APIs

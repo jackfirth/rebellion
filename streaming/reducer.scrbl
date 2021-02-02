@@ -16,7 +16,8 @@
                      rebellion/collection/list
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer
-                     rebellion/type/record)
+                     rebellion/type/record
+                     rebellion/type/tuple)
           (submod rebellion/private/scribble-evaluator-factory doc)
           (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
@@ -33,7 +34,8 @@
                    'rebellion/collection/list
                    'rebellion/streaming/reducer
                    'rebellion/streaming/transducer
-                   'rebellion/type/record)
+                   'rebellion/type/record
+                   'rebellion/type/tuple)
     #:private (list 'racket/base)))
 
 @title{Reducers}
@@ -510,6 +512,21 @@ reducers with increasing power and complexity:
    (define stringly-typed-into-sum
      (reducer-map into-sum #:domain string->number #:range number->string))
    (transduce (list "12" "5" "42" "17") #:into stringly-typed-into-sum))}
+
+
+@defproc[(reducer-zip [zip-function procedure?] [subreducer reducer?] ...) reducer?]{
+ Combines @racket[subreducer]s into a single reducer that applies @racket[zip-function] to the
+ reduction results of the subreducers. The given @racket[zip-function] must accept as many arguments
+ as there are @racket[subreducer]s. If every @racket[subreducer] finishes early, the combined reducer
+ finishes early.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define-tuple-type endpoints (first last))
+    (define into-endpoints (reducer-zip endpoints nonempty-into-first nonempty-into-last)))
+
+   (transduce (list 1 2 3 4 5) #:into into-endpoints))}
 
 @defproc[(reducer-filter [red reducer?] [pred predicate/c]) reducer?]{
  Wraps @racket[red] to only reduce sequence elements for which @racket[pred]
