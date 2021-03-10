@@ -1,7 +1,7 @@
 #lang racket/base
 
 ;; Guarded blocks are like regular blocks, except they support early exits.
-;; Early exits are  specified with the guard statement. Guarded blocks are
+;; Early exits are specified with the guard statement. Guarded blocks are
 ;; transformed into equivalent nested cond expressions.
 
 (provide define/guard
