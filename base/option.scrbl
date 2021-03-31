@@ -27,9 +27,9 @@ function, and absent values are represented by the @racket[absent] constant.
   #:eval (make-evaluator) #:once
   (eval:no-prompt
    (define (hash-ref-option h k)
-    (if (hash-has-key? h k)
-        (present (hash-ref h k))
-        absent)))
+     (if (hash-has-key? h k)
+         (present (hash-ref h k))
+         absent)))
 
   (hash-ref-option (hash 'a 1 'b 2) 'a)
   (hash-ref-option (hash 'a 1 'b 2) 'c))
@@ -127,6 +127,36 @@ function, and absent values are represented by the @racket[absent] constant.
    (option-filter (present 42) number?)
    (option-filter (present "hello") number?)
    (option-filter absent number?))}
+
+
+@defproc[(option-or [first-opt option?] [opt option?] ...) option?]{
+ Returns the first option that's @tech{present}, or @racket[absent] if none are present.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (option-or (present 1) (present 2) (present 3))
+   (option-or absent (present 2) (present 3)))}
+
+
+@defproc[(option-or-call [first-opt option?] [opt-thunk (-> option?)] ...) option?]{
+ Returns @racket[first-opt] if it's @tech{present}, otherwise returns the first present option from
+ calling each @racket[opt-thunk]. Returns @racket[absent] if @racket[first-opt] is absent and every
+ @racket[opt-thunk] returns @racket[absent].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (option-or-call
+    absent
+    (λ ()
+      (printf "Calling first thunk...")
+      absent)
+    (λ ()
+      (printf "Calling second thunk...")
+      (present 1))
+    (λ ()
+      (printf "Calling third thunk...")
+      (present 2))))}
+
 
 @defproc[(option-get [opt option?] [default any/c]) any/c]{
  Returns the value in @racket[opt] if it is @tech{present}, otherwise returns
