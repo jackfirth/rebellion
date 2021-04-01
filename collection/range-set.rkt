@@ -23,6 +23,7 @@
 
 (require racket/math
          racket/sequence
+         racket/struct
          racket/vector
          rebellion/base/comparator
          rebellion/base/range
@@ -30,8 +31,7 @@
          rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/streaming/reducer
-         rebellion/streaming/transducer
-         rebellion/type/record)
+         rebellion/streaming/transducer)
 
 
 (module+ test
@@ -69,8 +69,17 @@
 ;; Data definition
 
 
-(define-record-type range-set (sorted-range-vector)
-  #:omit-root-binding)
+(struct range-set (sorted-range-vector)
+  #:transparent
+  #:omit-define-syntaxes
+  #:constructor-name constructor:range-set
+  #:property prop:sequence (λ (this) (range-set-sorted-range-vector this))
+
+  #:methods gen:custom-write
+  [(define write-proc
+     (make-constructor-style-printer
+      (λ (this) 'range-set)
+      (λ (this) (range-set-sorted-range-vector this))))])
 
 
 (define (range-set . ranges)
@@ -112,7 +121,7 @@
   (define sorted-ranges (vector-sort ranges range<?))
   (check-ranges-disjoint #:who (name build-range-set) sorted-ranges)
   (define coalesced-ranges (vector-merge-adjacent sorted-ranges range-connected? range-span))
-  (constructor:range-set #:sorted-range-vector coalesced-ranges))
+  (constructor:range-set coalesced-ranges))
 
 
 (define (check-ranges-use-same-comparator #:who who ranges)
@@ -221,7 +230,12 @@
 
       (test-case "equivalent but differently coalesced range set"
         (define expected-equivalent-set (range-set (singleton-range 1) (open-range 1 10)))
-        (check-equal? actual expected-equivalent-set)))))
+        (check-equal? actual expected-equivalent-set))))
+
+  (test-case "range set sequences"
+    (define ranges (range-set (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
+    (define expected (list (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
+    (check-equal? (sequence->list ranges) expected)))
 
 
 ;@----------------------------------------------------------------------------------------------------
