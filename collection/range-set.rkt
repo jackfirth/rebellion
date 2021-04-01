@@ -318,7 +318,7 @@
   (test-case "range-set-contains?"
     (define ranges (range-set (singleton-range 1) (closed-range 4 7) (greater-than-range 10)))
     (check-false (range-set-contains? ranges 0))
-    #;(check-true (range-set-contains? ranges 1))
+    (check-true (range-set-contains? ranges 1))
     (check-false (range-set-contains? ranges 2))
     (check-false (range-set-contains? ranges 3))
     (check-true (range-set-contains? ranges 4))
