@@ -1,6 +1,8 @@
 #lang racket/base
 
+
 (require racket/contract/base)
+
 
 (provide
  (contract-out
@@ -173,7 +175,9 @@
   [range-bound-endpoint (-> range-bound? any/c)]
   [range-bound-type (-> range-bound? bound-type?)]
   [inclusive-bound (-> any/c range-bound?)]
-  [exclusive-bound (-> any/c range-bound?)]))
+  [exclusive-bound (-> any/c range-bound?)]
+  [range<=> (comparator/c range?)]))
+
 
 (require racket/bool
          racket/match
@@ -185,9 +189,11 @@
          rebellion/type/singleton
          rebellion/type/tuple)
 
+
 (module+ test
   (require (submod "..")
            rackunit))
+
 
 ;@------------------------------------------------------------------------------
 ;; Data model
@@ -495,6 +501,21 @@
   (nor (equal? (compare cmp outer-lower inner-lower) greater)
        (equal? (compare cmp outer-upper inner-upper) lesser)))
 
+
+(define range<=>
+  (make-comparator
+   (λ (range other-range)
+     (unless (equal? (range-comparator range) (range-comparator other-range))
+       (raise-arguments-error
+        (name range<=>) "ranges must use same comparator" "range" range "other range" other-range))
+     (define cmp (cut<=> (range-comparator range)))
+     (match (compare cmp (range-lower-cut range) (range-lower-cut other-range))
+       [(== lesser) lesser]
+       [(== greater) greater]
+       [(== equivalent) (compare cmp (range-upper-cut range) (range-upper-cut other-range))]))
+   #:name (name range<=>)))
+
+
 (module+ test
   (test-case (name-string range-encloses?)
 
@@ -627,7 +648,56 @@
       (check-false (range-encloses? outer (greater-than-range 9)))
       (check-true (range-encloses? outer (singleton-range 2)))
       (check-true (range-encloses? outer (singleton-range 5)))
-      (check-false (range-encloses? outer (singleton-range 9))))))
+      (check-false (range-encloses? outer (singleton-range 9)))))
+
+  (test-case (name-string range<=>)
+
+    (test-case "should raise error on unequal comparators"
+      (define num-range (closed-range 2 9))
+      (define string-range
+        (closed-range "apple" "zebra" #:comparator string<=>))
+      (check-exn exn:fail:contract?
+                 (λ () (compare range<=> num-range string-range))))
+
+    (test-case "equal ranges compare equivalent"
+      (check-equal? (compare range<=> (closed-range 2 5) (closed-range 2 5)) equivalent)
+      (check-equal? (compare range<=> (open-range 2 5) (open-range 2 5)) equivalent)
+      (check-equal? (compare range<=> (closed-open-range 2 5) (closed-open-range 2 5)) equivalent)
+      (check-equal? (compare range<=> (open-closed-range 2 5) (open-closed-range 2 5)) equivalent)
+      (check-equal? (compare range<=> (less-than-range 2) (less-than-range 2)) equivalent)
+      (check-equal? (compare range<=> (greater-than-range 2) (greater-than-range 2)) equivalent)
+      (check-equal? (compare range<=> (at-most-range 2) (at-most-range 2)) equivalent)
+      (check-equal? (compare range<=> (at-least-range 2) (at-least-range 2)) equivalent)
+      (check-equal? (compare range<=> (singleton-range 2) (singleton-range 2)) equivalent))
+
+    (test-case "disconnected ranges compare based on their endpoints"
+      (check-equal? (compare range<=> (closed-range 2 5) (closed-range 6 10)) lesser)
+      (check-equal? (compare range<=> (less-than-range 2) (closed-range 6 10)) lesser)
+      (check-equal? (compare range<=> (greater-than-range 6) (less-than-range 2)) greater)
+      (check-equal? (compare range<=> (singleton-range 6) (less-than-range 2)) greater))
+
+    (test-case "overlapping ranges compare based on their minimum endpoints"
+      (check-equal? (compare range<=> (closed-range 2 6) (closed-range 4 10)) lesser)
+      (check-equal? (compare range<=> (closed-range 4 10) (closed-range 2 6)) greater)
+      (check-equal? (compare range<=> (closed-range 2 5) (at-least-range 3)) lesser)
+      (check-equal? (compare range<=> (at-least-range 3) (closed-range 2 5)) greater)
+      (check-equal? (compare range<=> (closed-range 2 5) (at-least-range 1)) greater)
+      (check-equal? (compare range<=> (at-least-range 1) (closed-range 2 5)) lesser)
+      (check-equal? (compare range<=> (closed-range 2 5) (open-closed-range 2 5)) lesser)
+      (check-equal? (compare range<=> (at-least-range 4) (greater-than-range 4)) lesser))
+
+    (test-case "for ranges with equal minimum endpoints, the lesser range is the smaller one"
+      (check-equal? (compare range<=> (closed-range 2 6) (closed-range 2 10)) lesser)
+      (check-equal? (compare range<=> (closed-range 2 10) (closed-range 2 6)) greater)
+      (check-equal? (compare range<=> (at-least-range 2) (closed-range 2 5)) greater)
+      (check-equal? (compare range<=> (closed-range 2 5) (at-least-range 2)) lesser))
+
+    (test-case "for ranges with equal maximum endpoints, the lesser range is the larger one"
+      (check-equal? (compare range<=> (closed-range 2 10) (closed-range 6 10)) lesser)
+      (check-equal? (compare range<=> (closed-range 6 10) (closed-range 2 10)) greater)
+      (check-equal? (compare range<=> (at-most-range 5) (closed-range 2 5)) lesser)
+      (check-equal? (compare range<=> (closed-range 2 5) (at-most-range 5)) greater))))
+
 
 (define (range-connected? range1 range2)
   (define cmp (cut<=> (range-comparator range1)))
