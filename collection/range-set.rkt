@@ -7,11 +7,11 @@
 (provide
  (contract-out
   [range-set? predicate/c]
-  [range-set (-> range? ... range-set?)]
+  [range-set (-> nonempty-range? ... range-set?)]
   [range-set-size (-> range-set? natural?)]
-  [sequence->range-set (-> (sequence/c range?) range-set?)]
-  [into-range-set (reducer/c range? range-set?)]
-  [in-range-set (-> range-set? (sequence/c range?))]
+  [sequence->range-set (-> (sequence/c nonempty-range?) range-set?)]
+  [into-range-set (reducer/c nonempty-range? range-set?)]
+  [in-range-set (-> range-set? (sequence/c nonempty-range?))]
   [empty-range-set empty-range-set?]
   [empty-range-set? predicate/c]
   [nonempty-range-set? predicate/c]
