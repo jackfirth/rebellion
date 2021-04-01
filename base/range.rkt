@@ -179,6 +179,10 @@
   [range<=> (comparator/c range?)]))
 
 
+(module+ private-for-range-set-implementation-only
+  (provide range-compare-to-value))
+
+
 (require racket/bool
          racket/match
          rebellion/base/comparator
@@ -237,10 +241,10 @@
 (define-singleton-type bottom-cut)
 
 (define (intermediate-cut-value cut)
-  (strict-cond
-    [(upper-cut? cut) (upper-cut-value cut)]
-    [(middle-cut? cut) (middle-cut-value cut)]
-    [(lower-cut? cut) (lower-cut-value cut)]))
+  (match cut
+    [(upper-cut value) value]
+    [(middle-cut value) value]
+    [(lower-cut value) value]))
 
 (define (range-lower-cut range)
   (define bound (range-lower-bound range))
@@ -871,6 +875,35 @@
     (check-exn
      #rx"expected non-overlapping ranges"
      (λ () (range-gap (closed-range 2 7) (closed-range 7 10))))))
+
+
+;@------------------------------------------------------------------------------
+;; Private utilities exported only for range set implementation
+
+
+(define (range-compare-to-value range value)
+  (define lower (range-lower-cut range))
+  (define upper (range-upper-cut range))
+  (define value-cut (middle-cut value))
+  (define cmp (cut<=> (range-comparator range)))
+  (match (compare cmp value-cut lower)
+    [(== equivalent) equivalent]
+    [(== lesser) greater]
+    [(== greater)
+     (match (compare cmp value-cut upper)
+       [(== equivalent) equivalent]
+       [(== lesser) equivalent]
+       [(== greater) lesser])]))
+
+
+(module+ test
+  (test-case (name-string range-compare-to-value)
+
+    (test-case "singleton ranges"
+      (define r (singleton-range 4))
+      (check-equal? (range-compare-to-value r 4) equivalent)
+      (check-equal? (range-compare-to-value r 2) greater)
+      (check-equal? (range-compare-to-value r 6) lesser))))
 
 
 ;@------------------------------------------------------------------------------

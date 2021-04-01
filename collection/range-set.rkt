@@ -21,17 +21,21 @@
   [range-subset (-> range-set? range? range-set?)]))
 
 
-(require racket/math
+(require racket/match
+         racket/math
          racket/sequence
          racket/struct
          racket/vector
          rebellion/base/comparator
+         rebellion/base/option
          rebellion/base/range
+         (submod rebellion/base/range private-for-range-set-implementation-only)
          rebellion/collection/vector/builder
          rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/streaming/reducer
-         rebellion/streaming/transducer)
+         rebellion/streaming/transducer
+         rebellion/type/tuple)
 
 
 (module+ test
@@ -63,6 +67,38 @@
           (iteration-loop (vector-builder-add builder element) j)))
     (merge-loop (vector-ref vec i) (add1 i)))
   (iteration-loop (make-vector-builder #:expected-size count) 0))
+
+
+;; Vector A, (A -> Comparison) -> Option A
+;; Searches vec for an element for which the search function returns the `equivalent` constant, then
+;; returns the index of that element if such an element exists. The vector is assumed to be sorted in
+;; a manner consistent with the comparison results returned by the search function. The search is a
+;; binary search taking log(n) time. Note that if there are multiple elements for which the search
+;; function returns `equivalent`, it is unspecified which of them is chosen. If no elements satisfy
+;; the search function, `absent` is returned.
+;; Examples:
+;; > (vector-binary-search (vector "a" "b" "c" "d") (λ (x) (compare string<=> x "c")))
+;; (present 2)
+(define (vector-binary-search vec search-function)
+  (define/guard (loop [lower 0] [upper (sub1 (vector-length vec))])
+    (guard (<= lower upper) else
+      absent)
+    (define middle (quotient (+ lower upper) 2))
+    (match (search-function (vector-ref vec middle))
+      [(== lesser) (loop (add1 middle) upper)]
+      [(== greater) (loop lower (sub1 middle))]
+      [(== equivalent) (present middle)]))
+  (loop))
+
+
+(module+ test
+  (test-case (name-string vector-binary-search)
+    (define vec (vector "a" "b" "c" "d"))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "a"))) (present 0))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "b"))) (present 1))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "c"))) (present 2))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "d"))) (present 3))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "e"))) absent)))
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -235,7 +271,17 @@
   (test-case "range set sequences"
     (define ranges (range-set (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
     (define expected (list (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
-    (check-equal? (sequence->list ranges) expected)))
+    (check-equal? (sequence->list ranges) expected))
+
+  (test-case "sequence->range-set"
+    (define ranges (list (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
+    (define expected (range-set (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
+    (check-equal? (sequence->range-set ranges) expected))
+
+  (test-case "into-range-set"
+    (define ranges (list (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
+    (define expected (range-set (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
+    (check-equal? (transduce ranges #:into into-range-set) expected)))
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -247,7 +293,8 @@
 
 
 (define (range-set-contains? ranges value)
-  #false)
+  (define vec (range-set-sorted-range-vector ranges))
+  (present? (vector-binary-search vec (λ (range) (range-compare-to-value range value)))))
 
 
 (define (range-set-encloses? ranges other-range)
@@ -260,3 +307,26 @@
 
 (define (range-subset ranges subset-range)
   ranges)
+
+
+(module+ test
+
+  (test-case "range-set-size"
+    (define ranges (range-set (closed-range 2 4) (closed-range 6 8) (closed-range 10 12)))
+    (check-equal? (range-set-size ranges) 3))
+
+  (test-case "range-set-contains?"
+    (define ranges (range-set (singleton-range 1) (closed-range 4 7) (greater-than-range 10)))
+    (check-false (range-set-contains? ranges 0))
+    #;(check-true (range-set-contains? ranges 1))
+    (check-false (range-set-contains? ranges 2))
+    (check-false (range-set-contains? ranges 3))
+    (check-true (range-set-contains? ranges 4))
+    (check-true (range-set-contains? ranges 5))
+    (check-true (range-set-contains? ranges 6))
+    (check-true (range-set-contains? ranges 7))
+    (check-false (range-set-contains? ranges 8))
+    (check-false (range-set-contains? ranges 9))
+    (check-false (range-set-contains? ranges 10))
+    (check-true (range-set-contains? ranges 11))
+    (check-true (range-set-contains? ranges 12))))
