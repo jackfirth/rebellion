@@ -53,63 +53,63 @@
 ;; Examples:
 ;; > (vector-merge-adjacent (vector 1 2 3 "hello" 4 5 "world" 6) both-numbers? +)
 ;; (vector 6 "hello" 9 "world" 6)
-(define (vector-merge-adjacent vec should-merge? merge-function)
+(define/guard (vector-merge-adjacent vec should-merge? merge-function)
   (define count (vector-length vec))
   (guard (< count 2) then
-         (vector->immutable-vector vec))
+    (vector->immutable-vector vec))
   (for/fold ([builder (make-vector-builder #:expected-size count)]
              [element (vector-ref vec 0)]
              #:result (build-vector (vector-builder-add builder element)))
             ([next-element (in-vector vec 1)])
     (if (should-merge? element next-element)
-        (values builder
-                (merge-function element next-element))
-        (values (vector-builder-add builder element)
-                next-element))))
+        (values builder (merge-function element next-element))
+        (values (vector-builder-add builder element) next-element))))
+
 
 (module+ test
   (test-case (name-string vector-merge-adjacent)
-             (define (numbers? . elements)
-               (andmap number? elements))
-             (check-equal? (vector-merge-adjacent #()
-                                                  (λ _ (raise 'should-not-be-called))
-                                                  (λ _ (raise 'should-not-be-called)))
-                           #()
-                           "Empty vectors are returned uninspected")
-             (check-equal? (vector-merge-adjacent #(1)
-                                                  (λ _ (raise 'should-not-be-called))
-                                                  (λ _ (raise 'should-not-be-called)))
-                           #(1)
-                           "Single-element vectors are returned uninspected")
-             (check-equal? (vector-merge-adjacent #(1 2 3 4 5)
-                                                  (λ _ #t)
-                                                  +)
-                           #(15)
-                           "Can merge all elements")
-             (check-equal? (vector-merge-adjacent #(1 2 3 4 5)
-                                                  (λ _ #f)
-                                                  (λ _ (raise 'should-not-be-called)))
-                           #(1 2 3 4 5)
-                           "Can merge no elements")
-             (check-equal? (vector-merge-adjacent #(1 2 3 a b c)
-                                                  numbers?
-                                                  +)
-                           #(6 a b c)
-                           "Can merge elements at start")
-             (check-equal? (vector-merge-adjacent #(a b c 4 5 6)
-                                                  numbers?
-                                                  +)
-                           #(a b c 15)
-                           "Can merge elements at end")
-             (check-equal? (vector-merge-adjacent #(a b c 4 5 6 d e f)
-                                                  numbers?
-                                                  +)
-                           #(a b c 15 d e f)
-                           "Can merge elements in middle")
-             (check-equal? (vector-merge-adjacent #(1 2 3 "hello" 4 5 "world" 6)
-                                                  numbers?
-                                                  +)
-                           #(6 "hello" 9 "world" 6))))
+
+    (define (both-numbers? left right)
+      (and (number? left) (number? right)))
+
+    (define (fail-immediately left right)
+      (raise 'should-not-be-called))
+
+    (test-case "empty vectors are returned uninspected"
+      (define actual (vector-merge-adjacent (vector-immutable) fail-immediately fail-immediately))
+      (check-equal? actual (vector-immutable)))
+
+    (test-case "single-element vectors are returned uninspected"
+      (define actual (vector-merge-adjacent (vector-immutable 1) fail-immediately fail-immediately))
+      (check-equal? actual (vector-immutable 1)))
+
+    (test-case "can merge all elements"
+      (define actual (vector-merge-adjacent (vector-immutable 1 2 3 4 5) (λ (a b) #true) +))
+      (check-equal? actual (vector-immutable 15)))
+
+    (test-case "can merge no elements"
+      (define actual
+        (vector-merge-adjacent (vector-immutable 1 2 3 4 5) (λ (a b) #false) fail-immediately))
+      (check-equal? actual (vector-immutable 1 2 3 4 5)))
+
+    (test-case "can merge elements at start"
+      (define actual (vector-merge-adjacent (vector-immutable 1 2 3 'a 'b 'c) both-numbers? +))
+      (check-equal? actual (vector-immutable 6 'a 'b 'c)))
+
+    (test-case "can merge elements at end"
+      (define actual (vector-merge-adjacent (vector-immutable 'a 'b 'c 4 5 6) both-numbers? +))
+      (check-equal? actual (vector-immutable 'a 'b 'c 15)))
+
+    (test-case "can merge elements in middle"
+      (define actual
+        (vector-merge-adjacent (vector-immutable 'a 'b 'c 4 5 6 'd 'e 'f) both-numbers? +))
+      (check-equal? actual (vector-immutable 'a 'b 'c 15 'd 'e 'f)))
+
+    (test-case "can merge elements in middle multiple times"
+      (define actual
+        (vector-merge-adjacent (vector-immutable 1 2 3 "hello" 4 5 "world" 6) both-numbers? +))
+    (check-equal? actual (vector-immutable 6 "hello" 9 "world" 6)))))
+
 
 ;; Vector A, (A -> Comparison) -> Option A
 ;; Searches vec for an element for which the search function returns the `equivalent` constant, then
