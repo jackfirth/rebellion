@@ -55,19 +55,61 @@
 ;; (vector 6 "hello" 9 "world" 6)
 (define (vector-merge-adjacent vec should-merge? merge-function)
   (define count (vector-length vec))
-  (define/guard (iteration-loop builder i)
-    (guard (equal? i count) then
-      (build-vector builder))
-    (define/guard (merge-loop element j)
-      (guard (equal? j count) then
-        (build-vector (vector-builder-add builder element)))
-      (define next-element (vector-ref vec j))
-      (if (should-merge? element next-element)
-          (merge-loop (merge-function element next-element) (add1 j))
-          (iteration-loop (vector-builder-add builder element) j)))
-    (merge-loop (vector-ref vec i) (add1 i)))
-  (iteration-loop (make-vector-builder #:expected-size count) 0))
+  (guard (< count 2) then
+         (vector->immutable-vector vec))
+  (for/fold ([builder (make-vector-builder #:expected-size count)]
+             [element (vector-ref vec 0)]
+             #:result (build-vector (vector-builder-add builder element)))
+            ([next-element (in-vector vec 1)])
+    (if (should-merge? element next-element)
+        (values builder
+                (merge-function element next-element))
+        (values (vector-builder-add builder element)
+                next-element))))
 
+(module+ test
+  (test-case (name-string vector-merge-adjacent)
+             (define (numbers? . elements)
+               (andmap number? elements))
+             (check-equal? (vector-merge-adjacent #()
+                                                  (λ _ (raise 'should-not-be-called))
+                                                  (λ _ (raise 'should-not-be-called)))
+                           #()
+                           "Empty vectors are returned uninspected")
+             (check-equal? (vector-merge-adjacent #(1)
+                                                  (λ _ (raise 'should-not-be-called))
+                                                  (λ _ (raise 'should-not-be-called)))
+                           #(1)
+                           "Single-element vectors are returned uninspected")
+             (check-equal? (vector-merge-adjacent #(1 2 3 4 5)
+                                                  (λ _ #t)
+                                                  +)
+                           #(15)
+                           "Can merge all elements")
+             (check-equal? (vector-merge-adjacent #(1 2 3 4 5)
+                                                  (λ _ #f)
+                                                  (λ _ (raise 'should-not-be-called)))
+                           #(1 2 3 4 5)
+                           "Can merge no elements")
+             (check-equal? (vector-merge-adjacent #(1 2 3 a b c)
+                                                  numbers?
+                                                  +)
+                           #(6 a b c)
+                           "Can merge elements at start")
+             (check-equal? (vector-merge-adjacent #(a b c 4 5 6)
+                                                  numbers?
+                                                  +)
+                           #(a b c 15)
+                           "Can merge elements at end")
+             (check-equal? (vector-merge-adjacent #(a b c 4 5 6 d e f)
+                                                  numbers?
+                                                  +)
+                           #(a b c 15 d e f)
+                           "Can merge elements in middle")
+             (check-equal? (vector-merge-adjacent #(1 2 3 "hello" 4 5 "world" 6)
+                                                  numbers?
+                                                  +)
+                           #(6 "hello" 9 "world" 6))))
 
 ;; Vector A, (A -> Comparison) -> Option A
 ;; Searches vec for an element for which the search function returns the `equivalent` constant, then
