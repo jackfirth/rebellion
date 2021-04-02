@@ -340,7 +340,11 @@
 
 
 (define (range-set-encloses? ranges other-range)
-  #false)
+  (define vec (range-set-sorted-range-vector ranges))
+  (match (vector-binary-search vec (λ (range) (range-compare-to-range range other-range)))
+    [(present overlapping-range-index)
+     (range-encloses? (vector-ref vec overlapping-range-index) other-range)]
+    [(== absent) #false]))
 
 
 (define (range-set-encloses-all? ranges other-ranges)
@@ -371,4 +375,24 @@
     (check-false (range-set-contains? ranges 9))
     (check-false (range-set-contains? ranges 10))
     (check-true (range-set-contains? ranges 11))
-    (check-true (range-set-contains? ranges 12))))
+    (check-true (range-set-contains? ranges 12)))
+
+  (test-case (name-string range-set-encloses?)
+    (define ranges (range-set (singleton-range 1) (closed-range 4 7) (greater-than-range 10)))
+    (check-true (range-set-encloses? ranges (singleton-range 1)))
+    (check-true (range-set-encloses? ranges (closed-range 4 7)))
+    (check-true (range-set-encloses? ranges (greater-than-range 10)))
+    (check-true (range-set-encloses? ranges (closed-range 5 6)))
+    (check-true (range-set-encloses? ranges (open-range 4 7)))
+    (check-true (range-set-encloses? ranges (closed-open-range 4 7)))
+    (check-true (range-set-encloses? ranges (open-closed-range 4 7)))
+    (check-true (range-set-encloses? ranges (closed-range 15 20)))
+    (check-false (range-set-encloses? ranges (unbounded-range)))
+    (check-false (range-set-encloses? ranges (closed-range 3 8)))
+    (check-false (range-set-encloses? ranges (closed-range 3 6)))
+    (check-false (range-set-encloses? ranges (closed-range 6 8)))
+    (check-false (range-set-encloses? ranges (less-than-range 1)))
+    (check-false (range-set-encloses? ranges (closed-range 2 3)))
+    (check-false (range-set-encloses? ranges (closed-range 8 9)))
+    (check-false (range-set-encloses? ranges (closed-range 1 7)))
+    (check-false (range-set-encloses? ranges (at-least-range 4)))))

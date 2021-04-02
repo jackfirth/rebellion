@@ -180,7 +180,8 @@
 
 
 (module+ private-for-range-set-implementation-only
-  (provide range-compare-to-value))
+  (provide range-compare-to-range
+           range-compare-to-value))
 
 
 (require racket/bool
@@ -904,6 +905,47 @@
       (check-equal? (range-compare-to-value r 4) equivalent)
       (check-equal? (range-compare-to-value r 2) greater)
       (check-equal? (range-compare-to-value r 6) lesser))))
+
+
+;; This is a bit of a weird comparison function that considers ranges equivalent if they overlap. It
+;; doesn't really work as an actual comparator because it's not transitive, but the range set
+;; implementation uses it for binary searching.
+(define/guard (range-compare-to-range range other-range)
+  (guard (range-overlaps? range other-range) then
+    equivalent)
+  (define cmp (cut<=> (range-comparator range)))
+  (define lower (range-lower-cut range))
+  (define other-upper (range-upper-cut other-range))
+  (if (equal? (compare cmp lower other-upper) greater)
+      greater
+      lesser))
+
+
+(module+ test
+  (test-case (name-string range-compare-to-range)
+
+    (test-case "singleton ranges"
+      (define r (singleton-range 4))
+      (check-equal? (range-compare-to-range r (singleton-range 4)) equivalent)
+      (check-equal? (range-compare-to-range r (singleton-range 2)) greater)
+      (check-equal? (range-compare-to-range r (singleton-range 6)) lesser))
+
+    (test-case "overlapping ranges compare equivalent"
+      (define r (closed-range 2 5))
+      (check-equal? (range-compare-to-range r r) equivalent)
+      (check-equal? (range-compare-to-range r (closed-range 0 10)) equivalent)
+      (check-equal? (range-compare-to-range r (closed-range 3 4)) equivalent)
+      (check-equal? (range-compare-to-range r (singleton-range 2)) equivalent)
+      (check-equal? (range-compare-to-range r (singleton-range 5)) equivalent)
+      (check-equal? (range-compare-to-range r (closed-range 1 3)) equivalent)
+      (check-equal? (range-compare-to-range r (closed-range 4 6)) equivalent))
+
+    (test-case "non-overlapping ranges compare based on their endpoints"
+      (define r (closed-range 4 6))
+      (check-equal? (range-compare-to-range r (closed-range 1 3)) greater)
+      (check-equal? (range-compare-to-range (closed-range 1 3) r) lesser)
+      (check-equal? (range-compare-to-range r (closed-range 8 10)) lesser)
+      (check-equal? (range-compare-to-range (closed-range 8 10) r) greater))))
 
 
 ;@------------------------------------------------------------------------------
