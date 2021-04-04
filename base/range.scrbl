@@ -493,6 +493,29 @@ whether the bound is inclusive or exclusive.
    (range-overlaps? (closed-range 2 5) (open-range 5 8)))}
 
 
+@defthing[range<=> (comparator/c range?)]{
+ A @tech{comparator} that compares @tech{ranges}. Ranges are compared by first comparing their lower
+ bounds and then comparing their upper bounds. One range is less than another if it contains smaller
+ values than the other range. In the case that the minimum values contained by each range are
+ equivalent, the smaller range is the range that contains fewer values (meaning the range that has a
+ smaller upper bound). Ranges can only be compared if they use equal endpoint comparators, otherwise a
+ contract exception is raised.
+
+ Ranges only compare equivalent if they're equal. That is, the @racket[range<=>] comparator is
+ @tech{consistent with equality}. Note that this means that some ranges are not equivalent even though
+ they contain the same set of values. Specifically, any two empty ranges with always contain the same
+ set of values (the empty set) but the ranges only compare equivalent if they have the same endpoints.
+ This is only possible with empty ranges; two nonempty ranges that contain the same set of values are
+ always equal and thus always compare equivalent.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare range<=> (singleton-range 4) (singleton-range 8))
+   (compare range<=> (closed-range 0 5) (closed-range 3 10))
+   (compare range<=> (closed-range 0 5) (closed-range 0 3))
+   (compare range<=> (closed-range 0 5) (closed-range 2 5)))}
+
+
 @section{Operations on Ranges}
 
 
@@ -520,3 +543,15 @@ whether the bound is inclusive or exclusive.
    (range-gap (less-than-range 4) (singleton-range 6))
    (range-gap (open-range 2 8) (closed-range 8 10))
    (eval:error (range-gap (closed-range 2 8) (closed-range 8 10))))}
+
+
+@defproc[(range-intersection [range1 range?] [range2 range?]) range?]{
+ Returns the largest range that is @tech{enclose}d by both @racket[range1] and @racket[range2]. The
+ ranges must be connected and use the same @tech{comparator} or else a contract error is raised. This
+ operation is commutative, associative, and idempotent.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-intersection (closed-range 2 8) (open-range 4 16))
+   (range-intersection (greater-than-range 4) (less-than-range 6))
+   (range-intersection (open-range 2 8) (at-most-range 5)))}
