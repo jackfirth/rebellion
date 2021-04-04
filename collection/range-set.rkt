@@ -5,6 +5,8 @@
 
 
 (provide
+ for/range-set
+ for*/range-set
  (contract-out
   [range-set? predicate/c]
   [range-set (-> nonempty-range? ... range-set?)]
@@ -21,7 +23,8 @@
   [range-subset (-> range-set? range? range-set?)]))
 
 
-(require racket/match
+(require (for-syntax racket/base)
+         racket/match
          racket/math
          racket/sequence
          racket/struct
@@ -250,6 +253,10 @@
 
 
 (define empty-range-set (range-set))
+
+
+(define-syntaxes (for/range-set for*/range-set)
+  (make-reducer-based-for-comprehensions #'into-range-set))
 
 
 (module+ test
