@@ -543,3 +543,15 @@ whether the bound is inclusive or exclusive.
    (range-gap (less-than-range 4) (singleton-range 6))
    (range-gap (open-range 2 8) (closed-range 8 10))
    (eval:error (range-gap (closed-range 2 8) (closed-range 8 10))))}
+
+
+@defproc[(range-intersection [range1 range?] [range2 range?]) range?]{
+ Returns the largest range that is @tech{enclose}d by both @racket[range1] and @racket[range2]. The
+ ranges must be connected and use the same @tech{comparator} or else a contract error is raised. This
+ operation is commutative, associative, and idempotent.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-intersection (closed-range 2 8) (open-range 4 16))
+   (range-intersection (greater-than-range 4) (less-than-range 6))
+   (range-intersection (open-range 2 8) (at-most-range 5)))}

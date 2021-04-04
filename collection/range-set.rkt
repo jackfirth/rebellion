@@ -25,6 +25,7 @@
          racket/math
          racket/sequence
          racket/struct
+         (only-in racket/unsafe/ops unsafe-vector*->immutable-vector!)
          racket/vector
          rebellion/base/comparator
          rebellion/base/option
@@ -111,7 +112,13 @@
     (check-equal? actual (vector-immutable 6 "hello" 9 "world" 6)))))
 
 
-;; Vector A, (A -> Comparison) -> Option A
+(define-tuple-type exact-match (index))
+
+;; The position indicates where in the vector the search ended up. It's not an index, it's a position
+;; *between* indices, so its range is [0, vector-length + 1] inclusive.
+(define-tuple-type no-match (position))
+
+;; Vector A, (A -> Comparison) -> (Or ExactMatch NoMatch)
 ;; Searches vec for an element for which the search function returns the `equivalent` constant, then
 ;; returns the index of that element if such an element exists. The vector is assumed to be sorted in
 ;; a manner consistent with the comparison results returned by the search function. The search is a
@@ -119,28 +126,35 @@
 ;; function returns `equivalent`, it is unspecified which of them is chosen. If no elements satisfy
 ;; the search function, `absent` is returned.
 ;; Examples:
-;; > (vector-binary-search (vector "a" "b" "c" "d") (λ (x) (compare string<=> x "c")))
-;; (present 2)
+;; > (vector-binary-search (vector "a" "b" "d" "e") (λ (x) (compare string<=> x "d")))
+;; (exact-match 2)
+;; > (vector-binary-search (vector "a" "b" "d" "e") (λ (x) (compare string<=> x "c")))
+;; (no-match 2)
 (define (vector-binary-search vec search-function)
   (define/guard (loop [lower 0] [upper (sub1 (vector-length vec))])
     (guard (<= lower upper) else
-      absent)
+      (no-match lower))
     (define middle (quotient (+ lower upper) 2))
     (match (search-function (vector-ref vec middle))
       [(== lesser) (loop (add1 middle) upper)]
       [(== greater) (loop lower (sub1 middle))]
-      [(== equivalent) (present middle)]))
+      [(== equivalent) (exact-match middle)]))
   (loop))
 
 
 (module+ test
   (test-case (name-string vector-binary-search)
-    (define vec (vector "a" "b" "c" "d"))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "a"))) (present 0))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "b"))) (present 1))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "c"))) (present 2))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "d"))) (present 3))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "e"))) absent)))
+    (define vec (vector "aa" "bb" "cc" "dd"))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "aa"))) (exact-match 0))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "bb"))) (exact-match 1))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "cc"))) (exact-match 2))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "dd"))) (exact-match 3))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "a"))) (no-match 0))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "b"))) (no-match 1))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "c"))) (no-match 2))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "d"))) (no-match 3))
+    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "e"))) (no-match 4))
+    (check-equal? (vector-binary-search (vector) (λ (x) (compare string<=> x "a"))) (no-match 0))))
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -336,15 +350,15 @@
 
 (define (range-set-contains? ranges value)
   (define vec (range-set-sorted-range-vector ranges))
-  (present? (vector-binary-search vec (λ (range) (range-compare-to-value range value)))))
+  (exact-match? (vector-binary-search vec (λ (range) (range-compare-to-value range value)))))
 
 
 (define (range-set-encloses? ranges other-range)
   (define vec (range-set-sorted-range-vector ranges))
   (match (vector-binary-search vec (λ (range) (range-compare-to-range range other-range)))
-    [(present overlapping-range-index)
+    [(exact-match overlapping-range-index)
      (range-encloses? (vector-ref vec overlapping-range-index) other-range)]
-    [(== absent) #false]))
+    [_ #false]))
 
 
 (define (range-set-encloses-all? ranges other-ranges)
@@ -352,7 +366,31 @@
 
 
 (define (range-subset ranges subset-range)
-  ranges)
+  (define vec (range-set-sorted-range-vector ranges))
+  (define lower-subset-cut (range-lower-cut subset-range))
+  (define upper-subset-cut (range-upper-cut subset-range))
+  (define lower-boundary
+    (vector-binary-search vec (λ (range) (range-compare-to-cut range lower-subset-cut))))
+  (define upper-boundary
+    (vector-binary-search vec (λ (range) (range-compare-to-cut range upper-subset-cut))))
+  (define start
+    (match lower-boundary
+      [(exact-match i) i]
+      [(no-match pos) pos]))
+  (define end
+    (match upper-boundary
+      [(exact-match i) (add1 i)]
+      [(no-match pos) pos]))
+  (define subvec (make-vector (- end start)))
+  (vector-copy! subvec 0 vec start end)
+  (when (exact-match? lower-boundary)
+    (define modified-range (range-intersection (vector-ref subvec 0) subset-range))
+    (vector-set! subvec 0 modified-range))
+  (when (exact-match? upper-boundary)
+    (define index-in-subvec (sub1 (vector-length subvec)))
+    (define modified-range (range-intersection (vector-ref subvec index-in-subvec) subset-range))
+    (vector-set! subvec index-in-subvec modified-range))
+  (constructor:range-set (unsafe-vector*->immutable-vector! subvec)))
 
 
 (module+ test
@@ -395,4 +433,38 @@
     (check-false (range-set-encloses? ranges (closed-range 2 3)))
     (check-false (range-set-encloses? ranges (closed-range 8 9)))
     (check-false (range-set-encloses? ranges (closed-range 1 7)))
-    (check-false (range-set-encloses? ranges (at-least-range 4)))))
+    (check-false (range-set-encloses? ranges (at-least-range 4))))
+
+  (test-case (name-string range-subset)
+    (define ranges (range-set (singleton-range 1) (closed-range 4 7) (greater-than-range 10)))
+    (check-equal? (range-subset ranges (unbounded-range)) ranges)
+
+    (test-case "non-intersecting subset selecting middle ranges only"
+      (define subset-range (closed-range 3 8))
+      (define expected (range-set (closed-range 4 7)))
+      (check-equal? (range-subset ranges subset-range) expected))
+
+    (test-case "non-intersecting subset selecting lower ranges only"
+      (define subset-range (less-than-range 8))
+      (define expected (range-set (singleton-range 1) (closed-range 4 7)))
+      (check-equal? (range-subset ranges subset-range) expected))
+
+    (test-case "non-intersecting subset selecting upper ranges only"
+      (define subset-range (greater-than-range 3))
+      (define expected (range-set (closed-range 4 7) (greater-than-range 10)))
+      (check-equal? (range-subset ranges subset-range) expected))
+
+    (test-case "intersecting subset selecting middle ranges only"
+      (define subset-range (closed-range 3 6))
+      (define expected (range-set (closed-range 4 6)))
+      (check-equal? (range-subset ranges subset-range) expected))
+
+    (test-case "intersecting subset selecting lower ranges only"
+      (define subset-range (less-than-range 6))
+      (define expected (range-set (singleton-range 1) (closed-open-range 4 6)))
+      (check-equal? (range-subset ranges subset-range) expected))
+
+    (test-case "intersecting subset selecting upper ranges only"
+      (define subset-range (greater-than-range 5))
+      (define expected (range-set (open-closed-range 5 7) (greater-than-range 10)))
+      (check-equal? (range-subset ranges subset-range) expected))))

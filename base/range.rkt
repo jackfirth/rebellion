@@ -109,57 +109,12 @@
   [unbounded-below-range
    (->* (range-bound?) (#:comparator comparator?) unbounded-below-range?)]
   [range-contains? (-> range? any/c boolean?)]
-
-  [range-encloses?
-   (->i #:chaperone
-        ([range range?] [other-range range?])
-
-        #:pre/name (range other-range)
-        "both ranges must use the same comparator"
-        (equal? (range-comparator range) (range-comparator other-range))
-
-        [_ boolean?])]
-
-  [range-connected?
-   (->i #:chaperone
-        ([range1 range?] [range2 range?])
-
-        #:pre/name (range1 range2)
-        "both ranges must use the same comparator"
-        (equal? (range-comparator range1) (range-comparator range2))
-
-        [_ boolean?])]
-
-  [range-overlaps?
-   (->i #:chaperone
-        ([range1 range?] [range2 range?])
-
-        #:pre/name (range1 range2)
-        "both ranges must use the same comparator"
-        (equal? (range-comparator range1) (range-comparator range2))
-
-        [_ boolean?])]
-
-  [range-span
-   (->i #:chaperone
-        ([range1 range?] [range2 range?])
-
-        #:pre/name (range1 range2)
-        "both ranges must use the same comparator"
-        (equal? (range-comparator range1) (range-comparator range2))
-
-        [_ range?])]
-
-  [range-gap
-   (->i #:chaperone
-        ([range1 range?] [range2 range?])
-
-        #:pre/name (range1 range2)
-        "both ranges must use the same comparator"
-        (equal? (range-comparator range1) (range-comparator range2))
-
-        [_ range?])]
-
+  [range-encloses? binary-range-predicate/c]
+  [range-connected? binary-range-predicate/c]
+  [range-overlaps? binary-range-predicate/c]
+  [range-span binary-range-operator/c]
+  [range-gap binary-range-operator/c]
+  [range-intersection binary-range-operator/c]
   [range-lower-bound (-> range? (or/c range-bound? unbounded?))]
   [range-upper-bound (-> range? (or/c range-bound? unbounded?))]
   [range-lower-endpoint (-> bounded-below-range? any/c)]
@@ -180,8 +135,11 @@
 
 
 (module+ private-for-range-set-implementation-only
-  (provide range-compare-to-range
-           range-compare-to-value))
+  (provide range-compare-to-cut
+           range-compare-to-range
+           range-compare-to-value
+           range-lower-cut
+           range-upper-cut))
 
 
 (require racket/bool
@@ -853,6 +811,25 @@
     [(exclusive-bound endpoint) (inclusive-bound endpoint)]))
 
 
+(define (range-intersection range1 range2)
+  (unless (range-connected? range1 range2)
+    (raise-arguments-error
+     (name range-intersection)
+     "expected connected ranges"
+     "range1" range1
+     "range2" range2))
+  (define cmp (cut<=> (range-comparator range1)))
+  (define lower-bound
+    (match (compare cmp (range-lower-cut range1) (range-lower-cut range2))
+      [(== lesser) (range-lower-bound range2)]
+      [_ (range-lower-bound range1)]))
+  (define upper-bound
+    (match (compare cmp (range-upper-cut range1) (range-upper-cut range2))
+      [(== greater) (range-upper-bound range2)]
+      [_ (range-upper-bound range1)]))
+  (range lower-bound upper-bound #:comparator (range-comparator range1)))
+
+
 (module+ test
   (test-case (name-string range-gap)
     (check-equal? (range-gap (closed-range 2 7) (closed-range 10 15)) (open-range 7 10))
@@ -875,26 +852,41 @@
     (check-equal? (range-gap (closed-range 7 10) (open-range 2 7)) (closed-open-range 7 7))
     (check-exn
      #rx"expected non-overlapping ranges"
-     (λ () (range-gap (closed-range 2 7) (closed-range 7 10))))))
+     (λ () (range-gap (closed-range 2 7) (closed-range 7 10)))))
+
+  (test-case (name-string range-intersection)
+    (check-equal? (range-intersection (closed-range 2 8) (closed-range 5 10)) (closed-range 5 8))
+    (check-equal? (range-intersection (closed-range 5 10) (closed-range 2 8)) (closed-range 5 8))
+    (check-equal? (range-intersection (closed-range 0 10) (closed-range 4 6)) (closed-range 4 6))
+    (check-equal? (range-intersection (closed-range 4 6) (closed-range 0 10)) (closed-range 4 6))
+    (check-equal? (range-intersection (closed-range 0 5) (closed-range 5 10)) (singleton-range 5))
+    (check-equal? (range-intersection (closed-range 5 10) (closed-range 0 5)) (singleton-range 5))
+    (check-equal? (range-intersection (open-range 0 5) (closed-range 5 10)) (closed-open-range 5 5))
+    (check-equal? (range-intersection (closed-range 5 10) (open-range 0 5)) (closed-open-range 5 5))
+    (check-equal? (range-intersection (closed-range 0 5) (open-range 5 10)) (open-closed-range 5 5))
+    (check-equal? (range-intersection (open-range 5 10) (closed-range 0 5)) (open-closed-range 5 5))))
 
 
 ;@------------------------------------------------------------------------------
 ;; Private utilities exported only for range set implementation
 
 
-(define (range-compare-to-value range value)
+(define (range-compare-to-cut range cut)
   (define lower (range-lower-cut range))
   (define upper (range-upper-cut range))
-  (define value-cut (middle-cut value))
   (define cmp (cut<=> (range-comparator range)))
-  (match (compare cmp value-cut lower)
+  (match (compare cmp cut lower)
     [(== equivalent) equivalent]
     [(== lesser) greater]
     [(== greater)
-     (match (compare cmp value-cut upper)
+     (match (compare cmp cut upper)
        [(== equivalent) equivalent]
        [(== lesser) equivalent]
        [(== greater) lesser])]))
+
+
+(define (range-compare-to-value range value)
+  (range-compare-to-cut range (middle-cut value)))
 
 
 (module+ test
@@ -951,7 +943,31 @@
 ;@------------------------------------------------------------------------------
 ;; Contract helpers
 
+
 (define (default-real<=> v) (if (unsupplied-arg? v) real<=> v))
+
 
 (define (single-endpoint-range-constructor/c range-subtype)
   (->* (any/c) (#:comparator comparator?) range-subtype))
+
+
+(define binary-range-predicate/c
+  (->i #:chaperone
+       ([range1 range?] [range2 range?])
+
+       #:pre/name (range1 range2)
+       "both ranges must use the same comparator"
+       (equal? (range-comparator range1) (range-comparator range2))
+
+       [_ boolean?]))
+
+
+(define binary-range-operator/c
+  (->i #:chaperone
+       ([range1 range?] [range2 range?])
+
+       #:pre/name (range1 range2)
+       "both ranges must use the same comparator"
+       (equal? (range-comparator range1) (range-comparator range2))
+
+       [_ range?]))
