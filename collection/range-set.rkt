@@ -362,7 +362,8 @@
 
 
 (define (range-set-encloses-all? ranges other-ranges)
-  #false)
+  (for/and ([range other-ranges])
+    (range-set-encloses? ranges range)))
 
 
 (define (range-subset ranges subset-range)
@@ -434,6 +435,18 @@
     (check-false (range-set-encloses? ranges (closed-range 8 9)))
     (check-false (range-set-encloses? ranges (closed-range 1 7)))
     (check-false (range-set-encloses? ranges (at-least-range 4))))
+
+  (test-case (name-string range-set-encloses-all?)
+    (define ranges (range-set (singleton-range 1) (closed-range 4 7) (greater-than-range 10)))
+    (check-true (range-set-encloses-all? ranges ranges))
+    (check-true (range-set-encloses-all? ranges '()))
+    (check-true (range-set-encloses-all? ranges (list (singleton-range 1))))
+    (check-true (range-set-encloses-all? ranges (list (closed-range 4 7))))
+    (check-true (range-set-encloses-all? ranges (list (greater-than-range 10))))
+    (check-false (range-set-encloses-all? ranges (list (unbounded-range))))
+    (check-false (range-set-encloses-all? ranges (list (closed-range 0 1))))
+    (check-false (range-set-encloses-all? ranges (list (closed-range 1 2))))
+    (check-false (range-set-encloses-all? ranges (list (singleton-range 1) (singleton-range 2)))))
 
   (test-case (name-string range-subset)
     (define ranges (range-set (singleton-range 1) (closed-range 4 7) (greater-than-range 10)))
