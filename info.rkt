@@ -9,8 +9,7 @@
               "rebellion")))
 
 (define deps
-  (list "base"
-        "reprovide-lang"))
+  (list "base"))
 
 (define build-deps
   (list "net-doc"
