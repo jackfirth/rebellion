@@ -4,6 +4,7 @@
                      racket/bool
                      racket/contract/base
                      racket/contract/region
+                     racket/function
                      racket/math
                      racket/sequence
                      racket/set
@@ -106,18 +107,19 @@ early, before the input sequence is fully consumed.
 
 @defproc[(append-mapping [f (-> any/c sequence?)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
- emits each element in the returned sequence downstream.
+ emits @italic{each} element in the returned sequence downstream.
  
  This is similar to Java's
  @hyperlink["https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html#flatMap-java.util.function.Function-"]{@tt{Stream.flatMap}}
- method and Haskell's
- @hyperlink["https://hackage.haskell.org/package/base/docs/Prelude.html#t:Functor"]{@tt{fmap}}
- function.
+ method.
 
  @(examples
    #:eval (make-evaluator) #:once
    (transduce (set 'red 'green 'blue)
               (append-mapping symbol->immutable-string)
+              #:into into-string))
+   (transduce (list 11 17 15)
+              (append-mapping (lambda (n) (build-list n identity))
               #:into into-string))}
 
 @defproc[(folding [f (-> any/c any/c any/c)] [init any/c]) transducer?]{
