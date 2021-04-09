@@ -120,7 +120,7 @@ early, before the input sequence is fully consumed.
               #:into into-string))
    (transduce (list 3 1 2)
               (append-mapping (lambda (n) (in-range n))
-              #:into into-string))}
+              #:into into-list))}
 
 @defproc[(folding [f (-> any/c any/c any/c)] [init any/c]) transducer?]{
  Constructs a @tech{transducer} that folds over the input elements and emits the
