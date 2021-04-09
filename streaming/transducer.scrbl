@@ -107,6 +107,12 @@ early, before the input sequence is fully consumed.
 @defproc[(append-mapping [f (-> any/c sequence?)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
  emits each element in the returned sequence downstream.
+ 
+ This is similar to Java's
+ @hyperlink["https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html#flatMap-java.util.function.Function-"]{@tt{Stream.flatMap}}
+ method and Haskell's
+ @hyperlink["https://hackage.haskell.org/package/base/docs/Prelude.html#t:Functor"]{@tt{fmap}}
+ function.
 
  @(examples
    #:eval (make-evaluator) #:once
