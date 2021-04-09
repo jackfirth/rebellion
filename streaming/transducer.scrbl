@@ -4,7 +4,6 @@
                      racket/bool
                      racket/contract/base
                      racket/contract/region
-                     racket/function
                      racket/math
                      racket/sequence
                      racket/set
