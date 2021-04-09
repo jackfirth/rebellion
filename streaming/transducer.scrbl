@@ -119,7 +119,7 @@ early, before the input sequence is fully consumed.
               (append-mapping symbol->immutable-string)
               #:into into-string))
    (transduce (list 3 1 2)
-              (append-mapping (lambda (n) (build-list n identity))
+              (append-mapping (lambda (n) (in-range n))
               #:into into-string))}
 
 @defproc[(folding [f (-> any/c any/c any/c)] [init any/c]) transducer?]{
