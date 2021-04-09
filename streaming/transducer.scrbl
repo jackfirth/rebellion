@@ -118,7 +118,7 @@ early, before the input sequence is fully consumed.
    (transduce (set 'red 'green 'blue)
               (append-mapping symbol->immutable-string)
               #:into into-string))
-   (transduce (list 11 17 15)
+   (transduce (list 3 1 2)
               (append-mapping (lambda (n) (build-list n identity))
               #:into into-string))}
 
