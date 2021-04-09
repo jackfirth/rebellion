@@ -106,13 +106,20 @@ early, before the input sequence is fully consumed.
 
 @defproc[(append-mapping [f (-> any/c sequence?)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
- emits each element in the returned sequence downstream.
+ emits @italic{each} element in the returned sequence downstream.
+ 
+ This is similar to Java's
+ @hyperlink["https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html#flatMap-java.util.function.Function-"]{@tt{Stream.flatMap}}
+ method.
 
  @(examples
    #:eval (make-evaluator) #:once
    (transduce (set 'red 'green 'blue)
               (append-mapping symbol->immutable-string)
-              #:into into-string))}
+              #:into into-string))
+   (transduce (list 3 1 2)
+              (append-mapping (lambda (n) (in-range 0 n))
+              #:into into-list))}
 
 @defproc[(folding [f (-> any/c any/c any/c)] [init any/c]) transducer?]{
  Constructs a @tech{transducer} that folds over the input elements and emits the
