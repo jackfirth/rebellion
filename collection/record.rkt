@@ -29,7 +29,7 @@
          rebellion/base/generative-token
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
-         rebellion/private/spliced-printing-entry
+         rebellion/private/sequence-markup
          rebellion/type/record
          rebellion/type/tuple)
 
@@ -51,7 +51,7 @@
         (for/list ([kw (in-list (keyset->list keywords))]
                    [v (in-vector values)])
           (define kw-str (unquoted-printing-string (format "~s" kw)))
-          (spliced-printing-entry kw-str v)))))
+          (sequence-markup (list kw-str v))))))
   (list (cons prop:equal+hash (default-tuple-equal+hash descriptor))
         (cons prop:custom-write custom-write)))
 
