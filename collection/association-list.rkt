@@ -29,7 +29,6 @@
          racket/math
          racket/sequence
          racket/set
-         racket/struct
          rebellion/collection/entry
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
@@ -66,7 +65,7 @@
   (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
-     (λ (_) type-name)
+     type-name
      (λ (this)
        (define backing-hash (accessor this backing-hash-field))
        (for*/list ([(k vs) (in-immutable-hash backing-hash)]

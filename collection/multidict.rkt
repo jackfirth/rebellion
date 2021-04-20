@@ -39,7 +39,6 @@
          racket/sequence
          racket/set
          racket/stream
-         racket/struct
          rebellion/collection/entry
          rebellion/collection/multiset
          rebellion/collection/keyset
@@ -80,7 +79,7 @@
   (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
-     (λ (_) type-name)
+     type-name
      (λ (this)
        (for*/list ([e (sequence this)])
          (sequence-markup (list (entry-key e) (entry-value e)))))))
