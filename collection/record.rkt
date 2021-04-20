@@ -25,12 +25,9 @@
 (require racket/list
          racket/math
          racket/set
-         racket/struct
-         rebellion/base/generative-token
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/private/sequence-markup
-         rebellion/type/record
          rebellion/type/tuple)
 
 (module+ test
@@ -44,7 +41,7 @@
   (define accessor (tuple-descriptor-accessor descriptor))
   (define custom-write
     (make-constructor-style-printer
-      (λ (this) 'record)
+      'record
       (λ (this)
         (define keywords (accessor this 0))
         (define values (accessor this 1))
@@ -178,7 +175,7 @@
   (define equal+hash (default-tuple-equal+hash descriptor))
   (define custom-write
     (make-constructor-style-printer
-     (λ (_) type-name)
+     type-name
      (λ (this)
        (define name (string-append "#:" (keyword->string (accessor this 0))))
        (list (unquoted-printing-string name) (accessor this 1)))))
