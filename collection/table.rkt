@@ -49,7 +49,7 @@
     (keyset-index-of fields '#:backing-column-vectors))
   (define size-field (keyset-index-of fields '#:size))
   (define custom-write
-    (make-constructor-style-printer
+    (make-constructor-style-printer-with-markup
      (name table)
      (λ (this)
        (define vectors (accessor this backing-column-vectors-field))

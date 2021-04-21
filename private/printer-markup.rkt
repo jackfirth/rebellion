@@ -28,7 +28,7 @@
        #:unquoted-printed-form any/c
        #:quoted-printed-form any/c
        mode-sensitive-markup?)]
-  [make-constructor-style-printer
+  [make-constructor-style-printer-with-markup
    (-> symbol? (-> any/c (sequence/c any/c)) custom-write-function/c)]))
 
 
@@ -51,7 +51,7 @@
   #:guard
   (λ (elements indentation prefix suffix inline-separator _)
     (values (sequence->list elements) indentation prefix suffix inline-separator))
-
+  
   #:methods gen:custom-write
   [(define/guard (write-proc this out mode)
      (define elements (sequence-markup-elements this))
@@ -84,10 +84,10 @@
   #:transparent
   #:guard
   (λ (elements prefix suffix separator _) (values (sequence->list elements) prefix suffix separator))
-
+  
   #:methods gen:custom-write
   [(define (write-proc this out mode)
-
+     
      (define (recur x)
        (custom-write x out mode #:recursive? #true))
      
@@ -126,10 +126,10 @@
   #:guard
   (λ (elements indentation prefix suffix _)
     (values (sequence->list elements) indentation prefix suffix))
-
+  
   #:methods gen:custom-write
   [(define (write-proc this out mode)
-
+     
      (define (recur x)
        (custom-write x out mode #:recursive? #true))
      
@@ -222,7 +222,7 @@
    #:suffix constructor-style-closing-delimiter))
 
 
-(define ((make-constructor-style-printer type-name get-contents) this out mode)
+(define ((make-constructor-style-printer-with-markup type-name get-contents) this out mode)
   (define markup (constructor-style-markup type-name (get-contents this)))
   (custom-write markup out mode))
 
@@ -236,13 +236,13 @@
 ;; is printed to `out` and false is returned. If printing succeeds, true is returned.
 (define (try-pretty-print-single-line v out mode)
   (let/ec escape
-
+    
     (define (on-overflow)
-
+      
       ;; We have to cancel the port before escaping instead of after escaping because the
       ;; tentative-port variable isn't in scope outside the let/ec expression.
       (tentative-pretty-print-port-cancel tentative-port)
-
+      
       ;; We have to escape because make-tentative-pretty-print-output-port calls the overflow thunk
       ;; *each time* the content exceeds the column limit; it doesn't actually *stop* printing. The
       ;; only way to stop the print operation while inside the overflow thunk is to escape from the
@@ -251,11 +251,11 @@
     
     (define tentative-port
       (make-tentative-pretty-print-output-port out (pretty-print-columns) on-overflow))
-
+    
     ;; If this exceeds the column width, the on-overflow thunk is called which aborts out using the
     ;; escape continuation.
     (custom-write v tentative-port mode)
-
+    
     ;; If evaluation reaches this point, printing v did not exceed the column limit and we can commit
     ;; the tentative port's output, sending it to the original port.
     (tentative-pretty-print-port-transfer tentative-port out)

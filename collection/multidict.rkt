@@ -78,7 +78,7 @@
   (define accessor (record-descriptor-accessor descriptor))
   (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
-    (make-constructor-style-printer
+    (make-constructor-style-printer-with-markup
      type-name
      (λ (this)
        (for*/list ([e (sequence this)])
