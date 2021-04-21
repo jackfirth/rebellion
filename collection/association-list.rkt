@@ -33,7 +33,7 @@
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/multiset
-         rebellion/private/sequence-markup
+         rebellion/private/printer-markup
          rebellion/type/record)
 
 (module+ test

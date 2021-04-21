@@ -27,7 +27,7 @@
          racket/set
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
-         rebellion/private/sequence-markup
+         rebellion/private/printer-markup
          rebellion/type/tuple)
 
 (module+ test

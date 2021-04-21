@@ -43,7 +43,7 @@
          rebellion/collection/multiset
          rebellion/collection/keyset
          rebellion/private/guarded-block
-         rebellion/private/sequence-markup
+         rebellion/private/printer-markup
          rebellion/streaming/reducer
          rebellion/type/record)
 

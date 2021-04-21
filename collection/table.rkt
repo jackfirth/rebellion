@@ -26,7 +26,7 @@
          rebellion/collection/keyset
          rebellion/collection/record
          rebellion/private/guarded-block
-         rebellion/private/sequence-markup
+         rebellion/private/printer-markup
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/type/record

@@ -25,7 +25,7 @@
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
-         rebellion/private/sequence-markup
+         rebellion/private/printer-markup
          rebellion/type/record/base
          rebellion/type/tuple)
 
