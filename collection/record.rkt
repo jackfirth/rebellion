@@ -25,12 +25,9 @@
 (require racket/list
          racket/math
          racket/set
-         racket/struct
-         rebellion/base/generative-token
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
-         rebellion/private/spliced-printing-entry
-         rebellion/type/record
+         rebellion/private/printer-markup
          rebellion/type/tuple)
 
 (module+ test
@@ -43,15 +40,15 @@
 (define (make-record-properties descriptor)
   (define accessor (tuple-descriptor-accessor descriptor))
   (define custom-write
-    (make-constructor-style-printer
-      (λ (this) 'record)
-      (λ (this)
-        (define keywords (accessor this 0))
-        (define values (accessor this 1))
-        (for/list ([kw (in-list (keyset->list keywords))]
-                   [v (in-vector values)])
-          (define kw-str (unquoted-printing-string (format "~s" kw)))
-          (spliced-printing-entry kw-str v)))))
+    (make-constructor-style-printer-with-markup
+     'record
+     (λ (this)
+       (define keywords (accessor this 0))
+       (define values (accessor this 1))
+       (for/list ([kw (in-list (keyset->list keywords))]
+                  [v (in-vector values)])
+         (define kw-str (unquoted-printing-string (format "~s" kw)))
+         (sequence-markup (list kw-str v))))))
   (list (cons prop:equal+hash (default-tuple-equal+hash descriptor))
         (cons prop:custom-write custom-write)))
 
@@ -177,8 +174,8 @@
   (define accessor (tuple-descriptor-accessor descriptor))
   (define equal+hash (default-tuple-equal+hash descriptor))
   (define custom-write
-    (make-constructor-style-printer
-     (λ (_) type-name)
+    (make-constructor-style-printer-with-markup
+     type-name
      (λ (this)
        (define name (string-append "#:" (keyword->string (accessor this 0))))
        (list (unquoted-printing-string name) (accessor this 1)))))

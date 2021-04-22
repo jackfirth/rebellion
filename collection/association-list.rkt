@@ -29,12 +29,11 @@
          racket/math
          racket/sequence
          racket/set
-         racket/struct
          rebellion/collection/entry
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/multiset
-         rebellion/private/spliced-printing-entry
+         rebellion/private/printer-markup
          rebellion/type/record)
 
 (module+ test
@@ -65,13 +64,13 @@
     (keyset-index-of (record-type-fields type) '#:backing-hash))
   (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
-    (make-constructor-style-printer
-     (λ (_) type-name)
+    (make-constructor-style-printer-with-markup
+     type-name
      (λ (this)
        (define backing-hash (accessor this backing-hash-field))
        (for*/list ([(k vs) (in-immutable-hash backing-hash)]
                    [v (in-vector vs)])
-         (spliced-printing-entry k v)))))
+         (sequence-markup (list k v))))))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)))
 
@@ -142,23 +141,23 @@
 (module+ test
   (define assoc (association-list 'a 1 'b 2 'a 3 'c 4))
   (define alt-assoc (association-list 'a 3 'b 2 'a 1 'c 4))
-
+  
   (test-case (name-string association-list-ref)
     (check-equal? (association-list-ref assoc 'a) (immutable-vector 1 3))
     (check-equal? (association-list-ref assoc 'b) (immutable-vector 2))
     (check-equal? (association-list-ref assoc 'd) empty-immutable-vector)
     (check-not-equal? (association-list-ref assoc 'a)
                       (association-list-ref alt-assoc 'a)))
-
+  
   (test-case (name-string association-list-size)
     (check-equal? (association-list-size assoc) 4))
-
+  
   (test-case (name-string association-list-keys)
     (check-equal? (association-list-keys assoc) (multiset 'a 'a 'b 'c)))
-
+  
   (test-case (name-string association-list-unique-keys)
     (check-equal? (association-list-unique-keys assoc) (set 'a 'b 'c)))
-
+  
   (test-case (name-string association-list-values)
     (define vs (association-list-values assoc))
     (check-equal? (immutable-vector-length vs) 4)
@@ -169,7 +168,7 @@
     (check-true (< (immutable-vector-index-of vs 1)
                    (immutable-vector-index-of vs 3)))
     (check-not-equal? vs (association-list-values alt-assoc)))
-
+  
   (test-case (name-string association-list-entries)
     (define entries (association-list-entries assoc))
     (check-equal? (immutable-vector-length entries) 4)
@@ -180,23 +179,23 @@
     (check-true (< (immutable-vector-index-of entries (entry 'a 1))
                    (immutable-vector-index-of entries (entry 'a 3))))
     (check-not-equal? entries (association-list-entries alt-assoc)))
-
+  
   (test-case (name-string association-list->hash)
     (check-equal? (association-list->hash assoc)
                   (hash 'a (immutable-vector 1 3)
                         'b (immutable-vector 2)
                         'c (immutable-vector 4))))
-
+  
   (test-case (name-string association-list-contains-key?)
     (check-true (association-list-contains-key? assoc 'a))
     (check-false (association-list-contains-key? assoc 'foo))
     (check-false (association-list-contains-key? empty-association-list 'a)))
-
+  
   (test-case (name-string association-list-contains-value?)
     (check-true (association-list-contains-value? assoc 3))
     (check-false (association-list-contains-value? assoc 1000))
     (check-false (association-list-contains-value? empty-association-list 3)))
-
+  
   (test-case (name-string association-list-contains-entry?)
     (check-true (association-list-contains-entry? assoc (entry 'a 3)))
     (check-false (association-list-contains-entry? assoc (entry 'a 1000)))

@@ -22,12 +22,11 @@
          racket/math
          racket/sequence
          racket/stream
-         racket/struct
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
          rebellion/private/guarded-block
-         rebellion/private/markup
+         rebellion/private/printer-markup
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/type/record
@@ -35,7 +34,6 @@
 
 (module+ test
   (require (submod "..")
-           racket/format
            rackunit))
 
 ;@------------------------------------------------------------------------------
@@ -51,26 +49,29 @@
     (keyset-index-of fields '#:backing-column-vectors))
   (define size-field (keyset-index-of fields '#:size))
   (define custom-write
-    (make-constructor-style-printer
-     (λ (_) (name table))
+    (make-constructor-style-printer-with-markup
+     (name table)
      (λ (this)
        (define vectors (accessor this backing-column-vectors-field))
        (define size (accessor this size-field))
        (define column-names (record-keywords vectors))
        (define columns-markup
-         (constructor-call-markup
-          #:type-name (name columns)
-          #:subexpressions
-          (for/list ([k (in-keyset column-names)]) (keyword-markup k))))
+         (sequence-markup
+          (cons (unquoted-printing-string (name-string columns))
+                (for/list ([k (in-keyset column-names)])
+                  (unquoted-printing-string (string-append "#:" (keyword->string k)))))
+          #:prefix (unquoted-printing-string "(")
+          #:suffix (unquoted-printing-string ")")))
        (define rows-markup
-         (for/stream ([pos (in-range size)])
+         (for/list ([pos (in-range size)])
            (define row-values
              (for/list ([k (in-keyset column-names)])
                (table-ref this pos k)))
-           (constructor-call-markup
-            #:type-name (name row)
-            #:subexpressions row-values)))
-       (stream-cons columns-markup rows-markup))))
+           (sequence-markup
+            (cons (unquoted-printing-string (name-string columns)) row-values)
+            #:prefix (unquoted-printing-string "(")
+            #:suffix (unquoted-printing-string ")"))))
+       (cons columns-markup rows-markup))))
   (list (cons prop:custom-write custom-write)
         (cons prop:sequence in-table)
         (cons prop:equal+hash (default-record-equal+hash descriptor))))
@@ -136,7 +137,7 @@
            (row "Greece" 10800000 "Athens")
            (row "Nigeria" 198600000 "Abuja")
            (row "Japan" 126400000 "Tokyo")))
-
+  
   (test-case "table-ref"
     (check-equal? (table-ref countries 0 '#:name) "Argentina")
     (check-equal? (table-ref countries 2 '#:population) 198600000)

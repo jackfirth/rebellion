@@ -22,11 +22,10 @@
   [make-record-field-accessor (-> record-descriptor? natural? procedure?)]))
 
 (require racket/math
-         racket/struct
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
-         rebellion/private/spliced-printing-entry
+         rebellion/private/printer-markup
          rebellion/type/record/base
          rebellion/type/tuple)
 
@@ -46,10 +45,10 @@
   (type predicate constructor accessor backing-tuple-descriptor)
   #:omit-define-syntaxes
   #:constructor-name constructor:initialized-record-descriptor
-
+  
   #:property prop:object-name
   (λ (this) (record-type-name (initialized-record-descriptor-type this)))
-
+  
   #:property prop:custom-write write-descriptor
   #:property prop:custom-print-quotable 'never)
 
@@ -57,10 +56,10 @@
   (type predicate constructor accessor)
   #:omit-define-syntaxes
   #:constructor-name constructor:uninitialized-record-descriptor
-
+  
   #:property prop:object-name
   (λ (this) (record-type-name (uninitialized-record-descriptor-type this)))
-
+  
   #:property prop:custom-write write-descriptor
   #:property prop:custom-print-quotable 'never)
 
@@ -176,14 +175,14 @@
   (define accessor (record-descriptor-accessor descriptor))
   (define fields (record-type-fields type))
   (define size (keyset-size fields))
-  (make-constructor-style-printer
-   (λ (_) type-name)
+  (make-constructor-style-printer-with-markup
+   type-name
    (λ (this)
      (for*/list ([i (in-range size)]
                  [kw (in-value (keyset-ref fields i))])
        (define v (accessor this i))
        (define kw-str (unquoted-printing-keyword kw))
-       (spliced-printing-entry kw-str v)))))
+       (sequence-markup (list kw-str v))))))
 
 (define (make-record-field-accessor descriptor field)
   (define accessor (record-descriptor-accessor descriptor))

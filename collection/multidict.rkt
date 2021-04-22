@@ -39,12 +39,11 @@
          racket/sequence
          racket/set
          racket/stream
-         racket/struct
          rebellion/collection/entry
          rebellion/collection/multiset
          rebellion/collection/keyset
          rebellion/private/guarded-block
-         rebellion/private/spliced-printing-entry
+         rebellion/private/printer-markup
          rebellion/streaming/reducer
          rebellion/type/record)
 
@@ -79,11 +78,11 @@
   (define accessor (record-descriptor-accessor descriptor))
   (define equal+hash (default-record-equal+hash descriptor))
   (define custom-write
-    (make-constructor-style-printer
-     (λ (_) type-name)
+    (make-constructor-style-printer-with-markup
+     type-name
      (λ (this)
        (for*/list ([e (sequence this)])
-         (spliced-printing-entry (entry-key e) (entry-value e))))))
+         (sequence-markup (list (entry-key e) (entry-value e)))))))
   (define (sequence this)
     (define backing-hash (accessor this backing-hash-field))
     (for*/stream ([(k vs) (in-immutable-hash backing-hash)]
