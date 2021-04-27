@@ -86,7 +86,7 @@
 
 
 (define (make-mutable-red-black-tree comparator)
-  (constructor:mutable-red-black-tree comparator #false))
+  (constructor:mutable-red-black-tree comparator #false 0))
 
 
 ;; Mutable-Red-Black-Node -> (Sequence Any)
