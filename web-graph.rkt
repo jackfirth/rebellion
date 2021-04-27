@@ -1,4 +1,4 @@
-#lang racket/base
+#lang at-exp racket/base
 
 (require racket/contract/base)
 
@@ -14,10 +14,10 @@
 
 (module+ test
   (require (submod "..")
-           racket/format
            racket/port
            racket/pretty
-           rackunit))
+           rackunit
+           rebellion/private/at-exp-string-builders))
 
 ;@------------------------------------------------------------------------------
 
@@ -53,13 +53,11 @@
       (parameterize ([pretty-print-columns columns])
         (with-output-to-string
           (λ () (pretty-print v)))))
-    (check-equal? (~pretty graph #:columns 80)
-                  #<<END
-(web-graph
- (web-link "http://example.org" 'stylesheet "/styles.css")
- (web-link "http://example.org" 'stylesheet "/fonts.css")
- (web-link "http://example.org" 'search "/opensearch.xml")
- (web-link "http://example.org" 'privacy-policy "/privacy-policy"))
-
-END
-                  )))
+    (define expected
+      @block-string{
+        (web-graph
+          (web-link "http://example.org" 'stylesheet "/styles.css")
+          (web-link "http://example.org" 'stylesheet "/fonts.css")
+          (web-link "http://example.org" 'search "/opensearch.xml")
+          (web-link "http://example.org" 'privacy-policy "/privacy-policy"))})
+    (check-equal? (~pretty graph #:columns 80) expected)))
