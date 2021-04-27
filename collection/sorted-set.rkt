@@ -92,21 +92,15 @@
 
 
 (define (sorted-set-contains-all? set elements)
-  (if (immutable-sorted-set? set)
-      (immutable-sorted-set-contains-all? set elements)
-      (mutable-sorted-set-contains-all? set elements)))
+  (transduce elements #:into (into-all-match? (λ (e) (sorted-set-contains? set e)))))
 
 
 (define (sorted-set-contains-any? set elements)
-  (if (immutable-sorted-set? set)
-      (immutable-sorted-set-contains-any? set elements)
-      (mutable-sorted-set-contains-any? set elements)))
+  (transduce elements #:into (into-any-match? (λ (e) (sorted-set-contains? set e)))))
 
 
 (define (sorted-set-contains-none? set elements)
-  (if (immutable-sorted-set? set)
-      (immutable-sorted-set-contains-none? set elements)
-      (mutable-sorted-set-contains-none? set elements)))
+  (transduce elements #:into (into-none-match? (λ (e) (sorted-set-contains? set e)))))
 
 
 (define (sorted-set-least-element set)
@@ -171,8 +165,7 @@
 
 
 (define (mutable-sorted-set-size set)
-  ;; TODO
-  0)
+  (mutable-red-black-tree-size (mutable-sorted-set-backing-tree set)))
 
 
 (define (mutable-sorted-set-comparator set)
@@ -180,23 +173,7 @@
 
 
 (define (mutable-sorted-set-contains? set element)
-  ;; TODO
-  #false)
-
-
-(define (mutable-sorted-set-contains-all? set elements)
-  ;; TODO
-  #false)
-
-
-(define (mutable-sorted-set-contains-any? set elements)
-  ;; TODO
-  #false)
-
-
-(define (mutable-sorted-set-contains-none? set elements)
-  ;; TODO
-  #false)
+  (mutable-red-black-tree-contains? (mutable-sorted-set-backing-tree set) element))
 
 
 (define (sorted-set-add! set element)
@@ -205,8 +182,8 @@
 
 
 (define (sorted-set-add-all! set elements)
-  ;; TODO
-  (void))
+  (for ([element elements])
+    (sorted-set-add! set element)))
 
 
 (define (sorted-set-remove! set element)
@@ -215,13 +192,12 @@
 
 
 (define (sorted-set-remove-all! set elements)
-  ;; TODO
-  (void))
+  (for ([element elements])
+    (sorted-set-remove! set element)))
 
 
 (define (sorted-set-clear! set)
-  ;; TODO
-  (void))
+  (mutable-red-black-tree-clear! (mutable-sorted-set-backing-tree set)))
 
 
 (define (mutable-sorted-subset set range)
@@ -244,13 +220,13 @@
 
 
 (struct immutable-sorted-set struct-transformer:sorted-set
-
+  
   ;; Immutable sorted sets are implemented with *either* a flat, sorted vector, *or* an immutable
   ;; persistent red-black tree. When created with a builder, the elements are stord in a vector since
   ;; future modifications are unlikely. When sorted-set-add is called the tree is used, and if the
   ;; elements are stored in a vector, a tree is derived and cached.
   (comparator backing-vector [backing-tree #:mutable])
-
+  
   #:guard
   (struct-guard/c
    comparator? (or/c immutable-vector? #false) (or/c persistent-red-black-tree? #false))
@@ -292,18 +268,6 @@
   (if vector
       (exact-match? (vector-binary-search vector (λ (x) (compare element<=> x element))))
       (persistent-red-black-tree-contains? (immutable-sorted-set-backing-tree set) element)))
-
-
-(define (immutable-sorted-set-contains-all? set elements)
-  (transduce elements #:into (into-all-match? (λ (e) (immutable-sorted-set-contains? set e)))))
-
-
-(define (immutable-sorted-set-contains-any? set elements)
-  (transduce elements #:into (into-any-match? (λ (e) (immutable-sorted-set-contains? set e)))))
-
-
-(define (immutable-sorted-set-contains-none? set elements)
-  (transduce elements #:into (into-none-match? (λ (e) (immutable-sorted-set-contains? set e)))))
 
 
 (define/guard (sorted-set-add set element)
@@ -387,7 +351,7 @@
   (define mutable-elements (build-mutable-vector (sorted-set-builder-vector-builder builder)))
   (guard (zero? (vector-length mutable-elements)) then
     (empty-sorted-set element<=>))
-
+  
   (define (< x y)
     (equal? (compare element<=> x y) lesser))
   

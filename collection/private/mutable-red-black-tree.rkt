@@ -10,7 +10,10 @@
   [make-mutable-red-black-tree (-> comparator? mutable-red-black-tree?)]
   [mutable-red-black-tree-size (-> mutable-red-black-tree? natural?)]
   [mutable-red-black-tree-comparator (-> mutable-red-black-tree? comparator?)]
+  [mutable-red-black-tree-contains? (-> mutable-red-black-tree? any/c boolean?)]
   [mutable-red-black-tree-insert! (-> mutable-red-black-tree? any/c void?)]
+  [mutable-red-black-tree-remove! (-> mutable-red-black-tree? any/c void?)]
+  [mutable-red-black-tree-clear! (-> mutable-red-black-tree? void?)]
   [mutable-red-black-tree-elements (-> mutable-red-black-tree? list?)]
   [in-mutable-red-black-tree (-> mutable-red-black-tree? (sequence/c any/c))]))
 
@@ -21,7 +24,6 @@
          racket/sequence
          racket/stream
          rebellion/base/comparator
-         rebellion/base/option
          rebellion/private/guarded-block
          rebellion/private/static-name)
 
@@ -114,6 +116,21 @@
 ;; Mutable-Red-Black-Tree -> List
 (define (mutable-red-black-tree-elements tree)
   (sequence->list (in-mutable-red-black-tree tree)))
+
+
+(define (mutable-red-black-tree-contains? tree element)
+  (define element<=> (mutable-red-black-tree-comparator tree))
+  (define node (mutable-red-black-tree-root-node tree))
+  
+  (define/guard (loop node)
+    (guard node else
+      #false)
+    (match (compare element<=> (mutable-red-black-node-element node) element)
+      [(== equivalent) #true]
+      [(== lesser) (loop (mutable-red-black-node-right-child node))]
+      [(== greater) (loop (mutable-red-black-node-left-child node))]))
+  
+  (loop node))
 
 
 (define (mutable-red-black-tree-rotate! tree subtree-root direction)
@@ -228,6 +245,16 @@
     (if next-node (loop next-node) node))
   
   (and node (loop node)))
+
+
+(define (mutable-red-black-tree-remove! tree element)
+  ;; TODO
+  (void))
+
+
+(define (mutable-red-black-tree-clear! tree)
+  ;; TODO
+  (void))
 
 
 (module+ test
