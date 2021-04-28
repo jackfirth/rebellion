@@ -38,18 +38,25 @@
 ;; Immutable persistent red-black trees (Okasaki's implementation)
 
 
+
+(struct persistent-red-black-node
+  (element left-child right-child size)
+  #:constructor-name constructor:persistent-red-black-node)
+
+
 (struct persistent-red-black-tree
-  (comparator)
+  (comparator root-node)
+  #:guard (struct-guard/c comparator? (or/c persistent-red-black-node? #false))
   #:constructor-name constructor:persistent-red-black-tree)
 
 
 (define (empty-persistent-red-black-tree comparator)
-  (constructor:persistent-red-black-tree comparator))
+  (constructor:persistent-red-black-tree comparator #false))
 
 
 (define (persistent-red-black-tree-size tree)
-  ;; TODO
-  0)
+  (define root (persistent-red-black-tree-root-node tree))
+  (if root (persistent-red-black-node-size root) 0))
 
 
 (define (persistent-red-black-tree-contains? tree element)
@@ -79,3 +86,19 @@
 (define (sorted-unique-sequence->persistent-red-black-tree elements comparator)
   ;; TODO
   (empty-persistent-red-black-tree comparator))
+
+
+(module+ test
+  (test-case (name-string persistent-red-black-tree-size)
+    
+    (test-case "empty trees"
+      (define tree (empty-persistent-red-black-tree natural<=>))
+      (check-equal? (persistent-red-black-tree-size tree) 0))
+    
+    (test-case "singleton trees"
+      ;; TODO
+      (void))
+    
+    (test-case "trees with many elements"
+      ;; TODO
+      (void))))
