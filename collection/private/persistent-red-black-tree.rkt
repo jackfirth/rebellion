@@ -21,6 +21,7 @@
 (require racket/match
          racket/math
          racket/sequence
+         racket/stream
          rebellion/base/comparator
          rebellion/private/guarded-block
          rebellion/private/static-name)
@@ -190,8 +191,16 @@
 
 
 (define (in-persistent-red-black-tree tree)
-  ;; TODO
-  (list))
+  
+  (define (in-node node)
+    (if node
+        (sequence-append
+         (in-node (persistent-red-black-node-left-child node))
+         (stream (persistent-red-black-node-element node))
+         (in-node (persistent-red-black-node-right-child node)))
+        (stream)))
+  
+  (stream* (in-node (persistent-red-black-tree-root-node tree))))
 
 
 (define (sorted-unique-sequence->persistent-red-black-tree elements comparator)
@@ -200,30 +209,74 @@
 
 
 (module+ test
+  
+  (define empty-tree (empty-persistent-red-black-tree natural<=>))
+  (define (tree-of . elements)
+    (for/fold ([tree empty-tree])
+              ([element (in-list elements)])
+      (persistent-red-black-tree-insert tree element)))
+  
   (test-case (name-string persistent-red-black-tree-size)
     
     (test-case "empty trees"
-      (define tree (empty-persistent-red-black-tree natural<=>))
-      (check-equal? (persistent-red-black-tree-size tree) 0))
+      (check-equal? (persistent-red-black-tree-size empty-tree) 0))
     
     (test-case "singleton trees"
-      (define tree
-        (persistent-red-black-tree-insert
-         (empty-persistent-red-black-tree natural<=>)
-         5))
+      (define tree (tree-of 5))
       (check-equal? (persistent-red-black-tree-size tree) 1))
     
     (test-case "trees with many elements"
-      (define tree
-        (persistent-red-black-tree-insert
-         (persistent-red-black-tree-insert
-          (persistent-red-black-tree-insert
-           (persistent-red-black-tree-insert
-            (persistent-red-black-tree-insert
-             (empty-persistent-red-black-tree natural<=>)
-             3)
-            5)
-           2)
-          1)
-         4))
-      (check-equal? (persistent-red-black-tree-size tree) 5))))
+      (define tree (tree-of 3 5 2 1 4))
+      (check-equal? (persistent-red-black-tree-size tree) 5)))
+  
+  (test-case (name-string persistent-red-black-tree-insert)
+    
+    (test-case "insert one element into empty tree"
+      (define tree (tree-of 5))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 5)))
+    
+    (test-case "insert two ascending elements into empty tree"
+      (define tree (tree-of 5 10))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 5 10)))
+    
+    (test-case "insert two descending elements into empty tree"
+      (define tree (tree-of 5 2))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 2 5)))
+    
+    (test-case "insert many ascending elements into empty tree"
+      (define tree (tree-of 1 2 3 4 5))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 1 2 3 4 5)))
+    
+    (test-case "insert many descending elements into empty tree"
+      (define tree (tree-of 5 4 3 2 1))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 1 2 3 4 5)))
+    
+    (test-case "insert ascending and descending elements into empty tree"
+      (define tree (tree-of 2 3 1))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 1 2 3)))
+    
+    (test-case "insert many ascending and descending elements into empty tree"
+      (define tree (tree-of 3 5 1 4 2))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 1 2 3 4 5)))
+    
+    (test-case "insert repeatedly ascending then descending elements into empty tree"
+      (define tree (tree-of 1 7 2 6 3 5 4))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 1 2 3 4 5 6 7)))
+    
+    (test-case "insert repeatedly descending then ascending elements into empty tree"
+      (define tree (tree-of 7 1 6 2 5 3 4))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 1 2 3 4 5 6 7)))
+    
+    (test-case "insert many ascending elements then many descending elements into empty tree"
+      (define tree (tree-of 4 5 6 7 3 2 1))
+      (define elements (persistent-red-black-tree-elements tree))
+      (check-equal? elements (list 1 2 3 4 5 6 7)))))
