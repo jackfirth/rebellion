@@ -18,13 +18,10 @@
    (-> (sequence/c any/c) comparator? persistent-red-black-tree?)]))
 
 
-(require racket/block
-         racket/match
+(require racket/match
          racket/math
          racket/sequence
-         racket/stream
          rebellion/base/comparator
-         rebellion/base/option
          rebellion/private/guarded-block
          rebellion/private/static-name)
 
@@ -38,10 +35,20 @@
 ;; Immutable persistent red-black trees (Okasaki's implementation)
 
 
+;; We use constants for the red/black color enum instead of define-enum-type to avoid unnecessary
+;; dependencies on other parts of Rebellion, especially cyclic dependencies. We define constants
+;; instead of using the symbols directly so that typos are compile-time errors.
+(define red 'red)
+(define black 'black)
+
 
 (struct persistent-red-black-node
-  (element left-child right-child size)
+  (element color left-child right-child size)
   #:constructor-name constructor:persistent-red-black-node)
+
+
+(define (singleton-red-black-node element)
+  (constructor:persistent-red-black-node element red #false #false 1))
 
 
 (struct persistent-red-black-tree
@@ -65,8 +72,47 @@
 
 
 (define (persistent-red-black-tree-insert tree element)
+  (define element<=> (persistent-red-black-tree-comparator tree))
+  (define root (persistent-red-black-tree-root-node tree))
+  
+  (define/guard (loop node)
+    (guard node else
+      (singleton-red-black-node element))
+    (define node-element (persistent-red-black-node-element node))
+    (match (compare element<=> element node-element)
+      [(== equivalent) node]
+      
+      [(== lesser)
+       (define new-node
+         (constructor:persistent-red-black-node
+          (persistent-red-black-node-element node)
+          (persistent-red-black-node-color node)
+          (loop (persistent-red-black-node-left-child node))
+          (persistent-red-black-node-right-child node)
+          (add1 (persistent-red-black-node-size node))))
+       (persistent-red-black-node-rebalance-left new-node)]
+      
+      [(== greater)
+       (define new-node
+         (constructor:persistent-red-black-node
+          (persistent-red-black-node-element node)
+          (persistent-red-black-node-color node)
+          (persistent-red-black-node-left-child node)
+          (loop (persistent-red-black-node-right-child node))
+          (add1 (persistent-red-black-node-size node))))
+       (persistent-red-black-node-rebalance-right new-node)]))
+  
+  (constructor:persistent-red-black-tree element<=> (loop root)))
+
+
+(define (persistent-red-black-node-rebalance-left node)
   ;; TODO
-  tree)
+  node)
+
+
+(define (persistent-red-black-node-rebalance-right node)
+  ;; TODO
+  node)
 
 
 (define (persistent-red-black-tree-remove tree element)
@@ -96,9 +142,23 @@
       (check-equal? (persistent-red-black-tree-size tree) 0))
     
     (test-case "singleton trees"
-      ;; TODO
-      (void))
+      (define tree
+        (persistent-red-black-tree-insert
+         (empty-persistent-red-black-tree natural<=>)
+         5))
+      (check-equal? (persistent-red-black-tree-size tree) 1))
     
     (test-case "trees with many elements"
-      ;; TODO
-      (void))))
+      (define tree
+        (persistent-red-black-tree-insert
+         (persistent-red-black-tree-insert
+          (persistent-red-black-tree-insert
+           (persistent-red-black-tree-insert
+            (persistent-red-black-tree-insert
+             (empty-persistent-red-black-tree natural<=>)
+             3)
+            5)
+           2)
+          1)
+         4))
+      (check-equal? (persistent-red-black-tree-size tree) 5))))
