@@ -43,12 +43,35 @@
 
 
 (struct persistent-red-black-node
-  (element color left-child right-child size)
+  (color left-child element right-child size)
   #:constructor-name constructor:persistent-red-black-node)
 
 
 (define (singleton-red-black-node element)
-  (constructor:persistent-red-black-node element red #false #false 1))
+  (constructor:persistent-red-black-node red #false element #false 1))
+
+
+(define (make-red-black-node color left element right)
+  (define children-size
+    (cond
+      [(and left right)
+       (persistent-red-black-node-size left) (persistent-red-black-node-size right)]
+      [left (persistent-red-black-node-size left)]
+      [right (persistent-red-black-node-size right)]
+      [else 0]))
+  (constructor:persistent-red-black-node color left element right (add1 children-size)))
+
+
+(define (make-black-node left element right)
+  (make-red-black-node black left element right))
+
+
+(define (red-node? v)
+  (and (persistent-red-black-node? v) (equal? (persistent-red-black-node-color v) red)))
+
+
+(define (persistent-red-black-node-paint-red node)
+  (struct-copy persistent-red-black-node node [color red]))
 
 
 (struct persistent-red-black-tree
@@ -85,9 +108,9 @@
       [(== lesser)
        (define new-node
          (constructor:persistent-red-black-node
-          (persistent-red-black-node-element node)
           (persistent-red-black-node-color node)
           (loop (persistent-red-black-node-left-child node))
+          (persistent-red-black-node-element node)
           (persistent-red-black-node-right-child node)
           (add1 (persistent-red-black-node-size node))))
        (persistent-red-black-node-rebalance-left new-node)]
@@ -95,9 +118,9 @@
       [(== greater)
        (define new-node
          (constructor:persistent-red-black-node
-          (persistent-red-black-node-element node)
           (persistent-red-black-node-color node)
           (persistent-red-black-node-left-child node)
+          (persistent-red-black-node-element node)
           (loop (persistent-red-black-node-right-child node))
           (add1 (persistent-red-black-node-size node))))
        (persistent-red-black-node-rebalance-right new-node)]))
@@ -106,13 +129,55 @@
 
 
 (define (persistent-red-black-node-rebalance-left node)
-  ;; TODO
-  node)
+  (match node
+    
+    [(persistent-red-black-node
+      (== black)
+      (persistent-red-black-node (== red) (? red-node? red-left) y c _)
+      z
+      d
+      parent-size)
+     (define left (persistent-red-black-node-paint-red red-left))
+     (define right (make-black-node c z d))
+     (constructor:persistent-red-black-node red left y right parent-size)]
+    
+    [(persistent-red-black-node
+      (== black)
+      (persistent-red-black-node (== red) a x (persistent-red-black-node (== red) b y c _) _)
+      z
+      d
+      parent-size)
+     (define left (make-black-node a x b))
+     (define right (make-black-node c z d))
+     (constructor:persistent-red-black-node red left y right parent-size)]
+    
+    [else node]))
 
 
 (define (persistent-red-black-node-rebalance-right node)
-  ;; TODO
-  node)
+  (match node
+    
+    [(persistent-red-black-node
+      (== black)
+      a
+      x
+      (persistent-red-black-node (== red) (persistent-red-black-node (== red) b y c _) z d _)
+      parent-size)
+     (define left (make-black-node a x b))
+     (define right (make-black-node c z d))
+     (constructor:persistent-red-black-node red left y right parent-size)]
+    
+    [(persistent-red-black-node
+      (== black)
+      a
+      x
+      (persistent-red-black-node (== red) b y (? red-node? red-right) _)
+      parent-size)
+     (define left (make-black-node a x b))
+     (define right (persistent-red-black-node-paint-red red-right))
+     (constructor:persistent-red-black-node red left y right parent-size)]
+    
+    [else node]))
 
 
 (define (persistent-red-black-tree-remove tree element)
