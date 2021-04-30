@@ -240,7 +240,8 @@
        #true)
      (guard (equal? (immutable-sorted-set-size this) (immutable-sorted-set-size other)) else
        #false)
-     (guard (equal? (immutable-sorted-set-comparator this) (immutable-sorted-set-comparator other)) else
+     (guard (equal? (immutable-sorted-set-comparator this) (immutable-sorted-set-comparator other))
+       else
        #false)
      (for/and ([x (in-immutable-sorted-set this)]
                [y (in-immutable-sorted-set other)])
