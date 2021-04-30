@@ -176,9 +176,9 @@
   (mutable-red-black-tree-contains? (mutable-sorted-set-backing-tree set) element))
 
 
-(define (sorted-set-add! set element)
-  ;; TODO
-  (void))
+(define/guard (sorted-set-add! set element)
+  (unless (sorted-set-contains? set element)
+    (mutable-red-black-tree-insert! (mutable-sorted-set-backing-tree set) element)))
 
 
 (define (sorted-set-add-all! set elements)
@@ -211,8 +211,7 @@
 
 
 (define (in-mutable-sorted-set set)
-  ;; TODO
-  (list))
+  (in-mutable-red-black-tree (mutable-sorted-set-backing-tree set)))
 
 
 ;@----------------------------------------------------------------------------------------------------
