@@ -231,7 +231,25 @@
    comparator? (or/c immutable-vector? #false) (or/c persistent-red-black-tree? #false))
   
   #:omit-define-syntaxes
-  #:constructor-name constructor:immutable-sorted-set)
+  #:constructor-name constructor:immutable-sorted-set
+  
+  #:methods gen:equal+hash
+  
+  [(define/guard (equal-proc this other recur)
+     (guard (eq? this other) then
+       #true)
+     (guard (equal? (immutable-sorted-set-size this) (immutable-sorted-set-size other)) else
+       #false)
+     (for/and ([x (in-immutable-sorted-set this)]
+               [y (in-immutable-sorted-set other)])
+       (recur x y)))
+   
+   (define (hash-proc this recur)
+     (+ (recur (immutable-sorted-set-comparator this))
+        (for/sum ([x (in-immutable-sorted-set this)])
+          (recur x))))
+   
+   (define hash2-proc hash-proc)])
 
 
 (define (sorted-set #:comparator comparator . elements)
