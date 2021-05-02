@@ -253,8 +253,8 @@
 
 
 (define (mutable-red-black-tree-clear! tree)
-  ;; TODO
-  (void))
+  (set-mutable-red-black-tree-root-node! tree #false)
+  (set-mutable-red-black-tree-size! tree 0))
 
 
 (module+ test
@@ -352,4 +352,29 @@
       (mutable-red-black-tree-insert! tree 2)
       (mutable-red-black-tree-insert! tree 1)
       (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5 6 7)))))
+      (check-equal? elements (list 1 2 3 4 5 6 7))))
+  
+  (test-case (name-string mutable-red-black-tree-clear!)
+    
+    (test-case "clear should do nothing to an empty tree"
+      (define tree (make-mutable-red-black-tree natural<=>))
+      (mutable-red-black-tree-clear! tree)
+      (define elements (mutable-red-black-tree-elements tree))
+      (check-equal? elements '()))
+    
+    (test-case "clear should remove all elements from a tree"
+      (define tree (make-mutable-red-black-tree natural<=>))
+      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-clear! tree)
+      (define elements (mutable-red-black-tree-elements tree))
+      (check-equal? elements '()))
+    
+    (test-case "clear should set size to zero"
+      (define tree (make-mutable-red-black-tree natural<=>))
+      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-clear! tree)
+      (check-equal? (mutable-red-black-tree-size tree) 0))))
