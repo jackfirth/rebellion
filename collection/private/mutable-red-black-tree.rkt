@@ -119,18 +119,7 @@
 
 
 (define (mutable-red-black-tree-contains? tree element)
-  (define element<=> (mutable-red-black-tree-comparator tree))
-  (define node (mutable-red-black-tree-root-node tree))
-  
-  (define/guard (loop node)
-    (guard node else
-      #false)
-    (match (compare element<=> (mutable-red-black-node-element node) element)
-      [(== equivalent) #true]
-      [(== lesser) (loop (mutable-red-black-node-right-child node))]
-      [(== greater) (loop (mutable-red-black-node-left-child node))]))
-  
-  (loop node))
+  (and (mutable-red-black-tree-get-node tree element) #true))
 
 
 (define (mutable-red-black-tree-rotate! tree subtree-root direction)
@@ -247,134 +236,157 @@
   (and node (loop node)))
 
 
-(define (mutable-red-black-tree-remove! tree element)
-  ;; TODO
-  (void))
-
-
-(define (mutable-red-black-tree-clear! tree)
-  (set-mutable-red-black-tree-root-node! tree #false)
-  (set-mutable-red-black-tree-size! tree 0))
-
-
-(module+ test
-  (test-case (name-string mutable-red-black-tree-insert!)
-    
-    (test-case "insert one element into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 5)))
-    
-    (test-case "insert two ascending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
-      (mutable-red-black-tree-insert! tree 10)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 5 10)))
-    
-    (test-case "insert two descending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
-      (mutable-red-black-tree-insert! tree 2)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 2 5)))
-    
-    (test-case "insert many ascending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-insert! tree 4)
-      (mutable-red-black-tree-insert! tree 5)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5)))
-    
-    (test-case "insert many descending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
-      (mutable-red-black-tree-insert! tree 4)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 1)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5)))
-    
-    (test-case "insert ascending and descending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-insert! tree 1)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3)))
-    
-    (test-case "insert many ascending and descending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-insert! tree 5)
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 4)
-      (mutable-red-black-tree-insert! tree 2)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5)))
-    
-    (test-case "insert repeatedly ascending then descending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 7)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 6)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-insert! tree 5)
-      (mutable-red-black-tree-insert! tree 4)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5 6 7)))
-    
-    (test-case "insert repeatedly descending then ascending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 7)
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 6)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 5)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-insert! tree 4)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5 6 7)))
-    
-    (test-case "insert many ascending elements then many descending elements into empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 4)
-      (mutable-red-black-tree-insert! tree 5)
-      (mutable-red-black-tree-insert! tree 6)
-      (mutable-red-black-tree-insert! tree 7)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 1)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5 6 7))))
+(define/guard (mutable-red-black-tree-remove! tree element)
+  (define node (mutable-red-black-tree-get-node tree element))
+  (guard node else
+    (void))
+  (define root? (not (mutable-red-black-node-parent node)))
+  (define left (mutable-red-black-node-left-child node))
+  (define right (mutable-red-black-node-right-child node))
+  (guard (and root? (not left) (not right)) then
+    (mutable-red-black-tree-clear! tree))
   
-  (test-case (name-string mutable-red-black-tree-clear!)
+  
+  
+  (define (mutable-red-black-tree-get-node tree element)
+    (define element<=> (mutable-red-black-tree-comparator tree))
+    (define node (mutable-red-black-tree-root-node tree))
     
-    (test-case "clear should do nothing to an empty tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-clear! tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements '()))
+    (define/guard (loop node)
+      (guard node else
+        #false)
+      (match (compare element<=> (mutable-red-black-node-element node) element)
+        [(== equivalent) node]
+        [(== lesser) (loop (mutable-red-black-node-right-child node))]
+        [(== greater) (loop (mutable-red-black-node-left-child node))]))
     
-    (test-case "clear should remove all elements from a tree"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-clear! tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements '()))
+    (loop node))
+  
+  
+  (define (mutable-red-black-tree-clear! tree)
+    (set-mutable-red-black-tree-root-node! tree #false)
+    (set-mutable-red-black-tree-size! tree 0))
+  
+  
+  (module+ test
+    (test-case (name-string mutable-red-black-tree-insert!)
+      
+      (test-case "insert one element into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 5)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 5)))
+      
+      (test-case "insert two ascending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 5)
+        (mutable-red-black-tree-insert! tree 10)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 5 10)))
+      
+      (test-case "insert two descending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 5)
+        (mutable-red-black-tree-insert! tree 2)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 2 5)))
+      
+      (test-case "insert many ascending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 1)
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-insert! tree 4)
+        (mutable-red-black-tree-insert! tree 5)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 1 2 3 4 5)))
+      
+      (test-case "insert many descending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 5)
+        (mutable-red-black-tree-insert! tree 4)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 1)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 1 2 3 4 5)))
+      
+      (test-case "insert ascending and descending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-insert! tree 1)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 1 2 3)))
+      
+      (test-case "insert many ascending and descending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-insert! tree 5)
+        (mutable-red-black-tree-insert! tree 1)
+        (mutable-red-black-tree-insert! tree 4)
+        (mutable-red-black-tree-insert! tree 2)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 1 2 3 4 5)))
+      
+      (test-case "insert repeatedly ascending then descending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 1)
+        (mutable-red-black-tree-insert! tree 7)
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 6)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-insert! tree 5)
+        (mutable-red-black-tree-insert! tree 4)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 1 2 3 4 5 6 7)))
+      
+      (test-case "insert repeatedly descending then ascending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 7)
+        (mutable-red-black-tree-insert! tree 1)
+        (mutable-red-black-tree-insert! tree 6)
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 5)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-insert! tree 4)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 1 2 3 4 5 6 7)))
+      
+      (test-case "insert many ascending elements then many descending elements into empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 4)
+        (mutable-red-black-tree-insert! tree 5)
+        (mutable-red-black-tree-insert! tree 6)
+        (mutable-red-black-tree-insert! tree 7)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 1)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements (list 1 2 3 4 5 6 7))))
     
-    (test-case "clear should set size to zero"
-      (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 3)
-      (mutable-red-black-tree-clear! tree)
-      (check-equal? (mutable-red-black-tree-size tree) 0))))
+    (test-case (name-string mutable-red-black-tree-clear!)
+      
+      (test-case "clear should do nothing to an empty tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-clear! tree)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements '()))
+      
+      (test-case "clear should remove all elements from a tree"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 1)
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-clear! tree)
+        (define elements (mutable-red-black-tree-elements tree))
+        (check-equal? elements '()))
+      
+      (test-case "clear should set size to zero"
+        (define tree (make-mutable-red-black-tree natural<=>))
+        (mutable-red-black-tree-insert! tree 1)
+        (mutable-red-black-tree-insert! tree 2)
+        (mutable-red-black-tree-insert! tree 3)
+        (mutable-red-black-tree-clear! tree)
+        (check-equal? (mutable-red-black-tree-size tree) 0))))
+  
