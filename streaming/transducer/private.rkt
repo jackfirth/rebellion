@@ -4,6 +4,7 @@
 
 (provide
  (contract-out
+  #:unprotected-submodule no-contract
   [transduce (-> (sequence/c any/c) #:into reducer? transducer? ... any/c)]
   [in-transduced (-> (sequence/c any/c) transducer? (sequence/c any/c))]
   [mapping (-> (-> any/c any/c) transducer?)]

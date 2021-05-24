@@ -6,6 +6,7 @@
  for/reducer
  for*/reducer
  (contract-out
+  #:unprotected-submodule no-contract
   [make-fold-reducer
    (->* ((-> any/c any/c any/c) any/c)
         (#:name (or/c interned-symbol? #f))
@@ -53,7 +54,7 @@
         reducer?)]
   [reducer-filter (-> reducer? predicate/c reducer?)]
   [reducer-limit (-> reducer? natural? reducer?)])
- (all-from-out rebellion/streaming/reducer/private/base)
+ (all-from-out (submod rebellion/streaming/reducer/private/base no-contract))
  (all-from-out rebellion/streaming/reducer/private/zip))
 
 (require (for-syntax racket/base
@@ -74,7 +75,7 @@
          rebellion/private/guarded-block
          rebellion/private/impersonation
          rebellion/private/static-name
-         rebellion/streaming/reducer/private/base
+         (submod rebellion/streaming/reducer/private/base no-contract)
          rebellion/streaming/reducer/private/zip
          rebellion/type/record
          rebellion/type/object
@@ -102,29 +103,77 @@
 
 (define (make-effectful-fold-reducer consumer init-state-maker finisher
                                      #:name [name #false])
-  (make-reducer #:starter (λ () (variant #:consume (init-state-maker)))
-                #:consumer (λ (s v) (variant #:consume (consumer s v)))
-                #:finisher finisher
-                #:early-finisher values
-                #:name name))
+  (make-branchless-reducer #:starter init-state-maker
+                           #:consumer consumer
+                           #:finisher finisher
+                           #:name name))
 
 (define/name into-sum (make-fold-reducer + 0 #:name enclosing-variable-name))
 (define/name into-product (make-fold-reducer * 1 #:name enclosing-variable-name))
 (define/name into-count (make-fold-reducer (λ (s _) (add1 s)) 0 #:name enclosing-variable-name))
 
 (define (reduce red . vs)
+  (reduce-all red vs))
+
+
+(define/guard (reduce-all red seq)
+  (define branchless? (branchless-reducer? red))
+  (cond
+    [(list? seq)
+     (if branchless?
+         (list-reduce-all-branchless red seq)
+         (list-reduce-all red seq))]
+    [(vector? seq) (vector-reduce-all red seq)]
+    [else (sequence-reduce-all red seq)]))
+
+
+(define (list-reduce-all red lst)
   (define starter (reducer-starter red))
   (define consumer (reducer-consumer red))
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
-  (define/guard (loop [tagged-state (starter)] [vs vs])
+
+  (define/guard (loop [tagged-state (starter)] [lst lst])
     (guard-match (variant #:consume state) tagged-state else
       (early-finisher (variant-value tagged-state)))
-    (guard-match (cons v next-vs) vs else (finisher state))
-    (loop (consumer state v) next-vs))
+    (guard-match (cons v lst-rest) lst else
+      (finisher state))
+    (loop (consumer state v) lst-rest))
+
   (loop))
 
-(define/name (reduce-all red seq)
+
+(define (list-reduce-all-branchless red lst)
+  (define starter (branchless-reducer-starter red))
+  (define consumer (branchless-reducer-consumer red))
+  (define finisher (reducer-finisher red))
+
+  (define/guard (loop [state (starter)] [lst lst])
+    (guard-match (cons v lst-rest) lst else
+      (finisher state))
+    (loop (consumer state v) lst-rest))
+
+  (loop))
+
+
+(define (vector-reduce-all red vec)
+  (define starter (reducer-starter red))
+  (define consumer (reducer-consumer red))
+  (define finisher (reducer-finisher red))
+  (define early-finisher (reducer-early-finisher red))
+  (define len (vector-length vec))
+
+  (define/guard (loop [tagged-state (starter)] [i 0])
+    (guard-match (variant #:consume state) tagged-state else
+      (early-finisher (variant-value tagged-state)))
+    (guard (equal? i len) then
+      (finisher state))
+    (loop (consumer state (vector-ref vec i)) (add1 i)))
+
+  (loop))
+  
+
+(define (sequence-reduce-all red seq)
   (define starter (reducer-starter red))
   (define consumer (reducer-consumer red))
   (define finisher (reducer-finisher red))
@@ -136,15 +185,19 @@
                       [generate-rest generate-rest])
     (guard-match (variant #:consume state) tagged-state else
       (early-finisher (variant-value tagged-state)))
-    (guard (false? first-vs) then (finisher state))
+    (guard (false? first-vs) then
+      (finisher state))
     (guard-match (list v) first-vs else
       (apply raise-result-arity-error
-             enclosing-function-name 1
+             (name reduce-all) 1
              (format "\n  in: sequence elements at position ~a" sequence-position)
              first-vs))
     (define-values (next-vs next-generate-rest) (generate-rest))
     (loop (consumer state v) (add1 sequence-position) next-vs next-generate-rest))
   (loop))
+
+
+
 
 (module+ test
   (test-case (name-string reduce)

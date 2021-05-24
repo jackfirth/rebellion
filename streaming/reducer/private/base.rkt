@@ -6,6 +6,7 @@
 
 (provide
  (contract-out
+  #:unprotected-submodule no-contract
   [reducer? predicate/c]
   [reducer/c (-> contract? contract? contract?)]
   [make-reducer
@@ -26,7 +27,16 @@
          #:range-guard (or/c (-> any/c any/c) #false)
          #:properties impersonator-property-hash/c
          #:chaperone? boolean?)
-        reducer?)]))
+        reducer?)]
+  [branchless-reducer? predicate/c]
+  [make-branchless-reducer
+   (->* (#:starter (-> any/c)
+         #:consumer (-> any/c any/c any/c)
+         #:finisher (-> any/c any/c))
+        (#:name (or/c interned-symbol? #false))
+        reducer?)]
+  [branchless-reducer-starter (-> branchless-reducer? (-> any/c))]
+  [branchless-reducer-consumer (-> branchless-reducer? (-> any/c any/c any/c))]))
 
 
 (require racket/bool
@@ -34,6 +44,7 @@
          rebellion/base/symbol
          rebellion/base/variant
          rebellion/private/contract-projection
+         rebellion/private/guarded-block
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/type/object)
@@ -45,8 +56,8 @@
 (define reduction-state/c (variant/c #:consume any/c #:early-finish any/c))
 
 
-(define-object-type reducer (starter consumer finisher early-finisher)
-  #:constructor-name constructor:reducer)
+(define-object-type generic-reducer (starter consumer finisher early-finisher)
+  #:constructor-name constructor:generic-reducer)
 
 
 (define (make-reducer #:starter starter*
@@ -55,7 +66,7 @@
                       #:early-finisher early-finisher*
                       #:name [name #false])
   (define starter
-    (if (zero? (procedure-arity starter*)) starter* (procedure-reduce-arity starter* 0)))
+    (if (equal? (procedure-arity starter*) 0) starter* (procedure-reduce-arity starter* 0)))
   (define consumer
     (if (equal? (procedure-arity consumer*) 2) consumer* (procedure-reduce-arity consumer* 2)))
   (define finisher
@@ -64,7 +75,7 @@
     (if (equal? (procedure-arity early-finisher*) 1)
         early-finisher*
         (procedure-reduce-arity early-finisher* 1)))
-  (constructor:reducer
+  (constructor:generic-reducer
    #:starter starter
    #:consumer consumer
    #:finisher finisher
@@ -72,11 +83,88 @@
    #:name name))
 
 
+(define-object-type branchless-reducer (starter consumer finisher)
+  #:constructor-name constructor:branchless-reducer)
+
+
+(define (make-branchless-reducer #:starter starter*
+                                 #:consumer consumer*
+                                 #:finisher finisher*
+                                 #:name [name #false])
+  (define starter
+    (if (equal? (procedure-arity starter*) 0) starter* (procedure-reduce-arity starter* 0)))
+  (define consumer
+    (if (equal? (procedure-arity consumer*) 2) consumer* (procedure-reduce-arity consumer* 2)))
+  (define finisher
+    (if (equal? (procedure-arity finisher*) 1) finisher* (procedure-reduce-arity finisher* 1)))
+  (constructor:branchless-reducer
+   #:starter starter
+   #:consumer consumer
+   #:finisher finisher
+   #:name name))
+
+
+(define (branchless-reducer->generic-reducer reducer)
+  (define branchless-starter (branchless-reducer-starter reducer))
+  (define branchless-consumer (branchless-reducer-consumer reducer))
+  (define branchless-finisher (branchless-reducer-finisher reducer))
+
+  (define (start)
+    (variant #:consume (branchless-starter)))
+  
+  (define (consume state v)
+    (variant #:consume (branchless-consumer state v)))
+
+  (make-reducer
+   #:starter start
+   #:consumer consume
+   #:finisher branchless-finisher
+   #:early-finisher void
+   #:name (object-name reducer)))
+
+
+(define (reducer? v)
+  (or (generic-reducer? v)
+      (branchless-reducer? v)))
+
+
+(define/guard (reducer-starter reducer)
+  (guard (generic-reducer? reducer) then
+    (generic-reducer-starter reducer))
+  (define branchless-starter (branchless-reducer-starter reducer))
+  (define (start)
+    (variant #:consume (branchless-starter)))
+  start)
+
+
+(define/guard (reducer-consumer reducer)
+  (guard (generic-reducer? reducer) then
+    (generic-reducer-consumer reducer))
+  (define branchless-consumer (branchless-reducer-consumer reducer))
+  (define (consume state v)
+    (variant #:consume (branchless-consumer state v)))
+  consume)
+
+
+(define (reducer-finisher reducer)
+  (if (generic-reducer? reducer)
+      (generic-reducer-finisher reducer)
+      (branchless-reducer-finisher reducer)))
+
+
+(define (reducer-early-finisher reducer)
+  (if (generic-reducer? reducer)
+      (generic-reducer-early-finisher reducer)
+      void))
+
+
 ;@------------------------------------------------------------------------------
 ;; Contracts
 
+
 (define ((reducer-consumer-guard domain-guard) state element)
   (values state (domain-guard element)))
+
 
 (define (reducer-impersonate
          reducer
@@ -85,9 +173,31 @@
          #:properties [properties (hash)]
          #:chaperone?
          [chaperone? (and (false? domain-guard) (false? range-guard))])
-  (define consumer (reducer-consumer reducer))
-  (define finisher (reducer-finisher reducer))
-  (define early-finisher (reducer-early-finisher reducer))
+  (if (generic-reducer? reducer)
+      (generic-reducer-impersonate
+       reducer
+       #:domain-guard domain-guard
+       #:range-guard range-guard
+       #:properties properties
+       #:chaperone? chaperone?)
+      (branchless-reducer-impersonate
+       reducer
+       #:domain-guard domain-guard
+       #:range-guard range-guard
+       #:properties properties
+       #:chaperone? chaperone?)))
+
+
+(define (generic-reducer-impersonate
+         reducer
+         #:domain-guard [domain-guard #false]
+         #:range-guard [range-guard #false]
+         #:properties [properties (hash)]
+         #:chaperone?
+         [chaperone? (and (false? domain-guard) (false? range-guard))])
+  (define consumer (generic-reducer-consumer reducer))
+  (define finisher (generic-reducer-finisher reducer))
+  (define early-finisher (generic-reducer-early-finisher reducer))
   (define domain-chaperone? (or chaperone? (false? domain-guard)))
   (define range-chaperone? (or chaperone? (false? range-guard)))
 
@@ -108,13 +218,47 @@
                           #:chaperone? range-chaperone?))
   
   (define impersonated-without-props
-    (make-reducer #:starter (reducer-starter reducer)
+    (make-reducer #:starter (generic-reducer-starter reducer)
                   #:consumer impersonated-consumer
                   #:finisher impersonated-finisher
                   #:early-finisher impersonated-early-finisher
                   #:name (object-name reducer)))
   
-  (object-impersonate impersonated-without-props descriptor:reducer
+  (object-impersonate impersonated-without-props descriptor:generic-reducer
+                      #:properties properties))
+
+
+(define (branchless-reducer-impersonate
+         reducer
+         #:domain-guard [domain-guard #false]
+         #:range-guard [range-guard #false]
+         #:properties [properties (hash)]
+         #:chaperone?
+         [chaperone? (and (false? domain-guard) (false? range-guard))])
+  (define consumer (branchless-reducer-consumer reducer))
+  (define finisher (branchless-reducer-finisher reducer))
+  (define domain-chaperone? (or chaperone? (false? domain-guard)))
+  (define range-chaperone? (or chaperone? (false? range-guard)))
+
+  (define impersonated-consumer
+    (function-impersonate
+     consumer
+     #:arguments-guard (and domain-guard (reducer-consumer-guard domain-guard))
+     #:chaperone? domain-chaperone?))
+
+  (define impersonated-finisher
+    (function-impersonate finisher
+                          #:results-guard range-guard
+                          #:chaperone? range-chaperone?))
+  
+  (define impersonated-without-props
+    (make-branchless-reducer
+     #:starter (branchless-reducer-starter reducer)
+     #:consumer impersonated-consumer
+     #:finisher impersonated-finisher
+     #:name (object-name reducer)))
+  
+  (object-impersonate impersonated-without-props descriptor:branchless-reducer
                       #:properties properties))
 
 
