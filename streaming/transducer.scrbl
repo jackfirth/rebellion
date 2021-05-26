@@ -270,6 +270,43 @@ early, before the input sequence is fully consumed.
               (taking-maxima #:key string-length)
               #:into into-list))}
 
+
+@deftogether[[
+ @defproc[
+ (taking-local-maxima
+  [comparator comparator? real<=>] [#:key key-function (-> any/c any/c) values])
+ transducer?]
+ @defproc[
+ (taking-local-minima
+  [comparator comparator? real<=>] [#:key key-function (-> any/c any/c) values])
+ transducer?]]]{
+ Constructs @tech{transducers} that remove all elements from the sequence except for the elements that
+ are larger than their neighbors (called the @emph{local maxima}) or smaller than their neighbors
+ (called the @emph{local minima}), respectively. If a subsequence of values are equivalent but larger
+ (or smaller) than the subsequence's neighbors, the last element of the subsequence is kept. The
+ relative order of the local maxima or minima is preserved.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 1 8 4 7 1)
+              (taking-local-maxima)
+              #:into into-list))
+
+ Elements are compared using @racket[comparator]. If @racket[key-function] is
+ provided, then elements are not compared directly. Instead, a @emph{key} is
+ extracted from each element using @racket[key-function] and the keys of
+ elements are compared instead of the elements themselves.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list "cat" "dog" "aardvark" "zebra" "horse")
+              (taking-local-maxima string<=>)
+              #:into into-list)
+   (transduce (list "a" "long" "b" "longer" "longest" "c")
+              (taking-local-maxima #:key string-length)
+              #:into into-list))}
+
+
 @defproc[(taking-duplicates [#:key key-function (-> any/c any/c) values]) transducer?]{
  Constructs a @tech{transducer} that keeps only the duplicate elements of the transduced sequence.
  The first time an element occurs, it is removed from the sequence. Subsequent occurrences of that
