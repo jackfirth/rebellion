@@ -13,6 +13,8 @@
   [comparator-reverse (-> comparator? comparator?)]
   [comparator-chain (-> comparator? comparator? ... comparator?)]
   [comparator-of-constants (-> any/c ... comparator?)]
+  [comparator-min (-> comparator? any/c any/c ... any/c)]
+  [comparator-max (-> comparator? any/c any/c ... any/c)]
   [comparison? predicate/c]
   [lesser comparison?]
   [greater comparison?]
@@ -115,6 +117,23 @@
        (raise-argument-error enclosing-function-name (format "one of ~v" ascending-constants) y))
      (compare real<=> i j))
    #:name enclosing-function-name))
+
+
+(define (comparator-min comparator v . vs)
+  (for/fold ([min-so-far v])
+            ([v (in-list vs)])
+    (if (equal? (compare comparator v min-so-far) lesser)
+        v
+        min-so-far)))
+
+
+(define (comparator-max comparator v . vs)
+  (for/fold ([max-so-far v])
+            ([v (in-list vs)])
+    (if (equal? (compare comparator v max-so-far) greater)
+        v
+        max-so-far)))
+
 
 (define (comparable-real? v) (and (real? v) (not (equal? v +nan.0))))
 
@@ -262,7 +281,17 @@
     (check-exn #rx"'small" (λ () (comparator-of-constants 'small 'medium 'small)))
     (check-exn
      #rx"'\\(small medium small\\)" (λ () (comparator-of-constants 'small 'medium 'small)))
-    (check-exn exn:fail:contract? (λ () (comparator-of-constants #false #false)))))
+    (check-exn exn:fail:contract? (λ () (comparator-of-constants #false #false))))
+
+  (test-case (name-string comparator-min)
+    (check-equal? (comparator-min real<=> 1 99 99) 1)
+    (check-equal? (comparator-min real<=> 99 1 99) 1)
+    (check-equal? (comparator-min real<=> 99 99 1) 1))
+
+  (test-case (name-string comparator-max)
+    (check-equal? (comparator-max real<=> 99 1 1) 99)
+    (check-equal? (comparator-max real<=> 1 99 1) 99)
+    (check-equal? (comparator-max real<=> 1 1 99) 99)))
 
 ;@------------------------------------------------------------------------------
 ;; Contracts
