@@ -72,6 +72,25 @@ with equality unless otherwise stated.
    (compare real<=> 5 8)
    (compare string<=> "foo" "bar"))}
 
+
+@defproc[(comparator-min [comparator comparator?] [v any/c] ...+) any/c]{
+ Returns the smallest @racket[v], according to @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (comparator-min real<=> 5 8)
+   (comparator-min string<=> "foo" "bar"))}
+
+
+@defproc[(comparator-max [comparator comparator?] [v any/c] ...+) any/c]{
+ Returns the largest @racket[v], according to @racket[comparator].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (comparator-max real<=> 5 8)
+   (comparator-max string<=> "foo" "bar"))}
+
+
 @section{Constructing Comparators}
 
 @defproc[(comparator-of-constants [constant any/c] ...) comparator?]{
