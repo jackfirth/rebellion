@@ -59,8 +59,10 @@ satisfy this stronger property are @deftech{inconsistent with equality}. All
 comparators defined in @racketmodname[rebellion/base/comparator] are consistent
 with equality unless otherwise stated.
 
+
 @defproc[(comparator? [v any/c]) boolean?]{
  A predicate for @tech{comparators}.}
+
 
 @defproc[(compare [comparator comparator?] [left any/c] [right any/c])
          comparison?]{
@@ -71,6 +73,26 @@ with equality unless otherwise stated.
    #:eval (make-evaluator) #:once
    (compare real<=> 5 8)
    (compare string<=> "foo" "bar"))}
+
+
+@defform[(compare-infix comparator-expr comparison-chain)
+         #:grammar
+         [(comparison-chain
+           (code:line operand-expr operator operand-expr)
+           (code:line operand-expr operator comparison-chain))
+          (operator < > <= >= == !=)]
+         #:contracts ([comparator-expr comparator?])]{
+ Compares the given @racket[operand-expr]s using @racket[comparator-expr], returning @racket[#true] if
+ all of the specified comparisons are true and returning @racket[#false] otherwise. Unlike
+ @racket[compare], this form is a macro and allows specifying comparisons with an infix syntax. The
+ given @racket[operand-expr]s are evaluated in left-to-right order with short-circuiting. Each
+ @racket[operand-expr] is evaluated at most once.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (compare-infix real<=> 1 < 3)
+   (compare-infix real<=> 1 < 3 < 5)
+   (compare-infix real<=> 100 < 3 < (error "short circuits before reaching here")))}
 
 
 @defproc[(comparator-min [comparator comparator?] [v any/c] ...+) any/c]{

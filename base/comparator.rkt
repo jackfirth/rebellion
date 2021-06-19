@@ -1,8 +1,11 @@
 #lang racket/base
 
+
 (require racket/contract/base)
 
+
 (provide
+ compare-infix
  (contract-out
   [comparator? predicate/c]
   [compare (-> comparator? any/c any/c comparison?)]
@@ -35,7 +38,10 @@
         comparator?)]
   [comparator/c (-> contract? contract?)]))
 
-(require racket/contract/combinator
+
+(require (for-syntax racket/base
+                     syntax/parse)
+         racket/contract/combinator
          racket/list
          racket/math
          racket/set
@@ -46,7 +52,9 @@
          rebellion/private/static-name
          rebellion/private/strict-cond
          rebellion/type/object
-         rebellion/type/singleton)
+         rebellion/type/singleton
+         syntax/parse/define)
+
 
 (module+ test
   (require (submod "..")
@@ -55,7 +63,9 @@
            racket/function
            rackunit))
 
+
 ;@------------------------------------------------------------------------------
+
 
 (define-object-type comparator (function)
   #:constructor-name constructor:comparator)
@@ -404,3 +414,105 @@
       (check-pred has-contract? contracted)
       (check-equal? (value-contract contracted) the-contract)
       (check-pred has-blame? contracted))))
+
+
+;@------------------------------------------------------------------------------
+;; Infix macro
+
+
+(begin-for-syntax
+
+  (define-syntax-class comparison-operator
+    #:attributes (comparison-constant equality-form)
+    #:datum-literals (< > <= >= == !=)
+    (pattern < #:with comparison-constant #'lesser #:attr equality-form #'equal?)
+    (pattern >= #:with comparison-constant #'lesser #:attr equality-form #'not-equal?)
+    (pattern > #:with comparison-constant #'greater #:attr equality-form #'equal?)
+    (pattern <= #:with comparison-constant #'greater #:attr equality-form #'not-equal?)
+    (pattern == #:with comparison-constant #'equivalent #:attr equality-form #'equal?)
+    (pattern != #:with comparison-constant #'equivalent #:attr equality-form #'not-equal?))
+
+  (define-splicing-syntax-class comparison-chain
+    (pattern (~seq first-operand:expr (~seq operator:comparison-operator rest-operand:expr) ...+))))
+
+
+(define-syntax-parse-rule (not-equal? left:expr right:expr)
+  (not (equal? left right)))
+
+
+(define-syntax-parse-rule (compare-infix comparator-expr comparison:comparison-chain)
+  #:declare comparator-expr (expr/c #'comparator?)
+  #:with (comparison-part ...) #'comparison
+  (let ([comparator comparator-expr.c])
+    (compare-infix-internal comparator comparison-part ...)))
+
+
+(define-syntax (compare-infix-internal stx)
+  (syntax-parse stx
+    [(_ comparator left operator:comparison-operator right)
+     #'(operator.equality-form (compare comparator left right) operator.comparison-constant)]
+    [(_ comparator
+        left
+        left-operator:comparison-operator
+        middle
+        (~seq right-operator:comparison-operator right) ...)
+     #'(let ([evaluated-left left] [evaluated-middle middle])
+         (and (compare-infix-internal comparator evaluated-left left-operator evaluated-middle)
+              (compare-infix-internal comparator evaluated-middle (~@ right-operator right) ...)))]))
+
+
+(module+ test
+  (test-case (name-string compare-infix)
+    (check-true (compare-infix real<=> 5 < 8))
+    (check-true (compare-infix real<=> 5 <= 8))
+    (check-false (compare-infix real<=> 5 > 8))
+    (check-false (compare-infix real<=> 5 >= 8))
+    (check-false (compare-infix real<=> 5 == 8))
+    (check-true (compare-infix real<=> 5 != 8))
+    (check-true (compare-infix real<=> 1 < 2 < 3))
+    (check-true (compare-infix real<=> 1 <= 2 <= 3))
+
+    (define (eval-inc v counter)
+      (set-box! counter (add1 (unbox counter)))
+      v)
+
+    (test-case "evaluates comparator only once"
+      (define counter (box 0))
+      (compare-infix (eval-inc real<=> counter) 1 < 2 < 3 < 4 < 5)
+      (check-equal? (unbox counter) 1))
+
+    (test-case "evaluates operands at most once"
+      (define a (box 0))
+      (define b (box 0))
+      (define c (box 0))
+      (define d (box 0))
+      (compare-infix real<=> (eval-inc 1 a) < (eval-inc 2 b) < (eval-inc 3 c) < (eval-inc 4 d))
+      (check-equal? (unbox a) 1)
+      (check-equal? (unbox b) 1)
+      (check-equal? (unbox c) 1)
+      (check-equal? (unbox d) 1))
+
+    (test-case "short circuits"
+      (define counter (box 0))
+      (compare-infix real<=> 1 > 2 < (eval-inc 3 counter))
+      (check-equal? (unbox counter) 0))
+
+    (test-case "evaluates in left-to-right order"
+      (define log (box '()))
+
+      (define (log! v)
+        (set-box! log (append (unbox log) (list v)))
+        v)
+      
+      (compare-infix (log! real<=>) (log! 1) < (log! 2) < (log! 3) < (log! 4))
+      (check-equal? (unbox log) (list real<=> 1 2 3 4)))
+
+    (test-case "contract violation"
+
+      (define (bad)
+        (compare-infix 'not-a-comparator 1 < 2))
+
+      (check-exn exn:fail:contract:blame? bad)
+      (check-exn #rx"compare-infix: contract violation" bad)
+      (check-exn #rx"expected: comparator\\?" bad)
+      (check-exn #rx"not-a-comparator" bad))))
