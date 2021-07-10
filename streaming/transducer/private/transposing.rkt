@@ -6,16 +6,18 @@
 
 (provide
  (contract-out
-  [transposing (-> #:into reducer? transducer?)]))
+  [transposing (-> #:into reducer? (transducer/c (sequence/c any/c) any/c))]))
 
 
 (require racket/match
+         racket/sequence
          rebellion/base/variant
          rebellion/collection/vector
          rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/streaming/reducer
-         rebellion/streaming/transducer/base)
+         rebellion/streaming/transducer/base
+         rebellion/streaming/transducer/private/contract)
 
 
 ;@----------------------------------------------------------------------------------------------------
