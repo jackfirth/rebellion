@@ -427,6 +427,51 @@ early, before the input sequence is fully consumed.
               (sorting #:key gem-weight #:descending? #t)
               #:into into-list))}
 
+
+@defproc[(transposing
+          [#:into column-reducer reducer?]
+          [#:ordered? preserve-column-order? boolean? #true])
+         (transducer/c (sequence/c any/c) any/c)]{
+
+ Constructs a @tech{transducer} that transforms a sequence of rows (where each row can be any
+ single-element sequence) into a sequence of columns, using @racket[column-reducer] to build each
+ column. All of the row sequences must have the same length, or else a contract error is raised.
+
+ @(examples
+   #:eval (make-evaluator)
+   (transduce (list (list 1 2 3) (list 4 5 6) (list 7 8 9))
+              (transposing #:into into-list)
+              #:into into-list)
+   (transduce (list "abc" "xyz")
+              (transposing #:into into-string)
+              #:into into-list))
+
+ If @racket[column-reducer] finishes early while building a column, that column may be sent downstream
+ before additional rows are consumed. If @racket[preserve-column-order?] is true, a column is only
+ sent downstream once all columns to the left of it have been sent downstream. If
+ @racket[preserve-column-order?] is false, columns are sent downstream as soon as they're ready. In
+ either case, if all columns finish early the transducer stops consuming input rows from upstream.
+
+ @(examples
+   #:eval (make-evaluator)
+   (eval:no-prompt
+    (define into-list-while-positive
+      (into-transduced (taking-while positive?) #:into into-list))
+    (define rows
+      (list (list 1 2 3)
+            (list 1 0 3)
+            (list 0 0 3)
+            (list 0 0 0))))
+   
+   (transduce rows
+              (transposing #:into into-list-while-positive)
+              #:into into-list)
+
+   (transduce rows
+              (transposing #:into into-list-while-positive #:ordered? #false)
+              #:into into-list))}
+
+
 @section{Transducer Composition}
 
 @defproc[(transducer-pipe [trans transducer?] ...) transducer?]{
