@@ -45,6 +45,7 @@
        (define tag-str (string-append "#:" (keyword->string tag)))
        (list (unquoted-printing-string tag-str) value))))
   (list (cons prop:custom-write custom-write)
+        (cons prop:custom-print-quotable 'never)
         (cons prop:equal+hash (default-tuple-equal+hash descriptor))))
 
 (define-tuple-type variant (tag value)
