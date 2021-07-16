@@ -102,13 +102,13 @@
 
     (test-case "terminating reducer"
 
-      (define into-list-until-stop
-        (into-transduced (taking-while (λ (x) (not (equal? x 'stop)))) #:into into-list))
+      (define into-list-while-positive
+        (into-transduced (taking-while positive?) #:into into-list))
 
       (test-case "no input"
         (define actual
           (transduce '()
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected (list start-event half-close-event finish-event))
         (check-equal? actual expected))
@@ -116,7 +116,7 @@
       (test-case "single empty list"
         (define actual
           (transduce (list '())
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected (list start-event (consume-event '()) finish-event))
         (check-equal? actual expected))
@@ -124,7 +124,7 @@
       (test-case "multiple empty lists"
         (define actual
           (transduce (list '() '() '())
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected (list start-event (consume-event '()) finish-event))
         (check-equal? actual expected))
@@ -133,7 +133,7 @@
         (define actual
           (transduce (for/stream ([_ (in-naturals)])
                        '())
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected (list start-event (consume-event '()) finish-event))
         (check-equal? actual expected))
@@ -141,7 +141,7 @@
       (test-case "multiple singleton lists"
         (define actual
           (transduce (list (list 1) (list 2) (list 3))
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected
           (list start-event
@@ -155,15 +155,15 @@
 
       (test-case "multiple singleton lists with stop"
         (define actual
-          (transduce (list (list 1) (list 2) (list 3) (list 'stop) (list 4))
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+          (transduce (list (list 1) (list 2) (list 3) (list 0) (list 4))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1))
                 (consume-event (list 2))
                 (consume-event (list 3))
-                (consume-event (list 'stop))
+                (consume-event (list 0))
                 (half-closed-emit-event (list 1 2 3))
                 finish-event))
         (check-equal? actual expected))
@@ -171,19 +171,19 @@
       (test-case "infinite singleton lists with stop"
         (define input
           (sequence-append
-           (list (list 1) (list 2) (list 3) (list 'stop))
+           (list (list 1) (list 2) (list 3) (list 0))
            (for/stream ([n (in-naturals 4)])
              (list n))))
         (define actual
           (transduce input
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1))
                 (consume-event (list 2))
                 (consume-event (list 3))
-                (consume-event (list 'stop))
+                (consume-event (list 0))
                 (half-closed-emit-event (list 1 2 3))
                 finish-event))
         (check-equal? actual expected))
@@ -191,7 +191,7 @@
       (test-case "multiple lists"
         (define actual
           (transduce (list (list 1 2 3) (list 4 5 6) (list 7 8 9))
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected
           (list start-event
@@ -207,13 +207,13 @@
 
       (test-case "multiple lists with first column stopping"
         (define actual
-          (transduce (list (list 1 2 3) (list 'stop 5 6) (list 7 8 9))
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+          (transduce (list (list 1 2 3) (list 0 5 6) (list 7 8 9))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1 2 3))
-                (consume-event (list 'stop 5 6))
+                (consume-event (list 0 5 6))
                 (emit-event (list 1))
                 (consume-event (list 7 8 9))
                 half-close-event
@@ -224,14 +224,14 @@
 
       (test-case "multiple lists with first column stopping with unordered columns"
         (define actual
-          (transduce (list (list 1 2 3) (list 'stop 5 6) (list 7 8 9))
+          (transduce (list (list 1 2 3) (list 0 5 6) (list 7 8 9))
                      (observing-transduction-events
-                      (transposing #:into into-list-until-stop #:ordered? #false))
+                      (transposing #:into into-list-while-positive #:ordered? #false))
                      #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1 2 3))
-                (consume-event (list 'stop 5 6))
+                (consume-event (list 0 5 6))
                 (emit-event (list 1))
                 (consume-event (list 7 8 9))
                 half-close-event
@@ -242,13 +242,13 @@
 
       (test-case "multiple lists with last column stopping"
         (define actual
-          (transduce (list (list 1 2 3) (list 4 5 'stop) (list 7 8 9))
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+          (transduce (list (list 1 2 3) (list 4 5 0) (list 7 8 9))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1 2 3))
-                (consume-event (list 4 5 'stop))
+                (consume-event (list 4 5 0))
                 (consume-event (list 7 8 9))
                 half-close-event
                 (half-closed-emit-event (list 1 4 7))
@@ -259,14 +259,14 @@
 
       (test-case "multiple lists with last column stopping with unordered columns"
         (define actual
-          (transduce (list (list 1 2 3) (list 4 5 'stop) (list 7 8 9))
+          (transduce (list (list 1 2 3) (list 4 5 0) (list 7 8 9))
                      (observing-transduction-events
-                      (transposing #:into into-list-until-stop #:ordered? #false))
+                      (transposing #:into into-list-while-positive #:ordered? #false))
                      #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1 2 3))
-                (consume-event (list 4 5 'stop))
+                (consume-event (list 4 5 0))
                 (emit-event (list 3))
                 (consume-event (list 7 8 9))
                 half-close-event
@@ -277,13 +277,13 @@
 
       (test-case "multiple lists with all stopping simultaneously"
         (define actual
-          (transduce (list (list 1 2 3) (list 'stop 'stop 'stop) (list 7 8 9))
-                     (observing-transduction-events (transposing #:into into-list-until-stop))
+          (transduce (list (list 1 2 3) (list 0 0 0) (list 7 8 9))
+                     (observing-transduction-events (transposing #:into into-list-while-positive))
                      #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1 2 3))
-                (consume-event (list 'stop 'stop 'stop))
+                (consume-event (list 0 0 0))
                 (half-closed-emit-event (list 1))
                 (half-closed-emit-event (list 2))
                 (half-closed-emit-event (list 3))
@@ -293,17 +293,17 @@
       (test-case "multiple lists with all stopping separately"
         (define actual
           (transduce
-           (list (list 1 2 3) (list 4 'stop 6) (list 'stop 8 9) (list 0 0 'stop) (list 0 0 0))
-           (observing-transduction-events (transposing #:into into-list-until-stop))
+           (list (list 1 2 3) (list 4 0 6) (list 0 8 9) (list 0 0 0) (list 0 0 0))
+           (observing-transduction-events (transposing #:into into-list-while-positive))
            #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1 2 3))
-                (consume-event (list 4 'stop 6))
-                (consume-event (list 'stop 8 9))
+                (consume-event (list 4 0 6))
+                (consume-event (list 0 8 9))
                 (emit-event (list 1 4))
                 (emit-event (list 2))
-                (consume-event (list 0 0 'stop))
+                (consume-event (list 0 0 0))
                 (half-closed-emit-event (list 3 6 9))
                 finish-event))
         (check-equal? actual expected))
@@ -311,17 +311,72 @@
       (test-case "multiple lists with all stopping separately with unordered columns"
         (define actual
           (transduce
-           (list (list 1 2 3) (list 4 'stop 6) (list 'stop 8 9) (list 0 0 'stop) (list 0 0 0))
-           (observing-transduction-events (transposing #:into into-list-until-stop #:ordered? #false))
+           (list (list 1 2 3) (list 4 0 6) (list 0 8 9) (list 0 0 0) (list 0 0 0))
+           (observing-transduction-events
+            (transposing #:into into-list-while-positive #:ordered? #false))
            #:into into-list))
         (define expected
           (list start-event
                 (consume-event (list 1 2 3))
-                (consume-event (list 4 'stop 6))
+                (consume-event (list 4 0 6))
                 (emit-event (list 2))
-                (consume-event (list 'stop 8 9))
+                (consume-event (list 0 8 9))
                 (emit-event (list 1 4))
-                (consume-event (list 0 0 'stop))
+                (consume-event (list 0 0 0))
                 (half-closed-emit-event (list 3 6 9))
+                finish-event))
+        (check-equal? actual expected))
+
+      (test-case "multiple lists with all stopping separately with multiple batches of columns"
+        (define actual
+          (transduce
+           (list (list 1 2 3 4 5)
+                 (list 1 0 3 4 0)
+                 (list 0 0 3 0 0)
+                 (list 0 0 3 0 0)
+                 (list 0 0 0 0 0)
+                 (list 0 0 0 0 0))
+           (observing-transduction-events (transposing #:into into-list-while-positive))
+           #:into into-list))
+        (define expected
+          (list start-event
+                (consume-event (list 1 2 3 4 5))
+                (consume-event (list 1 0 3 4 0))
+                (consume-event (list 0 0 3 0 0))
+                (emit-event (list 1 1))
+                (emit-event (list 2))
+                (consume-event (list 0 0 3 0 0))
+                (consume-event (list 0 0 0 0 0))
+                (half-closed-emit-event (list 3 3 3 3))
+                (half-closed-emit-event (list 4 4))
+                (half-closed-emit-event (list 5))
+                finish-event))
+        (check-equal? actual expected))
+
+      (test-case
+          "multiple lists with all stopping separately with multiple batches of columns unordered"
+        (define actual
+          (transduce
+           (list (list 1 2 3 4 5)
+                 (list 1 0 3 4 0)
+                 (list 0 0 3 0 0)
+                 (list 0 0 3 0 0)
+                 (list 0 0 0 0 0)
+                 (list 0 0 0 0 0))
+           (observing-transduction-events
+            (transposing #:into into-list-while-positive #:ordered? #false))
+           #:into into-list))
+        (define expected
+          (list start-event
+                (consume-event (list 1 2 3 4 5))
+                (consume-event (list 1 0 3 4 0))
+                (emit-event (list 2))
+                (emit-event (list 5))
+                (consume-event (list 0 0 3 0 0))
+                (emit-event (list 1 1))
+                (emit-event (list 4 4))
+                (consume-event (list 0 0 3 0 0))
+                (consume-event (list 0 0 0 0 0))
+                (half-closed-emit-event (list 3 3 3 3))
                 finish-event))
         (check-equal? actual expected)))))
