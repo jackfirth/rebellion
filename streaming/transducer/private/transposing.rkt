@@ -109,20 +109,29 @@
 (define/guard (transposing-state-next-action-ordered state)
   (match-define (transposing-state _ first-consuming first-finished-early) state)
   (cond
-    [(and first-consuming first-finished-early)
+    [(and first-finished-early first-consuming)
      (if (< first-finished-early first-consuming) (variant #:emit state) (variant #:consume state))]
     [first-finished-early (variant #:half-closed-emit state)]
     [first-consuming (variant #:consume state)]
     [else (variant #:finish #false)]))
 
 
-(define (transposing-state-emit! state early-finisher)
+(define (transposing-state-emit-unordered! state early-finisher)
   (match-define (transposing-state state-vec _ first-finished-early) state)
   (match-define (variant #:early-finish substate) (vector-ref state-vec first-finished-early))
   (define result (early-finisher substate))
   (vector-set! state-vec first-finished-early #false)
   (transposing-state-find-first-finished-early! state)
   (emission (transposing-state-next-action-unordered state) result))
+
+
+(define (transposing-state-emit-ordered! state early-finisher)
+  (match-define (transposing-state state-vec _ first-finished-early) state)
+  (match-define (variant #:early-finish substate) (vector-ref state-vec first-finished-early))
+  (define result (early-finisher substate))
+  (vector-set! state-vec first-finished-early #false)
+  (transposing-state-find-first-finished-early! state)
+  (emission (transposing-state-next-action-ordered state) result))
 
 
 (define (transposing-state-next-half-closed-action-unordered state)
@@ -199,8 +208,12 @@
             (transposing-state-consume-sequence! state seq transposition-consumer)
             (transposing-state-next-action-unordered state)))))
 
-  (define (emit state)
-    (transposing-state-emit! state transposition-early-finisher))
+  (define emit
+    (if ordered?
+        (λ (state)
+          (transposing-state-emit-ordered! state transposition-early-finisher))
+        (λ (state)
+          (transposing-state-emit-unordered! state transposition-early-finisher))))
 
   (define half-close
     (if ordered?
