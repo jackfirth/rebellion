@@ -187,8 +187,7 @@
 
 
 (define (sorted-set-remove! set element)
-  ;; TODO
-  (void))
+  (mutable-red-black-tree-remove! (mutable-sorted-set-backing-tree set) element))
 
 
 (define (sorted-set-remove-all! set elements)
