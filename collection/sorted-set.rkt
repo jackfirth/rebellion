@@ -285,7 +285,7 @@
   (define element<=> (immutable-sorted-set-comparator set))
   (define vector (immutable-sorted-set-backing-vector set))
   (if vector
-      (exact-match? (vector-binary-search vector (λ (x) (compare element<=> x element))))
+      (position? (vector-binary-search vector element #:comparator element<=>))
       (persistent-red-black-tree-contains? (immutable-sorted-set-backing-tree set) element)))
 
 

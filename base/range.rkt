@@ -136,7 +136,6 @@
 
 (module+ private-for-range-set-implementation-only
   (provide range-compare-to-cut
-           range-compare-to-range
            range-compare-to-value
            range-lower-cut
            range-upper-cut))
@@ -145,6 +144,7 @@
 (require racket/bool
          racket/match
          rebellion/base/comparator
+         rebellion/private/cut
          rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/private/strict-cond
@@ -193,18 +193,6 @@
 (define (range-upper-endpoint range)
   (range-bound-endpoint (range-upper-bound range)))
 
-(define-tuple-type upper-cut (value))
-(define-tuple-type middle-cut (value))
-(define-tuple-type lower-cut (value))
-(define-singleton-type top-cut)
-(define-singleton-type bottom-cut)
-
-(define (intermediate-cut-value cut)
-  (match cut
-    [(upper-cut value) value]
-    [(middle-cut value) value]
-    [(lower-cut value) value]))
-
 (define (range-lower-cut range)
   (define bound (range-lower-bound range))
   (strict-cond
@@ -220,39 +208,16 @@
     [else (lower-cut (range-bound-endpoint bound))]))
 
 (define (cut->lower-bound cut)
-  (strict-cond
-    [(bottom-cut? cut) unbounded]
-    [(lower-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
-    [(upper-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
+  (match cut
+    [(== bottom-cut) unbounded]
+    [(lower-cut endpoint) (inclusive-bound endpoint)]
+    [(upper-cut endpoint) (exclusive-bound endpoint)]))
 
 (define (cut->upper-bound cut)
-  (strict-cond
-    [(top-cut? cut) unbounded]
-    [(upper-cut? cut) (inclusive-bound (intermediate-cut-value cut))]
-    [(lower-cut? cut) (exclusive-bound (intermediate-cut-value cut))]))
-
-(define/name (cut<=> base-comparator)
-  (define/guard (cmp left right)
-    (guard (and (bottom-cut? left) (bottom-cut? right)) then equivalent)
-    (guard (bottom-cut? left) then lesser)
-    (guard (bottom-cut? right) then greater)
-    (guard (and (top-cut? left) (top-cut? right)) then equivalent)
-    (guard (top-cut? left) then greater)
-    (guard (top-cut? right) then lesser)
-    (define result
-      (compare
-       base-comparator
-       (intermediate-cut-value left)
-       (intermediate-cut-value right)))
-    (guard (or (equal? result lesser) (equal? result greater)) then result)
-    (guard (and (lower-cut? left) (lower-cut? right)) then equivalent)
-    (guard (lower-cut? left) then lesser)
-    (guard (lower-cut? right) then greater)
-    (guard (and (middle-cut? left) (middle-cut? right)) then equivalent)
-    (guard (middle-cut? left) then lesser)
-    (guard (middle-cut? right) then greater)
-    equivalent)
-  (make-comparator cmp #:name enclosing-function-name))
+  (match cut
+    [(== top-cut) unbounded]
+    [(upper-cut endpoint) (inclusive-bound endpoint)]
+    [(lower-cut endpoint) (exclusive-bound endpoint)]))
 
 (define (range-contains? rng v)
   (define lower (range-lower-cut rng))
@@ -897,47 +862,6 @@
       (check-equal? (range-compare-to-value r 4) equivalent)
       (check-equal? (range-compare-to-value r 2) greater)
       (check-equal? (range-compare-to-value r 6) lesser))))
-
-
-;; This is a bit of a weird comparison function that considers ranges equivalent if they overlap. It
-;; doesn't really work as an actual comparator because it's not transitive, but the range set
-;; implementation uses it for binary searching.
-(define/guard (range-compare-to-range range other-range)
-  (guard (range-overlaps? range other-range) then
-    equivalent)
-  (define cmp (cut<=> (range-comparator range)))
-  (define lower (range-lower-cut range))
-  (define other-upper (range-upper-cut other-range))
-  (if (equal? (compare cmp lower other-upper) greater)
-      greater
-      lesser))
-
-
-(module+ test
-  (test-case (name-string range-compare-to-range)
-
-    (test-case "singleton ranges"
-      (define r (singleton-range 4))
-      (check-equal? (range-compare-to-range r (singleton-range 4)) equivalent)
-      (check-equal? (range-compare-to-range r (singleton-range 2)) greater)
-      (check-equal? (range-compare-to-range r (singleton-range 6)) lesser))
-
-    (test-case "overlapping ranges compare equivalent"
-      (define r (closed-range 2 5))
-      (check-equal? (range-compare-to-range r r) equivalent)
-      (check-equal? (range-compare-to-range r (closed-range 0 10)) equivalent)
-      (check-equal? (range-compare-to-range r (closed-range 3 4)) equivalent)
-      (check-equal? (range-compare-to-range r (singleton-range 2)) equivalent)
-      (check-equal? (range-compare-to-range r (singleton-range 5)) equivalent)
-      (check-equal? (range-compare-to-range r (closed-range 1 3)) equivalent)
-      (check-equal? (range-compare-to-range r (closed-range 4 6)) equivalent))
-
-    (test-case "non-overlapping ranges compare based on their endpoints"
-      (define r (closed-range 4 6))
-      (check-equal? (range-compare-to-range r (closed-range 1 3)) greater)
-      (check-equal? (range-compare-to-range (closed-range 1 3) r) lesser)
-      (check-equal? (range-compare-to-range r (closed-range 8 10)) lesser)
-      (check-equal? (range-compare-to-range (closed-range 8 10) r) greater))))
 
 
 ;@------------------------------------------------------------------------------
