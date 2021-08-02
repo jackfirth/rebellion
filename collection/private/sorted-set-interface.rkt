@@ -64,6 +64,11 @@
 ;@----------------------------------------------------------------------------------------------------
 
 
+;; This is the API for *unmodifiable* sorted sets. Unmodifiable sorted sets do not expose an API for
+;; clients to mutate them, but they make no guarantees that they will not mutate of their own accord.
+;; For example, one module may wish to provide an *unmodifiable view* of a mutable sorted set to
+;; clients to prevent uncontrolled external mutation. Such a view is unmodifiable, but not immutable,
+;; as the underlying set backing the view may mutate.
 (define-generics sorted-set
 
   (in-sorted-set sorted-set)
@@ -138,6 +143,11 @@
        (generic-sorted-set-add! this element)))])
 
 
+;; Subtypes must implement the gen:sorted-set interface *and* the gen:mutable-sorted-set interface.
+;; Mutable sorted sets don't implement gen:equal+hash because two mutable objects should only be equal
+;; if they have the same identity: that is, if mutations to one are reflected by the other. This does
+;; not necessarily mean only eq? mutable objects should be equal?, as it's perfectly fine for a
+;; wrapper or view of a mutable object to be equal? to that object.
 (struct abstract-mutable-sorted-set abstract-sorted-set ()
 
   #:methods gen:custom-write
@@ -171,6 +181,7 @@
        (generic-sorted-set-remove this element)))])
 
 
+;; Subtypes must implement the gen:sorted-set interface *and* the gen:immutable-sorted-set interface.
 (struct abstract-immutable-sorted-set abstract-sorted-set ()
 
   #:methods gen:custom-write
@@ -180,15 +191,23 @@
       (λ (this) 'immutable-sorted-set)
       (λ (this) (in-sorted-set this))))]
 
+  ;; Immutable sorted sets are always compared structurally. Two immutable sorted sets are equal if
+  ;; they use equal comparators and they contain equal elements.
   #:methods gen:equal+hash
 
   [(define/guard (equal-proc this other recur)
+
+     ;; We check emptiness first as a fast path, since empty collections are common in practice and
+     ;; easy to optimize for.
      (guard (sorted-set-empty? this) then
        (sorted-set-empty? other))
      (guard (sorted-set-empty? other) then
        #false)
      (and (recur (sorted-set-comparator this) (sorted-set-comparator other))
           (equal? (sorted-set-size this) (sorted-set-size other))
+
+     ;; We check the size before comparing elements so that we can avoid paying the O(n) element
+     ;; comparison cost most of the time.
           (for/and ([this-element (in-sorted-set this)]
                     [other-element (in-sorted-set other)])
             (recur this-element other-element))))
