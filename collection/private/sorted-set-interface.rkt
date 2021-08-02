@@ -204,11 +204,11 @@
        (sorted-set-empty? other))
      (guard (sorted-set-empty? other) then
        #false)
-     (and (recur (sorted-set-comparator this) (sorted-set-comparator other))
-          (equal? (sorted-set-size this) (sorted-set-size other))
 
      ;; We check the size before comparing elements so that we can avoid paying the O(n) element
      ;; comparison cost most of the time.
+     (and (recur (sorted-set-size this) (sorted-set-size other))
+          (recur (sorted-set-comparator this) (sorted-set-comparator other))
           (for/and ([this-element (in-sorted-set this)]
                     [other-element (in-sorted-set other)])
             (recur this-element other-element))))
