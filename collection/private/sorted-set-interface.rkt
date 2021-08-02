@@ -128,7 +128,7 @@
   (sorted-set-add-all! mutable-sorted-set elements)
   (sorted-set-remove! mutable-sorted-set element)
   (sorted-set-remove-all! mutable-sorted-set elements)
-  (sorted-set-clear! mutable-sorted-set elements)
+  (sorted-set-clear! mutable-sorted-set)
 
   #:fallbacks
 
