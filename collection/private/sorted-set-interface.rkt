@@ -35,6 +35,22 @@
   [sorted-set-reverse (-> sorted-set? sorted-set?)]))
 
 
+;; The APIs for creating the generic, extensible hierarchy of collection implementations exist only to
+;; make it easier to organize Rebellion's various implementations. They are *not* designed for
+;; external consumption, and no promises of API stability or quality are made. Please do not make your
+;; own implementations of these interfaces; instead file an issue at
+;; https://github.com/jackfirth/rebellion/issues describing your use case. These APIs might be made
+;; public in the future, depending on feedback from users.
+(module+ private-for-rebellion-only
+  (provide
+   (struct-out abstract-sorted-set)
+   (struct-out abstract-mutable-sorted-set)
+   (struct-out abstract-immutable-sorted-set)
+   gen:sorted-set
+   gen:mutable-sorted-set
+   gen:immutable-sorted-set))
+
+
 (require racket/generic
          racket/sequence
          racket/struct
