@@ -109,6 +109,7 @@
      (not (generic-sorted-set-contains-any? this values)))])
 
 
+;; Subtypes must implement the gen:sorted-set interface.
 (struct abstract-sorted-set ()
 
   #:property prop:sequence in-sorted-set
