@@ -8,10 +8,20 @@
  (struct-out position)
  (struct-out gap)
  (contract-out
-  [vector-binary-search (-> vector? any/c #:comparator comparator? (or/c position? gap?))]
-  [vector-binary-search-cut (-> vector? cut? #:comparator comparator? (or/c position? gap?))]
-  [range-vector-binary-search (-> vector? any/c (or/c position? gap?))]
-  [range-vector-binary-search-cut (-> vector? cut? (or/c position? gap?))]))
+  [vector-binary-search
+   (->* (vector? any/c #:comparator comparator?) (natural? natural?) (or/c position? gap?))]
+  [vector-binary-search-cut
+   (->* (vector? cut? #:comparator comparator?) (natural? natural?) (or/c position? gap?))]
+  [vector-binary-search-element-less-than
+   (->* (vector? any/c #:comparator comparator?) (natural? natural?) option?)]
+  [vector-binary-search-element-greater-than
+   (->* (vector? any/c #:comparator comparator?) (natural? natural?) option?)]
+  [vector-binary-search-element-at-most
+   (->* (vector? any/c #:comparator comparator?) (natural? natural?) option?)]
+  [vector-binary-search-element-at-least
+   (->* (vector? any/c #:comparator comparator?) (natural? natural?) option?)]
+  [range-vector-binary-search (->* (vector? any/c) (natural? natural?) (or/c position? gap?))]
+  [range-vector-binary-search-cut (->* (vector? cut?) (natural? natural?) (or/c position? gap?))]))
 
 
 (require racket/match
@@ -44,7 +54,6 @@
   #:guard (struct-guard/c natural? option? option?))
 
 
-;; Vector A, (A -> Comparison) -> (Or (Position A) (Gap A))
 ;; Searches vec for an element for which the search function returns the `equivalent` constant, then
 ;; returns the index of that element if such an element exists. The vector is assumed to be sorted in
 ;; a manner consistent with the comparison results returned by the search function. The search is a
@@ -56,10 +65,11 @@
 ;; (exact-match 2)
 ;; > (vector-generalized-binary-search (vector "a" "b" "d" "e") (λ (x) (compare string<=> x "c")))
 ;; (no-match 2)
-(define (vector-generalized-binary-search vec search-function)
-  (define/guard (loop [lower 0]
+(define (vector-generalized-binary-search vec search-function [start 0] [end (vector-length vec)])
+
+  (define/guard (loop [lower start]
                       [lower-element absent]
-                      [upper (sub1 (vector-length vec))]
+                      [upper (sub1 end)]
                       [upper-element absent])
     (guard (<= lower upper) else
       (gap lower lower-element upper-element))
@@ -69,11 +79,12 @@
       [(== lesser) (loop (add1 middle) (present middle-element) upper upper-element)]
       [(== greater) (loop lower lower-element (sub1 middle) (present middle-element))]
       [(== equivalent) (position middle middle-element)]))
+  
   (loop))
 
 
-(define (vector-binary-search vec element #:comparator cmp)
-  (vector-generalized-binary-search vec (λ (x) (compare cmp x element))))
+(define (vector-binary-search vec element #:comparator cmp [start 0] [end (vector-length vec)])
+  (vector-generalized-binary-search vec (λ (x) (compare cmp x element)) start end))
 
 
 (module+ test
@@ -99,9 +110,9 @@
      (gap 4 (present "dd") absent))))
 
 
-(define (vector-binary-search-cut vec cut #:comparator cmp)
+(define (vector-binary-search-cut vec cut #:comparator cmp [start 0] [end (vector-length vec)])
   (define cut-cmp (cut<=> cmp))
-  (vector-generalized-binary-search vec (λ (c) (compare cut-cmp (middle-cut c) cut))))
+  (vector-generalized-binary-search vec (λ (c) (compare cut-cmp (middle-cut c) cut)) start end))
 
 
 (module+ test
@@ -157,9 +168,39 @@
     (check-equal? (search top-cut) (gap 4 (present "dd") absent))))
 
 
-(define (range-vector-binary-search range-vec value)
-  (vector-generalized-binary-search range-vec (λ (r) (range-compare-to-value r value))))
+(define (vector-binary-search-element-less-than
+         vec upper-bound [start 0] [end (vector-length vec)] #:comparator cmp)
+  (match (vector-binary-search vec upper-bound start end #:comparator cmp)
+    [(position 0 _) absent]
+    [(position i _) (present (vector-ref vec (sub1 i)))]
+    [(gap _ lesser-element _) lesser-element]))
 
 
-(define (range-vector-binary-search-cut range-vec cut)
-  (vector-generalized-binary-search range-vec (λ (r) (range-compare-to-cut r cut))))
+(define (vector-binary-search-element-greater-than
+         vec lower-bound [start 0] [end (vector-length vec)] #:comparator cmp)
+  (match (vector-binary-search vec lower-bound start end #:comparator cmp)
+    [(position i _) #:when (equal? i (sub1 (vector-length vec))) absent]
+    [(position i _) (present (vector-ref vec (add1 i)))]
+    [(gap _ _ greater-element) greater-element]))
+
+
+(define (vector-binary-search-element-at-most
+         vec upper-bound [start 0] [end (vector-length vec)] #:comparator cmp)
+  (match (vector-binary-search vec upper-bound start end #:comparator cmp)
+    [(position _ equivalent-element) (present equivalent-element)]
+    [(gap _ lesser-element _) lesser-element]))
+
+
+(define (vector-binary-search-element-at-least
+         vec lower-bound [start 0] [end (vector-length vec)] #:comparator cmp)
+  (match (vector-binary-search vec lower-bound start end #:comparator cmp)
+    [(position _ equivalent-element) (present equivalent-element)]
+    [(gap _ _ greater-element) greater-element]))
+
+
+(define (range-vector-binary-search range-vec value [start 0] [end (vector-length range-vec)])
+  (vector-generalized-binary-search range-vec (λ (r) (range-compare-to-value r value)) start end))
+
+
+(define (range-vector-binary-search-cut range-vec cut [start 0] [end (vector-length range-vec)])
+  (vector-generalized-binary-search range-vec (λ (r) (range-compare-to-cut r cut)) start end))
