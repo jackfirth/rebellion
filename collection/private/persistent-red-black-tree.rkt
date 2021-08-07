@@ -7,13 +7,39 @@
 (provide
  (contract-out
   [persistent-red-black-tree? predicate/c]
+  [in-persistent-red-black-tree
+   (->* (persistent-red-black-tree?) (#:descending? boolean?) (sequence/c any/c))]
+  [in-persistent-red-black-subtree
+   (->* (persistent-red-black-tree? range?) (#:descending? boolean?) (sequence/c any/c))]
   [empty-persistent-red-black-tree (-> comparator? persistent-red-black-tree?)]
   [persistent-red-black-tree-size (-> persistent-red-black-tree? natural?)]
+  [persistent-red-black-tree-comparator (-> persistent-red-black-tree? comparator?)]
   [persistent-red-black-tree-contains? (-> persistent-red-black-tree? any/c boolean?)]
   [persistent-red-black-tree-insert (-> persistent-red-black-tree? any/c persistent-red-black-tree?)]
   [persistent-red-black-tree-remove (-> persistent-red-black-tree? any/c persistent-red-black-tree?)]
   [persistent-red-black-tree-elements (-> persistent-red-black-tree? list?)]
-  [in-persistent-red-black-tree (-> persistent-red-black-tree? (sequence/c any/c))]
+  [persistent-red-black-tree-least-element (-> persistent-red-black-tree? option?)]
+  [persistent-red-black-tree-greatest-element (-> persistent-red-black-tree? option?)]
+  [persistent-red-black-tree-element-greater-than (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-element-less-than (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-element-at-most (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-element-at-least (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-binary-search
+   (-> persistent-red-black-tree? any/c (or/c position? gap?))]
+  [persistent-red-black-tree-binary-search-cut
+   (-> persistent-red-black-tree? cut? (or/c position? gap?))]
+  [persistent-red-black-subtree-copy
+   (-> persistent-red-black-tree? range? persistent-red-black-tree?)]
+  [persistent-red-black-subtree-size (-> persistent-red-black-tree? range? natural?)]
+  [persistent-red-black-subtree-contains? (-> persistent-red-black-tree? range? any/c boolean?)]
+  [persistent-red-black-subtree-least-element (-> persistent-red-black-tree? range? option?)]
+  [persistent-red-black-subtree-greatest-element (-> persistent-red-black-tree? range? option?)]
+  [persistent-red-black-subtree-element-greater-than
+   (-> persistent-red-black-tree? range? any/c option?)]
+  [persistent-red-black-subtree-element-less-than
+   (-> persistent-red-black-tree? range? any/c option?)]
+  [persistent-red-black-subtree-element-at-most (-> persistent-red-black-tree? range? any/c option?)]
+  [persistent-red-black-subtree-element-at-least (-> persistent-red-black-tree? range? any/c option?)]
   [sorted-unique-sequence->persistent-red-black-tree
    (-> (sequence/c any/c) comparator? persistent-red-black-tree?)]))
 
@@ -23,6 +49,11 @@
          racket/sequence
          racket/stream
          rebellion/base/comparator
+         rebellion/base/option
+         rebellion/base/range
+         (submod rebellion/base/range private-for-rebellion-only)
+         rebellion/collection/private/vector-binary-search
+         rebellion/private/cut
          rebellion/private/guarded-block
          rebellion/private/static-name)
 
@@ -91,8 +122,62 @@
 
 
 (define (persistent-red-black-tree-contains? tree element)
-  ;; TODO
-  #false)
+  (define cmp (persistent-red-black-tree-comparator tree))
+
+  (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
+    (guard node else
+      #false)
+    (match-define (persistent-red-black-node _ left node-element right _) node)
+    (match (compare cmp node-element element)
+      [(== lesser) (loop right)]
+      [(== greater) (loop left)]
+      [(== equivalent) #true]))
+  
+  (loop))
+
+
+(define (persistent-red-black-subtree-contains? tree range element)
+  (and (range-contains? range element) (persistent-red-black-tree-contains? tree element)))
+
+
+(define (persistent-red-black-tree-generalized-binary-search tree search-function)
+
+  (define/guard (loop [node (persistent-red-black-tree-root-node tree)]
+                      [min-start-index 0]
+                      [lower-element absent]
+                      [upper-element absent])
+    (guard node else
+      (gap min-start-index lower-element upper-element))
+    (match-define (persistent-red-black-node _ left element right _) node)
+    (match (search-function element)
+      [(== lesser)
+       (define left-size (if left (persistent-red-black-node-size left) 0))
+       (loop right (+ min-start-index left-size 1) (present element) upper-element)]
+      [(== greater)
+       (loop left min-start-index lower-element (present element))]
+      [(== equivalent)
+       (define left-size (if left (persistent-red-black-node-size left) 0))
+       (position (+ min-start-index left-size) element)]))
+
+  (loop))
+
+
+(define (persistent-red-black-tree-binary-search tree element)
+  (define cmp (persistent-red-black-tree-comparator tree))
+  (persistent-red-black-tree-generalized-binary-search tree (λ (x) (compare cmp x element))))
+
+
+(define (persistent-red-black-tree-binary-search-cut tree cut)
+  (define cut-cmp (cut<=> (persistent-red-black-tree-comparator tree)))
+  (persistent-red-black-tree-generalized-binary-search
+   tree (λ (c) (compare cut-cmp (middle-cut c) cut))))
+
+
+(define (persistent-red-black-subtree-size tree range)
+  (define lower (range-lower-cut range))
+  (define upper (range-upper-cut range))
+  (- (gap-index (persistent-red-black-tree-binary-search-cut tree upper))
+     (gap-index (persistent-red-black-tree-binary-search-cut tree lower))))
 
 
 (define (persistent-red-black-tree-insert tree element)
@@ -190,22 +275,176 @@
   (sequence->list (in-persistent-red-black-tree tree)))
 
 
-(define (in-persistent-red-black-tree tree)
+(define (in-persistent-red-black-tree tree #:descending? [descending? #false])
   
-  (define (in-node node)
-    (if node
-        (sequence-append
-         (in-node (persistent-red-black-node-left-child node))
-         (stream (persistent-red-black-node-element node))
-         (in-node (persistent-red-black-node-right-child node)))
-        (stream)))
+  (define in-node
+    (if descending?
+        (λ (node)
+          (if node
+              (sequence-append
+               (in-node (persistent-red-black-node-right-child node))
+               (stream (persistent-red-black-node-element node))
+               (in-node (persistent-red-black-node-left-child node)))
+              (stream)))
+        (λ (node)
+          (if node
+              (sequence-append
+               (in-node (persistent-red-black-node-left-child node))
+               (stream (persistent-red-black-node-element node))
+               (in-node (persistent-red-black-node-right-child node)))
+              (stream)))))
   
   (stream* (in-node (persistent-red-black-tree-root-node tree))))
+
+
+(define (in-persistent-red-black-subtree tree range #:descending? [descending? #false])
+
+  (define/guard (in-ascending-node node)
+    (guard node else
+      (stream))
+    (define element (persistent-red-black-node-element node))
+    (match (range-compare-to-value range element)
+      [(== lesser) (in-ascending-node (persistent-red-black-node-right-child node))]
+      [(== greater) (in-ascending-node (persistent-red-black-node-left-child node))]
+      [(== equivalent)
+       (sequence-append
+        (in-ascending-node (persistent-red-black-node-right-child node))
+        (stream element)
+        (in-ascending-node (persistent-red-black-node-left-child node)))]))
+
+  (define/guard (in-descending-node node)
+    (guard node else
+      (stream))
+    (define element (persistent-red-black-node-element node))
+    (match (range-compare-to-value range element)
+      [(== lesser) (in-descending-node (persistent-red-black-node-right-child node))]
+      [(== greater) (in-descending-node (persistent-red-black-node-left-child node))]
+      [(== equivalent)
+       (sequence-append
+        (in-descending-node (persistent-red-black-node-left-child node))
+        (stream element)
+        (in-descending-node (persistent-red-black-node-right-child node)))]))
+
+  (define root (persistent-red-black-tree-root-node tree))
+  (if descending? (stream* (in-descending-node root)) (stream* (in-ascending-node root))))
 
 
 (define (sorted-unique-sequence->persistent-red-black-tree elements comparator)
   ;; TODO
   (empty-persistent-red-black-tree comparator))
+
+
+(define/guard (persistent-red-black-tree-least-element tree)
+  (define root (persistent-red-black-tree-root-node tree))
+  (guard root else
+    absent)
+  
+  (define (loop node)
+    (match (persistent-red-black-node-left-child node)
+      [#false (persistent-red-black-node-element node)]
+      [left-child (loop left-child)]))
+
+  (present (loop root)))
+
+
+(define/guard (persistent-red-black-subtree-least-element tree range)
+  (define lower (range-lower-bound range))
+  (guard (equal? lower unbounded) then
+    (persistent-red-black-tree-least-element tree))
+  (define endpoint (range-bound-endpoint lower))
+  (match (range-bound-type lower)
+    [(== inclusive) (persistent-red-black-tree-element-at-least tree endpoint)]
+    [(== exclusive) (persistent-red-black-tree-element-greater-than tree endpoint)]))
+
+
+(define/guard (persistent-red-black-tree-greatest-element tree)
+  (define root (persistent-red-black-tree-root-node tree))
+  (guard root else
+    absent)
+  
+  (define (loop node)
+    (match (persistent-red-black-node-right-child node)
+      [#false (persistent-red-black-node-element node)]
+      [right-child (loop right-child)]))
+
+  (present (loop root)))
+
+
+(define/guard (persistent-red-black-subtree-greatest-element tree range)
+  (define upper (range-upper-bound range))
+  (guard (equal? upper unbounded) then
+    (persistent-red-black-tree-greatest-element tree))
+  (define endpoint (range-bound-endpoint upper))
+  (match (range-bound-type upper)
+    [(== inclusive) (persistent-red-black-tree-element-at-most tree endpoint)]
+    [(== exclusive) (persistent-red-black-tree-element-less-than tree endpoint)]))
+
+
+(define (persistent-red-black-tree-element-less-than tree upper-bound)
+  (gap-element-before (persistent-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
+
+
+(define (persistent-red-black-subtree-element-less-than tree range upper-bound)
+  (match (range-compare-to-cut range (lower-cut upper-bound))
+    [(== greater) (persistent-red-black-subtree-greatest-element tree range)]
+    [(== lesser) absent]
+    [(== equivalent)
+     (define result (persistent-red-black-tree-element-less-than tree upper-bound))
+     (option-filter result (λ (element) (range-contains? range element)))]))
+
+
+(define (persistent-red-black-tree-element-greater-than tree lower-bound)
+  (gap-element-after (persistent-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
+
+
+(define (persistent-red-black-subtree-element-greater-than tree range lower-bound)
+  (match (range-compare-to-cut range (upper-cut lower-bound))
+    [(== lesser) (persistent-red-black-subtree-least-element tree range)]
+    [(== greater) absent]
+    [(== equivalent)
+     (define result (persistent-red-black-tree-element-greater-than tree lower-bound))
+     (option-filter result (λ (element) (range-contains? range element)))]))
+
+
+(define (persistent-red-black-tree-element-at-most tree upper-bound)
+  (match (persistent-red-black-tree-binary-search tree upper-bound)
+    [(position _ equivalent-element) (present equivalent-element)]
+    [(gap _ lesser-element _) lesser-element]))
+
+
+(define (persistent-red-black-subtree-element-at-most tree range upper-bound)
+  (match (range-compare-to-cut range (upper-cut upper-bound))
+    [(== greater) (persistent-red-black-subtree-greatest-element tree range)]
+    [(== lesser) absent]
+    [(== equivalent)
+     (define result (persistent-red-black-tree-element-at-most tree upper-bound))
+     (option-filter result (λ (element) (range-contains? range element)))]))
+
+
+(define (persistent-red-black-tree-element-at-least tree lower-bound)
+  (match (persistent-red-black-tree-binary-search tree lower-bound)
+    [(position _ equivalent-element) (present equivalent-element)]
+    [(gap _ _ greater-element) greater-element]))
+
+
+(define (persistent-red-black-subtree-element-at-least tree range lower-bound)
+  (match (range-compare-to-cut range (lower-cut lower-bound))
+    [(== lesser) (persistent-red-black-subtree-least-element tree range)]
+    [(== greater) absent]
+    [(== equivalent)
+     (define result (persistent-red-black-tree-element-at-least tree lower-bound))
+     (option-filter result (λ (element) (range-contains? range element)))]))
+
+
+(define/guard (persistent-red-black-subtree-copy tree range)
+  (guard-match (present least) (persistent-red-black-tree-least-element tree) else
+    (empty-persistent-red-black-tree (persistent-red-black-tree-comparator tree)))
+  (match-define (present greatest) (persistent-red-black-tree-greatest-element tree))
+  (guard (and (range-contains? range least) (range-contains? range greatest)) then
+    tree)
+  (for/fold ([tree (empty-persistent-red-black-tree (persistent-red-black-tree-comparator tree))])
+            ([element (in-persistent-red-black-subtree tree range)])
+    (persistent-red-black-tree-insert tree element)))
 
 
 (module+ test
