@@ -134,7 +134,7 @@
   [range<=> (comparator/c range?)]))
 
 
-(module+ private-for-range-set-implementation-only
+(module+ private-for-rebellion-only
   (provide range-compare-to-cut
            range-compare-to-value
            range-lower-cut

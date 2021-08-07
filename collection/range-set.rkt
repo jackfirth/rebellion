@@ -33,7 +33,7 @@
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
-         (submod rebellion/base/range private-for-range-set-implementation-only)
+         (submod rebellion/base/range private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
          rebellion/collection/vector/builder
          rebellion/private/guarded-block
@@ -317,7 +317,8 @@
 
 
 (define (range-set-encloses? ranges other-range)
-  (match (range-vector-binary-search-cut (range-set-sorted-range-vector ranges) (range-lower-cut other-range))
+  (define vec (range-set-sorted-range-vector ranges))
+  (match (range-vector-binary-search-cut vec (range-lower-cut other-range))
     [(position _ overlapping-range)
      (range-encloses? overlapping-range other-range)]
     [_ #false]))

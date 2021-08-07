@@ -18,7 +18,7 @@
          racket/math
          rebellion/base/comparator
          rebellion/base/option
-         (submod rebellion/base/range private-for-range-set-implementation-only)
+         (submod rebellion/base/range private-for-rebellion-only)
          rebellion/private/cut
          rebellion/private/guarded-block
          rebellion/private/static-name)
