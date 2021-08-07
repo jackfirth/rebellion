@@ -11,7 +11,6 @@
 
 
 (require racket/generic
-         racket/match
          racket/vector
          rebellion/base/comparator
          rebellion/base/option
@@ -20,8 +19,7 @@
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
-         rebellion/private/guarded-block
-         rebellion/private/sequence-empty)
+         rebellion/private/guarded-block)
 
 
 ;@----------------------------------------------------------------------------------------------------
