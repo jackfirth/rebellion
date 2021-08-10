@@ -26,6 +26,10 @@
 ;@----------------------------------------------------------------------------------------------------
 
 
+;; We define a specialized implementation of the empty set for speed. It's included in this module so
+;; that the empty set implementation can switch to the persistent implementation when elements are
+;; added to it. The persistent implementation also depends on the empty implementation, since it can
+;; switch back to it if an empty subset of the persistent implementation is selected.
 (struct empty-sorted-set abstract-immutable-sorted-set (comparator)
 
   #:constructor-name make-empty-sorted-set
