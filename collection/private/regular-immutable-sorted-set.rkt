@@ -16,6 +16,7 @@
          rebellion/base/option
          (submod rebellion/base/range private-for-rebellion-only)
          rebellion/collection/private/persistent-sorted-set
+         rebellion/collection/private/reversed-sorted-set
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
@@ -53,8 +54,11 @@
 
   #:methods gen:sorted-set
 
-  [(define (in-sorted-set this)
-     (in-vector (regular-immutable-sorted-set-sorted-vector this)))
+  [(define (in-sorted-set this #:descending? [descending? #false])
+     (define vec (regular-immutable-sorted-set-sorted-vector this))
+     (if descending?
+         (in-vector vec (sub1 (vector-length vec)) -1 -1)
+         (in-vector vec)))
 
    (define (sorted-set-empty? this)
      (vector-empty? (regular-immutable-sorted-set-sorted-vector this)))
@@ -111,9 +115,7 @@
        [else (constructor:regular-immutable-sorted-subset vec cmp start end)]))
 
    (define (sorted-set-reverse this)
-     (define vec (regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (regular-immutable-sorted-set-comparator this))
-     (constructor:reversed-regular-immutable-sorted-set vec cmp))])
+     (make-reversed-immutable-sorted-set this))])
 
 
 (struct regular-immutable-sorted-subset abstract-regular-immutable-sorted-set
@@ -124,10 +126,13 @@
 
   #:methods gen:sorted-set
 
-  [(define (in-sorted-set this)
+  [(define (in-sorted-set this #:descending? [descending? #false])
+     (define vec (regular-immutable-sorted-set-sorted-vector this))
      (define start (regular-immutable-sorted-subset-start-index this))
      (define end (regular-immutable-sorted-subset-end-index this))
-     (in-vector (regular-immutable-sorted-set-sorted-vector this) start end))
+     (if descending?
+         (in-vector vec (sub1 end) (sub1 start) -1)
+         (in-vector vec start end)))
 
    (define (sorted-set-empty? this)
      (define start (regular-immutable-sorted-subset-start-index this))
@@ -205,175 +210,4 @@
          (constructor:regular-immutable-sorted-subset vec cmp new-start new-end)))
 
    (define (sorted-set-reverse this)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (constructor:reversed-regular-immutable-sorted-subset vec cmp start end))])
-
-
-(struct reversed-regular-immutable-sorted-set abstract-regular-immutable-sorted-set
-
-  (sorted-vector comparator)
-
-  #:constructor-name constructor:reversed-regular-immutable-sorted-set
-
-  #:methods gen:sorted-set
-
-  [(define (in-sorted-set this)
-     (in-vector (reversed-regular-immutable-sorted-set-sorted-vector this) 0 #false -1))
-
-   (define (sorted-set-empty? this)
-     (vector-empty? (reversed-regular-immutable-sorted-set-sorted-vector this)))
-
-   (define (sorted-set-size this)
-     (vector-length (reversed-regular-immutable-sorted-set-sorted-vector this)))
-
-   (define (sorted-set-comparator this)
-     (comparator-reverse (reversed-regular-immutable-sorted-set-comparator this)))
-
-   (define (sorted-set-contains? this value)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (reversed-regular-immutable-sorted-set-comparator this))
-     (position? (vector-binary-search vec value #:comparator cmp)))
-
-   (define (sorted-set-greatest-element this)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (if (vector-empty? vec) absent (present (vector-ref vec 0))))
-
-   (define (sorted-set-least-element this)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (if (vector-empty? vec) absent (present (vector-ref vec (sub1 (vector-length vec))))))
-
-   (define (sorted-set-element-less-than this upper-bound)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (reversed-regular-immutable-sorted-set-comparator this))
-     (vector-binary-search-element-at-least vec upper-bound #:comparator cmp))
-
-   (define (sorted-set-element-greater-than this lower-bound)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (reversed-regular-immutable-sorted-set-comparator this))
-     (vector-binary-search-element-at-most vec lower-bound #:comparator cmp))
-
-   (define (sorted-set-element-at-most this upper-bound)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (reversed-regular-immutable-sorted-set-comparator this))
-     (vector-binary-search-element-greater-than vec upper-bound #:comparator cmp))
-
-   (define (sorted-set-element-at-least this lower-bound)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (reversed-regular-immutable-sorted-set-comparator this))
-     (vector-binary-search-element-less-than vec lower-bound #:comparator cmp))
-
-   (define (sorted-subset this element-range)
-     (define vec (reversed-regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (reversed-regular-immutable-sorted-set-comparator this))
-     (define start
-       (gap-index (vector-binary-search-cut vec (range-lower-cut element-range) #:comparator cmp)))
-     (define end
-       (gap-index (vector-binary-search-cut vec (range-upper-cut element-range) #:comparator cmp)))
-     (cond
-       [(equal? start end) (make-empty-sorted-set (comparator-reverse cmp))]
-       [(and (zero? start) (equal? end (vector-length vec))) this]
-       [else (constructor:reversed-regular-immutable-sorted-subset vec cmp start end)]))
-
-   (define (sorted-set-reverse this)
-     (define vec (regular-immutable-sorted-set-sorted-vector this))
-     (define cmp (regular-immutable-sorted-set-comparator this))
-     (make-regular-immutable-sorted-set vec cmp))])
-
-
-(struct reversed-regular-immutable-sorted-subset abstract-regular-immutable-sorted-set
-
-  (sorted-vector comparator start-index end-index)
-
-  #:constructor-name constructor:reversed-regular-immutable-sorted-subset
-
-  #:methods gen:sorted-set
-
-  [(define (in-sorted-set this)
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (in-vector (regular-immutable-sorted-set-sorted-vector this) (sub1 end) (sub1 start) -1))
-
-   (define (sorted-set-empty? this)
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (equal? start end))
-
-   (define (sorted-set-size this)
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (- end start))
-
-   (define (sorted-set-comparator this)
-     (comparator-reverse (regular-immutable-sorted-subset-comparator this)))
-
-   (define (sorted-set-contains? this value)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (position? (vector-binary-search vec value start end #:comparator cmp)))
-
-   (define (sorted-set-least-element this)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (if (zero? end) absent (present (vector-ref vec (sub1 end)))))
-
-   (define/guard (sorted-set-greatest-element this)
-     (guard (sorted-set-empty? this) then
-       absent)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (present (vector-ref vec start)))
-
-   (define (sorted-set-element-less-than this upper-bound)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (vector-binary-search-element-at-least vec upper-bound start end #:comparator cmp))
-
-   (define (sorted-set-element-greater-than this lower-bound)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (vector-binary-search-element-at-most vec lower-bound start end #:comparator cmp))
-
-   (define (sorted-set-element-at-most this upper-bound)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (vector-binary-search-element-greater-than vec upper-bound start end #:comparator cmp))
-
-   (define (sorted-set-element-at-least this lower-bound)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (vector-binary-search-element-less-than vec lower-bound start end #:comparator cmp))
-
-   (define (sorted-subset this element-range)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (define new-start
-       (gap-index
-        (vector-binary-search-cut vec (range-lower-cut element-range) start end #:comparator cmp)))
-     (define new-end
-       (gap-index
-        (vector-binary-search-cut vec (range-upper-cut element-range) start end #:comparator cmp)))
-     (if (equal? new-start new-end)
-         (make-empty-sorted-set cmp)
-         (constructor:reversed-regular-immutable-sorted-subset vec cmp new-start new-end)))
-
-   (define (sorted-set-reverse this)
-     (define vec (regular-immutable-sorted-subset-sorted-vector this))
-     (define cmp (regular-immutable-sorted-subset-comparator this))
-     (define start (regular-immutable-sorted-subset-start-index this))
-     (define end (regular-immutable-sorted-subset-end-index this))
-     (constructor:regular-immutable-sorted-subset vec cmp start end))])
+     (make-reversed-immutable-sorted-set this))])

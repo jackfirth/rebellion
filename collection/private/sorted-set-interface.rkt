@@ -9,7 +9,7 @@
   [sorted-set? predicate/c]
   [immutable-sorted-set? predicate/c]
   [mutable-sorted-set? predicate/c]
-  [in-sorted-set (-> sorted-set? (sequence/c any/c))]
+  [in-sorted-set (->* (sorted-set?) (#:descending? boolean?) (sequence/c any/c))]
   [sorted-set-size (-> sorted-set? exact-nonnegative-integer?)]
   [sorted-set-comparator (-> sorted-set? comparator?)]
   [sorted-set-contains? (-> sorted-set? any/c boolean?)]
@@ -71,7 +71,7 @@
 ;; as the underlying set backing the view may mutate.
 (define-generics sorted-set
 
-  (in-sorted-set sorted-set)
+  (in-sorted-set sorted-set #:descending? [descending?]) ;; descending? should always default to false
   (sorted-set-empty? sorted-set)
   (sorted-set-size sorted-set)
   (sorted-set-comparator sorted-set)
