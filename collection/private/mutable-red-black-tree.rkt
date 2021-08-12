@@ -11,11 +11,22 @@
   [mutable-red-black-tree-size (-> mutable-red-black-tree? natural?)]
   [mutable-red-black-tree-comparator (-> mutable-red-black-tree? comparator?)]
   [mutable-red-black-tree-contains? (-> mutable-red-black-tree? any/c boolean?)]
-  [mutable-red-black-tree-insert! (-> mutable-red-black-tree? any/c void?)]
+  [mutable-red-black-tree-least-element (-> mutable-red-black-tree? option?)]
+  [mutable-red-black-tree-greatest-element (-> mutable-red-black-tree? option?)]
+  [mutable-red-black-tree-element-less-than (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-element-greater-than (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-element-at-most (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-element-at-least (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-add! (-> mutable-red-black-tree? any/c void?)]
   [mutable-red-black-tree-remove! (-> mutable-red-black-tree? any/c void?)]
   [mutable-red-black-tree-clear! (-> mutable-red-black-tree? void?)]
   [mutable-red-black-tree-elements (-> mutable-red-black-tree? list?)]
-  [in-mutable-red-black-tree (-> mutable-red-black-tree? (sequence/c any/c))]))
+  [mutable-red-black-subtree-size (-> mutable-red-black-tree? range? natural?)]
+  [mutable-red-black-subtree-clear! (-> mutable-red-black-tree? range? void?)]
+  [in-mutable-red-black-tree
+   (->* (mutable-red-black-tree?) (#:descending? boolean?) (sequence/c any/c))]
+  [in-mutable-red-black-subtree
+   (->* (mutable-red-black-tree? range?) (#:descending? boolean?) (sequence/c any/c))]))
 
 
 (require racket/block
@@ -25,6 +36,10 @@
          racket/stream
          racket/struct
          rebellion/base/comparator
+         rebellion/base/option
+         rebellion/base/range
+         rebellion/collection/private/vector-binary-search
+         rebellion/private/cut
          rebellion/private/guarded-block
          rebellion/private/static-name)
 
@@ -63,7 +78,9 @@
    [left-child #:mutable]
    [right-child #:mutable]
    [color #:mutable]
-   [element #:mutable])
+   [element #:mutable]
+   ;; TODO: track size at each node
+   [size #:mutable])
   
   #:constructor-name constructor:mutable-red-black-node
 
@@ -82,7 +99,7 @@
 
 
 (define (make-mutable-red-black-node element)
-  (constructor:mutable-red-black-node #false #false #false red element))
+  (constructor:mutable-red-black-node #false #false #false red element 1))
 
 
 (define (mutable-red-black-node-child node direction)
@@ -119,10 +136,12 @@
 
 
 ;; Mutable-Red-Black-Node -> (Sequence Any)
-(define (in-mutable-red-black-tree-node node)
+(define (in-mutable-red-black-tree-node node #:descending? [descending? #false])
   (define element (mutable-red-black-node-element node))
-  (define left (mutable-red-black-node-left-child node))
-  (define right (mutable-red-black-node-right-child node))
+  (define true-left (mutable-red-black-node-left-child node))
+  (define true-right (mutable-red-black-node-right-child node))
+  (define left (if descending? true-right true-left))
+  (define right (if descending? true-left true-right))
   (cond
     [(and left right)
      (sequence-append
@@ -133,11 +152,38 @@
 
 
 ;; Mutable-Red-Black-Tree -> (Sequence Any)
-(define (in-mutable-red-black-tree tree)
+(define (in-mutable-red-black-tree tree #:descending? [descending? #false])
   (stream*
    (block
     (define root (mutable-red-black-tree-root-node tree))
-    (if root (in-mutable-red-black-tree-node root) (stream)))))
+    (if root (in-mutable-red-black-tree-node root #:descending? descending?) (stream)))))
+
+
+;; Mutable-Red-Black-Node -> (Sequence Any)
+(define/guard (in-mutable-red-black-subtree-node
+               node element-range #:descending? [descending? #false])
+  (define element (mutable-red-black-node-element node))
+  (guard (range-contains? element-range element) else
+    (stream))
+  (define true-left (mutable-red-black-node-left-child node))
+  (define true-right (mutable-red-black-node-right-child node))
+  (define left (if descending? true-right true-left))
+  (define right (if descending? true-left true-right))
+  (cond
+    [(and left right)
+     (sequence-append
+      (in-mutable-red-black-tree-node left) (stream element) (in-mutable-red-black-tree-node right))]
+    [left (sequence-append (in-mutable-red-black-tree-node left) (stream element))]
+    [right (sequence-append (stream element) (in-mutable-red-black-tree-node right))]
+    [else (stream element)]))
+
+
+;; Mutable-Red-Black-Tree -> (Sequence Any)
+(define (in-mutable-red-black-subtree tree element-range #:descending? [descending? #false])
+  (stream*
+   (block
+    (define root (mutable-red-black-tree-root-node tree))
+    (if root (in-mutable-red-black-subtree-node root #:descending? descending?) (stream)))))
 
 
 ;; Mutable-Red-Black-Tree -> List
@@ -147,6 +193,11 @@
 
 (define (mutable-red-black-tree-contains? tree element)
   (and (mutable-red-black-tree-get-node tree element) #true))
+
+
+(define (mutable-red-black-subtree-size tree element-range)
+  ;; TODO
+  0)
 
 
 (define (mutable-red-black-tree-rotate! tree subtree-root direction)
@@ -169,6 +220,11 @@
           (set-mutable-red-black-node-right-child! subtree-parent new-subtree-root)
           (set-mutable-red-black-node-left-child! subtree-parent new-subtree-root))
       (set-mutable-red-black-tree-root-node! tree new-subtree-root)))
+
+
+(define (mutable-red-black-tree-add! tree element)
+  (unless (mutable-red-black-tree-contains? tree element)
+    (mutable-red-black-tree-insert! tree element)))
 
 
 ;; Mutable-Red-Black-Tree Any -> Void
@@ -326,29 +382,29 @@
       (set-mutable-red-black-node-color! sibling black)
       (let ([sibling (mutable-red-black-node-child sibling dir)])
         (guarded-block
-          (define distant-nephew (mutable-red-black-node-child sibling inverse-dir))
-          (guard (and distant-nephew (equal? (mutable-red-black-node-color distant-nephew) red)) then
-            ;; fall through to case 6 (by copying the code from that case)
-            (mutable-red-black-tree-rotate! tree parent dir)
-            (set-mutable-red-black-node-color! sibling (mutable-red-black-node-color parent))
-            (set-mutable-red-black-node-color! parent black)
-            (set-mutable-red-black-node-color! distant-nephew black))
-          (define close-nephew (mutable-red-black-node-child sibling inverse-dir))
-          (guard (and close-nephew (equal? (mutable-red-black-node-color close-nephew) red)) then
-            ;; fall through to case 5 (by copying the code from that case)
-            (mutable-red-black-tree-rotate! tree sibling inverse-dir)
-            (set-mutable-red-black-node-color! sibling red)
-            (set-mutable-red-black-node-color! close-nephew black)
-            (let* ([distant-nephew sibling]
-                   [sibling close-nephew])
-              ;; fall through to case 6 (by copying the code from that case)
-              (mutable-red-black-tree-rotate! tree parent dir)
-              (set-mutable-red-black-node-color! sibling (mutable-red-black-node-color parent))
-              (set-mutable-red-black-node-color! parent black)
-              (set-mutable-red-black-node-color! distant-nephew black)))
-          ;; fall through to case 4 (by copying the code from that case)
-          (set-mutable-red-black-node-color! sibling red)
-          (set-mutable-red-black-node-color! parent black))))
+         (define distant-nephew (mutable-red-black-node-child sibling inverse-dir))
+         (guard (and distant-nephew (equal? (mutable-red-black-node-color distant-nephew) red)) then
+           ;; fall through to case 6 (by copying the code from that case)
+           (mutable-red-black-tree-rotate! tree parent dir)
+           (set-mutable-red-black-node-color! sibling (mutable-red-black-node-color parent))
+           (set-mutable-red-black-node-color! parent black)
+           (set-mutable-red-black-node-color! distant-nephew black))
+         (define close-nephew (mutable-red-black-node-child sibling inverse-dir))
+         (guard (and close-nephew (equal? (mutable-red-black-node-color close-nephew) red)) then
+           ;; fall through to case 5 (by copying the code from that case)
+           (mutable-red-black-tree-rotate! tree sibling inverse-dir)
+           (set-mutable-red-black-node-color! sibling red)
+           (set-mutable-red-black-node-color! close-nephew black)
+           (let* ([distant-nephew sibling]
+                  [sibling close-nephew])
+             ;; fall through to case 6 (by copying the code from that case)
+             (mutable-red-black-tree-rotate! tree parent dir)
+             (set-mutable-red-black-node-color! sibling (mutable-red-black-node-color parent))
+             (set-mutable-red-black-node-color! parent black)
+             (set-mutable-red-black-node-color! distant-nephew black)))
+         ;; fall through to case 4 (by copying the code from that case)
+         (set-mutable-red-black-node-color! sibling red)
+         (set-mutable-red-black-node-color! parent black))))
 
     (define distant-nephew (mutable-red-black-node-child sibling inverse-dir))
 
@@ -393,6 +449,67 @@
   (rebalancing-loop node parent dir))
 
 
+(define (mutable-red-black-tree-least-element tree)
+  (define root (mutable-red-black-tree-root-node tree))
+  (if root (present (mutable-red-black-node-element (mutable-red-black-node-min-child root))) absent))
+
+
+(define (mutable-red-black-tree-greatest-element tree)
+  (define root (mutable-red-black-tree-root-node tree))
+  (if root (present (mutable-red-black-node-element (mutable-red-black-node-max-child root))) absent))
+
+
+(define (mutable-red-black-tree-element-less-than tree upper-bound)
+  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
+
+
+(define (mutable-red-black-tree-element-greater-than tree lower-bound)
+  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
+
+
+(define (mutable-red-black-tree-element-at-most tree upper-bound)
+  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (upper-cut upper-bound))))
+
+
+(define (mutable-red-black-tree-element-at-least tree lower-bound)
+  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (lower-cut lower-bound))))
+
+
+(define (mutable-red-black-tree-generalized-binary-search tree search-function)
+
+  (define/guard (loop [node (mutable-red-black-tree-root-node tree)]
+                      [min-start-index 0]
+                      [lower-element absent]
+                      [upper-element absent])
+    (guard node else
+      (gap min-start-index lower-element upper-element))
+    (define element (mutable-red-black-node-element node))
+    (define left (mutable-red-black-node-left-child node))
+    (define right (mutable-red-black-node-right-child node))
+    (match (search-function element)
+      [(== lesser)
+       (define left-size (if left (mutable-red-black-node-size left) 0))
+       (loop right (+ min-start-index left-size 1) (present element) upper-element)]
+      [(== greater)
+       (loop left min-start-index lower-element (present element))]
+      [(== equivalent)
+       (define left-size (if left (mutable-red-black-node-size left) 0))
+       (position (+ min-start-index left-size) element)]))
+
+  (loop))
+
+
+(define (mutable-red-black-tree-binary-search tree element)
+  (define cmp (mutable-red-black-tree-comparator tree))
+  (mutable-red-black-tree-generalized-binary-search tree (λ (x) (compare cmp x element))))
+
+
+(define (mutable-red-black-tree-binary-search-cut tree cut)
+  (define cut-cmp (cut<=> (mutable-red-black-tree-comparator tree)))
+  (mutable-red-black-tree-generalized-binary-search
+   tree (λ (c) (compare cut-cmp (middle-cut c) cut))))
+
+
 (define (mutable-red-black-node-max-child node)
   (define right (mutable-red-black-node-right-child node))
   (if right (mutable-red-black-node-max-child right) node))
@@ -409,7 +526,7 @@
   (set-mutable-red-black-node-element! first-node second-element)
   (set-mutable-red-black-node-element! second-node first-element))
 
-  
+
 (define (mutable-red-black-tree-get-node tree element)
   (define element<=> (mutable-red-black-tree-comparator tree))
   (define node (mutable-red-black-tree-root-node tree))
@@ -428,6 +545,11 @@
 (define (mutable-red-black-tree-clear! tree)
   (set-mutable-red-black-tree-root-node! tree #false)
   (set-mutable-red-black-tree-size! tree 0))
+
+
+(define (mutable-red-black-subtree-clear! tree element-range)
+  ;; TODO
+  (void))
   
   
 (module+ test

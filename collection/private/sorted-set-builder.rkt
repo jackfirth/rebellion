@@ -52,7 +52,7 @@
   (define element<=> (sorted-set-builder-comparator builder))
   (define mutable-elements (build-mutable-vector (sorted-set-builder-vector-builder builder)))
   (guard (zero? (vector-length mutable-elements)) then
-    (make-empty-sorted-set element<=>))
+    (empty-sorted-set element<=>))
   
   (define (< x y)
     (equal? (compare element<=> x y) lesser))

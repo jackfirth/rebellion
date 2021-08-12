@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [make-empty-sorted-set (-> comparator? immutable-sorted-set?)]
+  [empty-sorted-set (-> comparator? immutable-sorted-set?)]
   [make-persistent-sorted-set
    (-> (sequence/c any/c) #:comparator comparator? immutable-sorted-set?)]
   [make-persistent-sorted-set-from-sorted (-> sorted-set? immutable-sorted-set?)]))
@@ -34,8 +34,6 @@
 ;; added to it. The persistent implementation also depends on the empty implementation, since it can
 ;; switch back to it if an empty subset of the persistent implementation is selected.
 (struct empty-sorted-set abstract-immutable-sorted-set (comparator)
-
-  #:constructor-name make-empty-sorted-set
 
   #:methods gen:sorted-set
 
@@ -85,7 +83,7 @@
      this)
 
    (define (sorted-set-reverse this)
-     (make-empty-sorted-set (comparator-reverse (empty-sorted-set-comparator this))))]
+     (empty-sorted-set (comparator-reverse (empty-sorted-set-comparator this))))]
 
   #:methods gen:immutable-sorted-set
 
@@ -208,7 +206,7 @@
      (define delegate (get-delegate this))
      (define original-range (get-range this))
      (guard (range-overlaps? original-range element-range) else
-       (make-empty-sorted-set (generic-sorted-set-comparator delegate)))
+       (empty-sorted-set (generic-sorted-set-comparator delegate)))
      (define intersection (range-intersection original-range element-range))
      (constructor:persistent-sorted-subset delegate intersection))
 

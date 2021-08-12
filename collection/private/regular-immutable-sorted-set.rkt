@@ -110,7 +110,7 @@
      (define end
        (gap-index (vector-binary-search-cut vec (range-upper-cut element-range) #:comparator cmp)))
      (cond
-       [(equal? start end) (make-empty-sorted-set cmp)]
+       [(equal? start end) (empty-sorted-set cmp)]
        [(and (zero? start) (equal? end (vector-length vec))) this]
        [else (constructor:regular-immutable-sorted-subset vec cmp start end)]))
 
@@ -206,7 +206,7 @@
        (gap-index
         (vector-binary-search-cut vec (range-upper-cut element-range) start end #:comparator cmp)))
      (if (equal? new-start new-end)
-         (make-empty-sorted-set cmp)
+         (empty-sorted-set cmp)
          (constructor:regular-immutable-sorted-subset vec cmp new-start new-end)))
 
    (define (sorted-set-reverse this)
