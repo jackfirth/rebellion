@@ -12,7 +12,8 @@
   [make-persistent-sorted-set-from-sorted (-> sorted-set? immutable-sorted-set?)]))
 
 
-(require racket/sequence
+(require racket/generic
+         racket/sequence
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
@@ -20,6 +21,7 @@
          rebellion/collection/private/reversed-sorted-set
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
+         rebellion/collection/private/sorted-subset
          rebellion/private/guarded-block
          rebellion/private/sequence-empty)
 
@@ -155,83 +157,78 @@
      (constructor:persistent-sorted-set (persistent-red-black-tree-remove tree element)))])
 
 
-(struct persistent-sorted-subset abstract-immutable-sorted-set (tree element-range)
+(struct persistent-sorted-subset abstract-immutable-sorted-set (delegate element-range)
 
   #:constructor-name constructor:persistent-sorted-subset
 
   #:methods gen:sorted-set
 
-  [(define (in-sorted-set this #:descending? [descending? #false])
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (in-persistent-red-black-subtree tree #:descending? (not descending?)))
+  [(define (get-delegate this)
+     (persistent-sorted-subset-delegate this))
+
+   (define (get-tree this)
+     (persistent-sorted-set-tree (get-delegate this)))
+
+   (define (get-range this)
+     (persistent-sorted-subset-element-range this))
+
+   (define/generic generic-sorted-set-comparator sorted-set-comparator)
+   
+   (define (in-sorted-set this #:descending? [descending? #false])
+     (in-persistent-red-black-subtree (get-tree this) (get-range this) #:descending? descending?))
 
    (define (sorted-set-size this)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-size tree range))
+     (persistent-red-black-subtree-size (get-tree this) (get-range this)))
 
    (define (sorted-set-comparator this)
-     (persistent-red-black-tree-comparator (persistent-sorted-subset-tree this)))
+     (generic-sorted-set-comparator (get-delegate this)))
 
    (define (sorted-set-contains? this value)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-contains? tree range value))
+     (persistent-red-black-subtree-contains? (get-tree this) (get-range this) value))
 
    (define/guard (sorted-set-least-element this)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-least-element tree range))
+     (sorted-subset-least-element (get-delegate this) (get-range this)))
 
    (define/guard (sorted-set-greatest-element this)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-greatest-element tree range))
+     (sorted-subset-greatest-element (get-delegate this) (get-range this)))
 
    (define/guard (sorted-set-element-less-than this upper-bound)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-element-less-than tree range upper-bound))
+     (sorted-subset-element-less-than (get-delegate this) (get-range this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-element-greater-than tree range lower-bound))
+     (sorted-subset-element-greater-than (get-delegate this) (get-range this) lower-bound))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-element-at-most tree range upper-bound))
+     (sorted-subset-element-at-most (get-delegate this) (get-range this) upper-bound))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (persistent-red-black-subtree-element-at-least tree range lower-bound))
+     (sorted-subset-element-at-least (get-delegate this) (get-range this) lower-bound))
 
    (define/guard (sorted-subset this element-range)
-     (define tree (persistent-sorted-subset-tree this))
-     (define original-range (persistent-sorted-subset-element-range this))
+     (define delegate (get-delegate this))
+     (define original-range (get-range this))
      (guard (range-overlaps? original-range element-range) else
-       (make-empty-sorted-set (persistent-red-black-tree-comparator tree)))
+       (make-empty-sorted-set (generic-sorted-set-comparator delegate)))
      (define intersection (range-intersection original-range element-range))
-     (constructor:persistent-sorted-subset tree intersection))
+     (constructor:persistent-sorted-subset delegate intersection))
 
    (define (sorted-set-reverse this)
      (make-reversed-immutable-sorted-set this))]
 
   #:methods gen:immutable-sorted-set
 
-  [(define (sorted-set-add this element)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (define copy (persistent-red-black-subtree-copy tree range))
+  [(define (get-tree this)
+     (persistent-sorted-set-tree (persistent-sorted-subset-delegate this)))
+
+   (define (get-range this)
+     (persistent-sorted-subset-element-range this))
+
+   (define (sorted-set-add this element)
+     (define copy (persistent-red-black-subtree-copy (get-tree this) (get-range this)))
      (constructor:persistent-sorted-set (persistent-red-black-tree-insert copy element)))
 
    (define (sorted-set-remove this element)
-     (define tree (persistent-sorted-subset-tree this))
-     (define range (persistent-sorted-subset-element-range this))
-     (define copy (persistent-red-black-subtree-copy tree range))
+     (define copy (persistent-red-black-subtree-copy (get-tree this) (get-range this)))
      (constructor:persistent-sorted-set (persistent-red-black-tree-remove copy element)))])
 
 
