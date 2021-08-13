@@ -21,7 +21,8 @@
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
          rebellion/collection/private/sorted-subset
          rebellion/private/guarded-block
-         rebellion/private/sequence-empty)
+         rebellion/private/sequence-empty
+         rebellion/private/static-name)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -215,12 +216,14 @@
   #:methods gen:mutable-sorted-set
 
   [(define (sorted-set-add! this element)
-     (define comparator (empty-mutable-sorted-set-comparator this))
-     (make-mutable-sorted-set (list element) #:comparator comparator))
+     (raise-arguments-error
+      (name sorted-set-add!)
+      "assertion error: insertion into mutable empty subset shouldn't be possible"))
 
    (define (sorted-set-add-all! this elements)
-     (define comparator (empty-mutable-sorted-set-comparator this))
-     (make-mutable-sorted-set elements #:comparator comparator))
+     (raise-arguments-error
+      (name sorted-set-add!)
+      "assertion error: insertion into mutable empty subset shouldn't be possible"))
 
    (define (sorted-set-remove! this element)
      (void))
