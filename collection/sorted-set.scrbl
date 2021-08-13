@@ -6,6 +6,7 @@
                      racket/math
                      racket/sequence
                      rebellion/base/comparator
+                     rebellion/base/option
                      rebellion/collection/sorted-set
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer)
@@ -233,3 +234,23 @@ not a copy, so it constructs the view in constant time regardless of the size of
    (sorted-set-contains-none? numbers (list 11 12 13))
    (sorted-set-contains-none? numbers (vector 1 10 100))
    (sorted-set-contains-none? numbers (list)))}
+
+
+@defproc[(sorted-set-least-element [set sorted-set?]) option?]{
+
+ Returns the first and smallest element in @racket[set], or @racket[absent] if @racket[set] is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-set-least-element (sorted-set 5 2 6 #:comparator natural<=>))
+   (sorted-set-least-element (sorted-set #:comparator natural<=>)))}
+
+
+@defproc[(sorted-set-greatest-element [set sorted-set?]) option?]{
+
+ Returns the last and largest element in @racket[set], or @racket[absent] if @racket[set] is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-set-greatest-element (sorted-set 5 2 6 #:comparator natural<=>))
+   (sorted-set-greatest-element (sorted-set #:comparator natural<=>)))}
