@@ -234,7 +234,8 @@
 
 (define (make-mutable-sorted-set [elements '()] #:comparator comparator)
   (define set (constructor:regular-mutable-sorted-set (make-mutable-red-black-tree comparator)))
-  (sorted-set-add-all! set elements))
+  (sorted-set-add-all! set elements)
+  set)
 
 
 (define (make-mutable-sorted-set-from-sorted sorted-set)
