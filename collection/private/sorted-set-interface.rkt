@@ -10,6 +10,7 @@
   [immutable-sorted-set? predicate/c]
   [mutable-sorted-set? predicate/c]
   [in-sorted-set (->* (sorted-set?) (#:descending? boolean?) (sequence/c any/c))]
+  [sorted-set-empty? (-> sorted-set? boolean?)]
   [sorted-set-size (-> sorted-set? exact-nonnegative-integer?)]
   [sorted-set-comparator (-> sorted-set? comparator?)]
   [sorted-set-contains? (-> sorted-set? any/c boolean?)]
