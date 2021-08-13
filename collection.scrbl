@@ -31,6 +31,7 @@ duplicate elements. For advice on how to choose the right collection type, see
 @include-section[(lib "rebellion/collection/multiset.scrbl")]
 @include-section[(lib "rebellion/collection/multidict.scrbl")]
 @include-section[(lib "rebellion/collection/association-list.scrbl")]
+@include-section[(lib "rebellion/collection/sorted-set.scrbl")]
 @include-section[(lib "rebellion/collection/range-set.scrbl")]
 @include-section[(lib "rebellion/collection/keyset.scrbl")]
 @include-section[(lib "rebellion/collection/record.scrbl")]
