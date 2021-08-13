@@ -18,8 +18,8 @@
          rebellion/base/comparator
          rebellion/collection/vector
          rebellion/collection/vector/builder
-         rebellion/collection/private/persistent-sorted-set
-         rebellion/collection/private/regular-immutable-sorted-set
+         (submod rebellion/collection/private/persistent-sorted-set private-for-rebellion-only)
+         (submod rebellion/collection/private/regular-immutable-sorted-set private-for-rebellion-only)
          rebellion/collection/private/sorted-set-interface
          rebellion/streaming/transducer
          rebellion/private/guarded-block)

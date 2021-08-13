@@ -4,12 +4,13 @@
 (require racket/contract/base)
 
 
-(provide
- (contract-out
-  [empty-sorted-set (-> comparator? immutable-sorted-set?)]
-  [make-persistent-sorted-set
-   (-> (sequence/c any/c) #:comparator comparator? immutable-sorted-set?)]
-  [make-persistent-sorted-set-from-sorted (-> sorted-set? immutable-sorted-set?)]))
+(module+ private-for-rebellion-only
+  (provide
+   (contract-out
+    [empty-sorted-set (-> comparator? immutable-sorted-set?)]
+    [make-persistent-sorted-set
+     (-> (sequence/c any/c) #:comparator comparator? immutable-sorted-set?)]
+    [make-persistent-sorted-set-from-sorted (-> sorted-set? immutable-sorted-set?)])))
 
 
 (require racket/generic

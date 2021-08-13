@@ -4,10 +4,11 @@
 (require racket/contract/base)
 
 
-(provide
- (contract-out
-  [make-regular-immutable-sorted-set
-   (-> (and/c vector? immutable?) comparator? immutable-sorted-set?)]))
+(module+ private-for-rebellion-only
+  (provide
+   (contract-out
+    [make-regular-immutable-sorted-set
+     (-> (and/c vector? immutable?) comparator? immutable-sorted-set?)])))
 
 
 (require racket/generic
@@ -15,7 +16,7 @@
          rebellion/base/comparator
          rebellion/base/option
          (submod rebellion/base/range private-for-rebellion-only)
-         rebellion/collection/private/persistent-sorted-set
+         (submod rebellion/collection/private/persistent-sorted-set private-for-rebellion-only)
          rebellion/collection/private/reversed-sorted-set
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
