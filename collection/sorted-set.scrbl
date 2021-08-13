@@ -18,6 +18,7 @@
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/base/comparator
                    'rebellion/collection/sorted-set
+                   'rebellion/streaming/reducer
                    'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
 
@@ -111,3 +112,49 @@ not a copy, so it constructs the view in constant time regardless of the size of
    #:eval (make-evaluator) #:once
    (make-mutable-sorted-set #:comparator natural<=>)
    (make-mutable-sorted-set (list 4 7 3 5) #:comparator natural<=>))}
+
+
+@section{Querying Sorted Sets}
+
+
+@defproc[(in-sorted-set [set sorted-set?] [#:descending? descending? boolean? #false])
+         (sequence/c any/c)]{
+
+ Returns a @tech/reference{sequence} that iterates through the elements of @racket[set] in ascending
+ order. If @racket[descending?] is true, the sequence iterates in descending order instead.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define fruits
+      (sorted-set "apple" "orange" "grape" "banana"
+                  #:comparator string<=>)))
+
+   (transduce (in-sorted-set fruits)
+              #:into (join-into-string ", "))
+
+   (transduce (in-sorted-set fruits #:descending? #true)
+              #:into (join-into-string ", ")))}
+
+
+@defproc[(sorted-set-empty? [set sorted-set?]) boolean?]{
+
+ Returns true if @racket[set] contains no elements, returns false otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-set-empty? (sorted-set #:comparator natural<=>))
+   (sorted-set-empty? (sorted-set 1 2 3 #:comparator natural<=>)))}
+
+
+@defproc[(sorted-set-size [set sorted-set?]) natural?]{
+
+ Returns the number of elements in @racket[set].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sequence->sorted-set (in-range 5 15) #:comparator natural<=>)))
+   
+   (sorted-set-size numbers))}
