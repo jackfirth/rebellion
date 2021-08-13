@@ -32,7 +32,7 @@ A @deftech{sorted set} is a @tech{collection} of distinct elements sorted accord
 sets are @racket[equal?] if and only if they contain the same elements and use @racket[equal?]
 comparators. Two mutable sorted sets are @racket[equal?] if and only if they will @emph{always}
 contain the same elements and use @racket[equal?] comparators, meaning that they share the same
-mutable state. This is not necessarily the same as being @racket[eq?], as some mutable sets may be
+mutable state. This is not necessarily the same as being @racket[eq?], as some sorted sets may be
 views of others.
 
 All sorted sets are @tech/reference{sequences}. When iterated, a sorted set traverses its elements in
@@ -158,3 +158,78 @@ not a copy, so it constructs the view in constant time regardless of the size of
       (sequence->sorted-set (in-range 5 15) #:comparator natural<=>)))
    
    (sorted-set-size numbers))}
+
+
+@defproc[(sorted-set-comparator [set sorted-set?]) comparator?]{
+
+ Returns the @tech{comparator} used by @racket[set] to sort elements.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-set-comparator (sorted-set 1 2 3 #:comparator natural<=>)))}
+
+
+@defproc[(sorted-set-contains? [set sorted-set?] [value any/c]) boolean?]{
+
+ Returns true if @racket[set] contains @racket[value], returns false otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 1 2 3 4 5 #:comparator natural<=>)))
+
+   (sorted-set-contains? numbers 2)
+   (sorted-set-contains? numbers 100))}
+
+
+@defproc[(sorted-set-contains-any? [set sorted-set?] [sequence (sequence/c any/c)]) boolean?]{
+
+ Returns true if @racket[set] contains at least one element in @racket[sequence], returns false
+ otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 1 2 3 4 5 #:comparator natural<=>)))
+
+   (sorted-set-contains-any? numbers (list 1 10 100))
+   (sorted-set-contains-any? numbers (vector 11 12 13))
+   (sorted-set-contains-any? numbers (list)))}
+
+
+@(define vacuous-truth
+   @hyperlink["https://en.wikipedia.org/wiki/Vacuous_truth"]{vacuous truth})
+
+
+@defproc[(sorted-set-contains-all? [set sorted-set?] [sequence (sequence/c any/c)]) boolean?]{
+
+ Returns true if @racket[set] contains every element in @racket[sequence], returns false otherwise. If
+ @racket[sequence] is empty, then by the principle of @vacuous-truth the result is true.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 1 2 3 4 5 #:comparator natural<=>)))
+
+   (sorted-set-contains-all? numbers (list 1 2 3))
+   (sorted-set-contains-all? numbers (vector 1 10 100))
+   (sorted-set-contains-all? numbers (list)))}
+
+
+@defproc[(sorted-set-contains-none? [set sorted-set?] [sequence (sequence/c any/c)]) boolean?]{
+
+ Returns true if @racket[set] does not contain any element in @racket[sequence], returns false
+ otherwise. If @racket[sequence] is empty, then by the principle of @vacuous-truth the result is true.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 1 2 3 4 5 #:comparator natural<=>)))
+
+   (sorted-set-contains-none? numbers (list 11 12 13))
+   (sorted-set-contains-none? numbers (vector 1 10 100))
+   (sorted-set-contains-none? numbers (list)))}
