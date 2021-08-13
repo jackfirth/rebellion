@@ -6,7 +6,9 @@
                      racket/math
                      racket/sequence
                      rebellion/base/comparator
-                     rebellion/collection/sorted-set)
+                     rebellion/collection/sorted-set
+                     rebellion/streaming/reducer
+                     rebellion/streaming/transducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           (submod rebellion/private/scribble-cross-document-tech doc)
           scribble/example)
@@ -15,7 +17,8 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/base/comparator
-                   'rebellion/collection/sorted-set)
+                   'rebellion/collection/sorted-set
+                   'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
 
 
@@ -39,7 +42,8 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
 
 @defproc[(sorted-set? [v any/c]) boolean?]{
- A predicate for @tech{sorted sets}. Includes both mutable, immutable sorted sets.}
+ A predicate for @tech{sorted sets}. Includes mutable, immutable, and @tech{unmodifiable} sorted
+ sets.}
 
 
 @defproc[(mutable-sorted-set? [v any/c]) boolean?]{
@@ -79,4 +83,31 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  @(examples
    #:eval (make-evaluator) #:once
+   (sequence->sorted-set (list 4 8 2 1) #:comparator natural<=>)
    (sequence->sorted-set "hello world" #:comparator char<=>))}
+
+
+@defproc[(into-sorted-set [comparator comparator?]) (reducer/c any/c immutable-sorted-set?)]{
+                                                                                             
+ Constructs a @tech{reducer} that reduces elements into an immutable @tech{sorted set} sorted by
+ @racket[comparator]. Duplicate elements (as in, elements that @racket[comparator] considers
+ equivalent) are ignored.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 4 8 2 1) #:into (into-sorted-set natural<=>)))}
+
+
+@defproc[(make-mutable-sorted-set
+          [initial-elements (sequence/c any/c) '()] [#:comparator comparator comparator?])
+         mutable-sorted-set?]{
+
+ Constructs a new mutable @tech{sorted set} containing @racket[initial-elements] (which defaults to
+ the empty list) sorted according to @racket[comparator]. Duplicate elements in
+ @racket[initial-elements] (as in, elements that @racket[comparator] considers equivalent) are
+ ignored.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (make-mutable-sorted-set #:comparator natural<=>)
+   (make-mutable-sorted-set (list 4 7 3 5) #:comparator natural<=>))}
