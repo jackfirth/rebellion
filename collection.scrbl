@@ -17,6 +17,17 @@ duplicate elements. For advice on how to choose the right collection type, see
 @secref["choosing-collections"].
 
 
+Collections may be mutable, immutable, or @deftech{unmodifiable}. A mutable collection can be changed
+and updated by clients. Immutable collections never change: instead, operations on immutable
+collections return modified copies of the original collection. Unmodifiable collections lie between
+these two extremes: an unmodifiable collection cannot be changed by clients, but does not promise that
+it will not change on its own. A typical use case for unmodifiable collections is for a module to
+share access to a mutable collection with other modules without allowing other modules to modify the
+collection: the module can wrap the mutable collection with an @deftech{unmodifiable view}, and share
+that collection view with other modules. This provides other modules with read-only access to the
+module's mutable state.
+
+
 @local-table-of-contents[]
 
 
