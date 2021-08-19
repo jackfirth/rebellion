@@ -316,3 +316,150 @@ not a copy, so it constructs the view in constant time regardless of the size of
    (sorted-set-element-at-least numbers 7)
    (sorted-set-element-at-least numbers 5)
    (sorted-set-element-at-least numbers 30))}
+
+
+@section{Modifying Sorted Sets}
+
+
+@defproc[(sorted-set-add [set immutable-sorted-set?] [element any/c]) immutable-sorted-set?]{
+
+ Functionally inserts @racket[element] into @racket[set] by returning a new immutable sorted set
+ containing all of the elements of @racket[set] and @racket[element], if it did not already contain
+ @racket[element]. The input set is not modified.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 10 20 30 #:comparator natural<=>)))
+
+   (sorted-set-add numbers 14))}
+
+
+@defproc[(sorted-set-add! [set mutable-sorted-set?] [element any/c]) void?]{
+
+ Inserts @racket[element] into @racket[set] if it does not already contain @racket[element].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (make-mutable-sorted-set (list 10 20 30) #:comparator natural<=>)))
+
+   (sorted-set-add! numbers 14)
+   numbers)}
+
+
+@defproc[(sorted-set-add-all [set immutable-sorted-set?] [elements (sequence/c any/c)])
+         immutable-sorted-set?]{
+
+ Functionally inserts each element of @racket[elements] into @racket[set] by returning a new immutable
+ sorted set containing all of the elements of @racket[set] and @racket[elements]. There is no
+ requirement that @racket[elements] is sorted, and duplicates in @racket[elements] are ignored. The
+ input set is not modified. When given two sorted sets, this is the @emph{union} operation on
+ immutable sorted sets.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 10 20 30 #:comparator natural<=>)))
+
+   (sorted-set-add-all numbers (list 25 5 35 15)))}
+
+
+@defproc[(sorted-set-add-all! [set mutable-sorted-set?] [elements (sequence/c any/c)]) void?]{
+
+ Inserts each element of @racket[elements] into @racket[set]. There is no requirement that
+ @racket[elements] is sorted, and duplicates in @racket[elements] are ignored. When given two sorted
+ sets, this is the @emph{union} operation on mutable sorted sets.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (make-mutable-sorted-set (list 10 20 30) #:comparator natural<=>)))
+
+   (sorted-set-add-all! numbers (list 25 5 35 15))
+   numbers)}
+
+
+@defproc[(sorted-set-remove [set immutable-sorted-set?] [element any/c]) immutable-sorted-set?]{
+
+ Functionally removes @racket[element] from @racket[set] by returning a new immutable sorted set
+ containing all of the elements of @racket[set] except for @racket[element]. The input set is not
+ modified.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 10 20 30 #:comparator natural<=>)))
+
+   (sorted-set-remove numbers 20))}
+
+
+@defproc[(sorted-set-remove! [set mutable-sorted-set?] [element any/c]) void?]{
+
+ Removes @racket[element] from @racket[set].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (make-mutable-sorted-set (list 10 20 30) #:comparator natural<=>)))
+
+   (sorted-set-remove! numbers 20)
+   numbers)}
+
+
+@defproc[(sorted-set-remove-all [set immutable-sorted-set?] [elements (sequence/c any/c)])
+         immutable-sorted-set?]{
+
+ Functionally removes each element of @racket[elements] from @racket[set] by returning a new immutable
+ sorted set containing all of the elements of @racket[set] except those in @racket[elements]. There is
+ no requirement that @racket[elements] is sorted, and duplicates in @racket[elements] are ignored. The
+ input set is not modified. When given two sorted sets, this is the @emph{complement} operation on
+ immutable sorted sets.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 10 20 30 #:comparator natural<=>)))
+
+   (sorted-set-remove-all numbers (list 20 30 40)))}
+
+
+@defproc[(sorted-set-remove-all! [set mutable-sorted-set?] [elements (sequence/c any/c)]) void?]{
+
+ Removes each element of @racket[elements] from @racket[set]. There is no requirement that
+ @racket[elements] is sorted, and duplicates in @racket[elements] are ignored. When given two sorted
+ sets, this is the @emph{complement} operation on mutable sorted sets.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (make-mutable-sorted-set (list 10 20 30) #:comparator natural<=>)))
+
+   (sorted-set-remove-all! numbers (list 20 30 40))
+   numbers)}
+
+
+@defproc[(sorted-set-clear! [set mutable-sorted-set?]) void?]{
+
+ Removes all elements from @racket[set]. On its own this operation isn't all that useful, but it can
+ be composed with @racket[sorted-subset] to delete a range within a sorted set.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (make-mutable-sorted-set (list 10 20 30) #:comparator real<=>))
+    (define numbers>15
+      (sorted-subset numbers (greater-than-range 15))))
+
+   numbers>15
+   (sorted-set-clear! numbers>15)
+   numbers)}
