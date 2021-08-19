@@ -142,7 +142,7 @@
 
    (define (sorted-set-remove-all! this elements)
      (for ([element elements])
-       (generic-sorted-set-add! this element)))])
+       (generic-sorted-set-remove! this element)))])
 
 
 ;; Subtypes must implement the gen:sorted-set interface *and* the gen:mutable-sorted-set interface.
