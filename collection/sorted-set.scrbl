@@ -254,3 +254,65 @@ not a copy, so it constructs the view in constant time regardless of the size of
    #:eval (make-evaluator) #:once
    (sorted-set-greatest-element (sorted-set 5 2 6 #:comparator natural<=>))
    (sorted-set-greatest-element (sorted-set #:comparator natural<=>)))}
+
+
+@defproc[(sorted-set-element-less-than [set sorted-set?] [upper-bound any/c]) option?]{
+                                                                                       
+ Returns the largest element in @racket[set] less than @racket[upper-bound], or @racket[absent] if no
+ such element exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 5 10 20 #:comparator natural<=>)))
+   
+   (sorted-set-element-less-than numbers 12)
+   (sorted-set-element-less-than numbers 2))}
+
+
+@defproc[(sorted-set-element-greater-than [set sorted-set?] [lower-bound any/c]) option?]{
+                                                                                       
+ Returns the smallest element in @racket[set] greater than @racket[lower-bound], or @racket[absent] if
+ no such element exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 5 10 20 #:comparator natural<=>)))
+   
+   (sorted-set-element-greater-than numbers 7)
+   (sorted-set-element-greater-than numbers 20))}
+
+
+@defproc[(sorted-set-element-at-most [set sorted-set?] [upper-bound any/c]) option?]{
+                                                                                       
+ Returns the largest element in @racket[set] less than or equivalent to @racket[upper-bound], or
+ @racket[absent] if no such element exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 5 10 20 #:comparator natural<=>)))
+   
+   (sorted-set-element-at-most numbers 12)
+   (sorted-set-element-at-most numbers 10)
+   (sorted-set-element-at-most numbers 2))}
+
+
+@defproc[(sorted-set-element-at-least [set sorted-set?] [lower-bound any/c]) option?]{
+                                                                                       
+ Returns the smallest element in @racket[set] greater than or equivalent to @racket[lower-bound], or
+ @racket[absent] if no such element exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 5 10 20 #:comparator natural<=>)))
+   
+   (sorted-set-element-at-least numbers 7)
+   (sorted-set-element-at-least numbers 5)
+   (sorted-set-element-at-least numbers 30))}
