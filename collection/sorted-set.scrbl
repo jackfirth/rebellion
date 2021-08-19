@@ -7,6 +7,7 @@
                      racket/sequence
                      rebellion/base/comparator
                      rebellion/base/option
+                     rebellion/base/range
                      rebellion/collection/sorted-set
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer)
@@ -18,6 +19,7 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/base/comparator
+                   'rebellion/base/range
                    'rebellion/collection/sorted-set
                    'rebellion/streaming/reducer
                    'rebellion/streaming/transducer)
@@ -140,25 +142,33 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
 @defproc[(sorted-set-empty? [set sorted-set?]) boolean?]{
 
- Returns true if @racket[set] contains no elements, returns false otherwise.
+ Returns true if @racket[set] contains no elements, returns false otherwise. Note that this operation
+ can be combined with @racket[sorted-subset] to efficiently determine if a range within a sorted set
+ is empty.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (sorted-set-empty? (sorted-set #:comparator natural<=>))
-   (sorted-set-empty? (sorted-set 1 2 3 #:comparator natural<=>)))}
+   (eval:no-prompt
+    (define numbers (sorted-set 1 2 3 #:comparator real<=>)))
+   
+   (sorted-set-empty? numbers)
+   (sorted-set-empty? (sorted-subset numbers (greater-than-range 5))))}
 
 
 @defproc[(sorted-set-size [set sorted-set?]) natural?]{
 
- Returns the number of elements in @racket[set].
+ Returns the number of elements in @racket[set]. Note that this operation can be combined with
+ @racket[sorted-subset] to efficiently determine how many elements are contained within a range of a
+ sorted set.
 
  @(examples
    #:eval (make-evaluator) #:once
    (eval:no-prompt
     (define numbers
-      (sequence->sorted-set (in-range 5 15) #:comparator natural<=>)))
+      (sequence->sorted-set (in-range 5 15) #:comparator real<=>)))
    
-   (sorted-set-size numbers))}
+   (sorted-set-size numbers)
+   (sorted-set-size (sorted-subset numbers (less-than-range 10))))}
 
 
 @defproc[(sorted-set-comparator [set sorted-set?]) comparator?]{
