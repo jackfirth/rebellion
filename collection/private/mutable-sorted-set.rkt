@@ -65,7 +65,7 @@
      (mutable-red-black-tree-element-at-least (regular-mutable-sorted-set-tree this) lower-bound))
 
    (define (sorted-subset this element-range)
-     (constructor:regular-mutable-sorted-subset (regular-mutable-sorted-set-tree this) element-range))
+     (constructor:regular-mutable-sorted-subset this element-range))
 
    (define (sorted-set-reverse this)
      (make-reversed-mutable-sorted-set this))]
