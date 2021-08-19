@@ -328,6 +328,70 @@ not a copy, so it constructs the view in constant time regardless of the size of
    (sorted-set-element-at-least numbers 30))}
 
 
+@section{Sorted Set Views}
+
+
+@defproc[(sorted-subset [set sorted-set?] [element-range range?]) sorted-set?]{
+
+ Returns a view of the elements in @racket[set] that fall within @racket[element-range].
+ @bold{The returned subset is not a copy!} It is a @tech{read-through view} of @racket[set], and
+ any modifications to @racket[set] will be reflected in the returned view. The returned view is an
+ @racket[immutable-sorted-set?] if @racket[set] is immutable, and similarly it is a
+ @racket[mutable-sorted-set?] if @racket[set] is mutable.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 1 2 3 4 5 #:comparator real<=>)))
+
+   (sorted-subset numbers (closed-range 2 4)))
+
+ When used on mutable sorted sets, the returned set is also a @tech{write-through view} --- mutating
+ the returned subset will mutate the original, underlying set. The returned subset supports all of the
+ same operations as ordinary mutable sorted sets, with the exception that inserting elements outside
+ @racket[element-range] is disallowed. Additionally, note that calling @racket[sorted-set-remove!] on
+ the subset view with an element outside @racket[element-range] will have no effect on either the
+ subset view @emph{or} the original set, as @racket[sorted-set-remove!] does nothing on sets that do
+ not contain the element being removed.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (make-mutable-sorted-set (list 1 2 3 4 5) #:comparator real<=>))
+    (define numbers>3
+      (sorted-subset numbers (greater-than-range 3))))
+
+   numbers>3
+   (sorted-set-remove! numbers>3 4)
+   numbers>3
+   numbers)}
+
+
+@defproc[(sorted-set-reverse [set sorted-set?]) sorted-set?]{
+
+ Returns a @tech{view} of set that sorts elements in the opposite order.
+ @bold{The returned set is not a copy!} It is a @tech{read-through view} of @racket[set], and any
+ modifications to @racket[set] will be reflected in the returned view. The returned view is an
+ @racket[immutable-sorted-set?] if @racket[set] is immutable, and similarly it is a
+ @racket[mutable-sorted-set?] if @racket[set] is mutable. Note that calling
+ @racket[sorted-set-comparator] on the returned view returns a reversed version of the comparator on
+ @racket[set].
+
+ When used on mutable sorted sets, the returned set is also a @tech{write-through view} --- mutating
+ the returned set will mutate the original, underlying set. The returned set supports all of the same
+ operations as ordinary mutable sorted sets.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (sorted-set 1 2 3 4 5 #:comparator natural<=>)))
+
+   (sorted-set-reverse numbers))}
+
+
 @section{Modifying Sorted Sets}
 
 
