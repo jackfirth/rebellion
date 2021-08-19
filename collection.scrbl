@@ -20,12 +20,29 @@ duplicate elements. For advice on how to choose the right collection type, see
 Collections may be mutable, immutable, or @deftech{unmodifiable}. A mutable collection can be changed
 and updated by clients. Immutable collections never change: instead, operations on immutable
 collections return modified copies of the original collection. Unmodifiable collections lie between
-these two extremes: an unmodifiable collection cannot be changed by clients, but does not promise that
-it will not change on its own. A typical use case for unmodifiable collections is for a module to
-share access to a mutable collection with other modules without allowing other modules to modify the
-collection: the module can wrap the mutable collection with an @deftech{unmodifiable view}, and share
-that collection view with other modules. This provides other modules with read-only access to the
-module's mutable state.
+these two extremes. An unmodifiable collection cannot be changed by clients, but does not promise that
+it will not change on its own.
+
+
+Different collections need not necessarily have different state. A @tech{collection view} is a
+collection whose implementation defers to the state of some other collection. Collection views can be
+used for a wide variety of purposes, including efficiently operating on a subset of a collection,
+constructing a thread-safe wrapper around a collection meant to be shared between threads, or adapting
+one collection to the interface of another. Collection views come in a few main varieties:
+
+
+@itemlist[
+ @item{A @deftech{read-through view} reflects any changes in the underlying collection: updates to the
+  viewed collection cause the view to change.}
+
+ @item{A @deftech{write-through view} is a @tech{read-through view} that is mutable, and allows
+  clients of the view to mutate the underlying collection by mutating the view.}
+
+ @item{An @deftech{unmodifiable view} is a @tech{read-through view} that does not allow clients to
+  mutate the view directly. Unmodifiable views are useful for sharing access to mutable state with
+  clients who should be allowed to read that state, but not change it. @bold{Unmodifiable is not the
+   same as immutable!} An unmodifiable view cannot be changed @emph{directly}, but may change
+  @emph{indirectly} due to changes in the underlying collection.}]
 
 
 @local-table-of-contents[]
