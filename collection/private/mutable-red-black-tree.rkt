@@ -137,17 +137,19 @@
 
 ;; Mutable-Red-Black-Node -> (Sequence Any)
 (define (in-mutable-red-black-tree-node node #:descending? [descending? #false])
+
+  (define (recur node)
+    (in-mutable-red-black-tree-node node #:descending? descending?))
+  
   (define element (mutable-red-black-node-element node))
   (define true-left (mutable-red-black-node-left-child node))
   (define true-right (mutable-red-black-node-right-child node))
   (define left (if descending? true-right true-left))
   (define right (if descending? true-left true-right))
   (cond
-    [(and left right)
-     (sequence-append
-      (in-mutable-red-black-tree-node left) (stream element) (in-mutable-red-black-tree-node right))]
-    [left (sequence-append (in-mutable-red-black-tree-node left) (stream element))]
-    [right (sequence-append (stream element) (in-mutable-red-black-tree-node right))]
+    [(and left right) (sequence-append (recur left) (stream element) (recur right))]
+    [left (sequence-append (recur left) (stream element))]
+    [right (sequence-append (stream element) (recur right))]
     [else (stream element)]))
 
 
@@ -162,6 +164,10 @@
 ;; Mutable-Red-Black-Node -> (Sequence Any)
 (define/guard (in-mutable-red-black-subtree-node
                node element-range #:descending? [descending? #false])
+
+  (define (recur node)
+    (in-mutable-red-black-subtree-node node element-range #:descending? descending?))
+  
   (define element (mutable-red-black-node-element node))
   (guard (range-contains? element-range element) else
     (stream))
@@ -170,11 +176,9 @@
   (define left (if descending? true-right true-left))
   (define right (if descending? true-left true-right))
   (cond
-    [(and left right)
-     (sequence-append
-      (in-mutable-red-black-tree-node left) (stream element) (in-mutable-red-black-tree-node right))]
-    [left (sequence-append (in-mutable-red-black-tree-node left) (stream element))]
-    [right (sequence-append (stream element) (in-mutable-red-black-tree-node right))]
+    [(and left right) (sequence-append (recur left) (stream element) (recur right))]
+    [left (sequence-append (recur left) (stream element))]
+    [right (sequence-append (stream element) (recur right))]
     [else (stream element)]))
 
 
@@ -183,7 +187,9 @@
   (stream*
    (block
     (define root (mutable-red-black-tree-root-node tree))
-    (if root (in-mutable-red-black-subtree-node root #:descending? descending?) (stream)))))
+    (if root
+        (in-mutable-red-black-subtree-node root element-range #:descending? descending?)
+        (stream)))))
 
 
 ;; Mutable-Red-Black-Tree -> List
@@ -540,16 +546,20 @@
       [(== greater) (loop (mutable-red-black-node-left-child node))]))
     
   (loop node))
-  
-  
+
+
 (define (mutable-red-black-tree-clear! tree)
   (set-mutable-red-black-tree-root-node! tree #false)
   (set-mutable-red-black-tree-size! tree 0))
 
 
 (define (mutable-red-black-subtree-clear! tree element-range)
-  ;; TODO
-  (void))
+  ;; There's definitely a faster algorithm for this than just collecting all the elements into a list
+  ;; and removing them one at a time. But this works fine for now, and it has the advantages of being
+  ;; simple, easy to implement, and obviously correct.
+  (define elements (sequence->list (in-mutable-red-black-subtree tree element-range)))
+  (for ([element (in-list elements)])
+    (mutable-red-black-tree-remove! tree element)))
   
   
 (module+ test
