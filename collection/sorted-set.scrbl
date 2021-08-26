@@ -371,7 +371,7 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
 @defproc[(sorted-set-reverse [set sorted-set?]) sorted-set?]{
 
- Returns a @tech{view} of set that sorts elements in the opposite order.
+ Returns a view of @racket[set] that sorts elements in the opposite order.
  @bold{The returned set is not a copy!} It is a @tech{read-through view} of @racket[set], and any
  modifications to @racket[set] will be reflected in the returned view. The returned view is an
  @racket[immutable-sorted-set?] if @racket[set] is immutable, and similarly it is a
