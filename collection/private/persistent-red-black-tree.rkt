@@ -36,7 +36,8 @@
    (-> (sequence/c any/c) comparator? persistent-red-black-tree?)]))
 
 
-(require racket/match
+(require racket/contract/combinator
+         racket/match
          racket/math
          racket/sequence
          racket/stream
@@ -113,7 +114,7 @@
   (if root (persistent-red-black-node-size root) 0))
 
 
-(define (persistent-red-black-tree-contains? tree element)
+(define/guard (persistent-red-black-tree-contains? tree element)
   (define cmp (persistent-red-black-tree-comparator tree))
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
@@ -125,7 +126,7 @@
       [(== greater) (loop left)]
       [(== equivalent) #true]))
   
-  (loop))
+  (and (contract-first-order-passes? (comparator-operand-contract cmp) element) (loop)))
 
 
 (define (persistent-red-black-subtree-contains? tree range element)

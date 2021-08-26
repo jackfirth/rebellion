@@ -12,7 +12,8 @@
      (-> (and/c vector? immutable?) comparator? immutable-sorted-set?)])))
 
 
-(require racket/generic
+(require racket/contract/combinator
+         racket/generic
          racket/vector
          rebellion/base/comparator
          rebellion/base/option
@@ -22,7 +23,8 @@
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
-         rebellion/private/guarded-block)
+         rebellion/private/guarded-block
+         rebellion/private/static-name)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -71,10 +73,11 @@
    (define (sorted-set-comparator this)
      (regular-immutable-sorted-set-comparator this))
 
-   (define (sorted-set-contains? this value)
+   (define/guard (sorted-set-contains? this value)
      (define vec (regular-immutable-sorted-set-sorted-vector this))
      (define cmp (regular-immutable-sorted-set-comparator this))
-     (position? (vector-binary-search vec value #:comparator cmp)))
+     (and (contract-first-order-passes? (comparator-operand-contract cmp) value)
+          (position? (vector-binary-search vec value #:comparator cmp))))
 
    (define (sorted-set-least-element this)
      (define vec (regular-immutable-sorted-set-sorted-vector this))
@@ -154,7 +157,8 @@
      (define cmp (regular-immutable-sorted-subset-comparator this))
      (define start (regular-immutable-sorted-subset-start-index this))
      (define end (regular-immutable-sorted-subset-end-index this))
-     (position? (vector-binary-search vec value start end #:comparator cmp)))
+     (and (contract-first-order-passes? (comparator-operand-contract cmp) value)
+          (position? (vector-binary-search vec value start end #:comparator cmp))))
 
    (define/guard (sorted-set-least-element this)
      (guard (sorted-set-empty? this) then

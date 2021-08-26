@@ -15,7 +15,8 @@
   [sorted-subset-element-at-least (-> sorted-set? range? any/c option?)]))
 
 
-(require racket/match
+(require racket/contract/combinator
+         racket/match
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
@@ -29,7 +30,8 @@
 
 
 (define (sorted-subset-contains? set element-range value)
-  (and (range-contains? element-range value)
+  (and (contract-first-order-passes? (comparator-operand-contract (sorted-set-comparator set)) value)
+       (range-contains? element-range value)
        (sorted-set-contains? set value)))
 
 
