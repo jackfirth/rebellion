@@ -332,6 +332,13 @@ with equality unless otherwise stated.
  @racket[any/c] if @racket[comparator] does not have a contract attached to it. Note that the entire
  contract on @racket[comparator] can be retrieved with @racket[value-contract].
 
+ @bold{Warning:} because this function observes whether a contract is attached to @racket[comparator],
+ it may return different results for two comparators that are otherwise @racket[equal?]. The result
+ from @racket[comparator-operand-contract] should be viewed as a best-effort optimistic estimate:
+ any input that does @emph{not} satisfy the returned contract will definitely raise an error when
+ given to the contracted comparator, but there is no guarantee that inputs that satisfy the returned
+ contract will be accepted.
+
  @(examples
    #:eval (make-evaluator) #:once
    (eval:no-prompt
