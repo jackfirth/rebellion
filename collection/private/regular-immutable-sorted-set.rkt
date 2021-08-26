@@ -129,7 +129,7 @@
   #:methods gen:sorted-set
 
   [(define (in-sorted-set this #:descending? [descending? #false])
-     (define vec (regular-immutable-sorted-set-sorted-vector this))
+     (define vec (regular-immutable-sorted-subset-sorted-vector this))
      (define start (regular-immutable-sorted-subset-start-index this))
      (define end (regular-immutable-sorted-subset-end-index this))
      (if descending?
