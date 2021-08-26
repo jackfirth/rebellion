@@ -122,8 +122,8 @@
 
   (test-case "vector builders should allow multiple usages"
     (define builder (make-vector-builder))
-    (check-equal? (vector-builder-add builder 1) (vector-immutable 1))
-    (check-equal? (vector-builder-add builder 2) (vector-immutable 1 2))))
+    (check-equal? (build-vector (vector-builder-add builder 1)) (vector-immutable 1))
+    (check-equal? (build-vector (vector-builder-add builder 2)) (vector-immutable 1 2))))
 
 
 ;@----------------------------------------------------------------------------------------------------
