@@ -199,7 +199,10 @@
 
   [(define/guard (equal-proc this other recur)
 
-     ;; We check emptiness first as a fast path, since empty collections are common in practice and
+     (guard (recur (sorted-set-comparator this) (sorted-set-comparator other)) else
+       #false)
+
+     ;; We check emptiness as a fast path, since empty collections are common in practice and
      ;; easy to optimize for.
      (guard (sorted-set-empty? this) then
        (sorted-set-empty? other))
@@ -209,7 +212,6 @@
      ;; We check the size before comparing elements so that we can avoid paying the O(n) element
      ;; comparison cost most of the time.
      (and (recur (sorted-set-size this) (sorted-set-size other))
-          (recur (sorted-set-comparator this) (sorted-set-comparator other))
           (for/and ([this-element (in-sorted-set this)]
                     [other-element (in-sorted-set other)])
             (recur this-element other-element))))
