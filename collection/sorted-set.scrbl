@@ -537,3 +537,72 @@ not a copy, so it constructs the view in constant time regardless of the size of
    numbers>15
    (sorted-set-clear! numbers>15)
    numbers)}
+
+
+@section{Sorted Set Builders}
+
+
+A @deftech{sorted set builder} is a mutable object that can create sorted sets. Values can be added to
+a builder incrementally with @racket[sorted-set-builder-add], and immutable sorted sets can be built
+from a builder with @racket[build-sorted-set]. Builders can be reused --- a single builder can build
+many sorted sets, and elements can be added to the builder after its already built sets. Each built
+set is a superset of the sets built before it. Creating a sorted set with a builder will usually lead
+to faster performance than creating an empty sorted set and repeatedly insesrting elements into it.
+
+
+@defproc[(sorted-set-builder? [v any/c]) boolean?]{
+
+ A predicate for @tech{sorted set builders}.}
+
+
+@defproc[(make-sorted-set-builder [element-comparator comparator?]) sorted-set-builder?]{
+
+ Creates a new @tech{sorted set builder} that builds sets sorted by @racket[element-comparator].}
+
+
+@defproc[(sorted-set-builder-add [builder sorted-set-builder?] [element any/c] ...+)
+         sorted-set-builder?]{
+
+ Adds each @racket[element] to @racket[builder], then returns @racket[builder].
+ @bold{This mutates the builder!} The builder is returned as a convenience to the caller when used
+ with operations like @racket[for/fold]. Duplicate elements are ignored.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define builder (make-sorted-set-builder natural<=>)))
+
+   (sorted-set-builder-add builder 7 2 5 2)
+   (build-sorted-set builder))}
+
+
+@defproc[(sorted-set-builder-add-all [builder sorted-set-builder?] [elements (sequence/c any/c)])
+         sorted-set-builder?]{
+
+ Adds @racket[elements] to @racket[builder], then returns @racket[builder].
+ @bold{This mutates the builder!} The builder is returned as a convenience to the caller when used
+ with operations like @racket[for/fold]. Duplicate elements are ignored.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define builder (make-sorted-set-builder natural<=>)))
+
+   (sorted-set-builder-add-all builder (in-range 0 5))
+   (build-sorted-set builder))}
+
+
+@defproc[(build-sorted-set [builder sorted-set-builder?]) immutable-sorted-set?]{
+
+ Builds an immutable @tech{sorted set} from the contents of @racket[builder], sorted according to the
+ comparator used by @racket[builder]. Does not mutate @racket[builder] in any way, and
+ @racket[builder] can still be used to build additional sorted sets afterwards.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define builder (make-sorted-set-builder natural<=>)))
+
+   (build-sorted-set (sorted-set-builder-add-all builder (in-range 0 5)))
+   (build-sorted-set (sorted-set-builder-add-all builder (in-range 10 15)))
+   (build-sorted-set (sorted-set-builder-add builder 8 24)))}
