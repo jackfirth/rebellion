@@ -36,7 +36,8 @@
          #:comparison-marks (and/c hash? immutable?)
          #:chaperone? boolean?)
         comparator?)]
-  [comparator/c (-> contract? contract?)]))
+  [comparator/c (-> contract? contract?)]
+  [comparator-operand-contract (-> comparator? contract?)]))
 
 
 (require (for-syntax racket/base
@@ -48,6 +49,7 @@
          rebellion/base/immutable-string
          rebellion/base/symbol
          rebellion/private/contract-projection
+         rebellion/private/guarded-block
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/private/strict-cond
@@ -60,6 +62,7 @@
   (require (submod "..")
            racket/contract/parametric
            racket/contract/region
+           racket/format
            racket/function
            rackunit))
 
@@ -385,48 +388,81 @@
     (check-false (impersonator-of? real<=> chaperoned))))
 
 
-(define/name (comparator/c operand-contract*)
-  (define operand-contract
-    (coerce-contract enclosing-function-name operand-contract*))
-  (define contract-name
-    (build-compound-type-name enclosing-function-name operand-contract))
-  (define operand-projection (contract-late-neg-projection operand-contract))
-  (define chaperone? (chaperone-contract? operand-contract))
-  (define (projection blame)
-    (define operand-blame
-      (blame-add-context blame "an operand of" #:swap? #true))
-    (define late-neg-operand-guard (operand-projection operand-blame))
-    (λ (v missing-party)
-      (assert-satisfies v comparator? blame #:missing-party missing-party)
-      (define props
-        (hash impersonator-prop:contracted the-contract
-              impersonator-prop:blame (cons blame missing-party)))
-      (define (operand-guard v) (late-neg-operand-guard v missing-party))
-      (comparator-impersonate v
-                              #:operand-guard operand-guard
-                              #:chaperone? chaperone?
-                              #:properties props)))
-  (define the-contract
-    ((if chaperone? make-chaperone-contract make-contract)
-     #:name contract-name
-     #:first-order comparator?
-     #:late-neg-projection projection))
-  the-contract)
+(define (build-comparator-contract-property #:chaperone? chaperone?)
+
+  (define (get-name this)
+    (build-compound-type-name
+     (name comparator/c) (abstract-comparator-contract-operand-contract this)))
+
+  (define (get-late-neg-projection this)
+    (define operand-projection
+      (contract-late-neg-projection (abstract-comparator-contract-operand-contract this)))
+    (λ (blame)
+      (define operand-blame (blame-add-context blame "an operand of" #:swap? #true))
+      (define late-neg-operand-guard (operand-projection operand-blame))
+      (λ (v missing-party)
+        (assert-satisfies v comparator? blame #:missing-party missing-party)
+        (define props
+          (hash impersonator-prop:contracted this
+                impersonator-prop:blame (cons blame missing-party)))
+        (comparator-impersonate
+         v
+         #:operand-guard (λ (op) (late-neg-operand-guard op missing-party))
+         #:chaperone? chaperone?
+         #:properties props))))
+
+  ((if chaperone? build-chaperone-contract-property build-contract-property)
+   #:name get-name
+   #:first-order (λ (_) comparator?)
+   #:late-neg-projection get-late-neg-projection))
+
+
+(struct abstract-comparator-contract (operand-contract)
+  #:transparent
+  #:property prop:custom-write contract-custom-write-property-proc)
+
+
+(struct impersonator-comparator-contract abstract-comparator-contract ()
+  #:transparent
+  #:property prop:contract (build-comparator-contract-property #:chaperone? #false))
+
+
+(struct chaperone-comparator-contract abstract-comparator-contract ()
+  #:transparent
+  #:property prop:chaperone-contract (build-comparator-contract-property #:chaperone? #true))
+
+
+(define (comparator/c operand-contract)
+  (let ([operand-contract (coerce-contract (name comparator/c) operand-contract)])
+    (cond
+      [(contract-equivalent? operand-contract any/c)
+       (rename-contract comparator? (build-compound-type-name (name comparator/c) operand-contract))]
+      [(chaperone-contract? operand-contract) (chaperone-comparator-contract operand-contract)]
+      [else (impersonator-comparator-contract operand-contract)])))
+
+
+(define/guard (comparator-operand-contract comparator)
+  (define contract (value-contract comparator))
+  (guard (abstract-comparator-contract? contract) else
+    any/c)
+  (abstract-comparator-contract-operand-contract contract))
+
 
 (module+ test
-  (test-case (name-string comparator/c)
 
-    (define digit<=>
+  (define digit<=>
       (make-comparator
        (λ (x y)
          (strict-cond
-           [(equal? x y) equivalent]
-           [(< x y) lesser]
-           [(> x y) greater]))
+          [(equal? x y) equivalent]
+          [(< x y) lesser]
+          [(> x y) greater]))
        #:name (name digit<=>)))
 
-    (define digit/c (integer-in 0 9))
-
+  (define digit/c (rename-contract (integer-in 0 9) 'digit/c))
+  
+  (test-case (name-string comparator/c)
+    
     (test-case "should make chaperones for non-impersonator operand contracts"
       (check-pred chaperone-contract? (comparator/c any/c))
       (check-pred chaperone-contract? (comparator/c string?))
@@ -455,7 +491,29 @@
       (define/contract contracted the-contract digit<=>)
       (check-pred has-contract? contracted)
       (check-equal? (value-contract contracted) the-contract)
-      (check-pred has-blame? contracted))))
+      (check-pred has-blame? contracted))
+
+    (test-case "should special-case (comparator/c any/c) to a flat contract"
+      (define the-contract (comparator/c any/c))
+      (check-pred flat-contract? the-contract)
+      (check contract-equivalent? the-contract comparator?))
+
+    (test-case "should support contract-equivalent? for chaperone contracts"
+      (define the-contract (comparator/c digit/c))
+      (check contract-equivalent? the-contract (comparator/c digit/c)))
+
+    (test-case "should print like a regular contract"
+      (check-equal? (~v (comparator/c digit/c)) "(comparator/c digit/c)")))
+
+  (test-case (name-string comparator-operand-contract)
+
+    (test-case "should make it possible to extract the operand contract"
+      (define the-contract (comparator/c digit/c))
+      (define/contract contracted the-contract digit<=>)
+      (check-equal? (comparator-operand-contract contracted) digit/c))
+
+    (test-case "should default to any/c for comparators without contracts"
+      (check-equal? (comparator-operand-contract digit<=>) any/c))))
 
 
 ;@------------------------------------------------------------------------------
