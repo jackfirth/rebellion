@@ -28,6 +28,7 @@
          racket/math
          rebellion/base/comparator
          rebellion/base/option
+         rebellion/base/range
          (submod rebellion/base/range private-for-rebellion-only)
          rebellion/private/cut
          rebellion/private/guarded-block
@@ -170,32 +171,26 @@
 
 (define (vector-binary-search-element-less-than
          vec upper-bound [start 0] [end (vector-length vec)] #:comparator cmp)
-  (match (vector-binary-search vec upper-bound start end #:comparator cmp)
-    [(position 0 _) absent]
-    [(position i _) (present (vector-ref vec (sub1 i)))]
-    [(gap _ lesser-element _) lesser-element]))
+  (gap-element-before
+   (vector-binary-search-cut vec (lower-cut upper-bound) start end #:comparator cmp)))
 
 
 (define (vector-binary-search-element-greater-than
          vec lower-bound [start 0] [end (vector-length vec)] #:comparator cmp)
-  (match (vector-binary-search vec lower-bound start end #:comparator cmp)
-    [(position i _) #:when (equal? i (sub1 (vector-length vec))) absent]
-    [(position i _) (present (vector-ref vec (add1 i)))]
-    [(gap _ _ greater-element) greater-element]))
+  (gap-element-after
+   (vector-binary-search-cut vec (upper-cut lower-bound) start end #:comparator cmp)))
 
 
 (define (vector-binary-search-element-at-most
          vec upper-bound [start 0] [end (vector-length vec)] #:comparator cmp)
-  (match (vector-binary-search vec upper-bound start end #:comparator cmp)
-    [(position _ equivalent-element) (present equivalent-element)]
-    [(gap _ lesser-element _) lesser-element]))
+  (gap-element-before
+   (vector-binary-search-cut vec (upper-cut upper-bound) start end #:comparator cmp)))
 
 
 (define (vector-binary-search-element-at-least
          vec lower-bound [start 0] [end (vector-length vec)] #:comparator cmp)
-  (match (vector-binary-search vec lower-bound start end #:comparator cmp)
-    [(position _ equivalent-element) (present equivalent-element)]
-    [(gap _ _ greater-element) greater-element]))
+  (gap-element-after
+   (vector-binary-search-cut vec (lower-cut lower-bound) start end #:comparator cmp)))
 
 
 (define (range-vector-binary-search range-vec value [start 0] [end (vector-length range-vec)])
