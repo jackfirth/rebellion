@@ -170,22 +170,38 @@
      (sorted-set 1 2 3 #:comparator natural<=>) (sorted-set 3 2 1 #:comparator natural<=>))
     (check-not-equal? (sorted-set 1 #:comparator natural<=>) (sorted-set 2 #:comparator natural<=>)))
 
-  (test-case "empty sorted set"
-    (test-sorted-set (sorted-set #:comparator natural<=>)))
-
-  (test-case "singleton immutable sorted set"
-    (test-sorted-set (sorted-set 1 #:comparator natural<=>)))
-
   (test-case "immutable sorted set"
-    (test-sorted-set (sorted-set 1 2 3 4 5 6 7 8 9 10 #:comparator natural<=>)))
+    
+    (test-case "empty immutable sorted set"
+      (test-sorted-set (sorted-set #:comparator natural<=>)))
+
+    (test-case "singleton immutable sorted set"
+      (test-sorted-set (sorted-set 1 #:comparator natural<=>)))
+
+    (define set (sorted-set 1 2 3 4 5 6 7 8 9 10 #:comparator real<=>))
+    (test-sorted-set set)
+
+    (test-case "immutable sorted subset"
+      (test-sorted-set (sorted-subset set (closed-range 3 8))))
+
+    (test-case "reversed immutable sorted set"
+      (test-sorted-set (sorted-set-reverse set)))
+
+    (test-case "reversed immutable sorted subset"
+      (define range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
+      (test-sorted-set (sorted-subset (sorted-set-reverse set) range))))
 
   (test-case "mutable sorted set"
-    (test-sorted-set (make-mutable-sorted-set (list 1 2 3 4 5 6 7 8 9 10) #:comparator natural<=>)))
 
-  (test-case "immutable sorted subset"
-    (define set (sorted-set 1 2 3 4 5 6 7 8 9 10 #:comparator real<=>))
-    (test-sorted-set (sorted-subset set (closed-range 3 8))))
-
-  (test-case "mutable sorted subset"
     (define set (make-mutable-sorted-set (list 1 2 3 4 5 6 7 8 9 10) #:comparator real<=>))
-    (test-sorted-set (sorted-subset set (closed-range 3 8)))))
+    (test-sorted-set set)
+
+    (test-case "mutable sorted subset"
+      (test-sorted-set (sorted-subset set (closed-range 3 8))))
+
+    (test-case "reversed mutable sorted set"
+      (test-sorted-set (sorted-set-reverse set)))
+
+    (test-case "reversed mutable sorted subset"
+      (define range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
+      (test-sorted-set (sorted-subset (sorted-set-reverse set) range)))))

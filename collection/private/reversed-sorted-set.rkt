@@ -85,19 +85,19 @@
      (generic-sorted-set-least-element (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (generic-sorted-set-element-at-least (get-delegate this) upper-bound))
+     (generic-sorted-set-element-greater-than (get-delegate this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (generic-sorted-set-element-at-most (get-delegate this) lower-bound))
-
-   (define (sorted-set-element-at-most this upper-bound)
-     (generic-sorted-set-element-greater-than (get-delegate this) upper-bound))
-   
-   (define (sorted-set-element-at-least this lower-bound)
      (generic-sorted-set-element-less-than (get-delegate this) lower-bound))
 
+   (define (sorted-set-element-at-most this upper-bound)
+     (generic-sorted-set-element-at-least (get-delegate this) upper-bound))
+   
+   (define (sorted-set-element-at-least this lower-bound)
+     (generic-sorted-set-element-at-most (get-delegate this) lower-bound))
+
    (define (sorted-subset this element-range)
-     (construct (generic-sorted-subset (get-delegate this) element-range)))
+     (construct (generic-sorted-subset (get-delegate this) (range-reverse element-range))))
 
    (define (sorted-set-reverse this)
      (get-delegate this))])
@@ -162,19 +162,19 @@
      (generic-sorted-set-least-element (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (generic-sorted-set-element-at-least (get-delegate this) upper-bound))
+     (generic-sorted-set-element-greater-than (get-delegate this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (generic-sorted-set-element-at-most (get-delegate this) lower-bound))
-
-   (define (sorted-set-element-at-most this upper-bound)
-     (generic-sorted-set-element-greater-than (get-delegate this) upper-bound))
-   
-   (define (sorted-set-element-at-least this lower-bound)
      (generic-sorted-set-element-less-than (get-delegate this) lower-bound))
 
+   (define (sorted-set-element-at-most this upper-bound)
+     (generic-sorted-set-element-at-least (get-delegate this) upper-bound))
+   
+   (define (sorted-set-element-at-least this lower-bound)
+     (generic-sorted-set-element-at-most (get-delegate this) lower-bound))
+
    (define (sorted-subset this element-range)
-     (construct (generic-sorted-subset (get-delegate this) element-range)))
+     (construct (generic-sorted-subset (get-delegate this) (range-reverse element-range))))
 
    (define (sorted-set-reverse this)
      (get-delegate this))]
@@ -264,19 +264,19 @@
      (generic-sorted-set-least-element (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (generic-sorted-set-element-at-least (get-delegate this) upper-bound))
+     (generic-sorted-set-element-greater-than (get-delegate this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (generic-sorted-set-element-at-most (get-delegate this) lower-bound))
-
-   (define (sorted-set-element-at-most this upper-bound)
-     (generic-sorted-set-element-greater-than (get-delegate this) upper-bound))
-   
-   (define (sorted-set-element-at-least this lower-bound)
      (generic-sorted-set-element-less-than (get-delegate this) lower-bound))
 
+   (define (sorted-set-element-at-most this upper-bound)
+     (generic-sorted-set-element-at-least (get-delegate this) upper-bound))
+   
+   (define (sorted-set-element-at-least this lower-bound)
+     (generic-sorted-set-element-at-most (get-delegate this) lower-bound))
+
    (define (sorted-subset this element-range)
-     (construct (generic-sorted-subset (get-delegate this) element-range)))
+     (construct (generic-sorted-subset (get-delegate this) (range-reverse element-range))))
 
    (define (sorted-set-reverse this)
      (get-delegate this))]
@@ -303,3 +303,10 @@
 
    (define (sorted-set-remove-all! this elements)
      (generic-sorted-set-remove-all! (get-delegate this) elements))])
+
+
+(define (range-reverse original-range)
+  (range
+   (range-upper-bound original-range)
+   (range-lower-bound original-range)
+   #:comparator (comparator-reverse (range-comparator original-range))))
