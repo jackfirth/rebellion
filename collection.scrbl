@@ -24,7 +24,7 @@ these two extremes. An unmodifiable collection cannot be changed by clients, but
 it will not change on its own.
 
 
-Different collections need not necessarily have different state. A @tech{collection view} is a
+Different collections need not necessarily have different state. A @deftech{collection view} is a
 collection whose implementation defers to the state of some other collection. Collection views can be
 used for a wide variety of purposes, including efficiently operating on a subset of a collection,
 constructing a thread-safe wrapper around a collection meant to be shared between threads, or adapting
