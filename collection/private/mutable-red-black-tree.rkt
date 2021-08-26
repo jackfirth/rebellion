@@ -30,6 +30,7 @@
 
 
 (require racket/block
+         racket/contract/combinator
          racket/match
          racket/math
          racket/sequence
@@ -38,6 +39,7 @@
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
+         (submod rebellion/base/range private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
          rebellion/private/cut
          rebellion/private/guarded-block
@@ -79,7 +81,6 @@
    [right-child #:mutable]
    [color #:mutable]
    [element #:mutable]
-   ;; TODO: track size at each node
    [size #:mutable])
   
   #:constructor-name constructor:mutable-red-black-node
@@ -121,18 +122,46 @@
   (if (equal? parents-left-child node) left right))
 
 
+;; Updates the pointers in node and child to make node the parent of child.
+(define (mutable-red-black-node-link-child! node child direction)
+  (when child
+    (set-mutable-red-black-node-child! node child direction)
+    (set-mutable-red-black-node-parent! child node)
+    (define added-element-count (mutable-red-black-node-size child))
+    (let loop ([incorrectly-sized-node node])
+      (when incorrectly-sized-node
+        (define new-size (+ (mutable-red-black-node-size incorrectly-sized-node) added-element-count))
+        (set-mutable-red-black-node-size! incorrectly-sized-node new-size)
+        (loop (mutable-red-black-node-parent incorrectly-sized-node))))))
+
+
 ;; Removes the pointer from the node's parent to the node.
 (define (mutable-red-black-node-unlink-parent! node)
-  (define direction (mutable-red-black-node-parent-direction node))
-  (set-mutable-red-black-node-child! (mutable-red-black-node-parent node) #false direction))
+  (when (and node (mutable-red-black-node-parent node))
+    (define direction (mutable-red-black-node-parent-direction node))
+    (define parent (mutable-red-black-node-parent node))
+    (set-mutable-red-black-node-child! parent #false direction)
+    (set-mutable-red-black-node-parent! node #false)
+    (define removed-element-count (mutable-red-black-node-size node))
+    (let loop ([incorrectly-sized-node parent])
+      (when incorrectly-sized-node
+        (define new-size
+          (- (mutable-red-black-node-size incorrectly-sized-node) removed-element-count))
+        (set-mutable-red-black-node-size! incorrectly-sized-node new-size)
+        (loop (mutable-red-black-node-parent incorrectly-sized-node))))))
 
 
-(struct mutable-red-black-tree (comparator [root-node #:mutable] [size #:mutable])
+(struct mutable-red-black-tree (comparator [root-node #:mutable])
   #:constructor-name constructor:mutable-red-black-tree)
 
 
 (define (make-mutable-red-black-tree comparator)
-  (constructor:mutable-red-black-tree comparator #false 0))
+  (constructor:mutable-red-black-tree comparator #false))
+
+
+(define (mutable-red-black-tree-size tree)
+  (define root (mutable-red-black-tree-root-node tree))
+  (if root (mutable-red-black-node-size root) 0))
 
 
 ;; Mutable-Red-Black-Node -> (Sequence Any)
@@ -169,17 +198,17 @@
     (in-mutable-red-black-subtree-node node element-range #:descending? descending?))
   
   (define element (mutable-red-black-node-element node))
-  (guard (range-contains? element-range element) else
-    (stream))
-  (define true-left (mutable-red-black-node-left-child node))
-  (define true-right (mutable-red-black-node-right-child node))
+  (define range-comparison (range-compare-to-value element-range element))
+  (define true-left
+    (and (not (equal? range-comparison greater)) (mutable-red-black-node-left-child node)))
+  (define true-right
+    (and (not (equal? range-comparison lesser)) (mutable-red-black-node-right-child node)))
   (define left (if descending? true-right true-left))
   (define right (if descending? true-left true-right))
-  (cond
-    [(and left right) (sequence-append (recur left) (stream element) (recur right))]
-    [left (sequence-append (recur left) (stream element))]
-    [right (sequence-append (stream element) (recur right))]
-    [else (stream element)]))
+  (define left-stream (if left (stream* (recur left)) (stream)))
+  (define right-stream (if right (stream* (recur right)) (stream)))
+  (define element-stream (if (equal? range-comparison equivalent) (stream element) (stream)))
+  (sequence-append left-stream element-stream right-stream))
 
 
 ;; Mutable-Red-Black-Tree -> (Sequence Any)
@@ -198,15 +227,24 @@
 
 
 (define (mutable-red-black-tree-contains? tree element)
-  (and (mutable-red-black-tree-get-node tree element) #true))
+  (define cmp (mutable-red-black-tree-comparator tree))
+  (and (contract-first-order-passes? (comparator-operand-contract cmp) element)
+       (mutable-red-black-tree-get-node tree element)
+       #true))
 
 
 (define (mutable-red-black-subtree-size tree element-range)
-  ;; TODO
-  0)
+  (define lower (range-lower-cut element-range))
+  (define upper (range-upper-cut element-range))
+  (- (gap-index (mutable-red-black-tree-binary-search-cut tree upper))
+     (gap-index (mutable-red-black-tree-binary-search-cut tree lower))))
 
 
 (define (mutable-red-black-tree-rotate! tree subtree-root direction)
+
+  ;; TODO: remove the size invariant debugging check
+  (define size-before (mutable-red-black-tree-size tree))
+  
   (define subtree-parent (mutable-red-black-node-parent subtree-root))
   (define opposite-direction (direction-inverse direction))
   (define new-subtree-root (mutable-red-black-node-child subtree-root opposite-direction))
@@ -215,17 +253,32 @@
      (name mutable-red-black-tree-rotate!)
      "cannot rotate subtree, child to use as new root does not exist"))
   (define child (mutable-red-black-node-child new-subtree-root direction))
-  (set-mutable-red-black-node-child! subtree-root child opposite-direction)
-  (when child
-    (set-mutable-red-black-node-parent! child subtree-root))
-  (set-mutable-red-black-node-child! new-subtree-root subtree-root direction)
-  (set-mutable-red-black-node-parent! subtree-root new-subtree-root)
-  (set-mutable-red-black-node-parent! new-subtree-root subtree-parent)
+  (define subtree-parent-to-root-direction
+    (and subtree-parent
+         (if (equal? (mutable-red-black-node-right-child subtree-parent) subtree-root) right left)))
+
+  ;; First we unlink the three moving nodes from their parents
+  (mutable-red-black-node-unlink-parent! subtree-root)
+  (mutable-red-black-node-unlink-parent! new-subtree-root)
+  (mutable-red-black-node-unlink-parent! child)
+
+  ;; Next we build the rotated subtree by linking together the moving nodes
+  (mutable-red-black-node-link-child! subtree-root child opposite-direction)
+  (mutable-red-black-node-link-child! new-subtree-root subtree-root direction)
+
+  ;; Finally we plug the rotated subtree back into the original tree
   (if subtree-parent
-      (if (equal? (mutable-red-black-node-right-child subtree-parent) subtree-root)
-          (set-mutable-red-black-node-right-child! subtree-parent new-subtree-root)
-          (set-mutable-red-black-node-left-child! subtree-parent new-subtree-root))
-      (set-mutable-red-black-tree-root-node! tree new-subtree-root)))
+      (mutable-red-black-node-link-child!
+       subtree-parent new-subtree-root subtree-parent-to-root-direction)
+      (set-mutable-red-black-tree-root-node! tree new-subtree-root))
+
+  (define size-after (mutable-red-black-tree-size tree))
+  (unless (equal? size-before size-after)
+    (raise-arguments-error
+     (name mutable-red-black-tree-rotate!)
+     "tree rotation did not correctly preserve tree size"
+     "tree" tree
+     "new subtree root element" (mutable-red-black-node-element new-subtree-root))))
 
 
 (define (mutable-red-black-tree-add! tree element)
@@ -236,7 +289,6 @@
 ;; Mutable-Red-Black-Tree Any -> Void
 ;; Inserts an element into a red-black tree. The element must not already be present in the tree.
 (define/guard (mutable-red-black-tree-insert! tree element)
-  (set-mutable-red-black-tree-size! tree (add1 (mutable-red-black-tree-size tree)))
   (define element<=> (mutable-red-black-tree-comparator tree))
   (define parent (mutable-red-black-tree-insertion-parent tree element))
   (guard parent else
@@ -250,8 +302,7 @@
       [(== lesser) right]
       [(== greater) left]))
   (define node (make-mutable-red-black-node element))
-  (set-mutable-red-black-node-parent! node parent)
-  (set-mutable-red-black-node-child! parent node direction)
+  (mutable-red-black-node-link-child! parent node direction)
   
   (define/guard (rebalancing-loop node parent)
     
@@ -329,7 +380,6 @@
   (define node (mutable-red-black-tree-get-node tree element))
   (guard node else
     (void))
-  (set-mutable-red-black-tree-size! tree (sub1 (mutable-red-black-tree-size tree)))
   (mutable-red-black-tree-remove-node! tree node))
 
 
@@ -362,9 +412,7 @@
        "right" right
        "right color" (and right (mutable-red-black-node-color right))))
     (if root?
-        (block
-         (displayln (mutable-red-black-tree-elements tree))
-         (mutable-red-black-tree-clear! tree))
+        (mutable-red-black-tree-clear! tree)
         (mutable-red-black-node-unlink-parent! node)))
   (define only-child (or left right))
   (guard only-child then
@@ -470,7 +518,7 @@
 
 
 (define (mutable-red-black-tree-element-greater-than tree lower-bound)
-  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
+  (gap-element-after (mutable-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
 
 
 (define (mutable-red-black-tree-element-at-most tree upper-bound)
@@ -478,7 +526,7 @@
 
 
 (define (mutable-red-black-tree-element-at-least tree lower-bound)
-  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (lower-cut lower-bound))))
+  (gap-element-after (mutable-red-black-tree-binary-search-cut tree (lower-cut lower-bound))))
 
 
 (define (mutable-red-black-tree-generalized-binary-search tree search-function)
@@ -549,8 +597,7 @@
 
 
 (define (mutable-red-black-tree-clear! tree)
-  (set-mutable-red-black-tree-root-node! tree #false)
-  (set-mutable-red-black-tree-size! tree 0))
+  (set-mutable-red-black-tree-root-node! tree #false))
 
 
 (define (mutable-red-black-subtree-clear! tree element-range)
@@ -597,9 +644,28 @@
           (fail-check
            "all paths through a red black tree must traverse the same number of black nodes")))
       (if (equal? (mutable-red-black-node-color node) black) (add1 left-count) left-count))
-    
-    (check-path-black-node-counts (mutable-red-black-tree-root-node tree))
-    (check-red-node-children-are-black (mutable-red-black-tree-root-node tree)))
+
+    (define/guard (check-node-sizes node)
+      (guard node else
+        (void))
+      (define size (mutable-red-black-node-size node))
+      (define left (mutable-red-black-node-left-child node))
+      (define right (mutable-red-black-node-right-child node))
+      (define left-size (if left (mutable-red-black-node-size left) 0))
+      (define right-size (if right (mutable-red-black-node-size right) 0))
+      (unless (equal? (+ left-size right-size 1) size)
+        (with-check-info (['node node]
+                          ['size size]
+                          ['left-size left-size]
+                          ['right-size right-size])
+          (fail-check "the size recorded in each node must be equal to left-size + right-size + 1")))
+      (check-node-sizes left)
+      (check-node-sizes right))
+
+    (define root (mutable-red-black-tree-root-node tree))
+    (check-path-black-node-counts root)
+    (check-red-node-children-are-black root)
+    (check-node-sizes root))
   
   (test-case (name-string mutable-red-black-tree-insert!)
       
