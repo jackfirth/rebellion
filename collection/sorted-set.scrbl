@@ -392,6 +392,21 @@ not a copy, so it constructs the view in constant time regardless of the size of
    (sorted-set-reverse numbers))}
 
 
+@defproc[(unmodifiable-sorted-set [set sorted-set?]) (and/c sorted-set? (not/c mutable-sorted-set?))]{
+
+ Returns an @tech{unmodifiable view} of @racket[set]. If @racket[set] is not mutable, it is returned
+ directly instead.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define mutable-numbers
+      (make-mutable-sorted-set (list 1 2 3 4 5) #:comparator natural<=>))
+    (define numbers (unmodifiable-sorted-set mutable-numbers)))
+
+   (eval:error (sorted-set-add! numbers 6)))}
+
+
 @section{Modifying Sorted Sets}
 
 

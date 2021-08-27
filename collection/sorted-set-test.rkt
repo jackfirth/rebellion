@@ -189,7 +189,13 @@
 
     (test-case "reversed immutable sorted subset"
       (define range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
-      (test-sorted-set (sorted-subset (sorted-set-reverse set) range))))
+      (test-sorted-set (sorted-subset (sorted-set-reverse set) range)))
+
+    (test-case "unmodifiable view"
+      (define unmodifiable (unmodifiable-sorted-set set))
+      (check-equal? unmodifiable set)
+      (check-true (immutable-sorted-set? unmodifiable))
+      (test-sorted-set unmodifiable)))
 
   (test-case "mutable sorted set"
 
@@ -204,4 +210,11 @@
 
     (test-case "reversed mutable sorted subset"
       (define range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
-      (test-sorted-set (sorted-subset (sorted-set-reverse set) range)))))
+      (test-sorted-set (sorted-subset (sorted-set-reverse set) range)))
+
+    (test-case "unmodifiable view"
+      (define unmodifiable (unmodifiable-sorted-set set))
+      (check-not-equal? unmodifiable set)
+      (check-false (immutable-sorted-set? unmodifiable))
+      (check-false (mutable-sorted-set? unmodifiable))
+      (test-sorted-set unmodifiable))))

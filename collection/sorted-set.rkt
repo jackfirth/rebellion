@@ -8,6 +8,7 @@
  (all-from-out rebellion/collection/private/mutable-sorted-set)
  (all-from-out rebellion/collection/private/sorted-set-builder)
  (all-from-out rebellion/collection/private/sorted-set-interface)
+ (all-from-out rebellion/collection/private/unmodifiable-sorted-set)
  (contract-out
   [sorted-set (-> #:comparator comparator? any/c ... immutable-sorted-set?)]
   [sequence->sorted-set (-> (sequence/c any/c) #:comparator comparator? immutable-sorted-set?)]
@@ -20,6 +21,7 @@
          (submod rebellion/collection/private/regular-immutable-sorted-set private-for-rebellion-only)
          rebellion/collection/private/sorted-set-interface
          rebellion/collection/private/sorted-set-builder
+         rebellion/collection/private/unmodifiable-sorted-set
          rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/streaming/reducer
