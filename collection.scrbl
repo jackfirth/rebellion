@@ -42,7 +42,12 @@ one collection to the interface of another. Collection views come in a few main 
   mutate the view directly. Unmodifiable views are useful for sharing access to mutable state with
   clients who should be allowed to read that state, but not change it. @bold{Unmodifiable is not the
    same as immutable!} An unmodifiable view cannot be changed @emph{directly}, but may change
-  @emph{indirectly} due to changes in the underlying collection.}]
+  @emph{indirectly} due to changes in the underlying collection.}
+
+ @item{A @deftech{synchronized view} is a @tech{write-through view} that guards access to the
+  underlying collection using a @tech{read-write lock}. Synchronized views allow thread-safe access to
+  any mutable collection, provided the collection is accessed @bold{exclusively} through the
+  synchronized view.}]
 
 
 @local-table-of-contents[]

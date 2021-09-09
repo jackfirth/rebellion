@@ -2,15 +2,15 @@
 
 
 (module+ test
-  (require racket/match
+  (require (only-in racket/list shuffle)
+           racket/match
            racket/sequence
-           racket/stream
            rackunit
            rebellion/base/comparator
            rebellion/base/option
            rebellion/base/range
            rebellion/collection/sorted-set
-           rebellion/private/static-name))
+           rebellion/concurrency/lock))
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -217,4 +217,29 @@
       (check-not-equal? unmodifiable set)
       (check-false (immutable-sorted-set? unmodifiable))
       (check-false (mutable-sorted-set? unmodifiable))
-      (test-sorted-set unmodifiable))))
+      (test-sorted-set unmodifiable))
+
+    (test-case "synchronized view"
+      (define synchronized (synchronized-sorted-set set))
+      (check-true (mutable-sorted-set? synchronized))
+      (test-sorted-set synchronized)
+
+      (define lock (synchronized-sorted-set-lock synchronized))
+
+      (test-case "externally locked by reader"
+        (lock! (read-write-lock-read-lock lock) (λ () (test-sorted-set synchronized))))
+
+      (test-case "externally locked by writer"
+        (lock! (read-write-lock-write-lock lock) (λ () (test-sorted-set synchronized))))
+
+      (test-case "concurrency test"
+        (define numbers (synchronized-sorted-set (make-mutable-sorted-set #:comparator natural<=>)))
+        (for ([x (in-list (shuffle (sequence->list (in-range 0 1000))))])
+          (thread
+           (λ ()
+             (for ([_ (in-range 0 1000)])
+               (sorted-set-add! synchronized x)
+               (sorted-set-remove! synchronized x)))))
+        (sync (system-idle-evt))
+        (check-true (sorted-set-empty? numbers))
+        (test-sorted-set numbers)))))

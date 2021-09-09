@@ -9,6 +9,7 @@
                      rebellion/base/option
                      rebellion/base/range
                      rebellion/collection/sorted-set
+                     rebellion/concurrency/lock
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
@@ -21,6 +22,7 @@
     #:public (list 'rebellion/base/comparator
                    'rebellion/base/range
                    'rebellion/collection/sorted-set
+                   'rebellion/concurrency/lock
                    'rebellion/streaming/reducer
                    'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
@@ -405,6 +407,63 @@ not a copy, so it constructs the view in constant time regardless of the size of
     (define numbers (unmodifiable-sorted-set mutable-numbers)))
 
    (eval:error (sorted-set-add! numbers 6)))}
+
+
+@subsection{Synchronized Sorted Sets}
+
+
+@defproc[(synchronized-sorted-set? [v any/c]) boolean?]{
+
+ A predicate for @tech{synchronized views} of @tech{sorted sets}. Implies
+ @racket[mutable-sorted-set?].}
+
+
+@(define synchronized-sorted-set-eval (make-evaluator))
+
+
+@defproc[(synchronized-sorted-set [set mutable-sorted-set?]) synchronized-sorted-set?]{
+
+ Returns a @tech{synchronized view} of @racket[set]. The returned view is thread-safe
+ @bold{provided that @racket[set] is not accessed directly except by the view.} To ensure this,
+ consider calling @racket[synchronized-sorted-set] on the result of @racket[make-mutable-sorted-set]
+ immediately, without storing the underlying set in a variable.
+
+ @(examples
+   #:eval synchronized-sorted-set-eval
+   (eval:no-prompt
+    (define numbers
+      (synchronized-sorted-set (make-mutable-sorted-set #:comparator natural<=>))))
+
+   (for ([x (in-range 0 10)])
+     (thread (λ () (sorted-set-add! numbers x))))
+
+   (sorted-set-size numbers))
+
+ @bold{Warning:} the returned view is @bold{not} thread-safe when iterated over as a sequence or when
+ using @racket[in-sorted-set]. All iteration over the returned view @bold{must} be guarded by the
+ synchronized view's lock to ensure thread safety and atomicity. The lock can be acquired explicitly
+ by using @racket[synchronized-sorted-set-lock].
+
+ @(examples
+   #:eval synchronized-sorted-set-eval
+   (lock!
+    (read-write-lock-write-lock (synchronized-sorted-set-lock numbers))
+    (λ ()
+      (define sum
+        (for/sum ([x (in-sorted-set numbers)])
+          x))
+      (sorted-set-add! numbers sum)))
+
+   numbers)}
+
+
+@close-eval[synchronized-sorted-set-eval]
+
+
+@defproc[(synchronized-sorted-set-lock [set synchronized-sorted-set?]) read-write-lock?]{
+
+ Returns the @tech{read-write lock} that guards access to @racket[set]. The returned lock is
+ @tech{reentrant}.}
 
 
 @section{Modifying Sorted Sets}
