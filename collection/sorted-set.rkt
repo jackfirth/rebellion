@@ -6,6 +6,7 @@
 
 (provide
  (all-from-out rebellion/collection/private/mutable-sorted-set)
+ (all-from-out rebellion/collection/private/regular-immutable-sorted-set)
  (all-from-out rebellion/collection/private/sorted-set-builder)
  (all-from-out rebellion/collection/private/sorted-set-interface)
  (all-from-out rebellion/collection/private/synchronized-sorted-set)
@@ -19,6 +20,7 @@
 (require racket/sequence
          rebellion/base/comparator
          rebellion/collection/private/mutable-sorted-set
+         rebellion/collection/private/regular-immutable-sorted-set
          (submod rebellion/collection/private/regular-immutable-sorted-set private-for-rebellion-only)
          rebellion/collection/private/sorted-set-interface
          rebellion/collection/private/sorted-set-builder

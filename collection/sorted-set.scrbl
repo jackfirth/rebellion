@@ -93,6 +93,21 @@ not a copy, so it constructs the view in constant time regardless of the size of
    (sequence->sorted-set "hello world" #:comparator char<=>))}
 
 
+@defproc[(sorted-set->immutable-sorted-set [set sorted-set?]) immutable-sorted-set?]{
+
+ Copies @racket[set] into an immutable @tech{sorted set} sorted by the same comparator. Like
+ @racket[sequence->sorted-set], this function makes an effort to avoid unnecessary copying if its
+ input is already an immutable sorted set.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define numbers
+      (make-mutable-sorted-set (list 1 2 3 4 5) #:comparator natural<=>)))
+
+   (sorted-set->immutable-sorted-set numbers))}
+
+
 @defproc[(into-sorted-set [comparator comparator?]) (reducer/c any/c immutable-sorted-set?)]{
                                                                                              
  Constructs a @tech{reducer} that reduces elements into an immutable @tech{sorted set} sorted by

@@ -4,6 +4,11 @@
 (require racket/contract/base)
 
 
+(provide
+ (contract-out
+  [sorted-set->immutable-sorted-set (-> sorted-set? immutable-sorted-set?)]))
+
+
 (module+ private-for-rebellion-only
   (provide
    (contract-out
@@ -14,6 +19,7 @@
 
 (require racket/contract/combinator
          racket/generic
+         racket/unsafe/ops
          racket/vector
          rebellion/base/comparator
          rebellion/base/option
@@ -23,11 +29,28 @@
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
-         rebellion/private/guarded-block
-         rebellion/private/static-name)
+         rebellion/private/guarded-block)
 
 
 ;@----------------------------------------------------------------------------------------------------
+
+
+(define (sorted-set->immutable-sorted-set set)
+  (cond
+    [(regular-immutable-sorted-set? set) set]
+    [(regular-immutable-sorted-subset? set)
+     (define start (regular-immutable-sorted-subset-start-index set))
+     (define end (regular-immutable-sorted-subset-end-index))
+     (define vec (make-vector (- end start)))
+     (vector-copy! vec (regular-immutable-sorted-subset-sorted-vector set) start end)
+     (make-regular-immutable-sorted-set
+      (unsafe-vector*->immutable-vector! vec) (sorted-set-comparator set))]
+    [else
+     (define vec
+       (unsafe-vector*->immutable-vector!
+        (for/vector #:length (sorted-set-size set) ([element (in-sorted-set set)])
+          element)))
+     (make-regular-immutable-sorted-set vec (sorted-set-comparator set))]))
 
 
 (struct abstract-regular-immutable-sorted-set abstract-immutable-sorted-set ()
