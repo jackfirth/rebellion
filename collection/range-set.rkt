@@ -33,7 +33,8 @@
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
-         (submod rebellion/base/range private-for-range-set-implementation-only)
+         (submod rebellion/base/range private-for-rebellion-only)
+         rebellion/collection/private/vector-binary-search
          rebellion/collection/vector/builder
          rebellion/private/guarded-block
          rebellion/private/static-name
@@ -113,51 +114,6 @@
       (define actual
         (vector-merge-adjacent (vector-immutable 1 2 3 "hello" 4 5 "world" 6) both-numbers? +))
     (check-equal? actual (vector-immutable 6 "hello" 9 "world" 6)))))
-
-
-(define-tuple-type exact-match (index))
-
-;; The position indicates where in the vector the search ended up. It's not an index, it's a position
-;; *between* indices, so its range is [0, vector-length + 1] inclusive.
-(define-tuple-type no-match (position))
-
-;; Vector A, (A -> Comparison) -> (Or ExactMatch NoMatch)
-;; Searches vec for an element for which the search function returns the `equivalent` constant, then
-;; returns the index of that element if such an element exists. The vector is assumed to be sorted in
-;; a manner consistent with the comparison results returned by the search function. The search is a
-;; binary search taking log(n) time. Note that if there are multiple elements for which the search
-;; function returns `equivalent`, it is unspecified which of them is chosen. If no elements satisfy
-;; the search function, `absent` is returned.
-;; Examples:
-;; > (vector-binary-search (vector "a" "b" "d" "e") (λ (x) (compare string<=> x "d")))
-;; (exact-match 2)
-;; > (vector-binary-search (vector "a" "b" "d" "e") (λ (x) (compare string<=> x "c")))
-;; (no-match 2)
-(define (vector-binary-search vec search-function)
-  (define/guard (loop [lower 0] [upper (sub1 (vector-length vec))])
-    (guard (<= lower upper) else
-      (no-match lower))
-    (define middle (quotient (+ lower upper) 2))
-    (match (search-function (vector-ref vec middle))
-      [(== lesser) (loop (add1 middle) upper)]
-      [(== greater) (loop lower (sub1 middle))]
-      [(== equivalent) (exact-match middle)]))
-  (loop))
-
-
-(module+ test
-  (test-case (name-string vector-binary-search)
-    (define vec (vector "aa" "bb" "cc" "dd"))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "aa"))) (exact-match 0))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "bb"))) (exact-match 1))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "cc"))) (exact-match 2))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "dd"))) (exact-match 3))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "a"))) (no-match 0))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "b"))) (no-match 1))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "c"))) (no-match 2))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "d"))) (no-match 3))
-    (check-equal? (vector-binary-search vec (λ (x) (compare string<=> x "e"))) (no-match 4))
-    (check-equal? (vector-binary-search (vector) (λ (x) (compare string<=> x "a"))) (no-match 0))))
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -357,14 +313,14 @@
 
 (define (range-set-contains? ranges value)
   (define vec (range-set-sorted-range-vector ranges))
-  (exact-match? (vector-binary-search vec (λ (range) (range-compare-to-value range value)))))
+  (position? (range-vector-binary-search vec value)))
 
 
 (define (range-set-encloses? ranges other-range)
   (define vec (range-set-sorted-range-vector ranges))
-  (match (vector-binary-search vec (λ (range) (range-compare-to-range range other-range)))
-    [(exact-match overlapping-range-index)
-     (range-encloses? (vector-ref vec overlapping-range-index) other-range)]
+  (match (range-vector-binary-search-cut vec (range-lower-cut other-range))
+    [(position _ overlapping-range)
+     (range-encloses? overlapping-range other-range)]
     [_ #false]))
 
 
@@ -375,26 +331,22 @@
 
 (define (range-subset ranges subset-range)
   (define vec (range-set-sorted-range-vector ranges))
-  (define lower-subset-cut (range-lower-cut subset-range))
-  (define upper-subset-cut (range-upper-cut subset-range))
-  (define lower-boundary
-    (vector-binary-search vec (λ (range) (range-compare-to-cut range lower-subset-cut))))
-  (define upper-boundary
-    (vector-binary-search vec (λ (range) (range-compare-to-cut range upper-subset-cut))))
+  (define lower-boundary (range-vector-binary-search-cut vec (range-lower-cut subset-range)))
+  (define upper-boundary (range-vector-binary-search-cut vec (range-upper-cut subset-range)))
   (define start
     (match lower-boundary
-      [(exact-match i) i]
-      [(no-match pos) pos]))
+      [(position i _) i]
+      [(gap i _ _) i]))
   (define end
     (match upper-boundary
-      [(exact-match i) (add1 i)]
-      [(no-match pos) pos]))
+      [(position i _) (add1 i)]
+      [(gap i _ _) i]))
   (define subvec (make-vector (- end start)))
   (vector-copy! subvec 0 vec start end)
-  (when (exact-match? lower-boundary)
+  (when (position? lower-boundary)
     (define modified-range (range-intersection (vector-ref subvec 0) subset-range))
     (vector-set! subvec 0 modified-range))
-  (when (exact-match? upper-boundary)
+  (when (position? upper-boundary)
     (define index-in-subvec (sub1 (vector-length subvec)))
     (define modified-range (range-intersection (vector-ref subvec index-in-subvec) subset-range))
     (vector-set! subvec index-in-subvec modified-range))

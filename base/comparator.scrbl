@@ -307,7 +307,9 @@ with equality unless otherwise stated.
 
 @section{Comparator Contracts}
 
+
 @defproc[(comparator/c [operand-contract contract?]) contract?]{
+
  A @tech/reference{contract combinator} for @tech{comparators}. Returns a
  contract that enforces that the contracted value is a comparator, and wraps the
  comparator to check every value it compares with @racket[operand-contract]. If
@@ -322,6 +324,30 @@ with equality unless otherwise stated.
       real<=>))
    (compare even-integer<=> 2 8)
    (eval:error (compare even-integer<=> 3 8)))}
+
+
+@defproc[(comparator-operand-contract [comparator comparator?]) contract?]{
+
+ Returns the @tech/reference{contract} that guards values compared by @racket[comparator], or
+ @racket[any/c] if @racket[comparator] does not have a contract attached to it. Note that the entire
+ contract on @racket[comparator] can be retrieved with @racket[value-contract].
+
+ @bold{Warning:} because this function observes whether a contract is attached to @racket[comparator],
+ it may return different results for two comparators that are otherwise @racket[equal?]. The result
+ from @racket[comparator-operand-contract] should be viewed as a best-effort optimistic estimate:
+ any input that does @emph{not} satisfy the returned contract will definitely raise an error when
+ given to the contracted comparator, but there is no guarantee that inputs that satisfy the returned
+ contract will be accepted.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define/contract even-integer<=>
+      (comparator/c (and/c integer? even?))
+      real<=>))
+   (comparator-operand-contract even-integer<=>)
+   (value-contract even-integer<=>))}
+
 
 @section{Comparator Chaperones and Impersonators}
 
