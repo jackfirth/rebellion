@@ -65,6 +65,7 @@ one collection to the interface of another. Collection views come in a few main 
 @include-section[(lib "rebellion/collection/multidict.scrbl")]
 @include-section[(lib "rebellion/collection/association-list.scrbl")]
 @include-section[(lib "rebellion/collection/sorted-set.scrbl")]
+@include-section[(lib "rebellion/collection/sorted-map.scrbl")]
 @include-section[(lib "rebellion/collection/range-set.scrbl")]
 @include-section[(lib "rebellion/collection/keyset.scrbl")]
 @include-section[(lib "rebellion/collection/record.scrbl")]
