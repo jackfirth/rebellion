@@ -295,7 +295,7 @@
    (define (sorted-set-add! this element)
      (generic-sorted-set-add! (get-delegate this) element))
 
-   (define (sorted-set-add-all this elements)
+   (define (sorted-set-add-all! this elements)
      (generic-sorted-set-add-all! (get-delegate this) elements))
 
    (define (sorted-set-remove! this element)
