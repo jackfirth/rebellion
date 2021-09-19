@@ -64,7 +64,9 @@
    (struct-out abstract-immutable-sorted-map)
    gen:sorted-map
    gen:mutable-sorted-map
-   gen:immutable-sorted-map))
+   gen:immutable-sorted-map
+   (contract-out
+    [default-sorted-map-lookup-failure-result (-> interned-symbol? any/c sorted-map? void?)])))
 
 
 (require racket/generic
@@ -74,6 +76,7 @@
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
+         rebellion/base/symbol
          rebellion/collection/entry
          rebellion/private/guarded-block
          rebellion/private/printer-markup)
@@ -215,3 +218,9 @@
        (unsafe-fx+/wraparound hash-code (recur entry))))
 
    (define hash2-proc hash-proc)])
+
+
+(define ((default-sorted-map-lookup-failure-result name key map))
+  (define message
+    (format "~a: no value for key;\n  key: ~e\n  map: ~e" name key map))
+  (raise (make-exn:fail:contract message (current-continuation-marks))))
