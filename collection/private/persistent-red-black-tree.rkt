@@ -8,6 +8,10 @@
  (contract-out
   [persistent-red-black-tree? predicate/c]
   [in-persistent-red-black-tree
+   (->* (persistent-red-black-tree?) (#:descending? boolean?) (sequence/c entry?))]
+  [in-persistent-red-black-tree-keys
+   (->* (persistent-red-black-tree?) (#:descending? boolean?) (sequence/c any/c))]
+  [in-persistent-red-black-tree-values
    (->* (persistent-red-black-tree?) (#:descending? boolean?) (sequence/c any/c))]
   [in-persistent-red-black-subtree
    (->* (persistent-red-black-tree? range?) (#:descending? boolean?) (sequence/c any/c))]
@@ -15,15 +19,19 @@
   [persistent-red-black-tree-size (-> persistent-red-black-tree? natural?)]
   [persistent-red-black-tree-comparator (-> persistent-red-black-tree? comparator?)]
   [persistent-red-black-tree-contains? (-> persistent-red-black-tree? any/c boolean?)]
-  [persistent-red-black-tree-insert (-> persistent-red-black-tree? any/c persistent-red-black-tree?)]
+  [persistent-red-black-tree-get (-> persistent-red-black-tree? any/c failure-result/c any/c)]
+  [persistent-red-black-tree-get-option (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-get-entry (-> persistent-red-black-tree? any/c failure-result/c entry?)]
+  [persistent-red-black-tree-insert
+   (-> persistent-red-black-tree? any/c any/c persistent-red-black-tree?)]
   [persistent-red-black-tree-remove (-> persistent-red-black-tree? any/c persistent-red-black-tree?)]
-  [persistent-red-black-tree-elements (-> persistent-red-black-tree? list?)]
-  [persistent-red-black-tree-least-element (-> persistent-red-black-tree? option?)]
-  [persistent-red-black-tree-greatest-element (-> persistent-red-black-tree? option?)]
-  [persistent-red-black-tree-element-greater-than (-> persistent-red-black-tree? any/c option?)]
-  [persistent-red-black-tree-element-less-than (-> persistent-red-black-tree? any/c option?)]
-  [persistent-red-black-tree-element-at-most (-> persistent-red-black-tree? any/c option?)]
-  [persistent-red-black-tree-element-at-least (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-keys (-> persistent-red-black-tree? list?)]
+  [persistent-red-black-tree-least-key (-> persistent-red-black-tree? option?)]
+  [persistent-red-black-tree-greatest-key (-> persistent-red-black-tree? option?)]
+  [persistent-red-black-tree-key-greater-than (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-key-less-than (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-key-at-most (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-key-at-least (-> persistent-red-black-tree? any/c option?)]
   [persistent-red-black-tree-binary-search
    (-> persistent-red-black-tree? any/c (or/c position? gap?))]
   [persistent-red-black-tree-binary-search-cut
@@ -48,6 +56,7 @@
          rebellion/base/option
          rebellion/base/range
          (submod rebellion/base/range private-for-rebellion-only)
+         rebellion/collection/entry
          rebellion/collection/private/vector-binary-search
          rebellion/private/cut
          rebellion/private/guarded-block
@@ -82,15 +91,15 @@
 
 
 (struct persistent-red-black-node
-  (color left-child element right-child size)
+  (color left-child key value right-child size)
   #:constructor-name constructor:persistent-red-black-node)
 
 
-(define (singleton-red-black-node element)
-  (constructor:persistent-red-black-node red black-leaf element black-leaf 1))
+(define (singleton-red-black-node key value)
+  (constructor:persistent-red-black-node red black-leaf key value black-leaf 1))
 
 
-(define (make-red-black-node color left element right)
+(define (make-red-black-node color left key value right)
   (define children-size
     (cond
       [(and (persistent-red-black-node? left) (persistent-red-black-node? right))
@@ -98,39 +107,39 @@
       [(persistent-red-black-node? left) (persistent-red-black-node-size left)]
       [(persistent-red-black-node? right) (persistent-red-black-node-size right)]
       [else 0]))
-  (constructor:persistent-red-black-node color left element right (add1 children-size)))
+  (constructor:persistent-red-black-node color left key value right (add1 children-size)))
 
 
-(define (make-red-node left element right)
-  (make-red-black-node red left element right))
+(define (make-red-node left key value right)
+  (make-red-black-node red left key value right))
 
 
-(define (make-black-node left element right)
-  (make-red-black-node black left element right))
+(define (make-black-node left key value right)
+  (make-red-black-node black left key value right))
 
 
-(define (make-double-black-node left element right)
-  (make-red-black-node double-black left element right))
+(define (make-double-black-node left key value right)
+  (make-red-black-node double-black left key value right))
 
 
 (define-match-expander red-node
   (syntax-parser
-    [(_ left element right size)
-     #'(persistent-red-black-node (== red) left element right size)])
+    [(_ left key value right size)
+     #'(persistent-red-black-node (== red) left key value right size)])
   (make-rename-transformer #'make-red-node))
 
 
 (define-match-expander black-node
   (syntax-parser
-    [(_ left element right size)
-     #'(persistent-red-black-node (== black) left element right size)])
+    [(_ left key value right size)
+     #'(persistent-red-black-node (== black) left key value right size)])
   (make-rename-transformer #'make-black-node))
 
 
 (define-match-expander double-black-node
   (syntax-parser
-    [(_ left element right size)
-     #'(persistent-red-black-node (== double-black) left element right size)])
+    [(_ left key value right size)
+     #'(persistent-red-black-node (== double-black) left key value right size)])
   (make-rename-transformer #'make-double-black-node))
 
 
@@ -146,6 +155,10 @@
 (define (double-black-node? v)
   (or (equal? v double-black-leaf)
       (and (persistent-red-black-node? v) (equal? (persistent-red-black-node-color v) double-black))))
+
+
+(define (persistent-red-black-node-entry node)
+  (entry (persistent-red-black-node-key node) (persistent-red-black-node-value node)))
 
 
 (struct persistent-red-black-tree
@@ -167,9 +180,9 @@
 
 
 (define/guard (persistent-red-black-subtree-copy tree range)
-  (guard-match (present least) (persistent-red-black-tree-least-element tree) else
+  (guard-match (present least) (persistent-red-black-tree-least-key tree) else
     (empty-persistent-red-black-tree (persistent-red-black-tree-comparator tree)))
-  (match-define (present greatest) (persistent-red-black-tree-greatest-element tree))
+  (match-define (present greatest) (persistent-red-black-tree-greatest-key tree))
   (guard (and (range-contains? range least) (range-contains? range greatest)) then
     tree)
   (for/fold ([tree (empty-persistent-red-black-tree (persistent-red-black-tree-comparator tree))])
@@ -188,18 +201,28 @@
           (if (persistent-red-black-node? node)
               (sequence-append
                (in-node (persistent-red-black-node-right-child node))
-               (stream (persistent-red-black-node-element node))
+               (stream (persistent-red-black-node-entry node))
                (in-node (persistent-red-black-node-left-child node)))
               (stream)))
         (λ (node)
           (if (persistent-red-black-node? node)
               (sequence-append
                (in-node (persistent-red-black-node-left-child node))
-               (stream (persistent-red-black-node-element node))
+               (stream (persistent-red-black-node-entry node))
                (in-node (persistent-red-black-node-right-child node)))
               (stream)))))
   
   (stream* (in-node (persistent-red-black-tree-root-node tree))))
+
+
+(define (in-persistent-red-black-tree-keys tree #:descending? [descending? #false])
+  (for/stream ([e (in-persistent-red-black-tree tree #:descending? descending?)])
+    (entry-key e)))
+
+
+(define (in-persistent-red-black-tree-values tree #:descending? [descending? #false])
+  (for/stream ([e (in-persistent-red-black-tree tree #:descending? descending?)])
+    (entry-value e)))
 
 
 (define (in-persistent-red-black-subtree tree range #:descending? [descending? #false])
@@ -207,27 +230,27 @@
   (define/guard (in-ascending-node node)
     (guard (persistent-red-black-node? node) else
       (stream))
-    (define element (persistent-red-black-node-element node))
-    (match (range-compare-to-value range element)
+    (define key (persistent-red-black-node-key node))
+    (match (range-compare-to-value range key)
       [(== lesser) (in-ascending-node (persistent-red-black-node-right-child node))]
       [(== greater) (in-ascending-node (persistent-red-black-node-left-child node))]
       [(== equivalent)
        (sequence-append
         (in-ascending-node (persistent-red-black-node-right-child node))
-        (stream element)
+        (stream (entry key (persistent-red-black-node-value node)))
         (in-ascending-node (persistent-red-black-node-left-child node)))]))
 
   (define/guard (in-descending-node node)
     (guard (persistent-red-black-node? node) else
       (stream))
-    (define element (persistent-red-black-node-element node))
-    (match (range-compare-to-value range element)
+    (define key (persistent-red-black-node-key node))
+    (match (range-compare-to-value range key)
       [(== lesser) (in-descending-node (persistent-red-black-node-right-child node))]
       [(== greater) (in-descending-node (persistent-red-black-node-left-child node))]
       [(== equivalent)
        (sequence-append
         (in-descending-node (persistent-red-black-node-left-child node))
-        (stream element)
+        (stream (entry key (persistent-red-black-node-value node)))
         (in-descending-node (persistent-red-black-node-right-child node)))]))
 
   (define root (persistent-red-black-tree-root-node tree))
@@ -242,49 +265,87 @@
   (if (persistent-red-black-node? root) (persistent-red-black-node-size root) 0))
 
 
-(define/guard (persistent-red-black-tree-contains? tree element)
+(define/guard (persistent-red-black-tree-contains? tree key)
   (define cmp (persistent-red-black-tree-comparator tree))
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
     (guard (persistent-red-black-node? node) else
       #false)
-    (match-define (persistent-red-black-node _ left node-element right _) node)
-    (match (compare cmp node-element element)
+    (match-define (persistent-red-black-node _ left node-key _ right _) node)
+    (match (compare cmp node-key key)
       [(== lesser) (loop right)]
       [(== greater) (loop left)]
       [(== equivalent) #true]))
   
-  (and (contract-first-order-passes? (comparator-operand-contract cmp) element) (loop)))
+  (and (contract-first-order-passes? (comparator-operand-contract cmp) key) (loop)))
 
 
-(define (persistent-red-black-subtree-contains? tree range element)
-  (and (range-contains? range element) (persistent-red-black-tree-contains? tree element)))
+(define (persistent-red-black-subtree-contains? tree range key)
+  (and (range-contains? range key) (persistent-red-black-tree-contains? tree key)))
+
+
+(define/guard (persistent-red-black-tree-get tree key failure-result)
+  (define cmp (persistent-red-black-tree-comparator tree))
+
+  (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
+    (guard (persistent-red-black-node? node) else
+      (if (procedure? failure-result) (failure-result) failure-result))
+    (match-define (persistent-red-black-node _ left node-key value right _) node)
+    (match (compare cmp node-key key)
+      [(== lesser) (loop right)]
+      [(== greater) (loop left)]
+      [(== equivalent) value]))
+
+  (loop
+   (and (contract-first-order-passes? (comparator-operand-contract cmp) key)
+        (persistent-red-black-tree-root-node tree))))
+
+
+(define/guard (persistent-red-black-tree-get-option tree key)
+  (define cmp (persistent-red-black-tree-comparator tree))
+
+  (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
+    (guard (persistent-red-black-node? node) else
+      absent)
+    (match-define (persistent-red-black-node _ left node-key value right _) node)
+    (match (compare cmp node-key key)
+      [(== lesser) (loop right)]
+      [(== greater) (loop left)]
+      [(== equivalent) (present value)]))
+
+  (loop
+   (and (contract-first-order-passes? (comparator-operand-contract cmp) key)
+        (persistent-red-black-tree-root-node tree))))
+
+
+(define (persistent-red-black-tree-get-entry tree key failure-result)
+  (entry key (persistent-red-black-tree-get tree key failure-result)))
 
 
 (define (persistent-red-black-tree-generalized-binary-search tree search-function)
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)]
                       [min-start-index 0]
-                      [lower-element absent]
-                      [upper-element absent])
-    (guard-match (persistent-red-black-node _ left element right _) node else
-      (gap min-start-index lower-element upper-element))
-    (match (search-function element)
+                      [lower-key absent]
+                      [upper-key absent])
+    (guard-match (persistent-red-black-node _ left key value right _) node else
+      (gap min-start-index lower-key upper-key))
+    (match (search-function key)
       [(== lesser)
        (define left-size (if left (persistent-red-black-node-size left) 0))
-       (loop right (+ min-start-index left-size 1) (present element) upper-element)]
+       (loop right (+ min-start-index left-size 1) (present key) upper-key)]
       [(== greater)
-       (loop left min-start-index lower-element (present element))]
+       (loop left min-start-index lower-key (present key))]
       [(== equivalent)
        (define left-size (if left (persistent-red-black-node-size left) 0))
-       (position (+ min-start-index left-size) element)]))
+       (position (+ min-start-index left-size) key)]))
 
   (loop))
 
 
-(define (persistent-red-black-tree-binary-search tree element)
+(define (persistent-red-black-tree-binary-search tree key)
   (define cmp (persistent-red-black-tree-comparator tree))
-  (persistent-red-black-tree-generalized-binary-search tree (λ (x) (compare cmp x element))))
+  (persistent-red-black-tree-generalized-binary-search tree (λ (x) (compare cmp x key))))
 
 
 (define (persistent-red-black-tree-binary-search-cut tree cut)
@@ -300,68 +361,68 @@
      (gap-index (persistent-red-black-tree-binary-search-cut tree lower))))
 
 
-(define (persistent-red-black-tree-elements tree)
-  (sequence->list (in-persistent-red-black-tree tree)))
+(define (persistent-red-black-tree-keys tree)
+  (sequence->list (in-persistent-red-black-tree-keys tree)))
 
 
-(define/guard (persistent-red-black-tree-least-element tree)
+(define/guard (persistent-red-black-tree-least-key tree)
   (define root (persistent-red-black-tree-root-node tree))
   (guard (persistent-red-black-node? root) else
     absent)
   
   (define (loop node)
     (match (persistent-red-black-node-left-child node)
-      [(== black-leaf) (persistent-red-black-node-element node)]
+      [(== black-leaf) (persistent-red-black-node-key node)]
       [left-child (loop left-child)]))
 
   (present (loop root)))
 
 
-(define/guard (persistent-red-black-tree-greatest-element tree)
+(define/guard (persistent-red-black-tree-greatest-key tree)
   (define root (persistent-red-black-tree-root-node tree))
   (guard (persistent-red-black-node? root) else
     absent)
   
   (define (loop node)
     (match (persistent-red-black-node-right-child node)
-      [(== black-leaf) (persistent-red-black-node-element node)]
+      [(== black-leaf) (persistent-red-black-node-key node)]
       [right-child (loop right-child)]))
 
   (present (loop root)))
 
 
-(define (persistent-red-black-tree-element-less-than tree upper-bound)
+(define (persistent-red-black-tree-key-less-than tree upper-bound)
   (gap-element-before (persistent-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
 
 
-(define (persistent-red-black-tree-element-greater-than tree lower-bound)
+(define (persistent-red-black-tree-key-greater-than tree lower-bound)
   (gap-element-after (persistent-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
 
 
-(define (persistent-red-black-tree-element-at-most tree upper-bound)
+(define (persistent-red-black-tree-key-at-most tree upper-bound)
   (match (persistent-red-black-tree-binary-search tree upper-bound)
-    [(position _ equivalent-element) (present equivalent-element)]
-    [(gap _ lesser-element _) lesser-element]))
+    [(position _ equivalent-key) (present equivalent-key)]
+    [(gap _ lesser-key _) lesser-key]))
 
 
-(define (persistent-red-black-tree-element-at-least tree lower-bound)
+(define (persistent-red-black-tree-key-at-least tree lower-bound)
   (match (persistent-red-black-tree-binary-search tree lower-bound)
-    [(position _ equivalent-element) (present equivalent-element)]
-    [(gap _ _ greater-element) greater-element]))
+    [(position _ equivalent-key) (present equivalent-key)]
+    [(gap _ _ greater-key) greater-key]))
 
 
 ;; Modification
 
 
-(define (persistent-red-black-tree-insert tree element)
-  (define element<=> (persistent-red-black-tree-comparator tree))
+(define (persistent-red-black-tree-insert tree key value)
+  (define key<=> (persistent-red-black-tree-comparator tree))
   (define root (persistent-red-black-tree-root-node tree))
   
   (define/guard (loop node)
     (guard (persistent-red-black-node? node) else
-      (singleton-red-black-node element))
-    (define node-element (persistent-red-black-node-element node))
-    (match (compare element<=> element node-element)
+      (singleton-red-black-node key value))
+    (define node-element (persistent-red-black-node-key node))
+    (match (compare key<=> key node-element)
       [(== equivalent) node]
       
       [(== lesser)
@@ -369,7 +430,8 @@
          (make-red-black-node
           (persistent-red-black-node-color node)
           (loop (persistent-red-black-node-left-child node))
-          (persistent-red-black-node-element node)
+          (persistent-red-black-node-key node)
+          (persistent-red-black-node-value node)
           (persistent-red-black-node-right-child node)))
        (balance new-node)]
       
@@ -378,49 +440,45 @@
          (make-red-black-node
           (persistent-red-black-node-color node)
           (persistent-red-black-node-left-child node)
-          (persistent-red-black-node-element node)
+          (persistent-red-black-node-key node)
+          (persistent-red-black-node-value node)
           (loop (persistent-red-black-node-right-child node))))
        (balance new-node)]))
   
-  (constructor:persistent-red-black-tree element<=> (loop (blacken root))))
+  (constructor:persistent-red-black-tree key<=> (loop (blacken root))))
 
 
-(define (persistent-red-black-tree-remove tree element)
+(define (persistent-red-black-tree-remove tree key)
   (define cmp (persistent-red-black-tree-comparator tree))
   (define (remove node)
     (match node
 
       [(== black-leaf) black-leaf]
 
-      [(red-node (== black-leaf) x (== black-leaf) _)
-       #:when (compare-infix cmp x == element)
+      [(red-node (== black-leaf) x _ (== black-leaf) _)
+       #:when (compare-infix cmp x == key)
        black-leaf]
 
-      [(black-node (== black-leaf) x (== black-leaf) _)
-       #:when (compare-infix cmp x == element)
+      [(black-node (== black-leaf) x _ (== black-leaf) _)
+       #:when (compare-infix cmp x == key)
        double-black-leaf]
 
-      [(black-node (red-node left x right _) y (== black-leaf) _)
-       #:when (compare-infix cmp y == element)
-       (black-node left x right)]
+      [(black-node (red-node left x xv right _) y _ (== black-leaf) _)
+       #:when (compare-infix cmp y == key)
+       (black-node left x xv right)]
 
-      [(black-node (== black-leaf) x (red-node left y right _) _)
-       #:when (compare-infix cmp x == element)
-       (black-node left y right)]
+      [(black-node (== black-leaf) x _ (red-node left y yv right _) _)
+       #:when (compare-infix cmp x == key)
+       (black-node left y yv right)]
 
-      [(persistent-red-black-node color left x right size)
+      [(persistent-red-black-node color left x v right size)
        (rotate
-        (match (compare cmp element x)
-          [(== lesser) (make-red-black-node color (remove left) x right)]
-          [(== greater) (make-red-black-node color left x (remove right))]
+        (match (compare cmp key x)
+          [(== lesser) (make-red-black-node color (remove left) x v right)]
+          [(== greater) (make-red-black-node color left x v (remove right))]
           [(== equivalent)
-           (with-handlers ([(λ (_) #true)
-                            (λ (e)
-                              (pretty-print tree)
-                              (pretty-print node)
-                              (raise e))])
-             (define-values (new-x new-right) (min/delete right))
-             (make-red-black-node color left new-x new-right))]))]))
+           (define-values (new-x new-v new-right) (min/delete right))
+           (make-red-black-node color left new-x new-v new-right)]))]))
 
   (define new-root (remove (redden (persistent-red-black-tree-root-node tree))))
   (constructor:persistent-red-black-tree cmp new-root))
@@ -428,59 +486,59 @@
 
 (define (redden node)
   (match node
-    [(black-node (? black-node? left) x (? black-node? right) _)
-     (red-node left x right)]
+    [(black-node (? black-node? left) x v (? black-node? right) _)
+     (red-node left x v right)]
     [_ node]))
 
 
 (define (blacken node)
   (match node
-    [(red-node left x right _)
-     (black-node left x right)]
+    [(red-node left x v right _)
+     (black-node left x v right)]
     [_ node]))
 
 
 (define (min/delete node)
   (match node
-    [(red-node (== black-leaf) x (== black-leaf) _) (values x black-leaf)]
-    [(black-node (== black-leaf) x (== black-leaf) _) (values x double-black-leaf)]
-    [(black-node (== black-leaf) x (red-node left y right _) _)
-     (values x (black-node left y right))]
-    [(persistent-red-black-node c left x right _)
-     (define-values (v new-left) (min/delete left))
-     (values v (rotate (make-red-black-node c new-left x right)))]))
+    [(red-node (== black-leaf) x xv (== black-leaf) _) (values x xv black-leaf)]
+    [(black-node (== black-leaf) x xv (== black-leaf) _) (values x xv double-black-leaf)]
+    [(black-node (== black-leaf) x xv (red-node left y yv right _) _)
+     (values x xv (black-node left y yv right))]
+    [(persistent-red-black-node c left x xv right _)
+     (define-values (y yv new-left) (min/delete left))
+     (values y yv (rotate (make-red-black-node c new-left x xv right)))]))
 
 
 (define (balance node)
   (match node
-    [(or (black-node (red-node (red-node a x b _) y c _) z d _)
-         (black-node (red-node a x (red-node b y c _) _) z d _)
-         (black-node a x (red-node (red-node b y c _) z d _) _)
-         (black-node a x (red-node b y (red-node c z d _) _) _))
-     (red-node (black-node a x b) y (black-node c z d))]
-    [(or (double-black-node (red-node a x (red-node b y c _) _) z d _)
-         (double-black-node a x (red-node (red-node b y c _) z d _) _))
-     (black-node (black-node a x b) y (black-node c z d))]
+    [(or (black-node (red-node (red-node a x xv b _) y yv c _) z zv d _)
+         (black-node (red-node a x xv (red-node b y yv c _) _) z zv d _)
+         (black-node a x xv (red-node (red-node b y yv c _) z zv d _) _)
+         (black-node a x xv (red-node b y yv (red-node c z zv d _) _) _))
+     (red-node (black-node a x xv b) y yv (black-node c z zv d))]
+    [(or (double-black-node (red-node a x xv (red-node b y yv c _) _) z zv d _)
+         (double-black-node a x xv (red-node (red-node b y yv c _) z zv d _) _))
+     (black-node (black-node a x xv b) y yv (black-node c z zv d))]
     [t t]))
 
 
 (define (rotate node)
   (match node
 
-    [(red-node (? double-black-node? a-x-b) y (black-node c z d _) _)
-     (balance (black-node (red-node (remove-double-black a-x-b) y c) z d))]
-    [(red-node (black-node a x b _) y (? double-black-node? c-z-d) _)
-     (balance (black-node a x (red-node b y (remove-double-black c-z-d))))]
+    [(red-node (? double-black-node? a-x-b) y yv (black-node c z zv d _) _)
+     (balance (black-node (red-node (remove-double-black a-x-b) y yv c) z zv d))]
+    [(red-node (black-node a x xv b _) y yv (? double-black-node? c-z-d) _)
+     (balance (black-node a x xv (red-node b y yv (remove-double-black c-z-d))))]
     
-    [(black-node (? double-black-node? a-x-b) y (black-node c z d _) _)
-     (balance (double-black-node (red-node (remove-double-black a-x-b) y c) z d))]
-    [(black-node (black-node a x b _) y (? double-black-node? c-z-d) _)
-     (balance (double-black-node a x (red-node b y (remove-double-black c-z-d))))]
+    [(black-node (? double-black-node? a-x-b) y yv (black-node c z zv d _) _)
+     (balance (double-black-node (red-node (remove-double-black a-x-b) y yv c) z zv d))]
+    [(black-node (black-node a x xv b _) y yv (? double-black-node? c-z-d) _)
+     (balance (double-black-node a x xv (red-node b y yv (remove-double-black c-z-d))))]
     
-    [(black-node (? double-black-node? a-w-b) x (red-node (black-node c y d _) z e _) _)
-     (black-node (balance (black-node (red-node (remove-double-black a-w-b) x c) y d)) z e)]
-    [(black-node (red-node a w (black-node b x c _) _) y (? double-black-node? d-z-e) _)
-     (black-node a w (balance (black-node b x (red-node c y (remove-double-black d-z-e)))))]
+    [(black-node (? double-black-node? a-w-b) x xv (red-node (black-node c y yv d _) z zv e _) _)
+     (black-node (balance (black-node (red-node (remove-double-black a-w-b) x xv c) y yv d)) z zv e)]
+    [(black-node (red-node a w wv (black-node b x xv c _) _) y yv (? double-black-node? d-z-e) _)
+     (black-node a w wv (balance (black-node b x xv (red-node c y yv (remove-double-black d-z-e)))))]
     
     [t t]))
 
@@ -488,7 +546,7 @@
 (define (remove-double-black node)
   (match node
     [(== double-black-leaf) black-leaf]
-    [(double-black-node a x b _) (black-node a x b)]))
+    [(double-black-node a x xv b _) (black-node a x xv b)]))
 
 
 (module+ test
@@ -498,11 +556,11 @@
   (define (tree-of . elements)
     (for/fold ([tree empty-tree])
               ([element (in-list elements)])
-      (persistent-red-black-tree-insert tree element)))
+      (persistent-red-black-tree-insert tree element #false)))
 
-  (define (remove-all tree . elements)
+  (define (remove-all tree . keys)
     (for/fold ([tree tree])
-              ([element (in-list elements)])
+              ([element (in-list keys)])
       (persistent-red-black-tree-remove tree element)))
   
   (test-case (name-string persistent-red-black-tree-size)
@@ -522,112 +580,112 @@
     
     (test-case "insert one element into empty tree"
       (define tree (tree-of 5))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 5)))
     
     (test-case "insert two ascending elements into empty tree"
       (define tree (tree-of 5 10))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 5 10)))
     
     (test-case "insert two descending elements into empty tree"
       (define tree (tree-of 5 2))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 2 5)))
     
     (test-case "insert many ascending elements into empty tree"
       (define tree (tree-of 1 2 3 4 5))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3 4 5)))
     
     (test-case "insert many descending elements into empty tree"
       (define tree (tree-of 5 4 3 2 1))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3 4 5)))
     
     (test-case "insert ascending and descending elements into empty tree"
       (define tree (tree-of 2 3 1))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3)))
     
     (test-case "insert many ascending and descending elements into empty tree"
       (define tree (tree-of 3 5 1 4 2))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3 4 5)))
     
     (test-case "insert repeatedly ascending then descending elements into empty tree"
       (define tree (tree-of 1 7 2 6 3 5 4))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3 4 5 6 7)))
     
     (test-case "insert repeatedly descending then ascending elements into empty tree"
       (define tree (tree-of 7 1 6 2 5 3 4))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3 4 5 6 7)))
     
     (test-case "insert many ascending elements then many descending elements into empty tree"
       (define tree (tree-of 4 5 6 7 3 2 1))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3 4 5 6 7))))
 
   (test-case (name-string persistent-red-black-tree-remove)
 
     (test-case "remove from empty tree"
       (define tree (persistent-red-black-tree-remove (tree-of) 1))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list)))
 
     (test-case "remove contained from singleton tree"
       (define tree (persistent-red-black-tree-remove (tree-of 1) 1))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list)))
 
     (test-case "remove non-contained from singleton tree"
       (define tree (persistent-red-black-tree-remove (tree-of 1) 2))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1)))
 
     (test-case "remove min from tree with many elements"
       (define tree (persistent-red-black-tree-remove (tree-of 1 2 3 4 5) 1))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 2 3 4 5)))
 
     (test-case "remove max from tree with many elements"
       (define tree (persistent-red-black-tree-remove (tree-of 1 2 3 4 5) 5))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 3 4)))
 
     (test-case "remove middle from tree with many elements"
       (define tree (persistent-red-black-tree-remove (tree-of 1 2 3 4 5) 3))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2 4 5)))
 
     (test-case "remove lower half from tree with many elements in ascending order"
       (define tree (remove-all (tree-of 1 2 3 4 5) 1 2 3))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 4 5)))
 
     (test-case "remove lower half from tree with many elements in descending order"
       (define tree (remove-all (tree-of 1 2 3 4 5) 3 2 1))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 4 5)))
 
     (test-case "remove lower half from tree with many elements in alternating order"
       (define tree (remove-all (tree-of 1 2 3 4 5) 1 3 2))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 4 5)))
 
     (test-case "remove upper half from tree with many elements in ascending order"
       (define tree (remove-all (tree-of 1 2 3 4 5) 3 4 5))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2)))
 
     (test-case "remove upper half from tree with many elements in descending order"
       (define tree (remove-all (tree-of 1 2 3 4 5) 5 4 3))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2)))
 
     (test-case "remove upper half from tree with many elements in alternating order"
       (define tree (remove-all (tree-of 1 2 3 4 5) 3 5 4))
-      (define elements (persistent-red-black-tree-elements tree))
+      (define elements (persistent-red-black-tree-keys tree))
       (check-equal? elements (list 1 2)))))

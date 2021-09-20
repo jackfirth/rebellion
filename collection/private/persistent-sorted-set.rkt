@@ -110,7 +110,7 @@
   #:methods gen:sorted-set
 
   [(define (in-sorted-set this #:descending? [descending? #false])
-     (in-persistent-red-black-tree (persistent-sorted-set-tree this) #:descending? descending?))
+     (in-persistent-red-black-tree-keys (persistent-sorted-set-tree this) #:descending? descending?))
 
    (define (sorted-set-size this)
      (persistent-red-black-tree-size (persistent-sorted-set-tree this)))
@@ -122,22 +122,22 @@
      (persistent-red-black-tree-contains? (persistent-sorted-set-tree this) value))
 
    (define (sorted-set-least-element this)
-     (persistent-red-black-tree-least-element (persistent-sorted-set-tree this)))
+     (persistent-red-black-tree-least-key (persistent-sorted-set-tree this)))
 
    (define (sorted-set-greatest-element this)
-     (persistent-red-black-tree-greatest-element (persistent-sorted-set-tree this)))
+     (persistent-red-black-tree-greatest-key (persistent-sorted-set-tree this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (persistent-red-black-tree-element-less-than (persistent-sorted-set-tree this) upper-bound))
+     (persistent-red-black-tree-key-less-than (persistent-sorted-set-tree this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (persistent-red-black-tree-element-greater-than (persistent-sorted-set-tree this) lower-bound))
+     (persistent-red-black-tree-key-greater-than (persistent-sorted-set-tree this) lower-bound))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (persistent-red-black-tree-element-at-most (persistent-sorted-set-tree this) upper-bound))
+     (persistent-red-black-tree-key-at-most (persistent-sorted-set-tree this) upper-bound))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (persistent-red-black-tree-element-at-least (persistent-sorted-set-tree this) lower-bound))
+     (persistent-red-black-tree-key-at-least (persistent-sorted-set-tree this) lower-bound))
 
    (define (sorted-subset this element-range)
      (constructor:persistent-sorted-subset (persistent-sorted-set-tree this) element-range))
@@ -149,7 +149,7 @@
 
   [(define (sorted-set-add this element)
      (define tree (persistent-sorted-set-tree this))
-     (constructor:persistent-sorted-set (persistent-red-black-tree-insert tree element)))
+     (constructor:persistent-sorted-set (persistent-red-black-tree-insert tree element #false)))
 
    (define (sorted-set-remove this element)
      (define tree (persistent-sorted-set-tree this))
@@ -224,7 +224,7 @@
 
    (define (sorted-set-add this element)
      (define copy (persistent-red-black-subtree-copy (get-tree this) (get-range this)))
-     (constructor:persistent-sorted-set (persistent-red-black-tree-insert copy element)))
+     (constructor:persistent-sorted-set (persistent-red-black-tree-insert copy element #false)))
 
    (define (sorted-set-remove this element)
      (define copy (persistent-red-black-subtree-copy (get-tree this) (get-range this)))
@@ -235,7 +235,7 @@
   (for/fold ([tree (empty-persistent-red-black-tree comparator)]
              #:result (constructor:persistent-sorted-set tree))
             ([e elements])
-    (persistent-red-black-tree-insert tree e)))
+    (persistent-red-black-tree-insert tree e #false)))
 
 
 (define (make-persistent-sorted-set-from-sorted sorted-set)
