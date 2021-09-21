@@ -2,6 +2,9 @@
 
 
 (module+ test
+
+  (provide test-sorted-set)
+  
   (require (only-in racket/list shuffle)
            racket/match
            racket/sequence
