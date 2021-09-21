@@ -236,8 +236,8 @@
 (define (mutable-red-black-subtree-size tree element-range)
   (define lower (range-lower-cut element-range))
   (define upper (range-upper-cut element-range))
-  (- (gap-index (mutable-red-black-tree-binary-search-cut tree upper))
-     (gap-index (mutable-red-black-tree-binary-search-cut tree lower))))
+  (- (list-gap-index (mutable-red-black-tree-binary-search-cut tree upper))
+     (list-gap-index (mutable-red-black-tree-binary-search-cut tree lower))))
 
 
 (define (mutable-red-black-tree-rotate! tree subtree-root direction)
@@ -514,19 +514,19 @@
 
 
 (define (mutable-red-black-tree-element-less-than tree upper-bound)
-  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
+  (list-gap-element-before (mutable-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
 
 
 (define (mutable-red-black-tree-element-greater-than tree lower-bound)
-  (gap-element-after (mutable-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
+  (list-gap-element-after (mutable-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
 
 
 (define (mutable-red-black-tree-element-at-most tree upper-bound)
-  (gap-element-before (mutable-red-black-tree-binary-search-cut tree (upper-cut upper-bound))))
+  (list-gap-element-before (mutable-red-black-tree-binary-search-cut tree (upper-cut upper-bound))))
 
 
 (define (mutable-red-black-tree-element-at-least tree lower-bound)
-  (gap-element-after (mutable-red-black-tree-binary-search-cut tree (lower-cut lower-bound))))
+  (list-gap-element-after (mutable-red-black-tree-binary-search-cut tree (lower-cut lower-bound))))
 
 
 (define (mutable-red-black-tree-generalized-binary-search tree search-function)
@@ -536,7 +536,7 @@
                       [lower-element absent]
                       [upper-element absent])
     (guard node else
-      (gap min-start-index lower-element upper-element))
+      (list-gap min-start-index lower-element upper-element))
     (define element (mutable-red-black-node-element node))
     (define left (mutable-red-black-node-left-child node))
     (define right (mutable-red-black-node-right-child node))
@@ -548,7 +548,7 @@
        (loop left min-start-index lower-element (present element))]
       [(== equivalent)
        (define left-size (if left (mutable-red-black-node-size left) 0))
-       (position (+ min-start-index left-size) element)]))
+       (list-position (+ min-start-index left-size) element)]))
 
   (loop))
 

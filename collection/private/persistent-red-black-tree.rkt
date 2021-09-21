@@ -25,6 +25,8 @@
   [persistent-red-black-tree-insert
    (-> persistent-red-black-tree? any/c any/c persistent-red-black-tree?)]
   [persistent-red-black-tree-remove (-> persistent-red-black-tree? any/c persistent-red-black-tree?)]
+  [persistent-red-black-tree-update
+   (-> persistent-red-black-tree? any/c (-> any/c any/c) failure-result/c persistent-red-black-tree?)]
   [persistent-red-black-tree-keys (-> persistent-red-black-tree? list?)]
   [persistent-red-black-tree-least-key (-> persistent-red-black-tree? option?)]
   [persistent-red-black-tree-greatest-key (-> persistent-red-black-tree? option?)]
@@ -32,10 +34,17 @@
   [persistent-red-black-tree-key-less-than (-> persistent-red-black-tree? any/c option?)]
   [persistent-red-black-tree-key-at-most (-> persistent-red-black-tree? any/c option?)]
   [persistent-red-black-tree-key-at-least (-> persistent-red-black-tree? any/c option?)]
+  [persistent-red-black-tree-least-entry (-> persistent-red-black-tree? (option/c entry?))]
+  [persistent-red-black-tree-greatest-entry (-> persistent-red-black-tree? (option/c entry?))]
+  [persistent-red-black-tree-entry-greater-than
+   (-> persistent-red-black-tree? any/c (option/c entry?))]
+  [persistent-red-black-tree-entry-less-than (-> persistent-red-black-tree? any/c (option/c entry?))]
+  [persistent-red-black-tree-entry-at-most (-> persistent-red-black-tree? any/c (option/c entry?))]
+  [persistent-red-black-tree-entry-at-least (-> persistent-red-black-tree? any/c (option/c entry?))]
   [persistent-red-black-tree-binary-search
-   (-> persistent-red-black-tree? any/c (or/c position? gap?))]
+   (-> persistent-red-black-tree? any/c (or/c map-position? map-gap?))]
   [persistent-red-black-tree-binary-search-cut
-   (-> persistent-red-black-tree? cut? (or/c position? gap?))]
+   (-> persistent-red-black-tree? cut? (or/c map-position? map-gap?))]
   [persistent-red-black-subtree-copy
    (-> persistent-red-black-tree? range? persistent-red-black-tree?)]
   [persistent-red-black-subtree-size (-> persistent-red-black-tree? range? natural?)]
@@ -322,23 +331,64 @@
   (entry key (persistent-red-black-tree-get tree key failure-result)))
 
 
+(define (persistent-red-black-tree-update tree key updater failure-result)
+  (define key<=> (persistent-red-black-tree-comparator tree))
+  (define root (persistent-red-black-tree-root-node tree))
+  
+  (define/guard (loop node)
+    (guard (persistent-red-black-node? node) else
+      (define value (if (procedure? failure-result) (failure-result) failure-result))
+      (singleton-red-black-node key (updater value)))
+    (define node-element (persistent-red-black-node-key node))
+    (match (compare key<=> key node-element)
+      [(== equivalent)
+       (make-red-black-node
+        (persistent-red-black-node-color node)
+        (persistent-red-black-node-left-child node)
+        (persistent-red-black-node-key node)
+        (updater (persistent-red-black-node-value node))
+        (persistent-red-black-node-right-child node))]
+      
+      [(== lesser)
+       (define new-node
+         (make-red-black-node
+          (persistent-red-black-node-color node)
+          (loop (persistent-red-black-node-left-child node))
+          (persistent-red-black-node-key node)
+          (persistent-red-black-node-value node)
+          (persistent-red-black-node-right-child node)))
+       (balance new-node)]
+      
+      [(== greater)
+       (define new-node
+         (make-red-black-node
+          (persistent-red-black-node-color node)
+          (persistent-red-black-node-left-child node)
+          (persistent-red-black-node-key node)
+          (persistent-red-black-node-value node)
+          (loop (persistent-red-black-node-right-child node))))
+       (balance new-node)]))
+  
+  (constructor:persistent-red-black-tree key<=> (loop (blacken root))))
+
+
 (define (persistent-red-black-tree-generalized-binary-search tree search-function)
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)]
                       [min-start-index 0]
-                      [lower-key absent]
-                      [upper-key absent])
+                      [lower-entry absent]
+                      [upper-entry absent])
     (guard-match (persistent-red-black-node _ left key value right _) node else
-      (gap min-start-index lower-key upper-key))
+      (map-gap min-start-index lower-entry upper-entry))
     (match (search-function key)
       [(== lesser)
        (define left-size (if left (persistent-red-black-node-size left) 0))
-       (loop right (+ min-start-index left-size 1) (present key) upper-key)]
+       (loop right (+ min-start-index left-size 1) (present (entry key value)) upper-entry)]
       [(== greater)
-       (loop left min-start-index lower-key (present key))]
+       (loop left min-start-index lower-entry (present (entry key value)))]
       [(== equivalent)
        (define left-size (if left (persistent-red-black-node-size left) 0))
-       (position (+ min-start-index left-size) key)]))
+       (map-position (+ min-start-index left-size) key value)]))
 
   (loop))
 
@@ -357,8 +407,8 @@
 (define (persistent-red-black-subtree-size tree range)
   (define lower (range-lower-cut range))
   (define upper (range-upper-cut range))
-  (- (gap-index (persistent-red-black-tree-binary-search-cut tree upper))
-     (gap-index (persistent-red-black-tree-binary-search-cut tree lower))))
+  (- (map-gap-index (persistent-red-black-tree-binary-search-cut tree upper))
+     (map-gap-index (persistent-red-black-tree-binary-search-cut tree lower))))
 
 
 (define (persistent-red-black-tree-keys tree)
@@ -378,6 +428,20 @@
   (present (loop root)))
 
 
+(define/guard (persistent-red-black-tree-least-entry tree)
+  (define root (persistent-red-black-tree-root-node tree))
+  (guard (persistent-red-black-node? root) else
+    absent)
+  
+  (define (loop node)
+    (match (persistent-red-black-node-left-child node)
+      [(== black-leaf)
+       (entry (persistent-red-black-node-key node) (persistent-red-black-node-value node))]
+      [left-child (loop left-child)]))
+
+  (present (loop root)))
+
+
 (define/guard (persistent-red-black-tree-greatest-key tree)
   (define root (persistent-red-black-tree-root-node tree))
   (guard (persistent-red-black-node? root) else
@@ -391,24 +455,54 @@
   (present (loop root)))
 
 
+(define/guard (persistent-red-black-tree-greatest-entry tree)
+  (define root (persistent-red-black-tree-root-node tree))
+  (guard (persistent-red-black-node? root) else
+    absent)
+  
+  (define (loop node)
+    (match (persistent-red-black-node-right-child node)
+      [(== black-leaf)
+       (entry (persistent-red-black-node-key node) (persistent-red-black-node-value node))]
+      [right-child (loop right-child)]))
+
+  (present (loop root)))
+
+
+(define (persistent-red-black-tree-entry-less-than tree upper-bound)
+  (map-gap-entry-before (persistent-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
+
+
+(define (persistent-red-black-tree-entry-greater-than tree lower-bound)
+  (map-gap-entry-after (persistent-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
+
+
+(define (persistent-red-black-tree-entry-at-most tree upper-bound)
+  (match (persistent-red-black-tree-binary-search tree upper-bound)
+    [(map-position _ equivalent-key value) (present (entry equivalent-key value))]
+    [(map-gap _ lesser-entry _) lesser-entry]))
+
+
+(define (persistent-red-black-tree-entry-at-least tree lower-bound)
+  (match (persistent-red-black-tree-binary-search tree lower-bound)
+    [(map-position _ equivalent-key value) (present (entry equivalent-key value))]
+    [(map-gap _ _ greater-entry) greater-entry]))
+
+
 (define (persistent-red-black-tree-key-less-than tree upper-bound)
-  (gap-element-before (persistent-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
+  (option-map (persistent-red-black-tree-entry-less-than tree upper-bound) entry-key))
 
 
 (define (persistent-red-black-tree-key-greater-than tree lower-bound)
-  (gap-element-after (persistent-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
+  (option-map (persistent-red-black-tree-entry-greater-than tree lower-bound) entry-key))
 
 
 (define (persistent-red-black-tree-key-at-most tree upper-bound)
-  (match (persistent-red-black-tree-binary-search tree upper-bound)
-    [(position _ equivalent-key) (present equivalent-key)]
-    [(gap _ lesser-key _) lesser-key]))
+  (option-map (persistent-red-black-tree-entry-at-most tree upper-bound) entry-key))
 
 
 (define (persistent-red-black-tree-key-at-least tree lower-bound)
-  (match (persistent-red-black-tree-binary-search tree lower-bound)
-    [(position _ equivalent-key) (present equivalent-key)]
-    [(gap _ _ greater-key) greater-key]))
+  (option-map (persistent-red-black-tree-entry-at-least tree lower-bound) entry-key))
 
 
 ;; Modification

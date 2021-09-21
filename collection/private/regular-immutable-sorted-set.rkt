@@ -100,7 +100,7 @@
      (define vec (regular-immutable-sorted-set-sorted-vector this))
      (define cmp (regular-immutable-sorted-set-comparator this))
      (and (contract-first-order-passes? (comparator-operand-contract cmp) value)
-          (position? (vector-binary-search vec value #:comparator cmp))))
+          (list-position? (vector-binary-search vec value #:comparator cmp))))
 
    (define (sorted-set-least-element this)
      (define vec (regular-immutable-sorted-set-sorted-vector this))
@@ -134,9 +134,11 @@
      (define vec (regular-immutable-sorted-set-sorted-vector this))
      (define cmp (regular-immutable-sorted-set-comparator this))
      (define start
-       (gap-index (vector-binary-search-cut vec (range-lower-cut element-range) #:comparator cmp)))
+       (list-gap-index
+        (vector-binary-search-cut vec (range-lower-cut element-range) #:comparator cmp)))
      (define end
-       (gap-index (vector-binary-search-cut vec (range-upper-cut element-range) #:comparator cmp)))
+       (list-gap-index
+        (vector-binary-search-cut vec (range-upper-cut element-range) #:comparator cmp)))
      (cond
        [(equal? start end) (empty-sorted-set cmp)]
        [(and (zero? start) (equal? end (vector-length vec))) this]
@@ -181,7 +183,7 @@
      (define start (regular-immutable-sorted-subset-start-index this))
      (define end (regular-immutable-sorted-subset-end-index this))
      (and (contract-first-order-passes? (comparator-operand-contract cmp) value)
-          (position? (vector-binary-search vec value start end #:comparator cmp))))
+          (list-position? (vector-binary-search vec value start end #:comparator cmp))))
 
    (define/guard (sorted-set-least-element this)
      (guard (sorted-set-empty? this) then
@@ -229,10 +231,10 @@
      (define start (regular-immutable-sorted-subset-start-index this))
      (define end (regular-immutable-sorted-subset-end-index this))
      (define new-start
-       (gap-index
+       (list-gap-index
         (vector-binary-search-cut vec (range-lower-cut element-range) start end #:comparator cmp)))
      (define new-end
-       (gap-index
+       (list-gap-index
         (vector-binary-search-cut vec (range-upper-cut element-range) start end #:comparator cmp)))
      (if (equal? new-start new-end)
          (empty-sorted-set cmp)

@@ -10,8 +10,8 @@
   [immutable-sorted-map? predicate/c]
   [mutable-sorted-map? predicate/c]
   [in-sorted-map (->* (sorted-map?) (#:descending? boolean?) (sequence/c entry?))]
-  [in-sorted-map-keys (->* (sorted-map?) (#:descending? boolean?) (sequence/c entry?))]
-  [in-sorted-map-values (->* (sorted-map?) (#:descending? boolean?) (sequence/c entry?))]
+  [in-sorted-map-keys (->* (sorted-map?) (#:descending? boolean?) (sequence/c any/c))]
+  [in-sorted-map-values (->* (sorted-map?) (#:descending? boolean?) (sequence/c any/c))]
   [sorted-map-empty? (-> sorted-map? boolean?)]
   [sorted-map-size (-> sorted-map? exact-nonnegative-integer?)]
   [sorted-map-key-comparator (-> sorted-map? comparator?)]
@@ -47,6 +47,8 @@
   [sorted-map-remove-all (-> immutable-sorted-map? (sequence/c any/c) immutable-sorted-map?)]
   [sorted-map-remove-all! (-> mutable-sorted-map? (sequence/c any/c) void?)]
   [sorted-map-clear! (-> mutable-sorted-map? void?)]
+  [sorted-map-keys (-> sorted-map? sorted-set?)]
+  [sorted-map-entries (-> sorted-map? sorted-set?)]
   [sorted-submap (-> sorted-map? range? sorted-map?)]
   [sorted-map-reverse (-> sorted-map? sorted-map?)]))
 
@@ -66,7 +68,8 @@
    gen:mutable-sorted-map
    gen:immutable-sorted-map
    (contract-out
-    [default-sorted-map-lookup-failure-result (-> interned-symbol? any/c sorted-map? void?)])))
+    [default-sorted-map-lookup-failure-result
+      (-> interned-symbol? any/c sorted-map? failure-result/c)])))
 
 
 (require racket/generic
@@ -78,6 +81,7 @@
          rebellion/base/range
          rebellion/base/symbol
          rebellion/collection/entry
+         rebellion/collection/private/sorted-set-interface
          rebellion/private/guarded-block
          rebellion/private/printer-markup)
 
@@ -121,7 +125,14 @@
   (sorted-map-keys sorted-map)
   (sorted-map-entries sorted-map)
   (sorted-submap sorted-map key-range)
-  (sorted-map-reverse sorted-map))
+  (sorted-map-reverse sorted-map)
+
+  #:fallbacks
+
+  [(define/generic generic-sorted-map-size sorted-map-size)
+   
+   (define (sorted-map-empty? this)
+     (zero? (generic-sorted-map-size this)))])
 
 
 ;; Subtypes must implement the gen:sorted-map interface.
@@ -135,7 +146,7 @@
      (make-constructor-style-printer-with-markup
       'sorted-map
       (λ (this)
-        (for/stream ([e (in-sorted-map this)])
+        (for/list ([e (in-sorted-map this)])
           (sequence-markup (list (entry-key e) (entry-value e)))))))])
 
 
@@ -164,7 +175,7 @@
      (make-constructor-style-printer-with-markup
       'mutable-sorted-map
       (λ (this)
-        (for/stream ([e (in-sorted-map this)])
+        (for/list ([e (in-sorted-map this)])
           (sequence-markup (list (entry-key e) (entry-value e)))))))])
 
 
@@ -186,7 +197,7 @@
      (make-constructor-style-printer-with-markup
       'immutable-sorted-map
       (λ (this)
-        (for/stream ([e (in-sorted-map this)])
+        (for/list ([e (in-sorted-map this)])
           (sequence-markup (list (entry-key e) (entry-value e)))))))]
 
   ;; Immutable sorted maps are always compared structurally. Two immutable sorted maps are equal if
