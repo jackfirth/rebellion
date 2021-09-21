@@ -20,6 +20,7 @@
          rebellion/collection/private/reversed-sorted-map
          rebellion/collection/private/sorted-map-interface
          (submod rebellion/collection/private/sorted-map-interface private-for-rebellion-only)
+         rebellion/collection/private/sorted-map-key-set
          rebellion/private/static-name)
 
 
@@ -250,7 +251,7 @@
      (persistent-red-black-tree-entry-at-least (persistent-sorted-map-tree this) lower-key-bound))
 
    (define (sorted-map-keys this)
-     (error 'TODO))
+     (make-immutable-sorted-map-key-set this))
 
    (define (sorted-map-entries this)
      (error 'TODO))

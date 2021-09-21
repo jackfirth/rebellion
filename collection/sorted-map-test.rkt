@@ -86,7 +86,10 @@
       (test-case "in-sorted-map-values #:descending"
         (for ([entry (in-sorted-map map #:descending? #true)]
               [value (in-sorted-map-values map #:descending? #true)])
-          (check-equal? value (entry-value entry))))))
+          (check-equal? value (entry-value entry))))
+
+      (test-case "key set view"
+        (test-sorted-set (sorted-map-keys map)))))
 
   (test-case "immutable sorted map"
     
