@@ -382,12 +382,14 @@
       (map-gap min-start-index lower-entry upper-entry))
     (match (search-function key)
       [(== lesser)
-       (define left-size (if left (persistent-red-black-node-size left) 0))
+       (define left-size
+         (if (persistent-red-black-node? left) (persistent-red-black-node-size left) 0))
        (loop right (+ min-start-index left-size 1) (present (entry key value)) upper-entry)]
       [(== greater)
        (loop left min-start-index lower-entry (present (entry key value)))]
       [(== equivalent)
-       (define left-size (if left (persistent-red-black-node-size left) 0))
+       (define left-size
+         (if (persistent-red-black-node? left) (persistent-red-black-node-size left) 0))
        (map-position (+ min-start-index left-size) key value)]))
 
   (loop))
