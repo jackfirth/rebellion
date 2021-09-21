@@ -147,7 +147,8 @@
      (sorted-set-reverse (generic-sorted-map-entries (get-delegate this))))
 
    (define (sorted-submap this key-range)
-     (sorted-map-reverse (generic-sorted-submap (get-delegate this) (range-reverse key-range))))
+     (make-reversed-unmodifiable-sorted-map
+      (generic-sorted-submap (get-delegate this) (range-reverse key-range))))
 
    (define (sorted-map-reverse this)
      (get-delegate this))])
@@ -277,7 +278,8 @@
      (sorted-set-reverse (generic-sorted-map-entries (get-delegate this))))
 
    (define (sorted-submap this key-range)
-     (sorted-map-reverse (generic-sorted-submap (get-delegate this) (range-reverse key-range))))
+     (make-reversed-immutable-sorted-map
+      (generic-sorted-submap (get-delegate this) (range-reverse key-range))))
 
    (define (sorted-map-reverse this)
      (get-delegate this))]
@@ -432,7 +434,8 @@
      (sorted-set-reverse (generic-sorted-map-entries (get-delegate this))))
 
    (define (sorted-submap this key-range)
-     (sorted-map-reverse (generic-sorted-submap (get-delegate this) (range-reverse key-range))))
+     (make-reversed-mutable-sorted-map
+      (generic-sorted-submap (get-delegate this) (range-reverse key-range))))
 
    (define (sorted-map-reverse this)
      (get-delegate this))]
