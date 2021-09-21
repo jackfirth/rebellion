@@ -13,6 +13,7 @@
 (require racket/match
          rebellion/base/comparator
          rebellion/base/option
+         rebellion/base/result
          rebellion/collection/entry
          rebellion/collection/private/persistent-red-black-tree
          (submod rebellion/collection/private/persistent-sorted-set private-for-rebellion-only)
@@ -133,6 +134,9 @@
 
    (define (sorted-map-put-all this entries)
      (make-persistent-sorted-map entries #:comparator (empty-sorted-map-key-comparator this)))
+
+   (define (sorted-map-put-if-absent this key value)
+     (success (sorted-map-put this key value)))
 
    (define (sorted-map-update
             this
@@ -269,6 +273,12 @@
                  ([e entries])
          (persistent-red-black-tree-insert tree (entry-key e) (entry-value e))))
      (constructor:persistent-sorted-map tree))
+
+   (define (sorted-map-put-if-absent this key value)
+     (define tree (persistent-sorted-map-tree this))
+     (match (persistent-red-black-tree-get-option tree key)
+       [(== absent) (success (sorted-map-put this key value))]
+       [(present previous-value) (failure previous-value)]))
 
    (define (sorted-map-update
             this

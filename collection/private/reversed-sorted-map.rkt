@@ -12,8 +12,10 @@
 
 
 (require racket/generic
+         racket/match
          rebellion/base/comparator
          rebellion/base/range
+         rebellion/base/result
          rebellion/collection/private/sorted-map-interface
          (submod rebellion/collection/private/sorted-map-interface private-for-rebellion-only)
          rebellion/collection/private/sorted-set-interface
@@ -294,6 +296,7 @@
 
    (define/generic generic-sorted-map-put sorted-map-put)
    (define/generic generic-sorted-map-put-all sorted-map-put-all)
+   (define/generic generic-sorted-map-put-if-absent sorted-map-put-if-absent)
    (define/generic generic-sorted-map-remove sorted-map-remove)
    (define/generic generic-sorted-map-remove-all sorted-map-remove-all)
 
@@ -302,6 +305,11 @@
 
    (define (sorted-map-put-all this entries)
      (construct (generic-sorted-map-put-all (get-delegate this) entries)))
+
+   (define (sorted-map-put-if-absent this key value)
+     (match (generic-sorted-map-put-if-absent (get-delegate this) key value)
+       [(success new-delegate) (success (construct new-delegate))]
+       [fail fail]))
 
    (define (sorted-map-remove this key)
      (construct (generic-sorted-map-remove (get-delegate this) key)))
@@ -449,6 +457,7 @@
    (define/generic generic-sorted-map-get-entry! sorted-map-get-entry!)
    (define/generic generic-sorted-map-put! sorted-map-put!)
    (define/generic generic-sorted-map-put-all! sorted-map-put-all!)
+   (define/generic generic-sorted-map-put-if-absent! sorted-map-put-if-absent!)
    (define/generic generic-sorted-map-update! sorted-map-update!)
    (define/generic generic-sorted-map-remove! sorted-map-remove!)
    (define/generic generic-sorted-map-remove-all! sorted-map-remove-all!)
@@ -473,6 +482,9 @@
 
    (define (sorted-map-put-all! this entries)
      (generic-sorted-map-put-all! (get-delegate this) entries))
+
+   (define (sorted-map-put-if-absent! this key value)
+     (generic-sorted-map-put-if-absent! (get-delegate this) key value))
 
    (define (sorted-map-update!
             this

@@ -39,6 +39,9 @@
   [sorted-map-put! (-> mutable-sorted-map? any/c any/c void?)]
   [sorted-map-put-all (-> immutable-sorted-map? (sequence/c entry?) immutable-sorted-map?)]
   [sorted-map-put-all! (-> mutable-sorted-map? (sequence/c entry?) void?)]
+  [sorted-map-put-if-absent
+   (-> immutable-sorted-map? any/c any/c (result/c immutable-sorted-map? any/c))]
+  [sorted-map-put-if-absent! (-> mutable-sorted-map? any/c any/c option?)]
   [sorted-map-update
    (->* (immutable-sorted-map? any/c (-> any/c any/c)) (failure-result/c) immutable-sorted-map?)]
   [sorted-map-update! (->* (mutable-sorted-map? any/c (-> any/c any/c)) (failure-result/c) void?)]
@@ -79,6 +82,7 @@
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
+         rebellion/base/result
          rebellion/base/symbol
          rebellion/collection/entry
          rebellion/collection/private/sorted-set-interface
@@ -156,6 +160,7 @@
   (sorted-map-get-entry! mutable-sorted-map key failure-result)
   (sorted-map-put! mutable-sorted-map key value)
   (sorted-map-put-all! mutable-sorted-map entries)
+  (sorted-map-put-if-absent! mutable-sorted-map key value)
   (sorted-map-update! mutable-sorted-map key updater [failure-result])
   (sorted-map-remove! mutable-sorted-map key)
   (sorted-map-remove-all! mutable-sorted-map keys)
@@ -183,6 +188,7 @@
 
   (sorted-map-put immutable-sorted-map key value)
   (sorted-map-put-all immutable-sorted-map entries)
+  (sorted-map-put-if-absent immutable-sorted-map key value)
   (sorted-map-update immutable-sorted-map key updater [failure-result])
   (sorted-map-remove immutable-sorted-map key)
   (sorted-map-remove-all immutable-sorted-map keys))
