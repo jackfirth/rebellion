@@ -18,6 +18,13 @@
           scribble/example)
 
 
+@(define make-evaluator
+   (make-module-sharing-evaluator-factory
+    #:public (list 'rebellion/base/comparator
+                   'rebellion/collection/sorted-map)
+    #:private (list 'racket/base)))
+
+
 @title{Sorted Maps}
 @defmodule[rebellion/collection/sorted-map]
 
@@ -47,6 +54,22 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
 @defproc[(immutable-sorted-map? [v any/c]) boolean?]{
  A predicate for immutable @tech{sorted maps}. Implies @racket[sorted-map?].}
+
+
+@section{Constructing Sorted Maps}
+
+
+@defproc[(sorted-map [key any/c] [value any/c] ... ... [#:key-comparator key-comparator comparator?])
+         immutable-sorted-map?]{
+
+ Constructs an immutable @tech{sorted map} mapping each @racket[key] to the corresponding
+ @racket[value], where keys are sorted by @racket[key-comparator]. The input @racket[key]s may be
+ given in any order. Duplicate keys (as in, keys that @racket[key-comparator] considers equivalent)
+ are disallowed and result in a contract error.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-map 3 'c 1 'a 4 'd 2 'b 5 'e #:key-comparator natural<=>))}
 
 
 @section{Iterating Sorted Maps}
@@ -317,6 +340,25 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Inserts a mapping for each key-value entry in @racket[entries] into @racket[map]. If any
  @racket[entries] have duplicate keys, a contract error is raised.}
+
+
+@defproc[(sorted-map-put-if-absent [map immutable-sorted-map?] [key any/c] [value any/c])
+         (result/c immutable-sorted-map? any/c)]{
+
+ Functionally inserts a mapping from @racket[key] to @racket[value] into @racket[map] if @racket[map]
+ does not already contain a mapping for @racket[key]. If @racket[map] already contains @racket[key],
+ a @racket[failure] containing the preexisting value is returned. Otherwise, returns a
+ @racket[success] value of a new immutable sorted map containing all of the entries of @racket[map]
+ and the additional inserted mapping from @racket[key] to @racket[value]. The input map is not
+ modified.}
+
+
+@defproc[(sorted-map-put-if-absent! [map mutable-sorted-map?] [key any/c] [value any/c])
+         option?]{
+
+ Inserts a mapping from @racket[key] to @racket[value] into @racket[map] if @racket[map]
+ does not already contain a mapping for @racket[key]. If @racket[map] already contains @racket[key],
+ the map is not modified and the preexisting value is returned.}
 
 
 @defproc[(sorted-map-update
