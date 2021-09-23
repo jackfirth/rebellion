@@ -92,7 +92,56 @@
         (test-sorted-set (sorted-map-keys map)))
 
       (test-case "entry set view"
-        (test-sorted-set (sorted-map-entries map)))))
+        (test-sorted-set (sorted-map-entries map)))
+
+      (test-case "sorted-map-contains-key?"
+        (check-false (sorted-map-contains-key? map (gensym)))
+        (for ([key (in-sorted-map-keys map)])
+          (with-check-info (['key key])
+            (check-true (sorted-map-contains-key? map key)))))
+
+      (test-case "sorted-map-contains-value?"
+        (check-false (sorted-map-contains-value? map (gensym)))
+        (for ([value (in-sorted-map-values map)])
+          (with-check-info (['value value])
+            (check-true (sorted-map-contains-value? map value)))))
+
+      (test-case "sorted-map-contains-entry?"
+        (for ([e (in-sorted-map map)])
+          (match-define (entry key value) e)
+          (with-check-info (['entry e])
+            (check-true (sorted-map-contains-entry? map e)))
+          (define fresh-entry (entry key (gensym)))
+          (with-check-info (['fresh-entry fresh-entry])
+            (check-false (sorted-map-contains-entry? map fresh-entry)))))
+
+      (test-case "sorted-map-get"
+        (for ([e (in-sorted-map map)])
+          (match-define (entry key value) e)
+          (with-check-info (['key key])
+            (check-equal? (sorted-map-get map key) value)))
+        (check-exn exn:fail:contract? (λ () (sorted-map-get map (gensym))))
+        (check-exn #rx"sorted-map-get:" (λ () (sorted-map-get map (gensym))))
+        (check-equal? (sorted-map-get map (gensym) 'foo) 'foo)
+        (check-equal? (sorted-map-get map (gensym) (λ () 'foo)) 'foo))
+
+      (test-case "sorted-map-get-option"
+        (for ([e (in-sorted-map map)])
+          (match-define (entry key value) e)
+          (with-check-info (['key key])
+            (check-equal? (sorted-map-get-option map key) (present value))))
+        (check-equal? (sorted-map-get-option map (gensym)) absent))
+
+      (test-case "sorted-map-get-entry"
+        (for ([e (in-sorted-map map)])
+          (match-define (entry key value) e)
+          (with-check-info (['key key])
+            (check-equal? (sorted-map-get-entry map key) e)))
+        (check-exn exn:fail:contract? (λ () (sorted-map-get-entry map (gensym))))
+        (check-exn #rx"sorted-map-get-entry:" (λ () (sorted-map-get-entry map (gensym))))
+        (define fresh-key (gensym))
+        (check-equal? (sorted-map-get-entry map fresh-key 'foo) (entry fresh-key 'foo))
+        (check-equal? (sorted-map-get-entry map fresh-key (λ () 'foo)) (entry fresh-key 'foo)))))
 
   (test-case "immutable sorted map"
     

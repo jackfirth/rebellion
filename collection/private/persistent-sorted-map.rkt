@@ -81,7 +81,7 @@
             this
             key
             [failure-result
-             (default-sorted-map-lookup-failure-result (name sorted-map-get) key this)])
+             (default-sorted-map-lookup-failure-result (name sorted-map-get-entry) key this)])
      (entry key (if (procedure? failure-result) (failure-result) failure-result)))
 
    (define (sorted-map-least-key this)
