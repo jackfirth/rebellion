@@ -14,6 +14,10 @@
   [in-persistent-red-black-tree-values
    (->* (persistent-red-black-tree?) (#:descending? boolean?) (sequence/c any/c))]
   [in-persistent-red-black-subtree
+   (->* (persistent-red-black-tree? range?) (#:descending? boolean?) (sequence/c entry?))]
+  [in-persistent-red-black-subtree-keys
+   (->* (persistent-red-black-tree? range?) (#:descending? boolean?) (sequence/c any/c))]
+  [in-persistent-red-black-subtree-values
    (->* (persistent-red-black-tree? range?) (#:descending? boolean?) (sequence/c any/c))]
   [empty-persistent-red-black-tree (-> comparator? persistent-red-black-tree?)]
   [persistent-red-black-tree-size (-> persistent-red-black-tree? natural?)]
@@ -55,6 +59,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
+         racket/block
          racket/contract/combinator
          racket/match
          racket/math
@@ -234,36 +239,45 @@
     (entry-value e)))
 
 
-(define (in-persistent-red-black-subtree tree range #:descending? [descending? #false])
+(define/guard (in-persistent-red-black-subtree-node
+               node key-range #:descending? [descending? #false])
 
-  (define/guard (in-ascending-node node)
-    (guard (persistent-red-black-node? node) else
-      (stream))
-    (define key (persistent-red-black-node-key node))
-    (match (range-compare-to-value range key)
-      [(== lesser) (in-ascending-node (persistent-red-black-node-right-child node))]
-      [(== greater) (in-ascending-node (persistent-red-black-node-left-child node))]
-      [(== equivalent)
-       (sequence-append
-        (in-ascending-node (persistent-red-black-node-right-child node))
+  (guard (persistent-red-black-node? node) else
+    (stream))
+
+  (define (recur node)
+    (in-persistent-red-black-subtree-node node key-range #:descending? descending?))
+  
+  (define key (persistent-red-black-node-key node))
+  (define range-comparison (range-compare-to-value key-range key))
+  (define true-left
+    (and (not (equal? range-comparison greater)) (persistent-red-black-node-left-child node)))
+  (define true-right
+    (and (not (equal? range-comparison lesser)) (persistent-red-black-node-right-child node)))
+  (define left (if descending? true-right true-left))
+  (define right (if descending? true-left true-right))
+  (define left-stream (if left (stream* (recur left)) (stream)))
+  (define right-stream (if right (stream* (recur right)) (stream)))
+  (define entry-stream
+    (if (equal? range-comparison equivalent)
         (stream (entry key (persistent-red-black-node-value node)))
-        (in-ascending-node (persistent-red-black-node-left-child node)))]))
+        (stream)))
+  (sequence-append left-stream entry-stream right-stream))
 
-  (define/guard (in-descending-node node)
-    (guard (persistent-red-black-node? node) else
-      (stream))
-    (define key (persistent-red-black-node-key node))
-    (match (range-compare-to-value range key)
-      [(== lesser) (in-descending-node (persistent-red-black-node-right-child node))]
-      [(== greater) (in-descending-node (persistent-red-black-node-left-child node))]
-      [(== equivalent)
-       (sequence-append
-        (in-descending-node (persistent-red-black-node-left-child node))
-        (stream (entry key (persistent-red-black-node-value node)))
-        (in-descending-node (persistent-red-black-node-right-child node)))]))
 
+(define (in-persistent-red-black-subtree tree key-range #:descending? [descending? #false])
   (define root (persistent-red-black-tree-root-node tree))
-  (if descending? (stream* (in-descending-node root)) (stream* (in-ascending-node root))))
+  (in-persistent-red-black-subtree-node root key-range #:descending? descending?))
+
+
+(define (in-persistent-red-black-subtree-keys tree key-range #:descending? [descending? #false])
+  (for/stream ([e (in-persistent-red-black-subtree tree key-range #:descending? descending?)])
+    (entry-key e)))
+
+
+(define (in-persistent-red-black-subtree-values tree key-range #:descending? [descending? #false])
+  (for/stream ([e (in-persistent-red-black-subtree tree key-range #:descending? descending?)])
+    (entry-value e)))
 
 
 ;; Queries and searching

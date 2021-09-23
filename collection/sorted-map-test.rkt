@@ -101,7 +101,16 @@
 
     (define map
       (sorted-map 1 'a 2 'b 3 'c 4 'd 5 'e 6 'f 7 'g 8 'h 9 'i 10 'j #:key-comparator real<=>))
+
     (test-sorted-map map)
 
     (test-case "reversed immutable sorted map"
-      (test-sorted-map (sorted-map-reverse map)))))
+      (test-sorted-map (sorted-map-reverse map)))
+
+    (test-case "immutable sorted submap"
+      (test-sorted-map (sorted-submap map (closed-range 3 8))))
+
+    (test-case "reversed immutable sorted submap"
+      (test-sorted-map (sorted-map-reverse (sorted-submap map (closed-range 3 8))))
+      (define range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
+      (test-sorted-map (sorted-submap (sorted-map-reverse map) range)))))

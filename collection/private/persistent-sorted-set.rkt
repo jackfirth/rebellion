@@ -140,7 +140,7 @@
      (persistent-red-black-tree-key-at-least (persistent-sorted-set-tree this) lower-bound))
 
    (define (sorted-subset this element-range)
-     (constructor:persistent-sorted-subset (persistent-sorted-set-tree this) element-range))
+     (constructor:persistent-sorted-subset this element-range))
 
    (define (sorted-set-reverse this)
      (make-reversed-immutable-sorted-set this))]
@@ -183,7 +183,7 @@
      (generic-sorted-set-comparator (get-delegate this)))
 
    (define (sorted-set-contains? this value)
-     (persistent-red-black-subtree-contains? (get-tree this) (get-range this) value))
+     (sorted-subset-contains? (get-delegate this) (get-range this) value))
 
    (define/guard (sorted-set-least-element this)
      (sorted-subset-least-element (get-delegate this) (get-range this)))
