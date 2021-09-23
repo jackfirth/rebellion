@@ -89,7 +89,10 @@
           (check-equal? value (entry-value entry))))
 
       (test-case "key set view"
-        (test-sorted-set (sorted-map-keys map)))))
+        (test-sorted-set (sorted-map-keys map)))
+
+      (test-case "entry set view"
+        (test-sorted-set (sorted-map-entries map)))))
 
   (test-case "immutable sorted map"
     

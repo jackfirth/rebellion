@@ -22,6 +22,7 @@
          rebellion/collection/private/reversed-sorted-map
          rebellion/collection/private/sorted-map-interface
          (submod rebellion/collection/private/sorted-map-interface private-for-rebellion-only)
+         rebellion/collection/private/sorted-map-entry-set
          rebellion/collection/private/sorted-map-key-set
          rebellion/collection/private/sorted-submap
          rebellion/private/guarded-block
@@ -258,7 +259,7 @@
      (make-immutable-sorted-map-key-set this))
 
    (define (sorted-map-entries this)
-     (error 'TODO))
+     (make-immutable-sorted-map-entry-set this))
 
    (define (sorted-submap this key-range)
      (constructor:persistent-sorted-submap this key-range))
@@ -396,7 +397,7 @@
      (make-immutable-sorted-map-key-set this))
 
    (define (sorted-map-entries this)
-     (error 'TODO))
+     (make-immutable-sorted-map-entry-set this))
 
    (define/guard (sorted-submap this key-range)
      (define delegate (get-delegate this))

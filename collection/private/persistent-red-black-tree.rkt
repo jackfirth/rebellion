@@ -304,7 +304,20 @@
 
 
 (define (persistent-red-black-subtree-contains? tree range key)
-  (and (range-contains? range key) (persistent-red-black-tree-contains? tree key)))
+  (define cmp (persistent-red-black-tree-comparator tree))
+
+  (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
+    (guard (persistent-red-black-node? node) else
+      #false)
+    (match-define (persistent-red-black-node _ left node-key _ right _) node)
+    (match (compare cmp node-key key)
+      [(== lesser) (loop right)]
+      [(== greater) (loop left)]
+      [(== equivalent) #true]))
+  
+  (and (contract-first-order-passes? (comparator-operand-contract cmp) key)
+       (range-contains? range key)
+       (loop)))
 
 
 (define/guard (persistent-red-black-tree-get tree key failure-result)

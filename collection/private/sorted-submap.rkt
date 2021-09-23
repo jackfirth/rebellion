@@ -51,7 +51,7 @@
   (match-define (entry key value) e)
   (define key-cmp (sorted-map-key-comparator map))
   (and (contract-first-order-passes? (comparator-operand-contract key-cmp) key)
-       (range-contains? key-range value)
+       (range-contains? key-range key)
        (match (sorted-map-get-option map key)
          [(== absent) #false]
          [(present v) (equal? v value)])))
@@ -146,11 +146,11 @@
 
 (define (sorted-submap-entry-greater-than map key-range lower-bound)
   (match (range-compare-to-cut key-range (upper-cut lower-bound))
-    [(== lesser) (sorted-submap-least-key map key-range)]
+    [(== lesser) (sorted-submap-least-entry map key-range)]
     [(== greater) absent]
     [(== equivalent)
-     (define result (sorted-map-key-greater-than map lower-bound))
-     (option-filter result (λ (key) (range-contains? key-range key)))]))
+     (define result (sorted-map-entry-greater-than map lower-bound))
+     (option-filter result (λ (e) (range-contains? key-range (entry-key e))))]))
 
 
 (define (sorted-submap-key-at-most map key-range upper-bound)

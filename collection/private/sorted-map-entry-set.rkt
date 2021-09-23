@@ -6,35 +6,39 @@
 
 (provide
  (contract-out
-  [make-unmodifiable-sorted-map-key-set (-> sorted-map? sorted-set?)]
-  [make-immutable-sorted-map-key-set (-> immutable-sorted-map? immutable-sorted-set?)]
-  [make-mutable-sorted-map-key-set (-> mutable-sorted-map? mutable-sorted-set?)]))
+  [make-unmodifiable-sorted-map-entry-set (-> sorted-map? sorted-set?)]
+  [make-immutable-sorted-map-entry-set (-> immutable-sorted-map? immutable-sorted-set?)]
+  [make-mutable-sorted-map-entry-set (-> mutable-sorted-map? mutable-sorted-set?)]))
 
 
 (require racket/generic
+         rebellion/base/comparator
+         rebellion/base/range
+         rebellion/collection/entry
          rebellion/collection/private/sorted-map-interface
          rebellion/collection/sorted-set
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
+         rebellion/private/guarded-block
          rebellion/private/static-name)
 
 
 ;@----------------------------------------------------------------------------------------------------
 
 
-(struct unmodifiable-sorted-map-key-set abstract-sorted-set (delegate-map)
+(struct unmodifiable-sorted-map-entry-set abstract-sorted-set (delegate-map)
 
-  #:constructor-name make-unmodifiable-sorted-map-key-set
+  #:constructor-name make-unmodifiable-sorted-map-entry-set
 
   #:methods gen:sorted-set
 
   [(define (get-delegate this)
-     (unmodifiable-sorted-map-key-set-delegate-map this))
+     (unmodifiable-sorted-map-entry-set-delegate-map this))
 
    (define (construct delegate-map)
-     (make-unmodifiable-sorted-map-key-set delegate-map))
+     (make-unmodifiable-sorted-map-entry-set delegate-map))
 
    (define (in-sorted-set this #:descending? [descending? #false])
-     (in-sorted-map-keys (get-delegate this) #:descending? descending?))
+     (in-sorted-map (get-delegate this) #:descending? descending?))
 
    (define (sorted-set-empty? this)
      (sorted-map-empty? (get-delegate this)))
@@ -43,50 +47,52 @@
      (sorted-map-size (get-delegate this)))
 
    (define (sorted-set-comparator this)
-     (sorted-map-key-comparator (get-delegate this)))
+     (make-entry-comparator (sorted-map-key-comparator (get-delegate this))))
 
    (define (sorted-set-contains? this value)
-     (sorted-map-contains-key? (get-delegate this) value))
+     (sorted-map-contains-entry? (get-delegate this) value))
 
    (define (sorted-set-least-element this)
-     (sorted-map-least-key (get-delegate this)))
+     (sorted-map-least-entry (get-delegate this)))
 
    (define (sorted-set-greatest-element this)
-     (sorted-map-greatest-key (get-delegate this)))
+     (sorted-map-greatest-entry (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (sorted-map-key-less-than (get-delegate this) upper-bound))
+     (sorted-map-entry-less-than (get-delegate this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (sorted-map-key-greater-than (get-delegate this) lower-bound))
+     (sorted-map-entry-greater-than (get-delegate this) lower-bound))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (sorted-map-key-at-most (get-delegate this) upper-bound))
+     (sorted-map-entry-at-most (get-delegate this) upper-bound))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (sorted-map-key-at-least (get-delegate this) lower-bound))
+     (sorted-map-entry-at-least (get-delegate this) lower-bound))
 
-   (define (sorted-subset this element-range)
-     (construct (sorted-submap (get-delegate this) element-range)))
+   (define (sorted-subset this entry-range)
+     (define key<=> (sorted-map-key-comparator (get-delegate this)))
+     (define key-range (make-key-range entry-range #:key-comparator key<=>))
+     (construct (sorted-submap (get-delegate this) key-range)))
 
    (define (sorted-set-reverse this)
      (construct (sorted-map-reverse (get-delegate this))))])
 
 
-(struct mutable-sorted-map-key-set abstract-sorted-set (delegate-map)
+(struct mutable-sorted-map-entry-set abstract-sorted-set (delegate-map)
 
-  #:constructor-name make-mutable-sorted-map-key-set
+  #:constructor-name make-mutable-sorted-map-entry-set
 
   #:methods gen:sorted-set
 
   [(define (get-delegate this)
-     (mutable-sorted-map-key-set-delegate-map this))
+     (mutable-sorted-map-entry-set-delegate-map this))
 
    (define (construct delegate-map)
-     (make-mutable-sorted-map-key-set delegate-map))
+     (make-mutable-sorted-map-entry-set delegate-map))
 
    (define (in-sorted-set this #:descending? [descending? #false])
-     (in-sorted-map-keys (get-delegate this) #:descending? descending?))
+     (in-sorted-map (get-delegate this) #:descending? descending?))
 
    (define (sorted-set-empty? this)
      (sorted-map-empty? (get-delegate this)))
@@ -95,31 +101,33 @@
      (sorted-map-size (get-delegate this)))
 
    (define (sorted-set-comparator this)
-     (sorted-map-key-comparator (get-delegate this)))
+     (make-entry-comparator (sorted-map-key-comparator (get-delegate this))))
 
    (define (sorted-set-contains? this value)
-     (sorted-map-contains-key? (get-delegate this) value))
+     (sorted-map-contains-entry? (get-delegate this) value))
 
    (define (sorted-set-least-element this)
-     (sorted-map-least-key (get-delegate this)))
+     (sorted-map-least-entry (get-delegate this)))
 
    (define (sorted-set-greatest-element this)
-     (sorted-map-greatest-key (get-delegate this)))
+     (sorted-map-greatest-entry (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (sorted-map-key-less-than (get-delegate this) upper-bound))
+     (sorted-map-entry-less-than (get-delegate this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (sorted-map-key-greater-than (get-delegate this) lower-bound))
+     (sorted-map-entry-greater-than (get-delegate this) lower-bound))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (sorted-map-key-at-most (get-delegate this) upper-bound))
+     (sorted-map-entry-at-most (get-delegate this) upper-bound))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (sorted-map-key-at-least (get-delegate this) lower-bound))
+     (sorted-map-entry-at-least (get-delegate this) lower-bound))
 
-   (define (sorted-subset this element-range)
-     (construct (sorted-submap (get-delegate this) element-range)))
+   (define (sorted-subset this entry-range)
+     (define key<=> (sorted-map-key-comparator (get-delegate this)))
+     (define key-range (make-key-range entry-range #:key-comparator key<=>))
+     (construct (sorted-submap (get-delegate this) key-range)))
 
    (define (sorted-set-reverse this)
      (construct (sorted-map-reverse (get-delegate this))))]
@@ -127,7 +135,7 @@
   #:methods gen:mutable-sorted-set
 
   [(define (get-delegate this)
-     (mutable-sorted-map-key-set-delegate-map this))
+     (mutable-sorted-map-entry-set-delegate-map this))
 
    (define (sorted-set-add! this element)
      (raise-arguments-error
@@ -153,20 +161,20 @@
      (sorted-map-clear! (get-delegate this)))])
 
 
-(struct immutable-sorted-map-key-set abstract-sorted-set (delegate-map)
+(struct immutable-sorted-map-entry-set abstract-sorted-set (delegate-map)
 
-  #:constructor-name make-immutable-sorted-map-key-set
+  #:constructor-name make-immutable-sorted-map-entry-set
 
   #:methods gen:sorted-set
 
   [(define (get-delegate this)
-     (immutable-sorted-map-key-set-delegate-map this))
+     (immutable-sorted-map-entry-set-delegate-map this))
 
    (define (construct delegate-map)
-     (make-immutable-sorted-map-key-set delegate-map))
+     (make-immutable-sorted-map-entry-set delegate-map))
 
    (define (in-sorted-set this #:descending? [descending? #false])
-     (in-sorted-map-keys (get-delegate this) #:descending? descending?))
+     (in-sorted-map (get-delegate this) #:descending? descending?))
 
    (define (sorted-set-empty? this)
      (sorted-map-empty? (get-delegate this)))
@@ -175,31 +183,33 @@
      (sorted-map-size (get-delegate this)))
 
    (define (sorted-set-comparator this)
-     (sorted-map-key-comparator (get-delegate this)))
+     (make-entry-comparator (sorted-map-key-comparator (get-delegate this))))
 
    (define (sorted-set-contains? this value)
-     (sorted-map-contains-key? (get-delegate this) value))
+     (and (entry? value) (sorted-map-contains-entry? (get-delegate this) value)))
 
    (define (sorted-set-least-element this)
-     (sorted-map-least-key (get-delegate this)))
+     (sorted-map-least-entry (get-delegate this)))
 
    (define (sorted-set-greatest-element this)
-     (sorted-map-greatest-key (get-delegate this)))
+     (sorted-map-greatest-entry (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (sorted-map-key-less-than (get-delegate this) upper-bound))
+     (sorted-map-entry-less-than (get-delegate this) (entry-key upper-bound)))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (sorted-map-key-greater-than (get-delegate this) lower-bound))
+     (sorted-map-entry-greater-than (get-delegate this) (entry-key lower-bound)))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (sorted-map-key-at-most (get-delegate this) upper-bound))
+     (sorted-map-entry-at-most (get-delegate this) (entry-key upper-bound)))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (sorted-map-key-at-least (get-delegate this) lower-bound))
+     (sorted-map-entry-at-least (get-delegate this) (entry-key lower-bound)))
 
-   (define (sorted-subset this element-range)
-     (construct (sorted-submap (get-delegate this) element-range)))
+   (define (sorted-subset this entry-range)
+     (define key<=> (sorted-map-key-comparator (get-delegate this)))
+     (define key-range (make-key-range entry-range #:key-comparator key<=>))
+     (construct (sorted-submap (get-delegate this) key-range)))
 
    (define (sorted-set-reverse this)
      (construct (sorted-map-reverse (get-delegate this))))]
@@ -222,3 +232,23 @@
 
    (define (sorted-set-remove-all this elements)
      (generic-sorted-set-remove-all (sorted-set->immutable-sorted-set this) elements))])
+
+
+(define entry-comparator-cache (make-ephemeron-hash))
+
+
+(define (make-entry-comparator key-comparator)
+  (hash-ref! entry-comparator-cache key-comparator (λ () (comparator-map key-comparator entry-key))))
+
+
+(define (make-key-range entry-range #:key-comparator key-comparator)
+  (define lower (range-lower-bound entry-range))
+  (define upper (range-upper-bound entry-range))
+  (range (make-key-bound lower) (make-key-bound upper) #:comparator key-comparator))
+
+
+(define/guard (make-key-bound bound)
+  (guard (unbounded? bound) then
+    unbounded)
+  (define key (entry-key (range-bound-endpoint bound)))
+  (range-bound key (range-bound-type bound)))

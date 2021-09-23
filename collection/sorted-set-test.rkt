@@ -74,7 +74,8 @@
       (test-case "sorted-set-contains?"
         (check-false (sorted-set-contains? set (gensym)))
         (for ([element (in-sorted-set set)])
-          (check-true (sorted-set-contains? set element))))
+          (with-check-info (['element element])
+            (check-true (sorted-set-contains? set element)))))
 
       (test-case "sorted-set-contains-all?"
         (check-true (sorted-set-contains-all? set (list)))
