@@ -226,7 +226,31 @@
         (for ([e (in-sorted-map map)])
           (define key (entry-key e))
           (with-check-info (['upper-bound key])
-            (check-equal? (sorted-map-entry-at-least map key) (present e)))))))
+            (check-equal? (sorted-map-entry-at-least map key) (present e)))))
+
+      (test-case "sorted-map-size on exclusively bounded-above submaps"
+        (for ([key (in-sorted-map-keys map)]
+              [i (in-naturals)])
+          (define submap (sorted-submap map (less-than-range key #:comparator key<=>)))
+          (check-equal? (sorted-map-size submap) i)))
+
+      (test-case "sorted-map-size on exclusively bounded-below submaps"
+        (for ([key (in-sorted-map-keys map #:descending? #true)]
+              [i (in-naturals)])
+          (define submap (sorted-submap map (greater-than-range key #:comparator key<=>)))
+          (check-equal? (sorted-map-size submap) i)))
+
+      (test-case "sorted-map-size on inclusively bounded-above submaps"
+        (for ([key (in-sorted-map-keys map)]
+              [i (in-naturals 1)])
+          (define submap (sorted-submap map (at-most-range key #:comparator key<=>)))
+          (check-equal? (sorted-map-size submap) i)))
+
+      (test-case "sorted-map-size on inclusively bounded-below submaps"
+        (for ([key (in-sorted-map-keys map #:descending? #true)]
+              [i (in-naturals 1)])
+          (define submap (sorted-submap map (at-least-range key #:comparator key<=>)))
+          (check-equal? (sorted-map-size submap) i)))))
 
   (test-case "persistent sorted map"
 
