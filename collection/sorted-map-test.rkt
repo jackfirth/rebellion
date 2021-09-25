@@ -3,6 +3,7 @@
 
 (module+ test
   (require racket/match
+           racket/sequence
            rackunit
            rebellion/base/comparator
            rebellion/base/option
@@ -143,7 +144,89 @@
         (check-exn #rx"sorted-map-get-entry:" (λ () (sorted-map-get-entry map (gensym))))
         (define fresh-key (gensym))
         (check-equal? (sorted-map-get-entry map fresh-key 'foo) (entry fresh-key 'foo))
-        (check-equal? (sorted-map-get-entry map fresh-key (λ () 'foo)) (entry fresh-key 'foo)))))
+        (check-equal? (sorted-map-get-entry map fresh-key (λ () 'foo)) (entry fresh-key 'foo)))
+
+      (test-case "sorted-map-least-key"
+        (cond
+          [(sorted-map-empty? map)
+           (check-equal? (sorted-map-least-key map) absent)]
+          [else
+           (define first-key (sequence-ref (in-sorted-map-keys map) 0))
+           (check-equal? (sorted-map-least-key map) (present first-key))]))
+
+      (test-case "sorted-map-least-entry"
+        (cond
+          [(sorted-map-empty? map)
+           (check-equal? (sorted-map-least-entry map) absent)]
+          [else
+           (define first-entry (sequence-ref (in-sorted-map map) 0))
+           (check-equal? (sorted-map-least-entry map) (present first-entry))]))
+
+      (test-case "sorted-map-greatest-key"
+        (cond
+          [(sorted-map-empty? map)
+           (check-equal? (sorted-map-greatest-key map) absent)]
+          [else
+           (define last-key (sequence-ref (in-sorted-map-keys map #:descending? #true) 0))
+           (check-equal? (sorted-map-greatest-key map) (present last-key))]))
+
+      (test-case "sorted-map-greatest-entry"
+        (cond
+          [(sorted-map-empty? map)
+           (check-equal? (sorted-map-greatest-entry map) absent)]
+          [else
+           (define last-entry (sequence-ref (in-sorted-map map #:descending? #true) 0))
+           (check-equal? (sorted-map-greatest-entry map) (present last-entry))]))
+
+      (test-case "sorted-map-key-less-than"
+        (for/fold ([previous absent] #:result (void))
+                  ([next (in-sorted-map-keys map)])
+          (with-check-info (['upper-bound next])
+            (check-equal? (sorted-map-key-less-than map next) previous)
+            (present next))))
+
+      (test-case "sorted-map-entry-less-than"
+        (for/fold ([previous absent] #:result (void))
+                  ([next (in-sorted-map map)])
+          (with-check-info (['upper-bound next])
+            (check-equal? (sorted-map-entry-less-than map (entry-key next)) previous)
+            (present next))))
+
+      (test-case "sorted-map-key-greater-than"
+        (for/fold ([previous absent] #:result (void))
+                  ([next (in-sorted-map-keys map #:descending? #true)])
+          (with-check-info (['lower-bound next])
+            (check-equal? (sorted-map-key-greater-than map next) previous)
+            (present next))))
+
+      (test-case "sorted-map-entry-greater-than"
+        (for/fold ([previous absent] #:result (void))
+                  ([next (in-sorted-map map #:descending? #true)])
+          (with-check-info (['lower-bound next])
+            (check-equal? (sorted-map-entry-greater-than map (entry-key next)) previous)
+            (present next))))
+
+      (test-case "sorted-map-key-at-most"
+        (for ([key (in-sorted-map-keys map)])
+          (with-check-info (['upper-bound key])
+            (check-equal? (sorted-map-key-at-most map key) (present key)))))
+
+      (test-case "sorted-map-entry-at-most"
+        (for ([e (in-sorted-map map)])
+          (define key (entry-key e))
+          (with-check-info (['upper-bound key])
+            (check-equal? (sorted-map-entry-at-most map key) (present e)))))
+
+      (test-case "sorted-map-key-at-least"
+        (for ([key (in-sorted-map-keys map)])
+          (with-check-info (['lower-bound key])
+            (check-equal? (sorted-map-key-at-least map key) (present key)))))
+
+      (test-case "sorted-map-entry-at-least"
+        (for ([e (in-sorted-map map)])
+          (define key (entry-key e))
+          (with-check-info (['upper-bound key])
+            (check-equal? (sorted-map-entry-at-least map key) (present e)))))))
 
   (test-case "persistent sorted map"
 
