@@ -7,7 +7,8 @@
 (module+ private-for-rebellion-only
   (provide
    (contract-out
-    [empty-sorted-map (-> comparator? immutable-sorted-map?)])))
+    [empty-sorted-map (-> comparator? immutable-sorted-map?)]
+    [sorted-map->persistent-sorted-map (-> sorted-map? immutable-sorted-map?)])))
 
 
 (require racket/generic
@@ -30,6 +31,17 @@
 
 
 ;@----------------------------------------------------------------------------------------------------
+
+
+(define (sorted-map->persistent-sorted-map map)
+  (cond
+    [(persistent-sorted-map? map) map]
+    [else
+     (define key<=> (sorted-map-key-comparator map))
+     (constructor:persistent-sorted-map
+      (for/fold ([tree (empty-persistent-red-black-tree key<=>)])
+                ([e map])
+        (persistent-red-black-tree-insert tree (entry-key e) (entry-value e))))]))
 
 
 ;; We define a specialized implementation of the empty map for speed. It's included in this module so

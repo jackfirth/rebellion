@@ -10,6 +10,8 @@
  (struct-out map-position)
  (struct-out map-gap)
  (contract-out
+  [list-gap-index-before (-> list-gap? (option/c natural?))]
+  [list-gap-index-after (-> list-gap? (option/c natural?))]
   [vector-binary-search
    (->* (vector? any/c #:comparator comparator?) (natural? natural?) (or/c list-position? list-gap?))]
   [vector-binary-search-cut
@@ -58,6 +60,18 @@
 (struct list-gap (index element-before element-after)
   #:transparent
   #:guard (struct-guard/c natural? option? option?))
+
+
+(define (list-gap-index-before gap)
+  (match gap
+    [(list-gap i (? present?) _) (present (sub1 i))]
+    [(list-gap _ (== absent) _) absent]))
+
+
+(define (list-gap-index-after gap)
+  (match gap
+    [(list-gap i _ (? present?)) (present i)]
+    [(list-gap _ _ (== absent)) absent]))
 
 
 (struct map-position (index key element)

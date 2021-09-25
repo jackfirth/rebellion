@@ -8,6 +8,8 @@
            rebellion/base/option
            rebellion/base/range
            rebellion/collection/entry
+           (submod rebellion/collection/private/regular-immutable-sorted-map
+                   private-for-rebellion-only)
            rebellion/collection/sorted-map
            (submod rebellion/collection/sorted-set-test test)))
 
@@ -143,12 +145,12 @@
         (check-equal? (sorted-map-get-entry map fresh-key 'foo) (entry fresh-key 'foo))
         (check-equal? (sorted-map-get-entry map fresh-key (λ () 'foo)) (entry fresh-key 'foo)))))
 
-  (test-case "immutable sorted map"
-    
-    (test-case "empty immutable sorted map"
-      (test-sorted-map (sorted-map #:key-comparator natural<=>)))
+  (test-case "persistent sorted map"
 
-    (test-case "singleton immutable sorted map"
+    (test-case "empty persistent sorted map"
+      (test-sorted-map (sorted-map #:key-comparator natural<=>)))
+    
+    (test-case "singleton persistent sorted map"
       (test-sorted-map (sorted-map 1 'a #:key-comparator natural<=>)))
 
     (define map
@@ -156,13 +158,59 @@
 
     (test-sorted-map map)
 
+    (test-case "reversed persistent sorted map"
+      (test-sorted-map (sorted-map-reverse map)))
+
+    (test-case "persistent sorted submap"
+      (test-sorted-map (sorted-submap map (closed-range 3 8))))
+
+    (test-case "reversed persistent sorted submap"
+
+      (test-case "submap before reversal"
+        (define key-range (closed-range 3 8))
+        (with-check-info (['key-range key-range])
+          (test-sorted-map (sorted-map-reverse (sorted-submap map key-range)))))
+
+      (test-case "submap after reversal"
+        (define key-range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
+        (with-check-info (['key-range key-range])
+          (test-sorted-map (sorted-submap (sorted-map-reverse map) key-range))))))
+
+  (test-case "regular immutable sorted map"
+
+    (define map
+      (make-regular-immutable-sorted-map
+       (list
+        (entry 1 'a)
+        (entry 2 'b)
+        (entry 3 'c)
+        (entry 4 'd)
+        (entry 5 'e)
+        (entry 6 'f)
+        (entry 7 'g)
+        (entry 8 'h)
+        (entry 9 'i)
+        (entry 10 'j))
+       real<=>))
+
+    (test-sorted-map map)
+
     (test-case "reversed immutable sorted map"
       (test-sorted-map (sorted-map-reverse map)))
 
     (test-case "immutable sorted submap"
-      (test-sorted-map (sorted-submap map (closed-range 3 8))))
+      (define key-range (closed-range 3 8))
+      (with-check-info (['key-range key-range])
+        (test-sorted-map (sorted-submap map key-range))))
 
     (test-case "reversed immutable sorted submap"
-      (test-sorted-map (sorted-map-reverse (sorted-submap map (closed-range 3 8))))
-      (define range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
-      (test-sorted-map (sorted-submap (sorted-map-reverse map) range)))))
+
+      (test-case "submap before reversal"
+        (define key-range (closed-range 3 8))
+        (with-check-info (['key-range key-range])
+          (test-sorted-map (sorted-map-reverse (sorted-submap map key-range)))))
+
+      (test-case "submap after reversal"
+        (define key-range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
+        (with-check-info (['key-range key-range])
+          (test-sorted-map (sorted-submap (sorted-map-reverse map) key-range)))))))

@@ -50,7 +50,7 @@
      (make-entry-comparator (sorted-map-key-comparator (get-delegate this))))
 
    (define (sorted-set-contains? this value)
-     (sorted-map-contains-entry? (get-delegate this) value))
+     (and (entry? value) (sorted-map-contains-entry? (get-delegate this) value)))
 
    (define (sorted-set-least-element this)
      (sorted-map-least-entry (get-delegate this)))
@@ -59,16 +59,16 @@
      (sorted-map-greatest-entry (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (sorted-map-entry-less-than (get-delegate this) upper-bound))
+     (sorted-map-entry-less-than (get-delegate this) (entry-key upper-bound)))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (sorted-map-entry-greater-than (get-delegate this) lower-bound))
+     (sorted-map-entry-greater-than (get-delegate this) (entry-key lower-bound)))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (sorted-map-entry-at-most (get-delegate this) upper-bound))
+     (sorted-map-entry-at-most (get-delegate this) (entry-key upper-bound)))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (sorted-map-entry-at-least (get-delegate this) lower-bound))
+     (sorted-map-entry-at-least (get-delegate this) (entry-key lower-bound)))
 
    (define (sorted-subset this entry-range)
      (define key<=> (sorted-map-key-comparator (get-delegate this)))
@@ -104,7 +104,7 @@
      (make-entry-comparator (sorted-map-key-comparator (get-delegate this))))
 
    (define (sorted-set-contains? this value)
-     (sorted-map-contains-entry? (get-delegate this) value))
+     (and (entry? value) (sorted-map-contains-entry? (get-delegate this) value)))
 
    (define (sorted-set-least-element this)
      (sorted-map-least-entry (get-delegate this)))
@@ -113,16 +113,16 @@
      (sorted-map-greatest-entry (get-delegate this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (sorted-map-entry-less-than (get-delegate this) upper-bound))
+     (sorted-map-entry-less-than (get-delegate this) (entry-key upper-bound)))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (sorted-map-entry-greater-than (get-delegate this) lower-bound))
+     (sorted-map-entry-greater-than (get-delegate this) (entry-key lower-bound)))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (sorted-map-entry-at-most (get-delegate this) upper-bound))
+     (sorted-map-entry-at-most (get-delegate this) (entry-key upper-bound)))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (sorted-map-entry-at-least (get-delegate this) lower-bound))
+     (sorted-map-entry-at-least (get-delegate this) (entry-key lower-bound)))
 
    (define (sorted-subset this entry-range)
      (define key<=> (sorted-map-key-comparator (get-delegate this)))
