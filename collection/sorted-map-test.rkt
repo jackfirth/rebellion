@@ -9,6 +9,7 @@
            rebellion/base/option
            rebellion/base/range
            rebellion/collection/entry
+           (submod rebellion/collection/private/persistent-sorted-map private-for-rebellion-only)
            (submod rebellion/collection/private/regular-immutable-sorted-map
                    private-for-rebellion-only)
            rebellion/collection/sorted-map
@@ -255,13 +256,25 @@
   (test-case "persistent sorted map"
 
     (test-case "empty persistent sorted map"
-      (test-sorted-map (sorted-map #:key-comparator natural<=>)))
+      (test-sorted-map (make-persistent-sorted-map (list) natural<=>)))
     
     (test-case "singleton persistent sorted map"
-      (test-sorted-map (sorted-map 1 'a #:key-comparator natural<=>)))
+      (test-sorted-map (make-persistent-sorted-map (list (entry 1 'a)) natural<=>)))
 
     (define map
-      (sorted-map 1 'a 2 'b 3 'c 4 'd 5 'e 6 'f 7 'g 8 'h 9 'i 10 'j #:key-comparator real<=>))
+      (make-persistent-sorted-map
+       (list
+        (entry 1 'a)
+        (entry 2 'b)
+        (entry 3 'c)
+        (entry 4 'd)
+        (entry 5 'e)
+        (entry 6 'f)
+        (entry 7 'g)
+        (entry 8 'h)
+        (entry 9 'i)
+        (entry 10 'j))
+       real<=>))
 
     (test-sorted-map map)
 

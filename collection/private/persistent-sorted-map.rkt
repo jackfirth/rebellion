@@ -8,11 +8,13 @@
   (provide
    (contract-out
     [empty-sorted-map (-> comparator? immutable-sorted-map?)]
-    [sorted-map->persistent-sorted-map (-> sorted-map? immutable-sorted-map?)])))
+    [sorted-map->persistent-sorted-map (-> sorted-map? immutable-sorted-map?)]
+    [make-persistent-sorted-map (-> (sequence/c entry?) comparator? immutable-sorted-map?)])))
 
 
 (require racket/generic
          racket/match
+         racket/sequence
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
@@ -148,10 +150,10 @@
 
   [(define (sorted-map-put this key value)
      (define comparator (empty-sorted-map-key-comparator this))
-     (make-persistent-sorted-map (list (entry key value)) #:comparator comparator))
+     (make-persistent-sorted-map (list (entry key value)) comparator))
 
    (define (sorted-map-put-all this entries)
-     (make-persistent-sorted-map entries #:comparator (empty-sorted-map-key-comparator this)))
+     (make-persistent-sorted-map entries (empty-sorted-map-key-comparator this)))
 
    (define (sorted-map-put-if-absent this key value)
      (success (sorted-map-put this key value)))
@@ -164,7 +166,7 @@
              (default-sorted-map-lookup-failure-result (name sorted-map-update) key this)])
      (define value (if (procedure? failure-result) (failure-result) failure-result))
      (define comparator (empty-sorted-map-key-comparator this))
-     (make-persistent-sorted-map (list (entry key (updater value))) #:comparator comparator))
+     (make-persistent-sorted-map (list (entry key (updater value))) comparator))
 
    (define (sorted-map-remove this key)
      this)
@@ -173,7 +175,7 @@
      this)])
 
 
-(define (make-persistent-sorted-map entries #:comparator comparator)
+(define (make-persistent-sorted-map entries comparator)
   (constructor:persistent-sorted-map
    (for/fold ([tree (empty-persistent-red-black-tree comparator)])
              ([e entries])
