@@ -164,6 +164,45 @@
           (define subset (sorted-subset set (at-least-range element #:comparator cmp)))
           (check-equal? (sorted-set-size subset) i)))))
 
+
+  (define (test-immutable-sorted-set set #:try-inserting insertable-elements)
+
+    (with-check-info (['set set])
+
+      (test-sorted-set set)
+
+      (test-case "sorted-set-add"
+
+        (test-case "sorted-set-add already contained elements"
+          (for ([e set])
+            (check-equal? (sorted-set-add set e) set)))
+
+        (test-case "sorted-set-add new elements"
+          (for ([e insertable-elements])
+            (with-check-info (['inserted-element e])
+              (check-false (sorted-set-contains? set e))
+              (define modified (sorted-set-add set e))
+              (check-equal? (sorted-set-size modified) (add1 (sorted-set-size set)))
+              (check-true (sorted-set-contains? modified e))
+              (test-sorted-set modified)))))
+
+      (test-case "sorted-set-remove"
+
+        (test-case "sorted-set-remove elements not contained by set"
+          (for ([e insertable-elements])
+            (with-check-info (['element e])
+              (check-false (sorted-set-contains? set e))
+              (check-equal? (sorted-set-remove set e) set))))
+
+        (test-case "sorted-set-remove contained elements"
+          (for ([e set])
+            (with-check-info (['removed-element e])
+              (define modified (sorted-set-remove set e))
+              (check-equal? (sorted-set-size modified) (sub1 (sorted-set-size set)))
+              (check-false (sorted-set-contains? modified e))
+              (test-sorted-set modified)))))))
+
+
   (test-case "sorted set equality"
     (check-equal? (sorted-set #:comparator natural<=>) (sorted-set #:comparator natural<=>))
     (check-not-equal? (sorted-set #:comparator natural<=>) (sorted-set #:comparator string<=>))
@@ -177,29 +216,31 @@
   (test-case "immutable sorted set"
     
     (test-case "empty immutable sorted set"
-      (test-sorted-set (sorted-set #:comparator natural<=>)))
+      (test-immutable-sorted-set (sorted-set #:comparator natural<=>) #:try-inserting (list 1 2 3)))
 
     (test-case "singleton immutable sorted set"
-      (test-sorted-set (sorted-set 1 #:comparator natural<=>)))
+      (test-immutable-sorted-set (sorted-set 1 #:comparator natural<=>) #:try-inserting (list 2 3 4)))
 
     (define set (sorted-set 1 2 3 4 5 6 7 8 9 10 #:comparator real<=>))
-    (test-sorted-set set)
+    (test-immutable-sorted-set set #:try-inserting (list 0 20 4.5))
 
     (test-case "immutable sorted subset"
-      (test-sorted-set (sorted-subset set (closed-range 3 8))))
+      (test-immutable-sorted-set
+       (sorted-subset set (closed-range 3 8)) #:try-inserting (list 0 1 20 10 4.5)))
 
     (test-case "reversed immutable sorted set"
-      (test-sorted-set (sorted-set-reverse set)))
+      (test-immutable-sorted-set (sorted-set-reverse set) #:try-inserting (list 0 20 4.5)))
 
     (test-case "reversed immutable sorted subset"
       (define range (closed-range 8 3 #:comparator (comparator-reverse real<=>)))
-      (test-sorted-set (sorted-subset (sorted-set-reverse set) range)))
+      (test-immutable-sorted-set
+       (sorted-subset (sorted-set-reverse set) range) #:try-inserting (list 0 1 20 10 4.5)))
 
     (test-case "unmodifiable view"
       (define unmodifiable (unmodifiable-sorted-set set))
       (check-equal? unmodifiable set)
       (check-true (immutable-sorted-set? unmodifiable))
-      (test-sorted-set unmodifiable)))
+      (test-immutable-sorted-set unmodifiable #:try-inserting (list 0 20 4.5))))
 
   (test-case "mutable sorted set"
 
