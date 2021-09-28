@@ -9,6 +9,7 @@
                      rebellion/base/option
                      rebellion/base/range
                      rebellion/collection/entry
+                     rebellion/collection/hash
                      rebellion/collection/sorted-map
                      rebellion/concurrency/lock
                      rebellion/streaming/reducer
@@ -22,7 +23,9 @@
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/base/comparator
                    'rebellion/collection/entry
-                   'rebellion/collection/sorted-map)
+                   'rebellion/collection/hash
+                   'rebellion/collection/sorted-map
+                   'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
 
 
@@ -71,6 +74,38 @@ not a copy, so it constructs the view in constant time regardless of the size of
  @(examples
    #:eval (make-evaluator) #:once
    (sorted-map 3 'c 1 'a 4 'd 2 'b 5 'e #:key-comparator natural<=>))}
+
+
+@defproc[(entry-sequence->sorted-map
+          [entries (sequence/c entry?)]
+          [#:key-comparator key-comparator comparator?])
+         immutable-sorted-map?]{
+
+ Constructs an immutable @tech{sorted map} containing each mapping in @racket[entries], with keys
+ sorted by @racket[key-comparator]. The input @racket[entries] may be given in any order. Duplicate
+ keys (as in, keys that @racket[key-comparator] considers equivalent) are disallowed and result in a
+ contract error.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define h (hash 3 'c 1 'a 4 'd 2 'b 5 'e)))
+   
+   (entry-sequence->sorted-map (in-hash-entries h) #:key-comparator natural<=>))}
+
+
+@defproc[(into-sorted-map [key-comparator comparator?]) (reducer/c entry? immutable-sorted-map?)]{
+
+ Returns a @tech{reducer} that reduces a sequence of entries into an immutable @tech{sorted map},
+ where keys are sorted by @racket[key-comparator]. Duplicate keys (as in, keys that
+ @racket[key-comparator] considers equivalent) are disallowed and result in a contract error.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define h (hash 3 'c 1 'a 4 'd 2 'b 5 'e)))
+   
+   (transduce (in-hash-entries h) #:into (into-sorted-map natural<=>)))}
 
 
 @section{Iterating Sorted Maps}
