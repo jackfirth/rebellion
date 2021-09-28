@@ -12,6 +12,8 @@
  (contract-out
   [list-gap-index-before (-> list-gap? (option/c natural?))]
   [list-gap-index-after (-> list-gap? (option/c natural?))]
+  [map-gap-key-before (-> map-gap? option?)]
+  [map-gap-key-after (-> map-gap? option?)]
   [vector-binary-search
    (->* (vector? any/c #:comparator comparator?) (natural? natural?) (or/c list-position? list-gap?))]
   [vector-binary-search-cut
@@ -82,6 +84,14 @@
 (struct map-gap (index entry-before entry-after)
   #:transparent
   #:guard (struct-guard/c natural? (option/c entry?) (option/c entry?)))
+
+
+(define (map-gap-key-before gap)
+  (option-map (map-gap-entry-before gap) entry-key))
+
+
+(define (map-gap-key-after gap)
+  (option-map (map-gap-entry-after gap) entry-key))
 
 
 ;; Searches vec for an element for which the search function returns the `equivalent` constant, then

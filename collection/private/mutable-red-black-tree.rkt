@@ -9,23 +9,31 @@
   [mutable-red-black-tree? predicate/c]
   [make-mutable-red-black-tree (-> comparator? mutable-red-black-tree?)]
   [mutable-red-black-tree-size (-> mutable-red-black-tree? natural?)]
-  [mutable-red-black-tree-comparator (-> mutable-red-black-tree? comparator?)]
-  [mutable-red-black-tree-contains? (-> mutable-red-black-tree? any/c boolean?)]
-  [mutable-red-black-tree-least-element (-> mutable-red-black-tree? option?)]
-  [mutable-red-black-tree-greatest-element (-> mutable-red-black-tree? option?)]
-  [mutable-red-black-tree-element-less-than (-> mutable-red-black-tree? any/c option?)]
-  [mutable-red-black-tree-element-greater-than (-> mutable-red-black-tree? any/c option?)]
-  [mutable-red-black-tree-element-at-most (-> mutable-red-black-tree? any/c option?)]
-  [mutable-red-black-tree-element-at-least (-> mutable-red-black-tree? any/c option?)]
-  [mutable-red-black-tree-add! (-> mutable-red-black-tree? any/c void?)]
+  [mutable-red-black-tree-key-comparator (-> mutable-red-black-tree? comparator?)]
+  [mutable-red-black-tree-contains-key? (-> mutable-red-black-tree? any/c boolean?)]
+  [mutable-red-black-tree-least-key (-> mutable-red-black-tree? option?)]
+  [mutable-red-black-tree-greatest-key (-> mutable-red-black-tree? option?)]
+  [mutable-red-black-tree-key-less-than (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-key-greater-than (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-key-at-most (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-key-at-least (-> mutable-red-black-tree? any/c option?)]
+  [mutable-red-black-tree-put! (-> mutable-red-black-tree? any/c any/c void?)]
   [mutable-red-black-tree-remove! (-> mutable-red-black-tree? any/c void?)]
   [mutable-red-black-tree-clear! (-> mutable-red-black-tree? void?)]
-  [mutable-red-black-tree-elements (-> mutable-red-black-tree? list?)]
+  [mutable-red-black-tree-entries (-> mutable-red-black-tree? list?)]
   [mutable-red-black-subtree-size (-> mutable-red-black-tree? range? natural?)]
   [mutable-red-black-subtree-clear! (-> mutable-red-black-tree? range? void?)]
   [in-mutable-red-black-tree
+   (->* (mutable-red-black-tree?) (#:descending? boolean?) (sequence/c entry?))]
+  [in-mutable-red-black-tree-keys
+   (->* (mutable-red-black-tree?) (#:descending? boolean?) (sequence/c any/c))]
+  [in-mutable-red-black-tree-values
    (->* (mutable-red-black-tree?) (#:descending? boolean?) (sequence/c any/c))]
   [in-mutable-red-black-subtree
+   (->* (mutable-red-black-tree? range?) (#:descending? boolean?) (sequence/c entry?))]
+  [in-mutable-red-black-subtree-keys
+   (->* (mutable-red-black-tree? range?) (#:descending? boolean?) (sequence/c any/c))]
+  [in-mutable-red-black-subtree-values
    (->* (mutable-red-black-tree? range?) (#:descending? boolean?) (sequence/c any/c))]))
 
 
@@ -40,6 +48,7 @@
          rebellion/base/option
          rebellion/base/range
          (submod rebellion/base/range private-for-rebellion-only)
+         rebellion/collection/entry
          rebellion/collection/private/vector-binary-search
          rebellion/private/cut
          rebellion/private/guarded-block
@@ -80,7 +89,8 @@
    [left-child #:mutable]
    [right-child #:mutable]
    [color #:mutable]
-   [element #:mutable]
+   [key #:mutable]
+   [value #:mutable]
    [size #:mutable])
   
   #:constructor-name constructor:mutable-red-black-node
@@ -92,15 +102,20 @@
       (λ (this)
         (list
          (mutable-red-black-node-color this)
-         (mutable-red-black-node-element this)
+         (mutable-red-black-node-key this)
+         (mutable-red-black-node-value this)
          (mutable-red-black-node-left-child this)
          (mutable-red-black-node-right-child this)))))]
 
   #:property prop:custom-print-quotable 'never)
 
 
-(define (make-mutable-red-black-node element)
-  (constructor:mutable-red-black-node #false #false #false red element 1))
+(define (make-mutable-red-black-node key value)
+  (constructor:mutable-red-black-node #false #false #false red key value 1))
+
+
+(define (mutable-red-black-node-entry node)
+  (entry (mutable-red-black-node-key node) (mutable-red-black-node-value node)))
 
 
 (define (mutable-red-black-node-child node direction)
@@ -151,7 +166,7 @@
         (loop (mutable-red-black-node-parent incorrectly-sized-node))))))
 
 
-(struct mutable-red-black-tree (comparator [root-node #:mutable])
+(struct mutable-red-black-tree (key-comparator [root-node #:mutable])
   #:constructor-name constructor:mutable-red-black-tree)
 
 
@@ -170,16 +185,16 @@
   (define (recur node)
     (in-mutable-red-black-tree-node node #:descending? descending?))
   
-  (define element (mutable-red-black-node-element node))
+  (define entry (mutable-red-black-node-entry node))
   (define true-left (mutable-red-black-node-left-child node))
   (define true-right (mutable-red-black-node-right-child node))
   (define left (if descending? true-right true-left))
   (define right (if descending? true-left true-right))
   (cond
-    [(and left right) (sequence-append (recur left) (stream element) (recur right))]
-    [left (sequence-append (recur left) (stream element))]
-    [right (sequence-append (stream element) (recur right))]
-    [else (stream element)]))
+    [(and left right) (sequence-append (recur left) (stream entry) (recur right))]
+    [left (sequence-append (recur left) (stream entry))]
+    [right (sequence-append (stream entry) (recur right))]
+    [else (stream entry)]))
 
 
 ;; Mutable-Red-Black-Tree -> (Sequence Any)
@@ -190,15 +205,25 @@
     (if root (in-mutable-red-black-tree-node root #:descending? descending?) (stream)))))
 
 
+(define (in-mutable-red-black-tree-keys tree #:descending? [descending? #false])
+  (for/stream ([e (in-mutable-red-black-tree tree #:descending? descending?)])
+    (entry-key e)))
+
+
+(define (in-mutable-red-black-tree-values tree #:descending? [descending? #false])
+  (for/stream ([e (in-mutable-red-black-tree tree #:descending? descending?)])
+    (entry-value e)))
+
+
 ;; Mutable-Red-Black-Node -> (Sequence Any)
 (define/guard (in-mutable-red-black-subtree-node
-               node element-range #:descending? [descending? #false])
+               node key-range #:descending? [descending? #false])
 
   (define (recur node)
-    (in-mutable-red-black-subtree-node node element-range #:descending? descending?))
+    (in-mutable-red-black-subtree-node node key-range #:descending? descending?))
   
-  (define element (mutable-red-black-node-element node))
-  (define range-comparison (range-compare-to-value element-range element))
+  (define key (mutable-red-black-node-key node))
+  (define range-comparison (range-compare-to-value key-range key))
   (define true-left
     (and (not (equal? range-comparison greater)) (mutable-red-black-node-left-child node)))
   (define true-right
@@ -207,37 +232,50 @@
   (define right (if descending? true-left true-right))
   (define left-stream (if left (stream* (recur left)) (stream)))
   (define right-stream (if right (stream* (recur right)) (stream)))
-  (define element-stream (if (equal? range-comparison equivalent) (stream element) (stream)))
-  (sequence-append left-stream element-stream right-stream))
+  (define entry-stream
+    (if (equal? range-comparison equivalent)
+        (stream (entry key (mutable-red-black-node-value node)))
+        (stream)))
+  (sequence-append left-stream entry-stream right-stream))
 
 
 ;; Mutable-Red-Black-Tree -> (Sequence Any)
-(define (in-mutable-red-black-subtree tree element-range #:descending? [descending? #false])
+(define (in-mutable-red-black-subtree tree key-range #:descending? [descending? #false])
   (stream*
    (block
     (define root (mutable-red-black-tree-root-node tree))
     (if root
-        (in-mutable-red-black-subtree-node root element-range #:descending? descending?)
+        (in-mutable-red-black-subtree-node root key-range #:descending? descending?)
         (stream)))))
 
 
+(define (in-mutable-red-black-subtree-keys tree key-range #:descending? [descending? #false])
+  (for/stream ([e (in-mutable-red-black-subtree tree key-range #:descending? descending?)])
+    (entry-key e)))
+
+
+(define (in-mutable-red-black-subtree-values tree key-range #:descending? [descending? #false])
+  (for/stream ([e (in-mutable-red-black-subtree tree key-range #:descending? descending?)])
+    (entry-value e)))
+
+
 ;; Mutable-Red-Black-Tree -> List
-(define (mutable-red-black-tree-elements tree)
+(define (mutable-red-black-tree-entries tree)
   (sequence->list (in-mutable-red-black-tree tree)))
 
 
-(define (mutable-red-black-tree-contains? tree element)
-  (define cmp (mutable-red-black-tree-comparator tree))
-  (and (contract-first-order-passes? (comparator-operand-contract cmp) element)
-       (mutable-red-black-tree-get-node tree element)
+(define (mutable-red-black-tree-contains-key? tree key)
+  (define cmp (mutable-red-black-tree-key-comparator tree))
+  (and (contract-first-order-passes? (comparator-operand-contract cmp) key)
+       (mutable-red-black-tree-get-node tree key)
        #true))
 
 
-(define (mutable-red-black-subtree-size tree element-range)
-  (define lower (range-lower-cut element-range))
-  (define upper (range-upper-cut element-range))
-  (- (list-gap-index (mutable-red-black-tree-binary-search-cut tree upper))
-     (list-gap-index (mutable-red-black-tree-binary-search-cut tree lower))))
+(define (mutable-red-black-subtree-size tree key-range)
+  (define lower (range-lower-cut key-range))
+  (define upper (range-upper-cut key-range))
+  (- (map-gap-index (mutable-red-black-tree-binary-search-cut tree upper))
+     (map-gap-index (mutable-red-black-tree-binary-search-cut tree lower))))
 
 
 (define (mutable-red-black-tree-rotate! tree subtree-root direction)
@@ -278,30 +316,30 @@
      (name mutable-red-black-tree-rotate!)
      "tree rotation did not correctly preserve tree size"
      "tree" tree
-     "new subtree root element" (mutable-red-black-node-element new-subtree-root))))
+     "new subtree root key" (mutable-red-black-node-key new-subtree-root))))
 
 
-(define (mutable-red-black-tree-add! tree element)
-  (unless (mutable-red-black-tree-contains? tree element)
-    (mutable-red-black-tree-insert! tree element)))
+(define (mutable-red-black-tree-put! tree key value)
+  (unless (mutable-red-black-tree-contains-key? tree key)
+    (mutable-red-black-tree-insert! tree key value)))
 
 
 ;; Mutable-Red-Black-Tree Any -> Void
 ;; Inserts an element into a red-black tree. The element must not already be present in the tree.
-(define/guard (mutable-red-black-tree-insert! tree element)
-  (define element<=> (mutable-red-black-tree-comparator tree))
-  (define parent (mutable-red-black-tree-insertion-parent tree element))
+(define/guard (mutable-red-black-tree-insert! tree key value)
+  (define key<=> (mutable-red-black-tree-key-comparator tree))
+  (define parent (mutable-red-black-tree-insertion-parent tree key))
   (guard parent else
-    (set-mutable-red-black-tree-root-node! tree (make-mutable-red-black-node element)))
+    (set-mutable-red-black-tree-root-node! tree (make-mutable-red-black-node key value)))
   (define direction
-    (match (compare element<=> (mutable-red-black-node-element parent) element)
+    (match (compare key<=> (mutable-red-black-node-key parent) key)
       [(== equivalent)
        (raise-arguments-error
         (name mutable-red-black-tree-insert!)
-        "cannot insert element, tree already contains an equivalent element")]
+        "cannot insert key, tree already contains an equivalent key")]
       [(== lesser) right]
       [(== greater) left]))
-  (define node (make-mutable-red-black-node element))
+  (define node (make-mutable-red-black-node key value))
   (mutable-red-black-node-link-child! parent node direction)
   
   (define/guard (rebalancing-loop node parent)
@@ -357,17 +395,17 @@
 
 
 ;; Mutable-Red-Black-Tree Any -> (U Mutable-Red-Black-Node False)
-(define (mutable-red-black-tree-insertion-parent tree element)
-  (define element<=> (mutable-red-black-tree-comparator tree))
+(define (mutable-red-black-tree-insertion-parent tree key)
+  (define key<=> (mutable-red-black-tree-key-comparator tree))
   (define node (mutable-red-black-tree-root-node tree))
   
   (define (loop node)
     (define next-direction
-      (match (compare element<=> (mutable-red-black-node-element node) element)
+      (match (compare key<=> (mutable-red-black-node-key node) key)
         [(== equivalent)
          (raise-arguments-error
           (name mutable-red-black-tree-insertion-parent)
-          "cannot insert element, tree already contains an equivalent element")]
+          "cannot insert key, tree already contains an equivalent key")]
         [(== lesser) right]
         [(== greater) left]))
     (define next-node (mutable-red-black-node-child node next-direction))
@@ -376,8 +414,8 @@
   (and node (loop node)))
 
 
-(define/guard (mutable-red-black-tree-remove! tree element)
-  (define node (mutable-red-black-tree-get-node tree element))
+(define/guard (mutable-red-black-tree-remove! tree key)
+  (define node (mutable-red-black-tree-get-node tree key))
   (guard node else
     (void))
   (mutable-red-black-tree-remove-node! tree node))
@@ -503,63 +541,64 @@
   (rebalancing-loop node parent dir))
 
 
-(define (mutable-red-black-tree-least-element tree)
+(define (mutable-red-black-tree-least-key tree)
   (define root (mutable-red-black-tree-root-node tree))
-  (if root (present (mutable-red-black-node-element (mutable-red-black-node-min-child root))) absent))
+  (if root (present (mutable-red-black-node-key (mutable-red-black-node-min-child root))) absent))
 
 
-(define (mutable-red-black-tree-greatest-element tree)
+(define (mutable-red-black-tree-greatest-key tree)
   (define root (mutable-red-black-tree-root-node tree))
-  (if root (present (mutable-red-black-node-element (mutable-red-black-node-max-child root))) absent))
+  (if root (present (mutable-red-black-node-key (mutable-red-black-node-max-child root))) absent))
 
 
-(define (mutable-red-black-tree-element-less-than tree upper-bound)
-  (list-gap-element-before (mutable-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
+(define (mutable-red-black-tree-key-less-than tree upper-bound)
+  (map-gap-key-before (mutable-red-black-tree-binary-search-cut tree (lower-cut upper-bound))))
 
 
-(define (mutable-red-black-tree-element-greater-than tree lower-bound)
-  (list-gap-element-after (mutable-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
+(define (mutable-red-black-tree-key-greater-than tree lower-bound)
+  (map-gap-key-after (mutable-red-black-tree-binary-search-cut tree (upper-cut lower-bound))))
 
 
-(define (mutable-red-black-tree-element-at-most tree upper-bound)
-  (list-gap-element-before (mutable-red-black-tree-binary-search-cut tree (upper-cut upper-bound))))
+(define (mutable-red-black-tree-key-at-most tree upper-bound)
+  (map-gap-key-before (mutable-red-black-tree-binary-search-cut tree (upper-cut upper-bound))))
 
 
-(define (mutable-red-black-tree-element-at-least tree lower-bound)
-  (list-gap-element-after (mutable-red-black-tree-binary-search-cut tree (lower-cut lower-bound))))
+(define (mutable-red-black-tree-key-at-least tree lower-bound)
+  (map-gap-key-after (mutable-red-black-tree-binary-search-cut tree (lower-cut lower-bound))))
 
 
 (define (mutable-red-black-tree-generalized-binary-search tree search-function)
 
   (define/guard (loop [node (mutable-red-black-tree-root-node tree)]
                       [min-start-index 0]
-                      [lower-element absent]
-                      [upper-element absent])
+                      [lower-entry absent]
+                      [upper-entry absent])
     (guard node else
-      (list-gap min-start-index lower-element upper-element))
-    (define element (mutable-red-black-node-element node))
+      (map-gap min-start-index lower-entry upper-entry))
+    (define key (mutable-red-black-node-key node))
+    (define value (mutable-red-black-node-value node))
     (define left (mutable-red-black-node-left-child node))
-    (define right (mutable-red-black-node-right-child node))
-    (match (search-function element)
+    (match (search-function key)
       [(== lesser)
        (define left-size (if left (mutable-red-black-node-size left) 0))
-       (loop right (+ min-start-index left-size 1) (present element) upper-element)]
+       (define right (mutable-red-black-node-right-child node))
+       (loop right (+ min-start-index left-size 1) (present (entry key value)) upper-entry)]
       [(== greater)
-       (loop left min-start-index lower-element (present element))]
+       (loop left min-start-index lower-entry (present (entry key value)))]
       [(== equivalent)
        (define left-size (if left (mutable-red-black-node-size left) 0))
-       (list-position (+ min-start-index left-size) element)]))
+       (map-position (+ min-start-index left-size) key value)]))
 
   (loop))
 
 
-(define (mutable-red-black-tree-binary-search tree element)
-  (define cmp (mutable-red-black-tree-comparator tree))
-  (mutable-red-black-tree-generalized-binary-search tree (λ (x) (compare cmp x element))))
+(define (mutable-red-black-tree-binary-search tree key)
+  (define key<=> (mutable-red-black-tree-key-comparator tree))
+  (mutable-red-black-tree-generalized-binary-search tree (λ (x) (compare key<=> x key))))
 
 
 (define (mutable-red-black-tree-binary-search-cut tree cut)
-  (define cut-cmp (cut<=> (mutable-red-black-tree-comparator tree)))
+  (define cut-cmp (cut<=> (mutable-red-black-tree-key-comparator tree)))
   (mutable-red-black-tree-generalized-binary-search
    tree (λ (c) (compare cut-cmp (middle-cut c) cut))))
 
@@ -575,20 +614,24 @@
 
 
 (define (mutable-red-black-node-swap-contents! first-node second-node)
-  (define first-element (mutable-red-black-node-element first-node))
-  (define second-element (mutable-red-black-node-element second-node))
-  (set-mutable-red-black-node-element! first-node second-element)
-  (set-mutable-red-black-node-element! second-node first-element))
+  (define first-key (mutable-red-black-node-key first-node))
+  (define second-key (mutable-red-black-node-key second-node))
+  (set-mutable-red-black-node-key! first-node second-key)
+  (set-mutable-red-black-node-key! second-node first-key)
+  (define first-value (mutable-red-black-node-value first-node))
+  (define second-value (mutable-red-black-node-value second-node))
+  (set-mutable-red-black-node-value! first-node second-value)
+  (set-mutable-red-black-node-value! second-node first-value))
 
 
-(define (mutable-red-black-tree-get-node tree element)
-  (define element<=> (mutable-red-black-tree-comparator tree))
+(define (mutable-red-black-tree-get-node tree key)
+  (define key<=> (mutable-red-black-tree-key-comparator tree))
   (define node (mutable-red-black-tree-root-node tree))
     
   (define/guard (loop node)
     (guard node else
       #false)
-    (match (compare element<=> (mutable-red-black-node-element node) element)
+    (match (compare key<=> (mutable-red-black-node-key node) key)
       [(== equivalent) node]
       [(== lesser) (loop (mutable-red-black-node-right-child node))]
       [(== greater) (loop (mutable-red-black-node-left-child node))]))
@@ -600,13 +643,13 @@
   (set-mutable-red-black-tree-root-node! tree #false))
 
 
-(define (mutable-red-black-subtree-clear! tree element-range)
+(define (mutable-red-black-subtree-clear! tree key-range)
   ;; There's definitely a faster algorithm for this than just collecting all the elements into a list
   ;; and removing them one at a time. But this works fine for now, and it has the advantages of being
   ;; simple, easy to implement, and obviously correct.
-  (define elements (sequence->list (in-mutable-red-black-subtree tree element-range)))
-  (for ([element (in-list elements)])
-    (mutable-red-black-tree-remove! tree element)))
+  (define keys (sequence->list (in-mutable-red-black-subtree-keys tree key-range)))
+  (for ([key (in-list keys)])
+    (mutable-red-black-tree-remove! tree key)))
   
   
 (module+ test
@@ -671,214 +714,223 @@
       
     (test-case "insert one element into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 5)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries (list (entry 5 'a))))
       
     (test-case "insert two ascending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 10)
+      (mutable-red-black-tree-insert! tree 10 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 5 10)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries (list (entry 5 'a) (entry 10 'b))))
     
     (test-case "insert two descending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 2 5)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries (list (entry 2 'b) (entry 5 'a))))
       
     (test-case "insert many ascending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 1 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 3 'c)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 4)
+      (mutable-red-black-tree-insert! tree 4 'd)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'e)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries (list (entry 1 'a) (entry 2 'b) (entry 3 'c) (entry 4 'd) (entry 5 'e))))
       
     (test-case "insert many descending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 4)
+      (mutable-red-black-tree-insert! tree 4 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 3 'c)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'd)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 1 'e)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries (list (entry 1 'e) (entry 2 'd) (entry 3 'c) (entry 4 'b) (entry 5 'a))))
       
     (test-case "insert ascending and descending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 3 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 1 'c)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries (list (entry 1 'c) (entry 2 'a) (entry 3 'b))))
       
     (test-case "insert many ascending and descending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 3 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 1 'c)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 4)
+      (mutable-red-black-tree-insert! tree 4 'd)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'e)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries (list (entry 1 'c) (entry 2 'e) (entry 3 'a) (entry 4 'd) (entry 5 'b))))
       
     (test-case "insert repeatedly ascending then descending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 1 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 7)
+      (mutable-red-black-tree-insert! tree 7 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'c)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 6)
+      (mutable-red-black-tree-insert! tree 6 'd)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 3 'e)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'f)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 4)
+      (mutable-red-black-tree-insert! tree 4 'g)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5 6 7)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal?
+       entries
+       (list
+        (entry 1 'a) (entry 2 'c) (entry 3 'e) (entry 4 'g) (entry 5 'f) (entry 6 'd) (entry 7 'b))))
       
     (test-case "insert repeatedly descending then ascending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 7)
+      (mutable-red-black-tree-insert! tree 7 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 1 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 6)
+      (mutable-red-black-tree-insert! tree 6 'c)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'd)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'e)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 3 'f)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 4)
+      (mutable-red-black-tree-insert! tree 4 'g)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5 6 7)))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal?
+       entries
+       (list
+        (entry 1 'b) (entry 2 'd) (entry 3 'f) (entry 4 'g) (entry 5 'e) (entry 6 'c) (entry 7 'a))))
       
     (test-case "insert many ascending elements then many descending elements into empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 4)
+      (mutable-red-black-tree-insert! tree 4 'a)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 5)
+      (mutable-red-black-tree-insert! tree 5 'b)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 6)
+      (mutable-red-black-tree-insert! tree 6 'c)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 7)
+      (mutable-red-black-tree-insert! tree 7 'd)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 3 'e)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 2)
+      (mutable-red-black-tree-insert! tree 2 'f)
       (mutable-red-black-tree-check-invariants tree)
-      (mutable-red-black-tree-insert! tree 1)
+      (mutable-red-black-tree-insert! tree 1 'g)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements (list 1 2 3 4 5 6 7))))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal?
+       entries
+       (list
+        (entry 1 'g) (entry 2 'f) (entry 3 'e) (entry 4 'a) (entry 5 'b) (entry 6 'c) (entry 7 'd)))))
     
   (test-case (name-string mutable-red-black-tree-clear!)
       
     (test-case "clear should do nothing to an empty tree"
       (define tree (make-mutable-red-black-tree natural<=>))
       (mutable-red-black-tree-clear! tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements '()))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries '()))
       
     (test-case "clear should remove all elements from a tree"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 1 'a)
+      (mutable-red-black-tree-insert! tree 2 'b)
+      (mutable-red-black-tree-insert! tree 3 'c)
       (mutable-red-black-tree-clear! tree)
       (mutable-red-black-tree-check-invariants tree)
-      (define elements (mutable-red-black-tree-elements tree))
-      (check-equal? elements '()))
+      (define entries (mutable-red-black-tree-entries tree))
+      (check-equal? entries '()))
       
     (test-case "clear should set size to zero"
       (define tree (make-mutable-red-black-tree natural<=>))
-      (mutable-red-black-tree-insert! tree 1)
-      (mutable-red-black-tree-insert! tree 2)
-      (mutable-red-black-tree-insert! tree 3)
+      (mutable-red-black-tree-insert! tree 1 'a)
+      (mutable-red-black-tree-insert! tree 2 'b)
+      (mutable-red-black-tree-insert! tree 3 'c)
       (mutable-red-black-tree-clear! tree)
       (mutable-red-black-tree-check-invariants tree)
       (check-equal? (mutable-red-black-tree-size tree) 0)))
 
   (test-case "permutation test"
     (for* ([max-size (in-range 1 6)]
-           [elements (in-value (range 1 (add1 max-size)))]
-           [insertion-order (in-permutations elements)]
-           [deletion-order (in-permutations elements)])
+           [keys (in-value (range 1 (add1 max-size)))]
+           [insertion-order (in-permutations keys)]
+           [deletion-order (in-permutations keys)])
       (define tree (make-mutable-red-black-tree natural<=>))
       (with-check-info (['tree tree])
 
-        (for/fold ([inserted-elements '()]
+        (for/fold ([inserted-keys '()]
                    #:result (void))
-                  ([element (in-list insertion-order)]
-                   [inserted-element-count (in-naturals 1)])
-          (mutable-red-black-tree-insert! tree element)
-          (let ([inserted-elements (append inserted-elements (list element))])
-            (with-check-info (['inserted-elements inserted-elements])
+                  ([key (in-list insertion-order)]
+                   [inserted-key-count (in-naturals 1)])
+          (mutable-red-black-tree-insert! tree key #false)
+          (let ([inserted-keys (append inserted-keys (list key))])
+            (with-check-info (['inserted-keys inserted-keys])
 
               (mutable-red-black-tree-check-invariants tree)
 
               (check-equal?
-               (mutable-red-black-tree-elements tree)
-               (sort inserted-elements <)
-               "inserted elements should appear in sorted order when the tree is iterated")
+               (map entry-key (mutable-red-black-tree-entries tree))
+               (sort inserted-keys <)
+               "inserted keys should appear in sorted order when the tree is iterated")
 
-              (check-equal? (mutable-red-black-tree-size tree) inserted-element-count
-                            "inserting an element should increase the tree's size")
+              (check-equal? (mutable-red-black-tree-size tree) inserted-key-count
+                            "inserting a key should increase the tree's size")
             
-              inserted-elements)))
+              inserted-keys)))
 
-        (with-check-info (['inserted-elements insertion-order])
-          (for/fold ([remaining-elements elements]
-                     [deleted-elements '()]
+        (with-check-info (['inserted-keys insertion-order])
+          (for/fold ([remaining-keys keys]
+                     [deleted-keys '()]
                      #:result (void))
-                    ([element (in-list deletion-order)]
-                     [deleted-element-count (in-naturals 1)])
-            (mutable-red-black-tree-remove! tree element)
-            (let ([remaining-elements (remove element remaining-elements)]
-                  [deleted-elements (append deleted-elements (list element))])
-              (with-check-info (['deleted-elements deleted-elements])
+                    ([key (in-list deletion-order)]
+                     [deleted-key-count (in-naturals 1)])
+            (mutable-red-black-tree-remove! tree key)
+            (let ([remaining-keys (remove key remaining-keys)]
+                  [deleted-keys (append deleted-keys (list key))])
+              (with-check-info (['deleted-keys deleted-keys])
 
                 (mutable-red-black-tree-check-invariants tree)
 
-                (check-equal? (mutable-red-black-tree-elements tree) remaining-elements
-                              "removed elements should no longer appear when the tree is iterated")
+                (check-equal? (map entry-key (mutable-red-black-tree-entries tree)) remaining-keys
+                              "removed keys should no longer appear when the tree is iterated")
 
-                (check-equal? (mutable-red-black-tree-size tree) (- max-size deleted-element-count)
-                              "removing an element should decrease the tree's size")
+                (check-equal? (mutable-red-black-tree-size tree) (- max-size deleted-key-count)
+                              "removing a key should decrease the tree's size")
 
-                (values remaining-elements deleted-elements)))))))))
+                (values remaining-keys deleted-keys)))))))))
