@@ -5,6 +5,7 @@
 
 
 (provide
+ (all-from-out rebellion/collection/private/sorted-map-builder)
  (all-from-out rebellion/collection/private/sorted-map-interface)
  (contract-out
   [sorted-map (-> #:key-comparator comparator? any/c ... immutable-sorted-map?)]))
@@ -14,6 +15,7 @@
          racket/sequence
          rebellion/base/comparator
          rebellion/base/result
+         rebellion/collection/private/sorted-map-builder
          rebellion/collection/private/sorted-map-interface
          (submod rebellion/collection/private/persistent-sorted-map private-for-rebellion-only)
          rebellion/private/static-name)
@@ -28,18 +30,10 @@
 
 
 (define (sorted-map #:key-comparator key-comparator . entries)
-  (for/fold ([map (empty-sorted-map key-comparator)])
+  (for/fold ([builder (make-sorted-map-builder key-comparator)] #:result (build-sorted-map builder))
             ([e (in-slice 2 entries)])
     (match-define (list key value) e)
-    (match (sorted-map-put-if-absent map key value)
-      [(success new-map) new-map]
-      [(failure previous-value)
-       (raise-arguments-error
-        (name sorted-map)
-        "duplicate keys not allowed"
-        "key" key
-        "value1" previous-value
-        "value2" value)])))
+    (sorted-map-builder-put builder key value)))
 
 
 (module+ test

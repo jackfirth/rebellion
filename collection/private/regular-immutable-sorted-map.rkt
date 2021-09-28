@@ -14,7 +14,9 @@
    (contract-out
     [regular-immutable-sorted-map? predicate/c]
     [make-regular-immutable-sorted-map
-     (-> (sequence/c entry?) comparator? immutable-sorted-map?)])))
+     (-> (sequence/c entry?) comparator? immutable-sorted-map?)]
+    [constructor:regular-immutable-sorted-map
+     (-> (and/c vector? immutable?) (and/c vector? immutable?) comparator? immutable-sorted-map?)])))
 
 
 (require racket/contract/combinator

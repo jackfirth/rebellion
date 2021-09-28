@@ -21,6 +21,7 @@
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'rebellion/base/comparator
+                   'rebellion/collection/entry
                    'rebellion/collection/sorted-map)
     #:private (list 'racket/base)))
 
@@ -420,3 +421,79 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Removes all entries from @racket[map]. On its own this operation isn't all that useful, but it can be
  composed with @racket[sorted-submap] to delete a range within a sorted map.}
+
+
+@section{Sorted Map Builders}
+
+
+A @deftech{sorted map builder} is a mutable object that can create sorted maps. Entries can be added
+to a builder incrementally with @racket[sorted-map-builder-put], and immutable sorted maps can be
+built from a builder with @racket[build-sorted-map]. Builders can be reused --- a single builder can
+build many sorted maps, and entries can be added to the builder after its already built maps. Each
+built map is a supermap of the maps built before it. Creating a sorted map with a builder will usually
+lead to faster performance than creating an empty sorted map and repeatedly insesrting elements into
+it.
+
+
+@defproc[(sorted-map-builder? [v any/c]) boolean?]{
+
+ A predicate for @tech{sorted map builders}.}
+
+
+@defproc[(make-sorted-map-builder [key-comparator comparator?]) sorted-map-builder?]{
+
+ Creates a new @tech{sorted map builder} that builds maps sorted by @racket[key-comparator].}
+
+
+@defproc[(sorted-map-builder-put [builder sorted-map-builder?] [key any/c] [value any/c])
+         sorted-map-builder?]{
+
+ Adds an entry mapping @racket[key] to @racket[value] in the built map, then returns @racket[builder].
+ @bold{This mutates the builder!} The builder is returned as a convenience to the caller when used
+ with operations like @racket[for/fold]. Duplicate keys are not allowed, and will cause
+ @racket[build-sorted-map] to fail.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define builder (make-sorted-map-builder natural<=>)))
+
+   (sorted-map-builder-put builder 7 'c)
+   (sorted-map-builder-put builder 2 'a)
+   (sorted-map-builder-put builder 5 'b)
+   (build-sorted-map builder))}
+
+
+@defproc[(sorted-map-builder-put-all [builder sorted-map-builder?] [entries (sequence/c entry?)])
+         sorted-map-builder?]{
+
+ Adds @racket[entries] to @racket[builder], then returns @racket[builder].
+ @bold{This mutates the builder!} The builder is returned as a convenience to the caller when used
+ with operations like @racket[for/fold]. Duplicate keys are not allowed, and will cause
+ @racket[build-sorted-map] to fail.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define builder (make-sorted-map-builder natural<=>)))
+
+   (sorted-map-builder-put-all builder (list (entry 1 'a) (entry 3 'c) (entry 2 'b)))
+   (build-sorted-map builder))}
+
+
+@defproc[(build-sorted-map [builder sorted-map-builder?]) immutable-sorted-map?]{
+
+ Builds an immutable @tech{sorted map} from the contents of @racket[builder], sorted according to the
+ key comparator used by @racket[builder]. Does not mutate @racket[builder] in any way, and
+ @racket[builder] can still be used to build additional sorted maps afterwards.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define builder (make-sorted-map-builder natural<=>)))
+
+   (for/fold ([builder (make-sorted-map-builder natural<=>)]
+              #:result (build-sorted-map builder))
+             ([char (in-string "hello")]
+              [i (in-naturals)])
+     (sorted-map-builder-put builder i char)))}
