@@ -179,8 +179,9 @@ initialized.
                (listof (cons/c struct-type-property? any/c)))
            default-wrapper-properties]
           [#:guard-maker guard-maker
-           (-> uninitialized-wrapper-descriptor?
-               (-> any/c any/c))]
+           (or/c #f
+                 (-> uninitialized-wrapper-descriptor?
+                     (-> any/c any/c)))]
           [#:inspector inspector inspector? (current-inspector)])
          initialized-wrapper-descriptor?]{
  Implements @racket[type] and returns a @tech{type descriptor} for the new
