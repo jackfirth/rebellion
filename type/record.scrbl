@@ -143,6 +143,10 @@ obvious order to those pieces.
 
    (color-set yellow #:red 255 #:green 0))}
 
+@defform[#:kind "provide transformer" (record-out record)]{
+ Provides @racket[record], which must be a @racket[record-id], along with
+ its descriptor, predicate, constructor, accessor and all of its field accessors.}
+
 @section{Record Type Information}
 
 @defproc[(record-type? [v any/c]) boolean?]{
