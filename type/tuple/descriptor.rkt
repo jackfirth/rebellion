@@ -1,6 +1,6 @@
 #lang racket/base
 
-(require racket/contract/base)
+(require racket/contract/base racket/contract/region)
 
 (provide
  (contract-out
@@ -27,7 +27,9 @@
          #:inspector inspector?
          #:property-maker
          (-> uninitialized-tuple-descriptor?
-             (listof (cons/c struct-type-property? any/c))))
+             (listof (cons/c struct-type-property? any/c)))
+         #:guard-maker
+         (or/c #f (-> uninitialized-tuple-descriptor? procedure?)))
         initialized-tuple-descriptor?)]
   [uninitialized-tuple-descriptor? (-> any/c boolean?)]
   [tuple-impersonate
@@ -36,15 +38,18 @@
          [descriptor initialized-tuple-descriptor?])
         (#:properties [properties impersonator-property-hash/c]
          #:chaperone? [chaperone? boolean?])
-        [_ (descriptor) (tuple-descriptor-predicate descriptor)])]))
+        [_ (descriptor) (tuple-descriptor-predicate descriptor)])])
+ tuple-guard-maker/c)
 
 (require racket/math
          racket/struct
+         syntax/location
          rebellion/custom-write
          rebellion/equal+hash
          rebellion/private/impersonation
          rebellion/type/tuple/base
-         rebellion/type/struct)
+         rebellion/type/struct
+         (for-syntax racket/syntax racket/base syntax/parse))
 
 (module+ test
   (require (submod "..")
@@ -160,7 +165,8 @@
          type
          #:guard [guard #f]
          #:inspector [inspector (current-inspector)]
-         #:property-maker [prop-maker default-tuple-properties])
+         #:property-maker [prop-maker default-tuple-properties]
+         #:guard-maker [guard-maker #f])
   (define (get-predicate descriptor)
     (procedure-rename (struct-descriptor-predicate descriptor)
                       (tuple-type-predicate-name type)))
@@ -170,13 +176,23 @@
   (define (get-accessor descriptor)
     (procedure-rename (struct-descriptor-accessor descriptor)
                       (tuple-type-accessor-name type)))
-  (define (struct-prop-maker descriptor)
-    (prop-maker
-     (uninitialized-tuple-descriptor
+  (define (make-uninit-descriptor descriptor)
+    (uninitialized-tuple-descriptor
       #:type type
       #:predicate (get-predicate descriptor)
       #:constructor (get-constructor descriptor)
-      #:accessor (get-accessor descriptor))))
+      #:accessor (get-accessor descriptor)))
+  (define (struct-prop-maker descriptor)
+    (prop-maker (make-uninit-descriptor descriptor)))
+  (define (make-constructor descriptor)
+    (define raw-constructor (get-constructor descriptor))
+    (if guard-maker
+        ;; ensure that arity errors are reported on the constructor rather than the guard
+        (procedure-reduce-arity
+         (compose raw-constructor (guard-maker (make-uninit-descriptor descriptor)))
+         (tuple-type-size type)
+         (object-name raw-constructor))
+        raw-constructor))
   (define descriptor
     (make-struct-implementation
      #:name (tuple-type-name type)
@@ -189,8 +205,45 @@
    #:type type
    #:backing-struct-type (struct-descriptor-type descriptor)
    #:predicate (get-predicate descriptor)
-   #:constructor (get-constructor descriptor)
+   #:constructor (make-constructor descriptor)
    #:accessor (get-accessor descriptor)))
+
+(define-syntax (tuple-guard-maker/c stx)
+  (syntax-parse stx
+    #:track-literals
+    [(_ contract-expr:expr ...)
+     (define/with-syntax ([ctc arg arg-name arg-index] ...)
+       (for/list ([ctc (syntax-e #'(contract-expr ...))]
+                  [index (in-naturals 1)])
+         (list ctc (gensym) (gensym) index)))
+     (define expected-size (length (syntax-e #'(arg ...))))
+     (quasisyntax/loc stx
+       (let ([loc (quote-srcloc #,stx)]
+             [blame-party (current-contract-region)])
+         (λ (desc)
+           (define tuple-type (tuple-descriptor-type desc))
+           (define constructor-name (tuple-type-constructor-name tuple-type))
+           #,(if (= 1 expected-size)
+                 #'(begin)
+                 #'(define-values (arg-name ...)
+                     (values (format "~a, field ~a" constructor-name arg-index) ...)))
+           (define size (tuple-type-size tuple-type))
+           (unless (= size #,expected-size)
+             (raise-arguments-error
+              'tuple-guard-maker/c
+              "tuple size mismatch;\n the expected tuple size does not match the given tuple descriptor"
+              "expected" #,expected-size
+              "given" size))
+           (λ (arg ...)
+             #,(if (= 1 expected-size)
+                   #'(contract ctc ... arg ...
+                               blame-party blame-party
+                               constructor-name loc)
+                   #'(values
+                      (contract ctc arg
+                                blame-party blame-party
+                                arg-name loc)
+                      ...))))))]))
 
 (define (make-tuple-field-accessor descriptor pos)
   (define type (tuple-descriptor-type descriptor))

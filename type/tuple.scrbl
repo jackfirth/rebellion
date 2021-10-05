@@ -70,12 +70,14 @@ represent a single logical thing, and there is an obvious order to those pieces.
    (code:line #:accessor-name accessor-id)
    (code:line #:pattern-name pattern-id)
    (code:line #:property-maker prop-maker-expr)
+   (code:line #:guard-maker guard-maker-expr)
    (code:line #:inspector inspector-expr)])
 
  #:contracts
  ([prop-maker-expr
    (-> uninitialized-tuple-descriptor?
        (listof (cons/c struct-type-property? any/c)))]
+  [guard-maker-expr (or/c #f (-> uninitialized-tuple-descriptor? procedure?))]
   [inspector-expr inspector?])]{
  Creates a new @tech{tuple type} named @racket[id] and binds the following
  identifiers:
@@ -115,9 +117,10 @@ represent a single logical thing, and there is an obvious order to those pieces.
  such as when creating a smart constructor.
 
  The @racket[prop-maker-expr] is used to add structure type properties to the
- created type, and @racket[inspector-expr] is used to determine the
- @tech/reference{inspector} that will control the created type. See
- @racket[make-tuple-implementation] for more information about these parameters.
+ created type, @racket[guard-expr] is used to attach guards to the tuple constructor
+ and @racket[inspector-expr] is used to determine the @tech/reference{inspector}
+ that will control the created type. See @racket[make-tuple-implementation]
+ for more information about these parameters.
  
  @(examples
    #:eval (make-evaluator) #:once
@@ -203,14 +206,26 @@ field in the tuple: the per-field accessors created by
   [#:property-maker prop-maker
    (-> uninitialized-tuple-descriptor?
        (listof (cons/c struct-type-property? any/c)))
-   default-tuple-properties])
+   default-tuple-properties]
+  [#:guard-maker (or/c #f (-> uninitialized-tuple-descriptor? procedure?)) #f])
  initialized-tuple-descriptor?]{
  Implements @racket[type] and returns a @tech{type descriptor} for the new
- implementation. The @racket[guard] and @racket[inspector] arguments behave the
+ implementation.
+
+ The @racket[guard] and @racket[inspector] arguments behave the
  same as the corresponding arguments of @racket[make-struct-type], although
- there are no transparent or prefab tuple types. The @racket[prop-maker]
- argument is similar to the corresponding argument of @racket[
- make-struct-implementation]. By default, tuple types are created with
+ there are no transparent or prefab tuple types.
+
+ The @racket[prop-maker] argument is similar to the corresponding argument
+ of @racket[make-struct-implementation].
+
+ The @racket[guard-maker] argument is a procedure that should accept the partially
+ constructed tuple descriptor, and must return a guard procedure. This guard
+ procedure is similar to the one in @racket[make-struct-type]: it will accept all
+ the arguments to the tuple constructor and the values it returns will be the values
+ stored in the tuple.
+
+ By default, tuple types are created with
  properties that make them print and compare in a manner similar to transparent
  structure types --- see @racket[default-tuple-properties] for details.
 
@@ -224,6 +239,13 @@ field in the tuple: the per-field accessors created by
    (point 42 888)
    (point-x (point 42 888))
    (point-y (point 42 888)))}
+
+@defform[(tuple-guard-maker/c contract-expr ...)]{
+ Returns a procedure suitable to be passed as the
+ @racket[#:guard-maker] argument to @racket[make-tuple-implementation]
+ or @racket[define-tuple-type]. The guard procedure will ensure that
+ the wrapped values are protected by @racket[contract-expr]s.
+ This is analogous to @racket[struct-guard/c].}
 
 @defproc[(tuple-descriptor-type [descriptor tuple-descriptor?]) tuple-type?]{
  Returns the @tech{tuple type} that @racket[descriptor] implements.}
