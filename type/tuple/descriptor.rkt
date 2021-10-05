@@ -212,11 +212,11 @@
   (syntax-parse stx
     #:track-literals
     [(_ contract-expr:expr ...)
-     (define/with-syntax ([ctc arg arg-name arg-index] ...)
+     (define/with-syntax ([ctc arg-sym arg-name-sym field-index] ...)
        (for/list ([ctc (syntax-e #'(contract-expr ...))]
                   [index (in-naturals 1)])
          (list ctc (gensym) (gensym) index)))
-     (define expected-size (length (syntax-e #'(arg ...))))
+     (define expected-size (length (syntax-e #'(contract-expr ...))))
      (quasisyntax/loc stx
        (let ([loc (quote-srcloc #,stx)]
              [blame-party (current-contract-region)])
@@ -225,8 +225,8 @@
            (define constructor-name (tuple-type-constructor-name tuple-type))
            #,(if (= 1 expected-size)
                  #'(begin)
-                 #'(define-values (arg-name ...)
-                     (values (format "~a, field ~a" constructor-name arg-index) ...)))
+                 #'(define-values (arg-name-sym ...)
+                     (values (format "~a, field ~a" constructor-name field-index) ...)))
            (define size (tuple-type-size tuple-type))
            (unless (= size #,expected-size)
              (raise-arguments-error
@@ -234,15 +234,15 @@
               "tuple size mismatch;\n the expected tuple size does not match the given tuple descriptor"
               "expected" #,expected-size
               "given" size))
-           (λ (arg ...)
+           (λ (arg-sym ...)
              #,(if (= 1 expected-size)
-                   #'(contract ctc ... arg ...
+                   #'(contract ctc ... arg-sym ...
                                blame-party blame-party
                                constructor-name loc)
                    #'(values
-                      (contract ctc arg
+                      (contract ctc arg-sym
                                 blame-party blame-party
-                                arg-name loc)
+                                arg-name-sym loc)
                       ...))))))]))
 
 (define (make-tuple-field-accessor descriptor pos)

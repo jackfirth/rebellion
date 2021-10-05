@@ -117,10 +117,10 @@ represent a single logical thing, and there is an obvious order to those pieces.
  such as when creating a smart constructor.
 
  The @racket[prop-maker-expr] is used to add structure type properties to the
- created type, @racket[guard-expr] is used to attach guards to the tuple constructor
- and @racket[inspector-expr] is used to determine the @tech/reference{inspector}
- that will control the created type. See @racket[make-tuple-implementation]
- for more information about these parameters.
+ created type, @racket[guard-maker-expr] is used to create the guard procedure, and
+ @racket[inspector-expr] is used to determine the @tech/reference{inspector} that
+ will control the created type. See @racket[make-tuple-implementation] for more
+ information about these parameters.
  
  @(examples
    #:eval (make-evaluator) #:once
@@ -207,7 +207,8 @@ field in the tuple: the per-field accessors created by
    (-> uninitialized-tuple-descriptor?
        (listof (cons/c struct-type-property? any/c)))
    default-tuple-properties]
-  [#:guard-maker (or/c #f (-> uninitialized-tuple-descriptor? procedure?)) #f])
+  [#:guard-maker guard-maker
+   (or/c #f (-> uninitialized-tuple-descriptor? procedure?)) #f])
  initialized-tuple-descriptor?]{
  Implements @racket[type] and returns a @tech{type descriptor} for the new
  implementation.
@@ -244,7 +245,7 @@ field in the tuple: the per-field accessors created by
  Returns a procedure suitable to be passed as the
  @racket[#:guard-maker] argument to @racket[make-tuple-implementation]
  or @racket[define-tuple-type]. The guard procedure will ensure that
- the wrapped values are protected by @racket[contract-expr]s.
+ the tuple fields are protected by @racket[contract-expr]s.
  This is analogous to @racket[struct-guard/c].}
 
 @defproc[(tuple-descriptor-type [descriptor tuple-descriptor?]) tuple-type?]{

@@ -58,12 +58,15 @@ obvious order to those pieces.
    (code:line #:accessor-name accessor-id)
    (code:line #:pattern-name pattern-id)
    (code:line #:property-maker prop-maker-expr)
+   (code:line #:guard-maker guard-maker-expr)
    (code:line #:inspector inspector-expr)])
  
  #:contracts
  ([prop-maker-expr
    (-> uninitialized-record-descriptor?
        (listof (cons/c struct-type-property? any/c)))]
+  [guard-maker-expr
+   (or/c #f (-> uninitialized-record-descriptor? procedure?))]
   [inspector-expr inspector?])]{
  Creates a new @tech{record type} named @racket[id] and binds the following
  identifiers:
@@ -103,12 +106,12 @@ obvious order to those pieces.
  @racket[constructor-id] when used as an expression. Use
  @racket[#:omit-root-binding] when you want control over what @racket[id] is
  bound to, such as when creating a smart constructor.
- 
+
  The @racket[prop-maker-expr] is used to add structure type properties to the
- created type, and @racket[inspector-expr] is used to determine the
- @tech/reference{inspector} that will control the created type. See
- @racket[make-record-implementation] for more information about these
- parameters.
+ created type, @racket[guard-maker-expr] is used to create the guard procedure, and
+ @racket[inspector-expr] is used to determine the @tech/reference{inspector} that
+ will control the created type. See @racket[make-record-implementation] for more
+ information about these parameters.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -208,16 +211,43 @@ can access any field in the record: the per-field accessors created by
           [#:property-maker prop-maker
            (-> uninitialized-record-descriptor?
                (listof (cons/c struct-type-property? any/c)))
-           default-record-properties])
+           default-record-properties]
+          [#:guard-maker guard-maker
+           (or/c #f (-> uninitialized-record-descriptor? procedure?))
+           #f])
          initialized-record-descriptor?]{
  Implements @racket[type] and returns a @tech{type descriptor} for the new
- implementation. The @racket[inspector] argument behaves the same as in
+ implementation.
+
+ The @racket[inspector] argument behaves the same as in
  @racket[make-struct-type], although there are no transparent or prefab record
- types. The @racket[prop-maker] argument is similar to the corresponding
- argument of @racket[make-struct-implementation]. By default, record types are
+ types.
+
+ The @racket[prop-maker] argument is similar to the corresponding
+ argument of @racket[make-struct-implementation].
+
+ The @racket[guard-maker] argument is a procedure that should accept the partially
+ constructed record descriptor, and must return a guard procedure. This guard
+ procedure is similar to the one in @racket[make-struct-type]. It will accept
+ all the arguments to the record constructor as positional arguments,
+ sorted alphabetically by field name, and the values it returns will be the
+ values stored in the record.
+
+ By default, record types are
  created with properties that make them print like transparent structures,
  except field names are included --- see @racket[default-record-properties] for
  details.}
+
+@defform[(record-guard-maker/c keyword-contract-pair ...)
+
+         #:grammar
+         ([keyword-contract-pair
+           (code:line field-name-keyword field-contract)])]{
+ Returns a procedure suitable to be passed as the
+ @racket[#:guard-maker] argument to @racket[make-record-implementation]
+ or @racket[define-record-type]. The guard procedure will ensure that
+ the fields of the record are protected by their corresponding @racket[field-contract]s.
+ This is analogous to @racket[struct-guard/c].}
 
 @defproc[(record-descriptor-type [descriptor record-descriptor?]) record-type?]{
  Returns the @tech{record type} that @racket[descriptor] implements.}

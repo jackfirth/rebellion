@@ -135,7 +135,7 @@
     (make-tuple-implementation tuple-impl-type
                                #:inspector inspector
                                #:property-maker tuple-impl-prop-maker
-                               #:guard-maker tuple-impl-guard-maker))
+                               #:guard-maker (and guard-maker tuple-impl-guard-maker)))
   (initialized-wrapper-descriptor
    #:type type
    #:predicate (tuple-descriptor-predicate tuple-impl)

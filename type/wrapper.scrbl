@@ -102,13 +102,12 @@ distinguished.
  @racket[constructor-id] when used as an expression. Use
  @racket[#:omit-root-binding] when you want control over what @racket[id] is
  bound to, such as when creating a smart constructor.
- 
+
  The @racket[prop-maker-expr] is used to add structure type properties to the
- created type, @racket[inspector-expr] is used to determine the
- @tech/reference{inspector} that will control the created type, and
- @racket[guard-maker-expr] is used to create the guard procedure. See
- @racket[make-wrapper-implementation] for more information about these
- parameters.
+ created type, @racket[guard-maker-expr] is used to create the guard procedure, and
+ @racket[inspector-expr] is used to determine the @tech/reference{inspector} that
+ will control the created type. See @racket[make-wrapper-implementation] for more
+ information about these parameters.
 
  @(examples
    #:eval (make-evaluator) #:once
