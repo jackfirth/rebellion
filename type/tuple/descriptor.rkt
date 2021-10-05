@@ -3,6 +3,7 @@
 (require racket/contract/base racket/contract/region)
 
 (provide
+ tuple-guard-maker/c
  (contract-out
   [initialized-tuple-descriptor? (-> any/c boolean?)]
   [default-tuple-properties
@@ -38,8 +39,7 @@
          [descriptor initialized-tuple-descriptor?])
         (#:properties [properties impersonator-property-hash/c]
          #:chaperone? [chaperone? boolean?])
-        [_ (descriptor) (tuple-descriptor-predicate descriptor)])])
- tuple-guard-maker/c)
+        [_ (descriptor) (tuple-descriptor-predicate descriptor)])]))
 
 (require racket/math
          racket/struct

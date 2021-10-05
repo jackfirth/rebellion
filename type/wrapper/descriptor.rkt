@@ -116,43 +116,31 @@
     (tuple-type (wrapper-type-name type) (list 'value)
                 #:predicate-name (wrapper-type-predicate-name type)
                 #:constructor-name (wrapper-type-constructor-name type)))
-  (define (tuple-impl-prop-maker tuple-impl)
+  (define (get-accessor tuple-impl)
     (define tuple-impl-accessor (tuple-descriptor-accessor tuple-impl))
     (define (accessor this) (tuple-impl-accessor this 0))
     (define accessor-name (wrapper-type-accessor-name type))
-    (prop-maker
-     (uninitialized-wrapper-descriptor
-      #:type type
-      #:predicate (tuple-descriptor-predicate tuple-impl)
-      #:constructor (tuple-descriptor-constructor tuple-impl)
-      #:accessor (procedure-rename accessor accessor-name))))
+    (procedure-rename accessor accessor-name))
+  (define (uninit-descriptor tuple-impl)
+    (uninitialized-wrapper-descriptor
+     #:type type
+     #:predicate (tuple-descriptor-predicate tuple-impl)
+     #:constructor (tuple-descriptor-constructor tuple-impl)
+     #:accessor (get-accessor tuple-impl)))
+  (define (tuple-impl-prop-maker tuple-impl)
+    (prop-maker (uninit-descriptor tuple-impl)))
+  (define (tuple-impl-guard-maker tuple-impl)
+    (guard-maker (uninit-descriptor tuple-impl)))
   (define tuple-impl
     (make-tuple-implementation tuple-impl-type
                                #:inspector inspector
-                               #:property-maker tuple-impl-prop-maker))
-  (define tuple-impl-accessor (tuple-descriptor-accessor tuple-impl))
-  (define accessor
-    (procedure-rename
-     (λ (this) (tuple-impl-accessor this 0))
-     (wrapper-type-accessor-name type)))
-  (define predicate (tuple-descriptor-predicate tuple-impl))
-  (define tuple-constructor (tuple-descriptor-constructor tuple-impl))
-  (define constructor
-    (if guard-maker
-        (let ([guard
-               (guard-maker
-                (uninitialized-wrapper-descriptor
-                 #:type type
-                 #:predicate predicate
-                 #:constructor tuple-constructor
-                 #:accessor accessor))])
-          (λ (value) (tuple-constructor (guard value))))
-        tuple-constructor))
+                               #:property-maker tuple-impl-prop-maker
+                               #:guard-maker tuple-impl-guard-maker))
   (initialized-wrapper-descriptor
    #:type type
-   #:predicate predicate 
-   #:constructor constructor
-   #:accessor accessor
+   #:predicate (tuple-descriptor-predicate tuple-impl)
+   #:constructor (tuple-descriptor-constructor tuple-impl)
+   #:accessor (get-accessor tuple-impl)
    #:backing-tuple-descriptor tuple-impl))
 
 (define-syntax (wrapper-guard-maker/c stx)
