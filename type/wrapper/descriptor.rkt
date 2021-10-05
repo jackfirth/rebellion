@@ -1,13 +1,17 @@
 #lang racket/base
 
-(require racket/contract/base)
+(require racket/contract/base racket/contract/region)
 
 (provide
+ wrapper-guard-maker/c
  (contract-out
   [make-wrapper-implementation
    (->* (wrapper-type?)
         (#:property-maker (-> uninitialized-wrapper-descriptor?
                               (listof (cons/c struct-type-property? any/c)))
+         #:guard-maker (or/c #f
+                             (-> uninitialized-wrapper-descriptor?
+                                 (-> any/c any/c)))
          #:inspector inspector?)
         initialized-wrapper-descriptor?)]
   [wrapper-descriptor? predicate/c]
@@ -23,12 +27,13 @@
    (-> wrapper-descriptor? custom-write-function/c)]))
 
 (require racket/struct
+         syntax/location
          rebellion/base/generative-token
          rebellion/custom-write
          rebellion/equal+hash
-         rebellion/type/record
          rebellion/type/tuple
-         rebellion/type/wrapper/base)
+         rebellion/type/wrapper/base
+         (for-syntax racket/base syntax/parse))
 
 ;@------------------------------------------------------------------------------
 
@@ -105,6 +110,7 @@
 (define (make-wrapper-implementation
          type
          #:property-maker [prop-maker default-wrapper-properties]
+         #:guard-maker [guard-maker #f]
          #:inspector [inspector (current-inspector)])
   (define tuple-impl-type
     (tuple-type (wrapper-type-name type) (list 'value)
@@ -125,13 +131,45 @@
                                #:inspector inspector
                                #:property-maker tuple-impl-prop-maker))
   (define tuple-impl-accessor (tuple-descriptor-accessor tuple-impl))
-  (define (accessor this) (tuple-impl-accessor this 0))
+  (define accessor
+    (procedure-rename
+     (λ (this) (tuple-impl-accessor this 0))
+     (wrapper-type-accessor-name type)))
+  (define predicate (tuple-descriptor-predicate tuple-impl))
+  (define tuple-constructor (tuple-descriptor-constructor tuple-impl))
+  (define constructor
+    (if guard-maker
+        (let ([guard
+               (guard-maker
+                (uninitialized-wrapper-descriptor
+                 #:type type
+                 #:predicate predicate
+                 #:constructor tuple-constructor
+                 #:accessor accessor))])
+          (λ (value) (tuple-constructor (guard value))))
+        tuple-constructor))
   (initialized-wrapper-descriptor
    #:type type
-   #:predicate (tuple-descriptor-predicate tuple-impl)
-   #:constructor (tuple-descriptor-constructor tuple-impl)
-   #:accessor (procedure-rename accessor (wrapper-type-accessor-name type))
+   #:predicate predicate 
+   #:constructor constructor
+   #:accessor accessor
    #:backing-tuple-descriptor tuple-impl))
+
+(define-syntax (wrapper-guard-maker/c stx)
+  (syntax-parse stx
+    [(_ contract-expr:expr)
+     (quasisyntax/loc stx
+       (let ([loc (quote-srcloc #,stx)]
+             ;; There's no way to blame the caller,
+             ;; so we have to take the blame for ourselves.
+             ;; (this is also what struct-guard/c does)
+             [blame-party (current-contract-region)])
+         (λ (desc)
+           (define name (wrapper-type-constructor-name (wrapper-descriptor-type desc)))
+           (λ (value)
+             (contract contract-expr value
+                       blame-party blame-party
+                       name loc)))))]))
 
 (define (make-delegating-equal+hash delegate-extractor)
   (define token (make-generative-token))
