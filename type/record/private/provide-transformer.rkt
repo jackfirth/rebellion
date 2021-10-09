@@ -1,10 +1,15 @@
 #lang racket/base
 
-(require (for-syntax racket/base syntax/parse racket/provide-transform
+(require (for-syntax racket/base
+                     syntax/parse
+                     racket/provide-transform
                      rebellion/type/record/binding))
 
 (module+ test
-  (require rackunit (submod "..")))
+  (require rackunit
+           syntax/location
+           rebellion/private/static-name
+           (submod "..")))
 
 (provide record-out)
 
@@ -18,19 +23,16 @@
             record
             record.descriptor
             record.predicate
-            record.constructor
-            record.accessor
             record.field-accessor ...)
          modes)]))))
 
 (module+ test
-  (require syntax/location)
   (module chair-module racket/base
     (require rebellion/type/record/private/definition-macro
              (submod ".." ".."))
     (provide (record-out chair))
     (define-record-type chair (legs seat screws)))
-  (test-case "record-out"
+  (test-case (name-string record-out)
     (define mod (quote-module-path chair-module))
     (check-not-exn
      (λ ()

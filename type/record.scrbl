@@ -145,7 +145,8 @@ obvious order to those pieces.
 
 @defform[#:kind "provide transformer" (record-out record)]{
  Provides @racket[record], which must be a @racket[record-id], along with
- its descriptor, predicate, constructor, accessor and all of its field accessors.}
+ its descriptor, predicate, and all of its field accessors,
+ but not its constructor or accessor.}
 
 @section{Record Type Information}
 
