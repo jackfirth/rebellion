@@ -20,6 +20,8 @@
           scribble/example
           syntax/parse/define)
 
+@(define reference-path '(lib "scribblings/reference/reference.scrbl"))
+
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/contract/base
@@ -293,10 +295,10 @@ alphabetical order.
 
 @defproc[(default-enum-flat-contract [descriptor enum-descriptor?])
          flat-contract-property?]{
- Builds a @tech{flat contract property} suitable for use with @racket[prop:flat-contract].
- The contract accepts a value if and only if it is the given enum constant.
- This function is used by @racket[default-enum-properties] to implement
- @racket[prop:flat-contract].}
+ Builds a @tech[#:doc reference-path]{flat contract property} suitable for
+ use with @racket[prop:flat-contract]. The contract accepts a value if
+ and only if it is the given enum constant. This function is used by
+ @racket[default-enum-properties] to implement @racket[prop:flat-contract].}
 
 @section{Enum Type Bindings}
 @defmodule[rebellion/type/enum/binding]

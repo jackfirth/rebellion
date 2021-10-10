@@ -16,6 +16,8 @@
           (submod rebellion/private/scribble-index-attribute doc)
           scribble/examples)
 
+@(define reference-path '(lib "scribblings/reference/reference.scrbl"))
+
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/contract/base
@@ -201,10 +203,10 @@ initialized, can be used to retrieve the singleton instance.
 
 @defproc[(default-singleton-flat-contract [descriptor singleton-descriptor?])
          flat-contract-property?]{
- Builds a @tech{flat contract property} suitable for use with @racket[prop:flat-contract].
- The contract accepts a value if and only if it is the singleton instance.
- This function is used by @racket[default-singleton-properties] to implement
- @racket[prop:flat-contract].}
+ Builds a @tech[#:doc reference-path]{flat contract property} suitable for
+ use with @racket[prop:flat-contract]. The contract accepts a value if and
+ only if it is the singleton instance. This function is used by
+ @racket[default-singleton-properties] to implement @racket[prop:flat-contract].}
 
 @section{Singleton Type Bindings}
 @defmodule[rebellion/type/singleton/binding]
