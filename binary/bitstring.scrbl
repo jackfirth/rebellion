@@ -4,14 +4,20 @@
                      racket/contract/base
                      racket/math
                      rebellion/binary/bit
-                     rebellion/binary/bitstring)
+                     rebellion/binary/bitstring
+                     rebellion/binary/byte
+                     rebellion/streaming/reducer
+                     rebellion/streaming/transducer)
           (submod rebellion/private/scribble-cross-document-tech doc)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/binary/bitstring)
+    #:public (list 'rebellion/binary/bitstring
+                   'rebellion/binary/byte
+                   'rebellion/streaming/reducer
+                   'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
 
 @title{Bitstrings}
@@ -63,6 +69,7 @@ memory, plus some constant overhead. Bitstrings implement the @tech/reference{
    (bitstring-size (bitstring 1 1 1 1 0 0 0 0))
    (bitstring-size (bitstring 1 1 1 1 0 0 0 0 1)))}
 
+
 @defproc[(in-bitstring [bits bitstring?]) (sequence/c bit?)]{
  Returns a @tech/reference{sequence} that traverses each bit in @racket[bits].
  Note that bitstrings already implement the sequence interface, but using this
@@ -75,6 +82,42 @@ memory, plus some constant overhead. Bitstrings implement the @tech/reference{
          [bit (in-bitstring (bitstring 1 1 0 0 1 0 1 0 0 1))]
          #:unless (zero? bit))
      (printf "Bit ~a is set\n" position)))}
+
+
+@defthing[into-bitstring (reducer/c bit? bitstring?)]{
+
+ A @tech{reducer} that collects a sequence of bits into a @tech{bitstring}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce (list 1 0 0 1 0 1)
+              #:into into-bitstring))}
+
+
+@defform[(for/bitstring (for-clause ...) body-or-break ... body)
+         #:contracts ([body bit?])]{
+
+ Iterates like @racket[for], but collects each @racket[body] result (which must be a @racket[bit?])
+ into a @tech{bitstring}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for/bitstring ([bit (in-list (list 1 0 0 1 0 1 0 1))])
+     bit))}
+
+
+@defform[(for*/bitstring (for-clause ...) body-or-break ... body)
+         #:contracts ([body bit?])]{
+
+ Iterates like @racket[for*], but collects each @racket[body] result (which must be a @racket[bit?])
+ into a @tech{bitstring}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for*/bitstring ([byte (in-bytes #"hi")]
+                    [bit (in-byte byte)])
+     bit))}
+
 
 @defproc[(bitstring->padded-bytes [bits bitstring?]) immutable-bytes?]{
  Returns an immutable byte string where each byte corresponds to eight bits of

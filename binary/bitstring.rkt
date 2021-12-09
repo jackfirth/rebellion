@@ -1,8 +1,12 @@
 #lang racket/base
 
+
 (require racket/contract)
 
+
 (provide
+ for/bitstring
+ for*/bitstring
  (contract-out
   [bitstring (-> bit? ... bitstring?)]
   [bitstring? predicate/c]
@@ -12,12 +16,15 @@
          [pos (bits) (integer-in 0 (bitstring-size bits))])
         [_ bit?])]
   [in-bitstring (-> bitstring? (sequence/c bit?))]
+  [into-bitstring (reducer/c bit? bitstring?)]
   [bitstring->padded-bytes (-> bitstring? immutable-bytes?)]
   [bytes->bitstring
    (->* (immutable-bytes?) (#:padding (integer-in 0 7)) bitstring?)]
   [empty-bitstring bitstring?]))
 
-(require racket/format
+
+(require (for-syntax racket/base)
+         racket/format
          racket/list
          racket/math
          racket/sequence
@@ -25,13 +32,17 @@
          racket/struct
          rebellion/binary/bit
          rebellion/binary/byte
+         rebellion/collection/list
          rebellion/private/guarded-block
+         rebellion/streaming/reducer
          rebellion/type/tuple)
+
 
 (module+ test
   (require (submod "..")
            rackunit
            rebellion/private/static-name))
+
 
 ;@------------------------------------------------------------------------------
 
@@ -104,6 +115,16 @@
   (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
 
   (constructor:bitstring padded-bytes padding-size))
+
+
+;; TODO: This is wildly inefficient, it could be much faster.
+(define into-bitstring
+  (reducer-map into-list #:range (λ (bits) (apply bitstring bits))))
+
+
+(define-syntaxes (for/bitstring for*/bitstring)
+  (make-reducer-based-for-comprehensions #'into-bitstring))
+
 
 (define (in-bitstring bits)
   (for/stream ([i (in-range (bitstring-size bits))])
