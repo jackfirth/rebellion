@@ -141,3 +141,13 @@ memory, plus some constant overhead. Bitstrings implement the @tech/reference{
    #:eval (make-evaluator) #:once
    (bytes->bitstring #"apple")
    (bytes->bitstring #"Apple"))}
+
+@defproc[(sequence->bitstring [seq])
+         bitstring?]{
+ Converts @racket[seq] into a @tech{bitstring} by converting each 1 or 0 into
+ a bit.
+ 
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sequence->bitstring (list 1 0 1 1))
+   (sequence->bitstring (vector 0 1 1 0)))}
