@@ -142,7 +142,7 @@ memory, plus some constant overhead. Bitstrings implement the @tech/reference{
    (bytes->bitstring #"apple")
    (bytes->bitstring #"Apple"))}
 
-@defproc[(sequence->bitstring [seq])
+@defproc[(sequence->bitstring [seq (sequence/c bit?)])
          bitstring?]{
  Converts @racket[seq] into a @tech{bitstring} by converting each 1 or 0 into
  a bit.
