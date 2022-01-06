@@ -149,8 +149,10 @@
     (constructor:bitstring padded-bytes padding)))
 
 (define (sequence->bitstring seq)
-  (for/bitstring ([bit seq])
-    bit))
+  (if (bitstring? seq)
+      seq
+      (for/bitstring ([bit seq])
+        bit))
 
 (module+ test
   (test-case (name-string bitstring)
