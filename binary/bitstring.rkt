@@ -20,7 +20,7 @@
   [bitstring->padded-bytes (-> bitstring? immutable-bytes?)]
   [bytes->bitstring
    (->* (immutable-bytes?) (#:padding (integer-in 0 7)) bitstring?)]
-  [sequence->bitstring (-> (sequence/c bit?) bitstring?)]
+  [sequence->bitstring (-> (or/c bitstring? (sequence/c bit?)) bitstring?)]
   [empty-bitstring bitstring?]))
 
 
