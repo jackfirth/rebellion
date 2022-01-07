@@ -152,7 +152,7 @@
   (if (bitstring? seq)
       seq
       (for/bitstring ([bit seq])
-        bit))
+        bit)))
 
 (module+ test
   (test-case (name-string bitstring)
