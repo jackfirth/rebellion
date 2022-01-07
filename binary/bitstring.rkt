@@ -20,6 +20,7 @@
   [bitstring->padded-bytes (-> bitstring? immutable-bytes?)]
   [bytes->bitstring
    (->* (immutable-bytes?) (#:padding (integer-in 0 7)) bitstring?)]
+  [sequence->bitstring (-> (or/c bitstring? (sequence/c bit?)) bitstring?)]
   [empty-bitstring bitstring?]))
 
 
@@ -146,6 +147,12 @@
     (bytes-set! mutable-padded-bytes last-pos padded-last-byte)
     (define padded-bytes (bytes->immutable-bytes mutable-padded-bytes))
     (constructor:bitstring padded-bytes padding)))
+
+(define (sequence->bitstring seq)
+  (if (bitstring? seq)
+      seq
+      (for/bitstring ([bit seq])
+        bit)))
 
 (module+ test
   (test-case (name-string bitstring)
