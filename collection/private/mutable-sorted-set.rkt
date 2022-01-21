@@ -35,35 +35,34 @@
   #:methods gen:sorted-set
 
   [(define (in-sorted-set this #:descending? [descending? #false])
-     (in-mutable-red-black-tree-keys
-      (regular-mutable-sorted-set-tree this) #:descending? descending?))
+     (in-mutable-rb-tree-keys (regular-mutable-sorted-set-tree this) #:descending? descending?))
 
    (define (sorted-set-size this)
-     (mutable-red-black-tree-size (regular-mutable-sorted-set-tree this)))
+     (mutable-rb-tree-size (regular-mutable-sorted-set-tree this)))
 
    (define (sorted-set-comparator this)
-     (mutable-red-black-tree-key-comparator (regular-mutable-sorted-set-tree this)))
+     (mutable-rb-tree-key-comparator (regular-mutable-sorted-set-tree this)))
 
    (define (sorted-set-contains? this value)
-     (mutable-red-black-tree-contains-key? (regular-mutable-sorted-set-tree this) value))
+     (mutable-rb-tree-contains-key? (regular-mutable-sorted-set-tree this) value))
 
    (define (sorted-set-least-element this)
-     (mutable-red-black-tree-least-key (regular-mutable-sorted-set-tree this)))
+     (mutable-rb-tree-least-key (regular-mutable-sorted-set-tree this)))
 
    (define (sorted-set-greatest-element this)
-     (mutable-red-black-tree-greatest-key (regular-mutable-sorted-set-tree this)))
+     (mutable-rb-tree-greatest-key (regular-mutable-sorted-set-tree this)))
 
    (define (sorted-set-element-less-than this upper-bound)
-     (mutable-red-black-tree-key-less-than (regular-mutable-sorted-set-tree this) upper-bound))
+     (mutable-rb-tree-key-less-than (regular-mutable-sorted-set-tree this) upper-bound))
 
    (define (sorted-set-element-greater-than this lower-bound)
-     (mutable-red-black-tree-key-greater-than (regular-mutable-sorted-set-tree this) lower-bound))
+     (mutable-rb-tree-key-greater-than (regular-mutable-sorted-set-tree this) lower-bound))
 
    (define (sorted-set-element-at-most this upper-bound)
-     (mutable-red-black-tree-key-at-most (regular-mutable-sorted-set-tree this) upper-bound))
+     (mutable-rb-tree-key-at-most (regular-mutable-sorted-set-tree this) upper-bound))
    
    (define (sorted-set-element-at-least this lower-bound)
-     (mutable-red-black-tree-key-at-least (regular-mutable-sorted-set-tree this) lower-bound))
+     (mutable-rb-tree-key-at-least (regular-mutable-sorted-set-tree this) lower-bound))
 
    (define (sorted-subset this element-range)
      (constructor:regular-mutable-sorted-subset this element-range))
@@ -74,13 +73,13 @@
   #:methods gen:mutable-sorted-set
 
   [(define (sorted-set-add! this element)
-     (mutable-red-black-tree-put! (regular-mutable-sorted-set-tree this) element #false))
+     (mutable-rb-tree-put! (regular-mutable-sorted-set-tree this) element #false))
 
    (define (sorted-set-remove! this element)
-     (mutable-red-black-tree-remove! (regular-mutable-sorted-set-tree this) element))
+     (mutable-rb-tree-remove! (regular-mutable-sorted-set-tree this) element))
 
    (define (sorted-set-clear! this)
-     (mutable-red-black-tree-clear! (regular-mutable-sorted-set-tree this)))])
+     (mutable-rb-tree-clear! (regular-mutable-sorted-set-tree this)))])
 
 
 (struct regular-mutable-sorted-subset abstract-mutable-sorted-set (delegate-set element-range)
@@ -101,10 +100,10 @@
    (define/generic generic-sorted-set-comparator sorted-set-comparator)
 
    (define (in-sorted-set this #:descending? [descending? #false])
-     (in-mutable-red-black-subtree-keys (get-tree this) (get-range this) #:descending? descending?))
+     (in-mutable-rb-subtree-keys (get-tree this) (get-range this) #:descending? descending?))
 
    (define (sorted-set-size this)
-     (mutable-red-black-subtree-size (get-tree this) (get-range this)))
+     (mutable-rb-subtree-size (get-tree this) (get-range this)))
 
    (define (sorted-set-comparator this)
      (generic-sorted-set-comparator (get-delegate this)))
@@ -150,14 +149,14 @@
      (regular-mutable-sorted-subset-element-range this))
 
    (define (sorted-set-add! this element)
-     (mutable-red-black-tree-put! (get-tree this) element #false))
+     (mutable-rb-tree-put! (get-tree this) element #false))
 
    (define (sorted-set-remove! this element)
      (when (range-contains? (get-range this) element)
-       (mutable-red-black-tree-remove! (get-tree this) element)))
+       (mutable-rb-tree-remove! (get-tree this) element)))
 
    (define (sorted-set-clear! this)
-     (mutable-red-black-subtree-clear! (get-tree this) (get-range this)))])
+     (mutable-rb-subtree-clear! (get-tree this) (get-range this)))])
 
 
 (struct empty-mutable-sorted-set abstract-mutable-sorted-set (comparator)
@@ -234,7 +233,7 @@
 
 
 (define (make-mutable-sorted-set [elements '()] #:comparator comparator)
-  (define set (constructor:regular-mutable-sorted-set (make-mutable-red-black-tree comparator)))
+  (define set (constructor:regular-mutable-sorted-set (make-mutable-rb-tree comparator)))
   (sorted-set-add-all! set elements)
   set)
 
