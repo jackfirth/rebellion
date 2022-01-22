@@ -11,6 +11,7 @@
                      rebellion/collection/entry
                      rebellion/collection/hash
                      rebellion/collection/sorted-map
+                     rebellion/collection/sorted-set
                      rebellion/concurrency/lock
                      rebellion/streaming/reducer
                      rebellion/streaming/transducer)
@@ -21,7 +22,9 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/base/comparator
+    #:public (list 'racket/sequence
+                   'rebellion/base/comparator
+                   'rebellion/base/range
                    'rebellion/collection/entry
                    'rebellion/collection/hash
                    'rebellion/collection/sorted-map
@@ -115,21 +118,42 @@ not a copy, so it constructs the view in constant time regardless of the size of
          (sequence/c entry?)]{
 
  Returns a @tech/reference{sequence} that iterates through the entries of @racket[map] in ascending
- order. If @racket[descending?] is true, the sequence iterates in descending order instead.}
+ order. If @racket[descending?] is true, the sequence iterates in descending order instead.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sequence->list (in-sorted-map map)))}
 
 
 @defproc[(in-sorted-map-keys [map sorted-map?] [#:descending? descending? boolean? #false])
          (sequence/c any/c)]{
 
  Returns a @tech/reference{sequence} that iterates through the keys of @racket[map] in ascending
- order. If @racket[descending?] is true, the sequence iterates in descending order instead.}
+ order. If @racket[descending?] is true, the sequence iterates in descending order instead.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sequence->list (in-sorted-map-keys map)))}
 
 
 @defproc[(in-sorted-map-values [map sorted-map?] [#:descending? descending? boolean? #false])
          (sequence/c any/c)]{
 
  Returns a @tech/reference{sequence} that iterates through the values of @racket[map] in ascending
- order by key. If @racket[descending?] is true, the sequence iterates in descending order instead.}
+ order by key. If @racket[descending?] is true, the sequence iterates in descending order instead.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sequence->list (in-sorted-map-values map)))}
 
 
 @section{Querying Sorted Maps}
@@ -139,34 +163,82 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Returns true if @racket[map] contains no entries, returns false otherwise. Note that this operation
  can be combined with @racket[sorted-submap] to efficiently determine if a range within a sorted map
- is empty.}
+ is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-empty? map)
+   (sorted-map-empty? (sorted-submap map (less-than-range 1 #:comparator natural<=>))))}
 
 
 @defproc[(sorted-map-size [map sorted-map?]) natural?]{
 
  Returns the number of entries in @racket[map]. Note that this operation can be combined with
  @racket[sorted-submap] to efficiently determine how many elements are contained within a range of a
- sorted map.}
+ sorted map.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-size map)
+   (sorted-map-size (sorted-submap map (at-least-range 2 #:comparator natural<=>))))}
 
 
 @defproc[(sorted-map-key-comparator [map sorted-map?]) comparator?]{
 
- Returns the @tech{comparator} used by @racket[map] to sort keys.}
+ Returns the @tech{comparator} used by @racket[map] to sort keys.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-key-comparator map))}
 
 
 @defproc[(sorted-map-contains-key? [map sorted-map?] [key any/c]) boolean?]{
 
- Returns true if @racket[map] contains an entry for @racket[key], returns false otherwise.}
+ Returns true if @racket[map] contains an entry for @racket[key], returns false otherwise.
+                 
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-contains-key? map 2)
+   (sorted-map-contains-key? map 4))}
 
 
 @defproc[(sorted-map-contains-value? [map sorted-map?] [value any/c]) boolean?]{
 
- Returns true if @racket[map] maps at least one key to @racket[value], returns false otherwise.}
+ Returns true if @racket[map] maps at least one key to @racket[value], returns false otherwise.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-contains-value? map 'b)
+   (sorted-map-contains-value? map 'z))}
 
 
 @defproc[(sorted-map-contains-entry? [map sorted-map?] [entry entry?]) boolean?]{
 
- Returns true if @racket[map] contains @racket[entry].}
+ Returns true if @racket[map] contains @racket[entry].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-contains-entry? map (entry 1 'a))
+   (sorted-map-contains-entry? map (entry 2 'b))
+   (sorted-map-contains-entry? map (entry 1 'b)))}
 
 
 @defproc[(sorted-map-get
@@ -177,13 +249,30 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Returns the value mapped by @racket[key] in @racket[map]. If no value exists for @racket[key], then
  @racket[failure-result] determines the result: if it's a procedure it's called with no arguments
- to produce the result, if it's not a procedure it's returned directly.}
+ to produce the result, if it's not a procedure it's returned directly.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-get map 2)
+   (eval:error (sorted-map-get map 4))
+   (sorted-map-get map 4 'missing))}
 
 
 @defproc[(sorted-map-get-option [map sorted-map?] [key any/c]) option?]{
 
  Returns the value mapped by @racket[key] in @racket[map], or @racket[absent] if no value exists for
- @racket[key].}
+ @racket[key].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-get-option map 2)
+   (sorted-map-get-option map 4))}
 
 
 @defproc[(sorted-map-get-entry
@@ -193,77 +282,170 @@ not a copy, so it constructs the view in constant time regardless of the size of
  Returns the entry for @racket[key] in @racket[map]. If no value exists for @racket[key], then
  @racket[failure-result] determines the resulting entry's value: if it's a procedure it's called with
  no arguments to produce the value, if it's not a procedure it's used directly as the resulting
- entry's value.}
+ entry's value.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-get-entry map 2)
+   (eval:error (sorted-map-get-entry map 4))
+   (sorted-map-get-entry map 4 'missing))}
 
 
 @defproc[(sorted-map-least-key [map sorted-map?]) option?]{
 
- Returns the first and smallest key in @racket[map], or @racket[absent] if @racket[map] is empty.}
+ Returns the first and smallest key in @racket[map], or @racket[absent] if @racket[map] is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-map-least-key (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>))
+   (sorted-map-least-key (sorted-map #:key-comparator natural<=>)))}
 
 
 @defproc[(sorted-map-greatest-key [map sorted-map?]) option?]{
 
- Returns the last and largest key in @racket[map], or @racket[absent] if @racket[map] is empty.}
+ Returns the last and largest key in @racket[map], or @racket[absent] if @racket[map] is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-map-greatest-key (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>))
+   (sorted-map-greatest-key (sorted-map #:key-comparator natural<=>)))}
 
 
 @defproc[(sorted-map-key-less-than [map sorted-map?] [upper-bound any/c]) option?]{
 
  Returns the largest key in @racket[map] less than @racket[upper-bound], or @racket[absent] if no such
- key exists.}
+ key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-key-less-than map 2)
+   (sorted-map-key-less-than map 1))}
 
 
 @defproc[(sorted-map-key-greater-than [map sorted-map?] [lower-bound any/c]) option?]{
 
  Returns the smallest key in @racket[map] greater than @racket[lower-bound], or @racket[absent] if no
- such key exists.}
+ such key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-key-greater-than map 2)
+   (sorted-map-key-greater-than map 3))}
 
 
 @defproc[(sorted-map-key-at-most [map sorted-map?] [upper-bound any/c]) option?]{
 
  Returns the largest key in @racket[map] less than or equivalent to @racket[upper-bound], or
- @racket[absent] if no such key exists.}
+ @racket[absent] if no such key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-key-at-most map 5)
+   (sorted-map-key-at-most map 0))}
 
 
 @defproc[(sorted-map-key-at-least [map sorted-map?] [lower-bound any/c]) option?]{
 
  Returns the smallest key in @racket[map] greater than or equivalent to @racket[lower-bound], or
- @racket[absent] if no such key exists.}
+ @racket[absent] if no such key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-key-at-least map 0)
+   (sorted-map-key-at-least map 5))}
 
 
 @defproc[(sorted-map-least-entry [map sorted-map?]) (option/c entry?)]{
 
  Returns the entry for the first and smallest key in @racket[map], or absent if @racket[map] is
- empty.}
+ empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-map-least-entry (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>))
+   (sorted-map-least-entry (sorted-map #:key-comparator natural<=>)))}
 
 
 @defproc[(sorted-map-greatest-entry [map sorted-map?]) (option/c entry?)]{
 
  Returns the entry for the last and largest key in @racket[map], or @racket[absent] if @racket[map] is
- empty.}
+ empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-map-greatest-entry (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>))
+   (sorted-map-greatest-entry (sorted-map #:key-comparator natural<=>)))}
 
 
 @defproc[(sorted-map-entry-less-than [map sorted-map?] [upper-key-bound any/c]) (option/c entry?)]{
 
  Returns the entry for the largest key in @racket[map] less than @racket[upper-key-bound], or
- @racket[absent] if no such key exists.}
+ @racket[absent] if no such key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-entry-less-than map 2)
+   (sorted-map-entry-less-than map 1))}
 
 
 @defproc[(sorted-map-entry-greater-than [map sorted-map?] [lower-key-bound any/c]) (option/c entry?)]{
 
  Returns the entry for the smallest key in @racket[map] greater than @racket[lower-key-bound], or
- @racket[absent] if no such key exists.}
+ @racket[absent] if no such key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-entry-greater-than map 2)
+   (sorted-map-entry-greater-than map 3))}
 
 
 @defproc[(sorted-map-entry-at-most [map sorted-map?] [upper-key-bound any/c]) (option/c entry?)]{
 
  Returns the entry for the largest key in @racket[map] less than or equivalent to
- @racket[upper-key-bound], or @racket[absent] if no such key exists.}
+ @racket[upper-key-bound], or @racket[absent] if no such key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-entry-at-most map 5)
+   (sorted-map-entry-at-most map 0))}
 
 
 @defproc[(sorted-map-entry-at-least [map sorted-map?] [lower-key-bound any/c]) (option/c entry?)]{
 
  Returns the entry for the smallest key in @racket[map] greater than or equivalent to
- @racket[lower-key-bound], or @racket[absent] if no such key exists.}
+ @racket[lower-key-bound], or @racket[absent] if no such key exists.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-entry-at-least map 0)
+   (sorted-map-entry-at-least map 5))}
 
 
 @section{Sorted Map Views}
@@ -276,6 +458,13 @@ not a copy, so it constructs the view in constant time regardless of the size of
  modifications to @racket[map] will be reflected in the returned view. The returned view is an
  @racket[immutable-sorted-map?] if @racket[map] is immutable, and similarly it is a
  @racket[mutable-sorted-map?] if @racket[map] is mutable.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-submap map (at-most-range 2 #:comparator natural<=>))) 
 
  When used on mutable sorted maps, the returned map is also a @tech{write-through view} --- mutating
  the returned submap will mutate the original, underlying map. The returned submap supports all of the
