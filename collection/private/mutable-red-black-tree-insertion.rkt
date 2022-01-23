@@ -6,10 +6,16 @@
 
 (provide
  (contract-out
-  [mutable-rb-tree-put! (-> mutable-rb-tree? any/c any/c void?)]))
+  [mutable-rb-tree-get! (-> mutable-rb-tree? any/c failure-result/c any/c)]
+  [mutable-rb-tree-get-entry! (-> mutable-rb-tree? any/c failure-result/c entry?)]
+  [mutable-rb-tree-put! (-> mutable-rb-tree? any/c any/c void?)]
+  [mutable-rb-tree-put-if-absent! (-> mutable-rb-tree? any/c any/c option?)]
+  [mutable-rb-tree-update! (-> mutable-rb-tree? any/c (-> any/c any/c) failure-result/c void?)]))
 
 
 (require rebellion/base/comparator
+         rebellion/base/option
+         rebellion/collection/entry
          rebellion/collection/private/mutable-red-black-tree-base
          rebellion/collection/private/mutable-red-black-tree-search
          rebellion/private/guarded-block
@@ -29,10 +35,48 @@
 
 
 (define/guard (mutable-rb-tree-put! tree key value)
-  (define key<=> (mutable-rb-tree-key-comparator tree))
   (define previous-leaf (mutable-rb-tree-get-node tree key))
   (guard (nil-leaf? previous-leaf) else
     (mutable-rb-node-set-value! previous-leaf value))
+  (mutable-rb-tree-put-absent! tree previous-leaf key value))
+
+
+(define/guard (mutable-rb-tree-put-if-absent! tree key value)
+  (define previous-leaf (mutable-rb-tree-get-node tree key))
+  (guard (nil-leaf? previous-leaf) else
+    (present (mutable-rb-node-value previous-leaf)))
+  (mutable-rb-tree-put-absent! tree previous-leaf key value)
+  absent)
+
+
+(define/guard (mutable-rb-tree-get! tree key failure-result)
+  (define previous-leaf (mutable-rb-tree-get-node tree key))
+  (guard (nil-leaf? previous-leaf) else
+    (mutable-rb-node-value previous-leaf))
+  (define value (if (procedure? failure-result) (failure-result) failure-result))
+  (mutable-rb-tree-put-absent! tree previous-leaf key value)
+  value)
+
+
+(define/guard (mutable-rb-tree-get-entry! tree key failure-result)
+  (define previous-leaf (mutable-rb-tree-get-node tree key))
+  (guard (nil-leaf? previous-leaf) else
+    (mutable-rb-node-entry previous-leaf))
+  (define value (if (procedure? failure-result) (failure-result) failure-result))
+  (mutable-rb-tree-put-absent! tree previous-leaf key value)
+  (entry key value))
+
+
+(define/guard (mutable-rb-tree-update! tree key updater failure-result)
+  (define previous-leaf (mutable-rb-tree-get-node tree key))
+  (guard (nil-leaf? previous-leaf) else
+    (define new-value (updater (mutable-rb-node-value previous-leaf)))
+    (mutable-rb-node-set-value! previous-leaf new-value))
+  (define value (updater (if (procedure? failure-result) (failure-result) failure-result)))
+  (mutable-rb-tree-put-absent! tree previous-leaf key value))
+
+
+(define/guard (mutable-rb-tree-put-absent! tree previous-leaf key value)
   (guard (root-node? previous-leaf) then
     (mutable-rb-tree-add-root-child! tree (make-red-node key value)))
   (define parent (mutable-rb-node-parent previous-leaf))

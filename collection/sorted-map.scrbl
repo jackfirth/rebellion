@@ -79,6 +79,23 @@ not a copy, so it constructs the view in constant time regardless of the size of
    (sorted-map 3 'c 1 'a 4 'd 2 'b 5 'e #:key-comparator natural<=>))}
 
 
+@defproc[(make-mutable-sorted-map
+          [initial-entries (sequence/c entry?) '()]
+          [#:key-comparator key-comparator comparator?])
+         mutable-sorted-map?]{
+
+ Constructs a new mutable @tech{sorted map} containing @racket[initial-entries] (which defaults to
+ the empty list) sorted by key according to @racket[key-comparator]. Duplicate keys (as in, keys that
+ @racket[key-comparator] considers equivalent) are disallowed and result in a contract error.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (make-mutable-sorted-map #:key-comparator natural<=>)
+   (make-mutable-sorted-map
+    (in-hash-entries (hash 3 'c 1 'a 4 'd 2 'b))
+    #:key-comparator natural<=>))}
+
+
 @defproc[(entry-sequence->sorted-map
           [entries (sequence/c entry?)]
           [#:key-comparator key-comparator comparator?])
@@ -472,7 +489,23 @@ not a copy, so it constructs the view in constant time regardless of the size of
  @racket[key-range] is disallowed. Additionally, note that calling @racket[sorted-map-remove!] on the
  submap view with a key outside @racket[key-range] will have no effect on either the submap view
  @emph{or} the original map, as @racket[sorted-map-remove!] does nothing on maps that do not contain
- an entry for the key being removed.}
+ an entry for the key being removed.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>))
+
+    (define map<=2
+      (sorted-submap map (at-most-range 2 #:comparator natural<=>))))
+
+   map<=2
+   (sorted-map-remove! map<=2 1)
+   map<=2
+   map)}
 
 
 @defproc[(sorted-map-reverse [map sorted-map?]) sorted-map?]{

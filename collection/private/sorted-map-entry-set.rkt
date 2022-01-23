@@ -11,6 +11,12 @@
   [make-mutable-sorted-map-entry-set (-> mutable-sorted-map? mutable-sorted-set?)]))
 
 
+(module+ private-for-rebellion-only
+  (provide
+   (contract-out
+    [make-entry-comparator (-> comparator? (comparator/c entry?))])))
+
+
 (require racket/generic
          rebellion/base/comparator
          rebellion/base/range

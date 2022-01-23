@@ -10,6 +10,12 @@
   [make-mutable-sorted-set-from-sorted (-> sorted-set? mutable-sorted-set?)]))
 
 
+(module+ private-for-rebellion-only
+  (provide
+   (contract-out
+    [make-empty-mutable-sorted-set (-> comparator? mutable-sorted-set?)])))
+
+
 (require racket/generic
          racket/sequence
          rebellion/base/comparator

@@ -5,6 +5,7 @@
 
 
 (provide
+ (all-from-out rebellion/collection/private/mutable-sorted-map)
  (all-from-out rebellion/collection/private/sorted-map-builder)
  (all-from-out rebellion/collection/private/sorted-map-interface)
  (contract-out
@@ -18,6 +19,7 @@
          racket/sequence
          rebellion/base/comparator
          rebellion/collection/entry
+         rebellion/collection/private/mutable-sorted-map
          rebellion/collection/private/sorted-map-builder
          rebellion/collection/private/sorted-map-interface
          rebellion/private/static-name

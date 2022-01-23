@@ -164,7 +164,15 @@
   (sorted-map-update! mutable-sorted-map key updater [failure-result])
   (sorted-map-remove! mutable-sorted-map key)
   (sorted-map-remove-all! mutable-sorted-map keys)
-  (sorted-map-clear! mutable-sorted-map))
+  (sorted-map-clear! mutable-sorted-map)
+
+  #:fallbacks
+
+  [(define/generic generic-sorted-map-remove! sorted-map-remove!)
+
+   (define (sorted-map-remove-all! this keys)
+     (for ([key keys])
+       (generic-sorted-map-remove! this key)))])
 
 
 ;; Subtypes must implement the gen:sorted-map interface *and* the gen:mutable-sorted-map interface.
