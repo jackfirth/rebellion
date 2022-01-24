@@ -18,6 +18,7 @@
 
 
 (require racket/generic
+         racket/match
          rebellion/base/comparator
          rebellion/base/range
          rebellion/collection/entry
@@ -144,24 +145,18 @@
      (mutable-sorted-map-entry-set-delegate-map this))
 
    (define (sorted-set-add! this element)
-     (raise-arguments-error
-      (name sorted-set-add)
-      "sorted map key sets do not support insertion"
-      "key set" this
-      "element" element))
+     (sorted-map-put-if-absent! (get-delegate this) (entry-key element) (entry-value element))
+     (void))
 
    (define (sorted-set-add-all! this elements)
-     (raise-arguments-error
-      (name sorted-set-add-all)
-      "sorted map key sets do not support insertion"
-      "key set" this
-      "elements" elements))
+     (for ([e elements])
+       (sorted-set-add! this e)))
 
    (define (sorted-set-remove! this element)
-     (sorted-map-remove! (get-delegate this) element))
+     (sorted-map-remove! (get-delegate this) (entry-key element)))
 
    (define (sorted-set-remove-all! this elements)
-     (sorted-map-remove-all! (get-delegate this) elements))
+     (sorted-map-remove-all! (get-delegate this) (for/list ([e elements]) (entry-key elements))))
 
    (define (sorted-set-clear! this)
      (sorted-map-clear! (get-delegate this)))])
