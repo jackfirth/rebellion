@@ -175,6 +175,12 @@
   (entry (persistent-red-black-node-key node) (persistent-red-black-node-value node)))
 
 
+(define (persistent-red-black-node-set-value node value)
+  (if (equal? value (persistent-red-black-node-value node))
+      node
+      (struct-copy persistent-red-black-node node [value value])))
+
+
 (struct persistent-red-black-tree
   (comparator root-node)
   #:guard (struct-guard/c comparator? (or/c persistent-red-black-node? black-leaf))
@@ -544,9 +550,9 @@
   (define/guard (loop node)
     (guard (persistent-red-black-node? node) else
       (singleton-red-black-node key value))
-    (define node-element (persistent-red-black-node-key node))
-    (match (compare key<=> key node-element)
-      [(== equivalent) node]
+    (define node-key (persistent-red-black-node-key node))
+    (match (compare key<=> key node-key)
+      [(== equivalent) (persistent-red-black-node-set-value node value)]
       
       [(== lesser)
        (define new-node
