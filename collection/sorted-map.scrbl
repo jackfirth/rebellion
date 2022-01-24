@@ -8,6 +8,7 @@
                      rebellion/base/comparator
                      rebellion/base/option
                      rebellion/base/range
+                     rebellion/base/result
                      rebellion/collection/entry
                      rebellion/collection/hash
                      rebellion/collection/sorted-map
@@ -28,6 +29,7 @@
                    'rebellion/collection/entry
                    'rebellion/collection/hash
                    'rebellion/collection/sorted-map
+                   'rebellion/collection/sorted-set
                    'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
 
@@ -520,7 +522,14 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  When used on mutable sorted maps, the returned map is also a @tech{write-through view} --- mutating
  the returned map will mutate the original, underlying map. The returned map supports all of the same
- operations as ordinary mutable sorted maps.}
+ operations as ordinary mutable sorted maps.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-reverse map))}
 
 
 @defproc[(sorted-map-keys [map sorted-map?]) sorted-set?]{
@@ -530,9 +539,25 @@ not a copy, so it constructs the view in constant time regardless of the size of
  returned view. The returned view is an @racket[immutable-sorted-set?] if @racket[map] is immutable,
  and similarly it is a @racket[mutable-sorted-set?] if @racket[map] is mutable.
 
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-map-keys (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
  When used on mutable sorted maps, the returned set is also a @tech{write-through view} --- mutating
  the returned key set will mutate the original, underlying map. The returned key set only supports set
- removal operations and cannot be used to insert new entries into @racket[map].}
+ removal operations and cannot be used to insert new entries into @racket[map].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>)))
+
+   (sorted-set-remove! (sorted-map-keys map) 2)
+   map
+   (eval:error (sorted-set-add! (sorted-map-keys map) 5)))}
 
 
 @defproc[(sorted-map-entries [map sorted-map?]) sorted-set?]{
@@ -544,10 +569,27 @@ not a copy, so it constructs the view in constant time regardless of the size of
  a @tech{comparator} on @tech{entries} that ignores the entry's value and compares its keys using the
  same comparator as @racket[map].
 
+ @(examples
+   #:eval (make-evaluator) #:once
+   (sorted-map-entries (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
  When used on mutable sorted maps, the returned set is also a @tech{write-through view} --- mutating
  the returned entry set will mutate the original, underlying map. The returned set supports all of the
  same operations as ordinary mutable sorted sets. Note that because it uses a comparator that ignores
- entry values, it cannot be used to insert entries with duplicate keys.}
+ entry values, it cannot be used to insert entries with duplicate keys.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>)))
+
+   (sorted-set-remove! (sorted-map-entries map) (entry 2 'b))
+   map
+   (sorted-set-add! (sorted-map-entries map) (entry 5 'b))
+   map)}
 
 
 @section{Modifying Sorted Maps}
