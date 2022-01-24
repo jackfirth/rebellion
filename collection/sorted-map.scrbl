@@ -601,7 +601,19 @@ not a copy, so it constructs the view in constant time regardless of the size of
  Returns the value mapped by @racket[key] in @racket[map]. If no value exists for @racket[key], then
  @racket[failure-result] determines the result: if it's a procedure it's called with no arguments
  to produce the result, if it's not a procedure it's returned directly. Either way, the returned
- result is also inserted into @racket[map] as the value for @racket[key].}
+ result is also inserted into @racket[map] as the value for @racket[key].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>)))
+
+   (sorted-map-get! map 2 'missing)
+   (sorted-map-get! map 5 'missing)
+   map)}
 
 
 @defproc[(sorted-map-get-entry! [map sorted-map?] [key any/c] [failure-result failure-result/c])
@@ -611,7 +623,19 @@ not a copy, so it constructs the view in constant time regardless of the size of
  @racket[failure-result] determines the resulting entry's value: if it's a procedure it's called with
  no arguments to produce the value, if it's not a procedure it's used directly as the resulting
  entry's value. Either way, the produced value is also inserted into @racket[map] as the value for
- @racket[key].}
+ @racket[key].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>)))
+
+   (sorted-map-get-entry! map 2 'missing)
+   (sorted-map-get-entry! map 5 'missing)
+   map)}
 
 
 @defproc[(sorted-map-put [map immutable-sorted-map?] [key any/c] [value any/c])
@@ -619,13 +643,34 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Functionally inserts a mapping from @racket[key] to @racket[value] into @racket[map] by returning a
  new immutable sorted map containing all of the entries of @racket[map] and the additional inserted
- mapping from @racket[key] to @racket[value]. The input map is not modified.}
+ mapping from @racket[key] to @racket[value]. The input map is not modified.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-put map 4 'd)
+   (sorted-map-put map 2 'x))}
 
 
 @defproc[(sorted-map-put! [map mutable-sorted-map?] [key any/c] [value any/c]) void?]{
 
  Inserts a mapping from @racket[key] to @racket[value] into @racket[map], overwriting any existing
- mapping for @racket[key] in @racket[map].}
+ mapping for @racket[key] in @racket[map].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>)))
+
+   (sorted-map-put! map 2 'x)
+   map
+   (sorted-map-put! map 4 'd)
+   map)}
 
 
 @defproc[(sorted-map-put-all [map immutable-sorted-map?] [entries (sequence/c entry?)])
@@ -633,13 +678,31 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Functionally inserts a mapping for each key-value entry in @racket[entries] into @racket[map] by
  returning a new immutable sorted map containing all of the entries of @racket[map] and the additional
- inserted mappings. If any @racket[entries] have duplicate keys, a contract error is raised.}
+ inserted mappings. If any @racket[entries] have duplicate keys, a contract error is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-put-all map (in-hash-entries (hash 2 'x 3 'x 4 'x))))}
 
 
 @defproc[(sorted-map-put-all! [map mutable-sorted-map?] [entries (sequence/c entry?)]) void?]{
 
  Inserts a mapping for each key-value entry in @racket[entries] into @racket[map]. If any
- @racket[entries] have duplicate keys, a contract error is raised.}
+ @racket[entries] have duplicate keys, a contract error is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>)))
+
+   (sorted-map-put-all! map (in-hash-entries (hash 2 'x 3 'x 4 'x)))
+   map)}
 
 
 @defproc[(sorted-map-put-if-absent [map immutable-sorted-map?] [key any/c] [value any/c])
@@ -650,7 +713,15 @@ not a copy, so it constructs the view in constant time regardless of the size of
  a @racket[failure] containing the preexisting value is returned. Otherwise, returns a
  @racket[success] value of a new immutable sorted map containing all of the entries of @racket[map]
  and the additional inserted mapping from @racket[key] to @racket[value]. The input map is not
- modified.}
+ modified.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 1 'a 2 'b 3 'c #:key-comparator natural<=>)))
+
+   (sorted-map-put-if-absent map 4 'd)
+   (sorted-map-put-if-absent map 2 'x))}
 
 
 @defproc[(sorted-map-put-if-absent! [map mutable-sorted-map?] [key any/c] [value any/c])
@@ -658,7 +729,20 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Inserts a mapping from @racket[key] to @racket[value] into @racket[map] if @racket[map]
  does not already contain a mapping for @racket[key]. If @racket[map] already contains @racket[key],
- the map is not modified and the preexisting value is returned.}
+ the map is not modified and the preexisting value is returned.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 1 'a) (entry 2 'b) (entry 3 'c))
+       #:key-comparator natural<=>)))
+
+   (sorted-map-put-if-absent! map 4 'd)
+   map
+   (sorted-map-put-if-absent! map 2 'x)
+   map)}
 
 
 @defproc[(sorted-map-update
@@ -673,7 +757,16 @@ not a copy, so it constructs the view in constant time regardless of the size of
  a mapping from @racket[key] to the value returned by @racket[updater]. If no value exists for
  @racket[key], then @racket[failure-result] determines the value passed to @racket[updater]: if it's a
  procedure it's called with no arguments to produce the value, if it's not a procedure it's passed to
- @racket[updater] directly. The input @racket[map] is not modified.}
+ @racket[updater] directly. The input @racket[map] is not modified.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 'a 1 'b 1 'c 1 #:key-comparator symbol<=>)))
+
+   (sorted-map-update map 'b add1)
+   (eval:error (sorted-map-update map 'd add1))
+   (sorted-map-update map 'd add1 0))}
 
 
 @defproc[(sorted-map-update!
@@ -687,19 +780,51 @@ not a copy, so it constructs the view in constant time regardless of the size of
  using the returned value as the new value for @racket[key]. If no value exists for @racket[key], then
  @racket[failure-result] determines the value passed to @racket[updater]: if it's a procedure it's
  called with no arguments to produce the value, if it's not a procedure it's passed to
- @racket[updater] directly.}
+ @racket[updater] directly.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 'a 1) (entry 'b 1) (entry 'c 1))
+       #:key-comparator symbol<=>)))
+
+   (sorted-map-update! map 'b add1)
+   map
+   (eval:error (sorted-map-update! map 'd add1))
+   (sorted-map-update! map 'd add1 0)
+   map)}
 
 
 @defproc[(sorted-map-remove [map immutable-sorted-map?] [key any/c]) immutable-sorted-map?]{
 
  Functionally removes the mapping for @racket[key] from @racket[map] by returning a new immutable
  sorted map with all of the entries in @racket[map] except for the entry for @racket[key]. The input
- @racket[map] is not modified.}
+ @racket[map] is not modified.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 'a 1 'b 1 'c 1 #:key-comparator symbol<=>)))
+
+   (sorted-map-remove map 'b))}
 
 
 @defproc[(sorted-map-remove! [map mutable-sorted-map?] [key any/c]) void?]{
 
- Removes the mapping for @racket[key] from @racket[map].}
+ Removes the mapping for @racket[key] from @racket[map].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 'a 1) (entry 'b 1) (entry 'c 1))
+       #:key-comparator symbol<=>)))
+
+   (sorted-map-remove! map 'b)
+   map)}
 
 
 @defproc[(sorted-map-remove-all [map immutable-sorted-map?] [keys (sequence/c any/c)])
@@ -707,19 +832,49 @@ not a copy, so it constructs the view in constant time regardless of the size of
 
  Functionally removes the mappings for @racket[keys] from @racket[map] by returning a new immutable
  sorted map with all of the entries in @racket[map] except for the entries for @racket[keys]. The
- input @racket[map] is not modified. Duplicate @racket[keys] are ignored.}
+ input @racket[map] is not modified. Duplicate @racket[keys] are ignored.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map (sorted-map 'a 1 'b 1 'c 1 #:key-comparator symbol<=>)))
+
+   (sorted-map-remove-all map (list 'b 'c 'd)))}
 
 
 @defproc[(sorted-map-remove-all! [map mutable-sorted-map?] [keys (sequence/c any/c)])
          void?]{
 
- Removes the mappings for @racket[keys] from @racket[map]. Duplicate @racket[keys] are ignored.}
+ Removes the mappings for @racket[keys] from @racket[map]. Duplicate @racket[keys] are ignored.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 'a 1) (entry 'b 1) (entry 'c 1))
+       #:key-comparator symbol<=>)))
+
+   (sorted-map-remove-all! map (list 'b 'c 'd))
+   map)}
 
 
 @defproc[(sorted-map-clear! [map mutable-sorted-map?]) void?]{
 
  Removes all entries from @racket[map]. On its own this operation isn't all that useful, but it can be
- composed with @racket[sorted-submap] to delete a range within a sorted map.}
+ composed with @racket[sorted-submap] to delete a range within a sorted map.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define map
+      (make-mutable-sorted-map
+       (list (entry 'a 1) (entry 'b 1) (entry 'c 1))
+       #:key-comparator symbol<=>)))
+
+   (sorted-map-clear!
+    (sorted-submap map (less-than-range 'c #:comparator symbol<=>)))
+   map)}
 
 
 @section{Sorted Map Builders}
