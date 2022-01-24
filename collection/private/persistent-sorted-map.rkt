@@ -306,8 +306,14 @@
             updater
             [failure-result
              (default-sorted-map-lookup-failure-result (name sorted-map-update) key this)])
-     (define tree (persistent-red-black-tree-update tree key updater failure-result))
-     (constructor:persistent-sorted-map tree))])
+     (define tree
+       (persistent-red-black-tree-update
+        (persistent-sorted-map-tree this) key updater failure-result))
+     (constructor:persistent-sorted-map tree))
+
+   (define (sorted-map-remove this key)
+     (constructor:persistent-sorted-map
+      (persistent-red-black-tree-remove (persistent-sorted-map-tree this) key)))])
 
 
 (struct persistent-sorted-submap abstract-immutable-sorted-map (delegate key-range)
