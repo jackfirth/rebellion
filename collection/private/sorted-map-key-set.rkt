@@ -131,14 +131,14 @@
 
    (define (sorted-set-add! this element)
      (raise-arguments-error
-      (name sorted-set-add)
+      (name sorted-set-add!)
       "sorted map key sets do not support insertion"
       "key set" this
       "element" element))
 
    (define (sorted-set-add-all! this elements)
      (raise-arguments-error
-      (name sorted-set-add-all)
+      (name sorted-set-add-all!)
       "sorted map key sets do not support insertion"
       "key set" this
       "elements" elements))
