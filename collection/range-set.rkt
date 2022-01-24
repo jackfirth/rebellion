@@ -313,13 +313,13 @@
 
 (define (range-set-contains? ranges value)
   (define vec (range-set-sorted-range-vector ranges))
-  (position? (range-vector-binary-search vec value)))
+  (list-position? (range-vector-binary-search vec value)))
 
 
 (define (range-set-encloses? ranges other-range)
   (define vec (range-set-sorted-range-vector ranges))
   (match (range-vector-binary-search-cut vec (range-lower-cut other-range))
-    [(position _ overlapping-range)
+    [(list-position _ overlapping-range)
      (range-encloses? overlapping-range other-range)]
     [_ #false]))
 
@@ -335,18 +335,18 @@
   (define upper-boundary (range-vector-binary-search-cut vec (range-upper-cut subset-range)))
   (define start
     (match lower-boundary
-      [(position i _) i]
-      [(gap i _ _) i]))
+      [(list-position i _) i]
+      [(list-gap i _ _) i]))
   (define end
     (match upper-boundary
-      [(position i _) (add1 i)]
-      [(gap i _ _) i]))
+      [(list-position i _) (add1 i)]
+      [(list-gap i _ _) i]))
   (define subvec (make-vector (- end start)))
   (vector-copy! subvec 0 vec start end)
-  (when (position? lower-boundary)
+  (when (list-position? lower-boundary)
     (define modified-range (range-intersection (vector-ref subvec 0) subset-range))
     (vector-set! subvec 0 modified-range))
-  (when (position? upper-boundary)
+  (when (list-position? upper-boundary)
     (define index-in-subvec (sub1 (vector-length subvec)))
     (define modified-range (range-intersection (vector-ref subvec index-in-subvec) subset-range))
     (vector-set! subvec index-in-subvec modified-range))
