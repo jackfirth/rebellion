@@ -199,7 +199,16 @@
   (sorted-map-put-if-absent immutable-sorted-map key value)
   (sorted-map-update immutable-sorted-map key updater [failure-result])
   (sorted-map-remove immutable-sorted-map key)
-  (sorted-map-remove-all immutable-sorted-map keys))
+  (sorted-map-remove-all immutable-sorted-map keys)
+
+  #:fallbacks
+
+  [(define/generic generic-sorted-map-remove sorted-map-remove)
+
+   (define (sorted-map-remove-all this keys)
+     (for/fold ([this this])
+               ([k keys])
+       (generic-sorted-map-remove this k)))])
 
 
 ;; Subtypes must implement the gen:sorted-map interface *and* the gen:immutable-sorted-map interface.
