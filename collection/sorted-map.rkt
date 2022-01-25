@@ -5,6 +5,8 @@
 
 
 (provide
+ for/sorted-map
+ for*/sorted-map
  (all-from-out rebellion/collection/private/mutable-sorted-map)
  (all-from-out rebellion/collection/private/sorted-map-builder)
  (all-from-out rebellion/collection/private/sorted-map-interface)
@@ -15,7 +17,9 @@
   [into-sorted-map (-> comparator? (reducer/c entry? immutable-sorted-map?))]))
 
 
-(require racket/match
+(require (for-syntax racket/base
+                     rebellion/private/for-body)
+         racket/match
          racket/sequence
          rebellion/base/comparator
          rebellion/collection/entry
@@ -23,7 +27,9 @@
          rebellion/collection/private/sorted-map-builder
          rebellion/collection/private/sorted-map-interface
          rebellion/private/static-name
-         rebellion/streaming/reducer)
+         rebellion/streaming/reducer
+         (submod rebellion/streaming/reducer private-for-rebellion-only)
+         syntax/parse/define)
 
 
 (module+ test
@@ -55,6 +61,20 @@
    (λ () (make-sorted-map-builder key-comparator))
    build-sorted-map
    #:name (name into-sorted-map)))
+
+
+(define-syntax-parse-rule (for/sorted-map #:key-comparator key-comparator clauses body)
+  #:declare key-comparator (expr/c #'comparator?)
+  #:declare body (for-body this-syntax)
+  #:with context this-syntax
+  (for/reducer/derived context (into-sorted-map key-comparator.c) clauses (~@ . body)))
+
+
+(define-syntax-parse-rule (for*/sorted-map #:key-comparator key-comparator clauses body)
+  #:declare key-comparator (expr/c #'comparator?)
+  #:declare body (for-body this-syntax)
+  #:with context this-syntax
+  (for*/reducer/derived context (into-sorted-map key-comparator.c) clauses (~@ . body)))
 
 
 (module+ test
