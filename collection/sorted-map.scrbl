@@ -130,6 +130,36 @@ not a copy, so it constructs the view in constant time regardless of the size of
    (transduce (in-hash-entries h) #:into (into-sorted-map natural<=>)))}
 
 
+@defform[(for/sorted-map #:key-comparator key-comparator (for-clause ...)
+           body-or-break ... body)
+         #:contracts ([key-comparator comparator?]
+                      [body entry?])]{
+
+ Like @racket[for], but collects the iterated entries into a @tech{sorted map}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for/sorted-map #:key-comparator char<=>
+     ([char (in-string "cat")]
+      [i (in-naturals)])
+     (entry char i)))}
+
+
+@defform[(for*/sorted-map #:key-comparator key-comparator (for-clause ...)
+           body-or-break ... body)
+         #:contracts ([key-comparator comparator?]
+                      [body entry?])]{
+
+ Like @racket[for*], but collects the iterated entries into a @tech{sorted map}.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (for*/sorted-map #:key-comparator char<=>
+     ([str (in-list (list "abc" "tuv" "xyz"))]
+      [char (in-string str)])
+     (entry char str)))}
+
+
 @section{Iterating Sorted Maps}
 
 
