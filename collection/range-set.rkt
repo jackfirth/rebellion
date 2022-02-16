@@ -478,8 +478,8 @@
 
   (test-case (name-string range-subset)
     (define ranges (range-set (singleton-range 1) (closed-range 4 7) (greater-than-range 10)))
-    #;(check-equal? (range-subset ranges (unbounded-range)) ranges)
-#|
+    (check-equal? (range-subset ranges (unbounded-range)) ranges)
+
     (test-case "non-intersecting subset selecting middle ranges only"
       (define subset-range (closed-range 3 8))
       (define expected (range-set (closed-range 4 7)))
@@ -504,7 +504,7 @@
       (define subset-range (less-than-range 6))
       (define expected (range-set (singleton-range 1) (closed-open-range 4 6)))
       (check-equal? (range-subset ranges subset-range) expected))
-|#
+
     (test-case "intersecting subset selecting upper ranges only"
       (define subset-range (greater-than-range 5))
       (define expected (range-set (open-closed-range 5 7) (greater-than-range 10)))
