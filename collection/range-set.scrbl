@@ -6,6 +6,7 @@
                      racket/math
                      racket/sequence
                      racket/set
+                     rebellion/base/comparator
                      rebellion/base/range
                      rebellion/collection/range-set
                      rebellion/streaming/reducer
@@ -17,7 +18,8 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/base/range
+    #:public (list 'rebellion/base/comparator
+                   'rebellion/base/range
                    'rebellion/collection/range-set
                    'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
@@ -36,16 +38,26 @@ used as a sequence the set's ranges are iterated in ascending order.
  A predicate for @tech{range sets}.}
 
 
-@defproc[(range-set [range nonempty-range?] ...) range-set?]{
- Constructs a @tech{range set} containing the given @racket[range]s. Overlapping ranges are
- disallowed, but adjacent ranges are accepted and are merged together. All ranges must use the same
- @tech{comparator} or a contract exception is raised.
+@defproc*[([(range-set
+             [range nonempty-range?] ...
+             [#:comparator comparator comparator?])
+            range-set?]
+           [(range-set
+             [first-range nonempty-range?]
+             [range nonempty-range?] ...
+             [#:comparator comparator comparator? (range-comparator first-range)])
+            range-set?])]{
+ Constructs a @tech{range set} containing the given @racket[range]s. If at least one @racket[range] is
+ provided, @racket[comparator] may be omitted and defaults to the comparator of the first range.
+ Overlapping ranges are disallowed, but adjacent ranges are accepted and are merged together. All
+ ranges must use @racket[comparator] as their endpoint comparators or a contract exception is raised.
 
  @(examples
    #:eval (make-evaluator) #:once
    (range-set (closed-open-range 2 5))
    (range-set (closed-open-range 4 8) (closed-open-range 0 4))
-   (range-set (greater-than-range 20) (less-than-range 5) (closed-range 10 15)))}
+   (range-set (greater-than-range 20) (less-than-range 5) (closed-range 10 15))
+   (range-set (closed-open-range 2 5) #:comparator real<=>))}
 
 
 @defproc[(empty-range-set? [v any/c]) boolean?]{
@@ -69,6 +81,10 @@ used as a sequence the set's ranges are iterated in ascending order.
  @(examples
    #:eval (make-evaluator) #:once
    (range-set-size (range-set (closed-range 3 5) (closed-range 8 14))))}
+
+
+@defproc[(range-set-comparator [ranges range-set?]) comparator?]{
+ Returns the comparator that @racket[ranges] uses to compare elements to its contained ranges.}
 
 
 @defproc[(range-set-contains? [ranges range-set?] [value any/c]) boolean?]{
@@ -124,42 +140,48 @@ used as a sequence the set's ranges are iterated in ascending order.
  when used directly within a @racket[for] clause.}
 
 
-@defthing[into-range-set (reducer/c nonempty-range? range-set?)]{
- A @tech{reducer} that reduces a sequence of nonempty ranges into a @tech{range set}. As in the
- @racket[range-set] constructor, overlapping ranges are disallowed and all ranges must use the same
- @tech{comparator}.
+@defproc[(into-range-set [comparator comparator?]) (reducer/c nonempty-range? range-set?)]{
+ Constructs a @tech{reducer} that reduces a sequence of nonempty ranges (which must use
+ @racket[comparator]) into a @tech{range set}. As in the @racket[range-set] constructor, overlapping
+ ranges are disallowed.
 
  @(examples
    #:eval (make-evaluator) #:once
    (transduce (list (closed-range 1 3) (closed-range 10 12) (closed-range 5 6))
-              #:into into-range-set))}
+              #:into (into-range-set real<=>)))}
 
 
-@defproc[(sequence->range-set [ranges (sequence/c nonempty-range?)]) range-set?]{
- Constructs a @tech{range set} from the given @racket[ranges]. As in the @racket[range-set]
- consturctor, overlapping ranges are disallowed and all ranges must use the same @tech{comparator}.
+@defproc[(sequence->range-set
+          [ranges (sequence/c nonempty-range?)]
+          [#:comparator comparator comparator?])
+         range-set?]{
+ Constructs a @tech{range set} from the given @racket[ranges] (which must use @racket[comparator].) As
+ in the @racket[range-set] consturctor, overlapping ranges are disallowed.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (sequence->range-set (list (closed-range 1 3) (closed-range 10 12) (closed-range 5 6))))}
+   (sequence->range-set
+    (list (closed-range 1 3) (closed-range 10 12) (closed-range 5 6))
+    #:comparator real<=>))}
 
 
-@defform[(for/range-set (for-clause ...) body-or-break ... body)]{
+@defform[(for/range-set #:comparator comparator (for-clause ...) body-or-break ... body)]{
  Like @racket[for], but collects the iterated ranges into a @tech{range set}.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (for/range-set ([char (in-string "abcxyz")])
+   (for/range-set #:comparator real<=> ([char (in-string "abcxyz")])
      (define codepoint (char->integer char))
      (closed-open-range codepoint (add1 codepoint))))}
 
 
-@defform[(for*/range-set (for-clause ...) body-or-break ... body)]{
+@defform[(for*/range-set #:comparator comparator (for-clause ...) body-or-break ... body)]{
  Like @racket[for*], but collects the iterated ranges into a @tech{range set}.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (for*/range-set ([str (in-list (list "abc" "tuv" "xyz" "qrs"))]
-                    [char (in-string str)])
+   (for*/range-set #:comparator real<=>
+     ([str (in-list (list "abc" "tuv" "xyz" "qrs"))]
+      [char (in-string str)])
      (define codepoint (char->integer char))
      (closed-open-range codepoint (add1 codepoint))))}

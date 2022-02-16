@@ -138,7 +138,8 @@
   (provide range-compare-to-cut
            range-compare-to-value
            range-lower-cut
-           range-upper-cut))
+           range-upper-cut
+           range-from-cuts))
 
 
 (require racket/bool
@@ -161,37 +162,48 @@
 ;@------------------------------------------------------------------------------
 ;; Data model
 
+
 (define-tuple-type range (lower-bound upper-bound comparator)
   #:omit-root-binding)
 
+
 (define-singleton-type unbounded)
 
+
 (define-enum-type bound-type (inclusive exclusive))
+
 
 (define-tuple-type inclusive-bound (endpoint))
 (define-tuple-type exclusive-bound (endpoint))
 
+
 (define (range-bound? v)
   (or (inclusive-bound? v) (exclusive-bound? v)))
+
 
 (define (range-bound endpoint type)
   (if (equal? type inclusive)
       (inclusive-bound endpoint)
       (exclusive-bound endpoint)))
 
+
 (define (range-bound-type bound)
   (if (inclusive-bound? bound) inclusive exclusive))
+
 
 (define (range-bound-endpoint bound)
   (if (inclusive-bound? bound)
       (inclusive-bound-endpoint bound)
       (exclusive-bound-endpoint bound)))
 
+
 (define (range-lower-endpoint range)
   (range-bound-endpoint (range-lower-bound range)))
 
+
 (define (range-upper-endpoint range)
   (range-bound-endpoint (range-upper-bound range)))
+
 
 (define (range-lower-cut range)
   (define bound (range-lower-bound range))
@@ -200,6 +212,7 @@
     [(inclusive-bound? bound) (lower-cut (range-bound-endpoint bound))]
     [else (upper-cut (range-bound-endpoint bound))]))
 
+
 (define (range-upper-cut range)
   (define bound (range-upper-bound range))
   (strict-cond
@@ -207,17 +220,24 @@
     [(inclusive-bound? bound) (upper-cut (range-bound-endpoint bound))]
     [else (lower-cut (range-bound-endpoint bound))]))
 
+
+(define (range-from-cuts lower-cut upper-cut #:comparator comparator)
+  (range (cut->lower-bound lower-cut) (cut->upper-bound upper-cut) #:comparator comparator))
+
+
 (define (cut->lower-bound cut)
   (match cut
     [(== bottom-cut) unbounded]
     [(lower-cut endpoint) (inclusive-bound endpoint)]
     [(upper-cut endpoint) (exclusive-bound endpoint)]))
 
+
 (define (cut->upper-bound cut)
   (match cut
     [(== top-cut) unbounded]
     [(upper-cut endpoint) (inclusive-bound endpoint)]
     [(lower-cut endpoint) (exclusive-bound endpoint)]))
+
 
 (define (range-contains? rng v)
   (define lower (range-lower-cut rng))
@@ -226,6 +246,7 @@
   (define cmp (cut<=> (range-comparator rng)))
   (and (equal? (compare cmp lower cut-v) lesser)
        (equal? (compare cmp cut-v upper) lesser)))
+
 
 ;@------------------------------------------------------------------------------
 ;; Smart constructors
@@ -710,9 +731,7 @@
   (define cmp (cut<=> (range-comparator range1)))
   (define lower (if (equal? (compare cmp lower1 lower2) greater) lower2 lower1))
   (define upper (if (equal? (compare cmp upper1 upper2) lesser) upper2 upper1))
-  (range (cut->lower-bound lower)
-         (cut->upper-bound upper)
-         #:comparator (range-comparator range1)))
+  (range-from-cuts lower upper #:comparator (range-comparator range1)))
 
 
 (module+ test
