@@ -163,8 +163,43 @@
 ;; Data model
 
 
-(define-tuple-type range (lower-bound upper-bound comparator)
-  #:omit-root-binding)
+(struct range (lower-bound upper-bound comparator)
+  #:transparent
+  #:constructor-name constructor:range
+  #:omit-define-syntaxes
+
+  #:methods gen:custom-write
+
+  [(define (write-proc this out mode)
+     (define (recur v)
+       (match mode
+         [#true (write v out)]
+         [#false (display v out)]
+         [0 (print v out 0)]
+         [1 (print v out 1)]))
+     (write-string "#<range:" out)
+     (write-string (symbol->string (object-name (range-comparator this))) out)
+     (write-string " " out)
+     (match (range-lower-bound this)
+       [(== unbounded)
+        (write-string "[-∞" out)]
+       [(inclusive-bound lower)
+        (write-string "[" out)
+        (recur lower)]
+       [(exclusive-bound lower)
+        (write-string "(" out)
+        (recur lower)])
+     (write-string ", " out)
+     (match (range-upper-bound this)
+       [(== unbounded)
+        (write-string "∞]" out)]
+       [(inclusive-bound upper)
+        (recur upper)
+        (write-string "]" out)]
+       [(exclusive-bound upper)
+        (recur upper)
+        (write-string ")" out)])
+     (write-string ">" out))])
 
 
 (define-singleton-type unbounded)
