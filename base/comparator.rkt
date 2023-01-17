@@ -16,6 +16,7 @@
   [comparator-reverse (-> comparator? comparator?)]
   [comparator-chain (-> comparator? comparator? ... comparator?)]
   [comparator-of-constants (-> any/c ... comparator?)]
+  [comparator-of-types (-> predicate/c ... comparator?)]
   [comparator-min (-> comparator? any/c any/c ... any/c)]
   [comparator-max (-> comparator? any/c any/c ... any/c)]
   [comparison? predicate/c]
@@ -150,6 +151,26 @@
        (raise-argument-error enclosing-function-name (format "one of ~v" ascending-constants) y))
      (compare real<=> i j))
    #:name enclosing-function-name))
+
+
+(define (comparator-of-types . ascending-types)
+  (define duplicate (check-duplicates ascending-types))
+  (when duplicate
+    (raise-arguments-error
+     (name comparator-of-types)
+     "contract violation;\n types must be unique to prevent ambiguity"
+     "types" ascending-types
+     "duplicate" duplicate))
+  (make-comparator
+   (λ (x y)
+     (define i (index-where ascending-types (λ (type) (type x))))
+     (define j (index-where ascending-types (λ (type) (type y))))
+     (unless i
+       (raise-argument-error (name comparator-of-types) (format "one of ~v" ascending-types) x))
+     (unless j
+       (raise-argument-error (name comparator-of-types) (format "one of ~v" ascending-types) y))
+     (compare real<=> i j))
+   #:name (name comparator-of-types)))
 
 
 (define (comparator-min comparator v . vs)
@@ -319,10 +340,32 @@
     (check-exn #rx"expected: one of '\\(small medium large\\)" (λ () (compare size<=> 'small 'short)))
     (check-exn #rx"given: 'short" (λ () (compare size<=> 'small 'short)))
     (check-exn exn:fail:contract? (λ () (comparator-of-constants 'small 'medium 'small)))
-    (check-exn #rx"'small" (λ () (comparator-of-constants 'small 'medium 'small)))
+    (check-exn #rx"duplicate: 'small" (λ () (comparator-of-constants 'small 'medium 'small)))
     (check-exn
      #rx"'\\(small medium small\\)" (λ () (comparator-of-constants 'small 'medium 'small)))
     (check-exn exn:fail:contract? (λ () (comparator-of-constants #false #false))))
+
+  (test-case (name-string comparator-of-types)
+    (define type<=> (comparator-of-types number? symbol? string?))
+    (check-equal? (compare type<=> 42 'foo) lesser)
+    (check-equal? (compare type<=> 42 "apple") lesser)
+    (check-equal? (compare type<=> 'foo "apple") lesser)
+    (check-equal? (compare type<=> 'foo 42) greater)
+    (check-equal? (compare type<=> "apple" 42) greater)
+    (check-equal? (compare type<=> "apple" 'foo) greater)
+    (check-equal? (compare type<=> "apple" "banana") equivalent)
+    (check-exn exn:fail:contract? (λ () (compare type<=> 42 #false)))
+    (check-exn
+     #rx"expected: one of '\\(#<procedure:number\\?> #<procedure:symbol\\?> #<procedure:string\\?>\\)"
+     (λ () (compare type<=> 42 #false)))
+    (check-exn #rx"given: #f" (λ () (compare type<=> 42 #false)))
+    (check-exn exn:fail:contract? (λ () (comparator-of-types number? symbol? number?)))
+    (check-exn
+     #rx"duplicate: #<procedure:number\\?>" (λ () (comparator-of-types number? symbol? number?)))
+    (check-exn
+     #rx"'\\(#<procedure:number\\?> #<procedure:symbol\\?> #<procedure:number\\?>\\)"
+     (λ () (comparator-of-types number? symbol? number?)))
+    (check-exn exn:fail:contract? (λ () (comparator-of-types number? number?))))
 
   (test-case (name-string comparator-min)
     (check-equal? (comparator-min real<=> 1 99 99) 1)

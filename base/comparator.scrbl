@@ -115,6 +115,7 @@ with equality unless otherwise stated.
 
 @section{Constructing Comparators}
 
+
 @defproc[(comparator-of-constants [constant any/c] ...) comparator?]{
  Constructs a @tech{comparator} that compares only the given @racket[constant]s using @racket[equal?].
  The order the constants are given in is interpreted as ascending order. Each @racket[constant] must
@@ -126,6 +127,21 @@ with equality unless otherwise stated.
    (compare size<=> 'small 'large)
    (compare size<=> 'medium 'medium)
    (eval:error (compare size<=> 'small 'big)))}
+
+
+@defproc[(comparator-of-types [type-predicate predicate/c] ...) comparator?]{
+ Constructs a @tech{comparator} that compares the types of values using the given
+ @racket[type-predicate]s. The order the predicates are given in is interpreted as ascending order.
+ Each @racket[type-predicate] must be unique (according to @racket[equal?]), otherwise a contract
+ exception is raised. Compared values must satisfy at least one of the predicates, otherwise a
+ contract exception is raised.
+
+ @(examples
+   #:eval (make-evaluator)
+   (eval:no-prompt (define type<=> (comparator-of-types number? symbol? string?)))
+   (transduce (list 'foo 42 "apple" 'bar "banana" 70) (sorting type<=>) #:into into-list)
+   (eval:error (compare type<=> 42 #false)))}
+
 
 @defproc[(comparator-map [comparator comparator?]
                          [f (-> any/c any/c)]
