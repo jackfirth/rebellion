@@ -14,7 +14,8 @@
   [bottom-cut cut?]
   [intermediate-cut? predicate/c]
   [intermediate-cut-value (-> intermediate-cut? any/c)]
-  [cut<=> (-> comparator? (comparator/c cut?))]))
+  [cut<=> (-> comparator? (comparator/c cut?))]
+  [cut-flip-side (-> cut? cut?)]))
 
 
 (require racket/match
@@ -100,3 +101,10 @@
   (guard (middle-cut? right) then
     greater)
   equivalent)
+
+
+(define (cut-flip-side cut)
+  (match cut
+    [(upper-cut value) (lower-cut value)]
+    [(lower-cut value) (upper-cut value)]
+    [_ cut]))
