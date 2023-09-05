@@ -92,3 +92,12 @@ have the same size and rearrange elements in the same way.
  @(examples
    #:eval (make-evaluator) #:once
    (string-permute "abcdefg" (cyclic-permutation 4 5 6)))}
+
+@defproc[(list-permute [xs list?] [perm permutation?])
+         list?]{
+ Rearranges the elements of @racket[xs] according to @racket[perm], which
+ must have the same size as @racket[xs].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (list-permute '(a b c d e f g) (cyclic-permutation 4 5 6)))}
