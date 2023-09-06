@@ -7,6 +7,10 @@
  cyclic-permutation
  (contract-out
   [empty-permutation permutation?]
+  [list-permute
+   (->i ([xs () list?]
+         [perm (xs) (permutation-size/c (length xs))])
+        [_ () list?])]
   [permutation? (-> any/c boolean?)]
   [permutation-ref
    (->i ([perm () permutation?]
@@ -103,6 +107,11 @@
                  (λ (pos)
                    (string-ref str (permutation-ref perm pos))))))
 
+(define (list-permute xs perm)
+  (define vec (list->vector xs))
+  (vector->list
+   (vector-permute vec  perm)))
+
 (module+ test
   (define perm (permutation 3 5 4 0 1 2))
   (test-case "permutation-size"
@@ -121,6 +130,8 @@
   (test-case "string-permute"
     (check-pred immutable? (string-permute "abcdef" perm))
     (check-equal? (string-permute "abcdef" perm) "dfeabc"))
+  (test-case "list-permute"
+    (check-equal? (list-permute '(a b c d e f) perm) '(d f e a b c)))
   (test-case "empty-permutation"
     (check-equal? (permutation-size empty-permutation) 0)
     (check-equal? (string-permute "" empty-permutation) ""))
