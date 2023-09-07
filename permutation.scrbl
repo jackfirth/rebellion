@@ -2,13 +2,21 @@
 
 @(require (for-label racket/base
                      racket/contract/base
-                     rebellion/permutation)
+                     racket/math
+                     rebellion/collection/vector
+                     rebellion/permutation
+                     rebellion/streaming/reducer
+                     rebellion/streaming/transducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
           scribble/example)
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/permutation)
+    #:public
+    (list 'rebellion/collection/vector
+          'rebellion/permutation
+          'rebellion/streaming/reducer
+          'rebellion/streaming/transducer)
     #:private (list 'racket/base)))
 
 @title{Permutations}
@@ -33,8 +41,8 @@ have the same size and rearrange elements in the same way.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (string-permute "abcd" (permutation 0 2 1 3))
-   (string-permute "abcd" (permutation 3 2 1 0)))}
+   (permute "abcd" (permutation 0 2 1 3) #:into into-string)
+   (permute "abcd" (permutation 3 2 1 0) #:into into-string))}
 
 @defform[(cyclic-permutation position ...)]{
  Constructs a @tech{permutation} that moves the item at each @racket[position]
@@ -46,8 +54,9 @@ have the same size and rearrange elements in the same way.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (string-permute "abcdefghijklmnopqrstuvwxyz"
-                   (cyclic-permutation 5 17 25 8 0)))}
+   (permute "abcdefghijklmnopqrstuvwxyz"
+            (cyclic-permutation 5 17 25 8 0)
+            #:into into-string))}
 
 @defthing[empty-permutation permutation? #:value (permutation)]{
  The empty permutation, which rearranges nothing. The size of the empty
@@ -74,30 +83,41 @@ have the same size and rearrange elements in the same way.
    (permutation-ref p 3)
    (permutation-ref p 8))}
 
-@defproc[(vector-permute [vec (and/c vector? immutable?)] [perm permutation?])
-         (and/c vector? immutable?)]{
- Rearranges the elements of @racket[vec] according to @racket[perm], which must
- have the same size as @racket[vec].
+@defproc[(permute
+          [seq (sequence/c any/c)]
+          [perm permutation?]
+          [#:into reducer reducer? (into-vector)])
+         any/c]{
+ Rearranges the elements of @racket[seq] according to @racket[perm], which must have the same size as
+ @racket[seq] has elements. The rearranged elements are collected into @racket[reducer] which defaults
+ to a reduction into a vector.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (vector-permute (vector-immutable 'a 'b 'c 'd 'e 'f)
-                   (permutation 4 1 5 3 0 2)))}
+   (permute '(a b c d e f) (permutation 4 1 5 3 0 2))
+   (permute "abcdef" (permutation 4 1 5 3 0 2) #:into into-string))}
 
-@defproc[(string-permute [str (and/c string? immutable?)] [perm permutation?])
-         (and/c string? immutable?)]{
- Rearranges the characters of @racket[str] according to @racket[perm], which
- must have the same size as @racket[str].
 
- @(examples
-   #:eval (make-evaluator) #:once
-   (string-permute "abcdefg" (cyclic-permutation 4 5 6)))}
-
-@defproc[(list-permute [xs list?] [perm permutation?])
-         list?]{
- Rearranges the elements of @racket[xs] according to @racket[perm], which
- must have the same size as @racket[xs].
+@defproc[(permuting [perm permutation?]) transducer?]{
+ Constructs a @tech{transducer} that rearranges the upstream elements according to @racket[perm] and
+ emits them downstream. Elements are emitted as soon as they're available. The transduction consumes
+ memory linear in the size of the permutation, but references to elements are not kept after they've
+ been emitted downstream.
 
  @(examples
    #:eval (make-evaluator) #:once
-   (list-permute '(a b c d e f g) (cyclic-permutation 4 5 6)))}
+   (transduce "abcdef"
+              (permuting (permutation 5 4 3 2 1 0))
+              #:into into-string))}
+
+@defproc[(permutation-reverse [perm permutation?]) permutation?]{
+ Constructs the inverse permutation of @racket[perm], which permutes elements in exactly the opposite
+ manner as @racket[perm]. The inverse of a permutation effectively undoes that permutation.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define shift-right-once (permutation 1 2 3 4 5 0)))
+   
+   (permute "abcdef" shift-right-once #:into into-string)
+   (permute "abcdef" (permutation-reverse shift-right-once) #:into into-string))}
