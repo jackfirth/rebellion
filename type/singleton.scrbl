@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/contract/region
+                     racket/contract/combinator
                      racket/math
                      rebellion/base/symbol
                      rebellion/custom-write
@@ -15,10 +16,13 @@
           (submod rebellion/private/scribble-index-attribute doc)
           scribble/examples)
 
+@(define reference-path '(lib "scribblings/reference/reference.scrbl"))
+
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/contract/base
                    'racket/contract/region
+                   'racket/contract/combinator
                    'rebellion/type/singleton
                    'syntax/parse/define)
     #:private (list 'racket/base)))
@@ -174,8 +178,8 @@ initialized, can be used to retrieve the singleton instance.
 
 @defproc[(default-singleton-properties [descriptor singleton-descriptor?])
          (listof (cons/c struct-type-property? any/c))]{
- Returns implementations of @racket[prop:equal+hash],
- @racket[prop:custom-write], and @racket[prop:object-name] suitable for most
+ Returns implementations of @racket[prop:equal+hash], @racket[prop:custom-write],
+ @racket[prop:object-name], and @racket[prop:flat-contract] suitable for most
  @tech{singleton types}. The default implementation of @racket[prop:equal+hash]
  always returns true, since it's only called if two values are instances of the
  same type and singleton types only have one value.
@@ -196,6 +200,13 @@ initialized, can be used to retrieve the singleton instance.
  @racket[object-name] to return the name of the instance when used on the
  singleton instance created by @racket[descriptor]. This function is used by
  @racket[default-singleton-properties] to implement @racket[prop:object-name].}
+
+@defproc[(default-singleton-flat-contract [descriptor singleton-descriptor?])
+         flat-contract-property?]{
+ Builds a @tech[#:doc reference-path]{flat contract property} suitable for
+ use with @racket[prop:flat-contract]. The contract accepts a value if and
+ only if it is the singleton instance. This function is used by
+ @racket[default-singleton-properties] to implement @racket[prop:flat-contract].}
 
 @section{Singleton Type Bindings}
 @defmodule[rebellion/type/singleton/binding]

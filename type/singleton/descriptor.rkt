@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/contract/base)
+(require racket/contract/base
+         racket/contract/combinator)
 
 (provide
  (contract-out
@@ -13,13 +14,15 @@
         initialized-singleton-descriptor?)]
   [initialized-singleton-descriptor? predicate/c]
   [uninitialized-singleton-descriptor? predicate/c]
+  [singleton-descriptor-type (-> singleton-descriptor? singleton-type?)]
   [singleton-descriptor-instance (-> initialized-singleton-descriptor? any/c)]
   [singleton-descriptor-predicate (-> singleton-descriptor? predicate/c)]
   [default-singleton-properties
    (-> singleton-descriptor? (listof (cons/c struct-type-property? any/c)))]
   [default-singleton-custom-write
    (-> singleton-descriptor? custom-write-function/c)]
-  [default-singleton-object-name (-> singleton-descriptor? object-name/c)]))
+  [default-singleton-object-name (-> singleton-descriptor? object-name/c)]
+  [default-singleton-flat-contract (-> singleton-descriptor? flat-contract-property?)]))
 
 (require racket/math
          rebellion/custom-write
@@ -108,11 +111,17 @@
   (define name (singleton-type-name (singleton-descriptor-type descriptor)))
   (λ (_) name))
 
+(define (default-singleton-flat-contract descriptor)
+  (build-flat-contract-property
+   #:name (default-singleton-object-name descriptor)
+   #:first-order (λ (this) (λ (x) (eq? x this)))))
+
 (define (default-singleton-properties descriptor)
   (list (cons prop:object-name (default-singleton-object-name descriptor))
         (cons prop:equal+hash (make-singleton-equal+hash))
         (cons prop:custom-write (default-singleton-custom-write descriptor))
-        (cons prop:custom-print-quotable 'never)))
+        (cons prop:custom-print-quotable 'never)
+        (cons prop:flat-contract (default-singleton-flat-contract descriptor))))
 
 ;@------------------------------------------------------------------------------
 
