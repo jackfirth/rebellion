@@ -1,13 +1,15 @@
 #lang racket/base
 
-(require racket/contract/base)
+(require racket/contract/base racket/contract/region)
 
 (provide
+ record-guard-maker/c
  (contract-out
   [make-record-implementation
    (->* (record-type?)
         (#:inspector inspector?
-         #:property-maker (-> uninitialized-record-descriptor? properties/c))
+         #:property-maker (-> uninitialized-record-descriptor? properties/c)
+         #:guard-maker (or/c #f (-> uninitialized-record-descriptor? procedure?)))
         initialized-record-descriptor?)]
   [record-descriptor? predicate/c]
   [initialized-record-descriptor? predicate/c]
@@ -22,12 +24,14 @@
   [make-record-field-accessor (-> record-descriptor? natural? procedure?)]))
 
 (require racket/math
+         syntax/location
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
          rebellion/private/printer-markup
          rebellion/type/record/base
-         rebellion/type/tuple)
+         rebellion/type/tuple
+         (for-syntax racket/syntax racket/base syntax/parse))
 
 ;@------------------------------------------------------------------------------
 
@@ -107,13 +111,17 @@
 (define (make-record-implementation
          type
          #:inspector [inspector (current-inspector)]
-         #:property-maker [prop-maker default-record-properties])
+         #:property-maker [prop-maker default-record-properties]
+         #:guard-maker [guard-maker #f])
   (define (tuple-prop-maker descriptor)
     (prop-maker (tuple-descriptor->record-descriptor descriptor type)))
+  (define (tuple-guard-maker descriptor)
+    (guard-maker (tuple-descriptor->record-descriptor descriptor type)))
   (define descriptor
     (make-tuple-implementation (record-type->tuple-type type)
                                #:inspector inspector
-                               #:property-maker tuple-prop-maker))
+                               #:property-maker tuple-prop-maker
+                               #:guard-maker (and guard-maker tuple-guard-maker)))
   (tuple-descriptor->record-descriptor descriptor type))
 
 (define (record-type->tuple-type type)
@@ -152,6 +160,47 @@
        #:predicate predicate
        #:constructor constructor
        #:accessor accessor)))
+
+(define-syntax (record-guard-maker/c stx)
+  (define-splicing-syntax-class kw+contract
+    #:description "keyword contract pair"
+    (pattern (~seq kw:keyword ctc:expr)))
+  (syntax-parse stx
+    #:track-literals
+    [(_ contract-expr:kw+contract ...)
+     (define/with-syntax ([ctc-expr
+                           arg-sym
+                           arg-name-sym
+                           field-keyword
+                           field-name-string]
+                          ...)
+       (for/list ([kw+ctc (sort (map syntax-e (syntax-e #'(contract-expr ...)))
+                                keyword<?
+                                #:key (compose1 syntax-e car))])
+         (define-values (kw ctc) (apply values kw+ctc))
+         (list ctc (gensym) (gensym) kw (keyword->string (syntax-e kw)))))
+     (quasisyntax/loc stx
+       (let ([loc (quote-srcloc #,stx)]
+             [blame-party (current-contract-region)]
+             [expected-keys (keyset field-keyword ...)])
+         (λ (desc)
+           (define record-type (record-descriptor-type desc))
+           (define record-keys (record-type-fields record-type))
+           (define constructor-name (record-type-constructor-name record-type))
+           (define-values (arg-name-sym ...)
+             (values (format "~a, field ~a" constructor-name field-name-string) ...))
+           (unless (equal? expected-keys record-keys)
+             (raise-arguments-error
+              'record-guard-maker/c
+              "record field mismatch\n the expected fields do not match the given record descriptor"
+              "expected" expected-keys
+              "given" record-keys))
+           (λ (arg-sym ...)
+             (values
+              (contract ctc-expr arg-sym
+                        blame-party blame-party
+                        arg-name-sym loc)
+              ...)))))]))
 
 (define (default-record-properties descriptor)
   (define equal+hash (default-record-equal+hash descriptor))

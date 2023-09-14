@@ -60,7 +60,12 @@
      (~optional
       (~seq #:property-maker property-maker:expr)
       #:defaults ([property-maker #'default-tuple-properties])
-      #:name "#:property-maker option"))
+      #:name "#:property-maker option")
+
+     (~optional
+      (~seq #:guard-maker guard-maker:expr)
+      #:defaults ([guard-maker #'#f])
+      #:name "#:guard-maker option"))
     ...)
   
   #:do [(define size (length (syntax->list #'(field ...))))]
@@ -100,7 +105,8 @@
         #:accessor-name 'accessor
         #:constructor-name 'constructor)
        #:inspector inspector
-       #:property-maker property-maker))
+       #:property-maker property-maker
+       #:guard-maker guard-maker))
     (define constructor (tuple-descriptor-constructor descriptor))
     (define predicate (tuple-descriptor-predicate descriptor))
     (define accessor (tuple-descriptor-accessor descriptor))

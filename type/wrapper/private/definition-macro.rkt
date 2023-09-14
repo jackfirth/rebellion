@@ -59,7 +59,12 @@
      (~optional
       (~seq #:property-maker prop-maker:expr)
       #:defaults ([prop-maker #'default-wrapper-properties])
-      #:name "#:property-maker option"))
+      #:name "#:property-maker option")
+
+     (~optional
+      (~seq #:guard-maker guard-maker:expr)
+      #:name "#:guard-maker option"
+      #:defaults ([guard-maker #'#f])))
     ...)
   
   #:with root-binding
@@ -89,7 +94,8 @@
         #:constructor-name 'constructor
         #:accessor-name 'accessor)
        #:inspector inspector
-       #:property-maker prop-maker))
+       #:property-maker prop-maker
+       #:guard-maker guard-maker))
     (define predicate (wrapper-descriptor-predicate descriptor))
     (define constructor (wrapper-descriptor-constructor descriptor))
     (define accessor (wrapper-descriptor-accessor descriptor))

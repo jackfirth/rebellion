@@ -60,12 +60,17 @@ distinguished.
    (code:line #:accessor-name accessor-id)
    (code:line #:pattern-name pattern-id)
    (code:line #:property-maker prop-maker-expr)
+   (code:line #:guard-maker guard-maker-expr)
    (code:line #:inspector inspector-expr)])
 
  #:contracts
  ([prop-maker-expr
    (-> uninitialized-wrapper-descriptor?
        (listof (cons/c struct-type-property? any/c)))]
+  [guard-maker-expr
+   (or/c #f
+         (-> uninitialized-wrapper-descriptor?
+             (-> any/c any/c)))]
   [inspector-expr inspector?])]{
  Creates a new @tech{wrapper type} named @racket[id] and binds the following
  identifiers:
@@ -97,12 +102,12 @@ distinguished.
  @racket[constructor-id] when used as an expression. Use
  @racket[#:omit-root-binding] when you want control over what @racket[id] is
  bound to, such as when creating a smart constructor.
- 
+
  The @racket[prop-maker-expr] is used to add structure type properties to the
- created type, and @racket[inspector-expr] is used to determine the
- @tech/reference{inspector} that will control the created type. See
- @racket[make-wrapper-implementation] for more information about these
- parameters.
+ created type, @racket[guard-maker-expr] is used to create the guard procedure, and
+ @racket[inspector-expr] is used to determine the @tech/reference{inspector} that
+ will control the created type. See @racket[make-wrapper-implementation] for more
+ information about these parameters.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -172,16 +177,39 @@ initialized.
            (-> uninitialized-wrapper-descriptor?
                (listof (cons/c struct-type-property? any/c)))
            default-wrapper-properties]
+          [#:guard-maker guard-maker
+           (or/c #f
+                 (-> uninitialized-wrapper-descriptor?
+                     (-> any/c any/c)))]
           [#:inspector inspector inspector? (current-inspector)])
          initialized-wrapper-descriptor?]{
  Implements @racket[type] and returns a @tech{type descriptor} for the new
- implementation. The @racket[inspector] argument behaves the same as in
+ implementation.
+
+ The @racket[inspector] argument behaves the same as in
  @racket[make-struct-type], although there are no transparent or prefab wrapper
- types. The @racket[prop-maker] argument is similar to the corresponding
- argument of @racket[make-struct-implementation]. By default, wrapper types are
+ types.
+
+ The @racket[prop-maker] argument is similar to the corresponding
+ argument of @racket[make-struct-implementation].
+
+ The @racket[guard-maker] argument is a procedure that should accept the partially
+ constructed wrapper descriptor, and must return a guard procedure. This guard
+ procedure is similar to the one in @racket[make-struct-type]: it will accept
+ the singular argument to the wrapper constructor and the value it returns will be
+ the stored value.
+
+ By default, wrapper types are
  created with properties that make them print and compare in a manner similar to
  transparent structure types --- see @racket[default-wrapper-properties] for
  details.}
+
+@defform[(wrapper-guard-maker/c contract-expr)]{
+ Returns a procedure suitable to be passed as the
+ @racket[#:guard-maker] argument to @racket[make-wrapper-implementation]
+ or @racket[define-wrapper-type]. The guard procedure will ensure that
+ the wrapped value is protected by @racket[contract-expr].
+ This is analogous to @racket[struct-guard/c].}
 
 @defproc[(wrapper-descriptor-type [descriptor wrapper-descriptor?])
          wrapper-type?]{

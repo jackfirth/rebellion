@@ -77,7 +77,12 @@
      (~optional
       (~seq #:property-maker prop-maker:expr)
       #:defaults ([prop-maker #'default-record-properties])
-      #:name "#:property-maker option"))
+      #:name "#:property-maker option")
+
+     (~optional
+      (~seq #:guard-maker guard-maker:expr)
+      #:defaults ([guard-maker #'#f])
+      #:name "#:guard-maker option"))
     ...)
   
   #:with (field-accessor ...)
@@ -113,7 +118,8 @@
         #:constructor-name 'constructor
         #:accessor-name 'accessor)
        #:inspector inspector
-       #:property-maker prop-maker))
+       #:property-maker prop-maker
+       #:guard-maker guard-maker))
     (define predicate (record-descriptor-predicate descriptor))
     (define constructor (record-descriptor-constructor descriptor))
     (define accessor (record-descriptor-accessor descriptor))
