@@ -92,7 +92,7 @@ early, before the input sequence is fully consumed.
                        #:into into-string)))
    (transduce "The quick brown fox" #:into into-first-ten-letters))}
 
-@section{Element-Transforming Transducers}
+@section{Transforming Elements with Transducers}
 
 @defproc[(mapping [f (-> any/c any/c)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
@@ -201,7 +201,7 @@ early, before the input sequence is fully consumed.
  Predicate, constructor, and accessors for the enumerated values emitted by the
  @racket[enumerating] transducer.}
 
-@section{Element-Removing Transducers}
+@section{Removing Elements with Transducers}
 
 @defproc[(filtering [pred predicate/c]) transducer?]{
  Constructs a @tech{transducer} that passes input elements downstream only when
@@ -387,7 +387,19 @@ early, before the input sequence is fully consumed.
               (deduplicating-consecutive #:key string-foldcase)
               #:into into-list))}
 
-@section{Element-Rearranging Transducers}
+@section{Adding Elements with Transducers}
+
+
+@defproc[(adding-between [separator any/c]) transducer?]{
+ Constructs a @tech{transducer} that inserts @racket[separator] between elements of the transduced
+ sequence. If the input sequence does not contain at least two elements, nothing is inserted.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "BEHOLD" (adding-between #\space) #:into into-string))}
+
+
+@section{Rearranging Elements with Transducers}
 
 @defproc[(sorting [comparator comparator? real<=>]
                   [#:key key-function (-> any/c any/c) values]
