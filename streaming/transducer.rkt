@@ -3,6 +3,7 @@
 (require rebellion/streaming/transducer/base
          rebellion/streaming/transducer/composition
          rebellion/streaming/transducer/private
+         rebellion/streaming/transducer/private/adding-between
          rebellion/streaming/transducer/private/batching
          rebellion/streaming/transducer/private/contract
          rebellion/streaming/transducer/private/deduplicating
@@ -18,6 +19,7 @@
 (provide (all-from-out rebellion/streaming/transducer/base
                        rebellion/streaming/transducer/composition
                        rebellion/streaming/transducer/private
+                       rebellion/streaming/transducer/private/adding-between
                        rebellion/streaming/transducer/private/batching
                        rebellion/streaming/transducer/private/contract
                        rebellion/streaming/transducer/private/deduplicating
