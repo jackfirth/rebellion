@@ -10,6 +10,7 @@
          rebellion/streaming/transducer/private/enumerating
          rebellion/streaming/transducer/private/reducer
          rebellion/streaming/transducer/private/sorting
+         rebellion/streaming/transducer/private/splicing-between
          rebellion/streaming/transducer/private/taking-duplicates
          rebellion/streaming/transducer/private/taking-local-maxima
          rebellion/streaming/transducer/private/taking-maxima
@@ -26,6 +27,7 @@
                        rebellion/streaming/transducer/private/enumerating
                        rebellion/streaming/transducer/private/reducer
                        rebellion/streaming/transducer/private/sorting
+                       rebellion/streaming/transducer/private/splicing-between
                        rebellion/streaming/transducer/private/taking-duplicates
                        rebellion/streaming/transducer/private/taking-local-maxima
                        rebellion/streaming/transducer/private/taking-maxima

@@ -6,6 +6,7 @@
                      racket/contract/region
                      racket/math
                      racket/sequence
+                     racket/random
                      racket/set
                      rebellion/base/comparator
                      rebellion/base/immutable-string
@@ -25,6 +26,7 @@
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/contract/region
                    'racket/math
+                   'racket/random
                    'racket/set
                    'rebellion/base/comparator
                    'rebellion/base/immutable-string
@@ -397,6 +399,41 @@ early, before the input sequence is fully consumed.
  @(examples
    #:eval (make-evaluator) #:once
    (transduce "BEHOLD" (adding-between #\space) #:into into-string))}
+
+
+@defproc[(splicing-between [seperator-seq (sequence/c any/c)]) transducer?]{
+ Constructs a @tech{transducer} that inserts each element of @racket[separator-seq] between elements
+ of the transduced sequence. If the input sequence does not contain at least two elements, nothing is
+ inserted.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "BEHOLD" (splicing-between "   ") #:into into-string))
+
+ Beware that if @racket[separator-seq] is inserted into the input sequence multiple times, it is
+ @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{initiate}d each time it's inserted. This
+ can have unexpected behavior with sequences that have side effects, sequences that are
+ nondeterministic, and sequences that observe concurrently-mutated state. This behavior can be
+ suppressed by converting the sequence to a
+ @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{stream} using @racket[sequence->stream].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (struct shoes-or-hat ()
+      (code:comment "This sequence randomly picks between a pair of shoes or a single hat")
+      #:property prop:sequence
+      (λ (this)
+        (random-ref (list (list 'shoe 'shoe)
+                          (list 'hat))))))
+
+   (transduce (list 1 2 3 4 5 6)
+              (splicing-between (shoes-or-hat))
+              #:into into-list)
+   
+   (transduce (list 1 2 3 4 5 6)
+              (splicing-between (sequence->stream (shoes-or-hat)))
+              #:into into-list))}
 
 
 @section{Rearranging Elements with Transducers}
