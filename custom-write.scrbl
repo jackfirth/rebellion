@@ -40,7 +40,7 @@ must satisfy the @racket[custom-write-function/c] contract.
 
 @defproc[(make-named-object-custom-write
           [type-name symbol?]
-          [#:name-getter get-name (-> any/c (or/c symbol? string? #f)) object-name])
+          [#:name-getter get-name (-> any/c (or/c symbol? string? #false)) object-name])
          custom-write-function/c]{
  Constructs a @tech{custom write implementation} that prints values as opaque,
  unreadable, named objects, similar to the way functions are printed.
