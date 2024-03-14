@@ -38,16 +38,9 @@ must satisfy the @racket[custom-write-function/c] contract.
  matching @racket[custom-write-function/c]. See @racket[gen:custom-write] for
  details.}
 
-@defthing[object-name/c flat-contract?
-          #:value (or/c symbol? string? bytes? number? path? #false)]{
- A @tech/reference{contract} describing expected return values of
- @racket[object-name]. Note that @racket[object-name] can technically return any
- kind of value, so more precisely this contract describes the name values that
- @racket[make-named-object-custom-write] will accept.}
-
 @defproc[(make-named-object-custom-write
           [type-name symbol?]
-          [#:name-getter get-name (-> any/c object-name/c) object-name])
+          [#:name-getter get-name (-> any/c (or/c symbol? string?)) object-name])
          custom-write-function/c]{
  Constructs a @tech{custom write implementation} that prints values as opaque,
  unreadable, named objects, similar to the way functions are printed.
