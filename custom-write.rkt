@@ -6,9 +6,8 @@
  (contract-out
   [custom-write-mode/c flat-contract?]
   [custom-write-function/c chaperone-contract?]
-  [object-name/c flat-contract?]
   [make-named-object-custom-write
-   (->* (symbol?) (#:name-getter (-> any/c (or/c object-name/c #false)))
+   (->* (symbol?) (#:name-getter (-> any/c (or/c symbol? string? path? #false)))
         custom-write-function/c)]))
 
 ;@------------------------------------------------------------------------------
@@ -18,14 +17,10 @@
 (define custom-write-function/c
   (-> any/c output-port? custom-write-mode/c void?))
 
-(define object-name/c (or/c symbol? string? bytes? number? path?))
-
 (define (object-name->string name)
   (cond
     [(symbol? name) (symbol->string name)]
     [(string? name) name]
-    [(bytes? name) (bytes->string/locale name #\�)]
-    [(number? name) (number->string name)]
     [(path? name) (path->string name)]))
 
 (define (make-named-object-custom-write type-name
