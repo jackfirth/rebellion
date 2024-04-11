@@ -1,12 +1,15 @@
 #lang racket/base
 
+
 (require racket/contract/base)
+
 
 (provide
  for/multiset
  for*/multiset
  (contract-out
   [multiset (-> any/c ... multiset?)]
+  [multiset-of-frequencies (-> (entry/c any/c natural?) ... multiset?)]
   [multiset? (-> any/c boolean?)]
   [multiset-add (->* (multiset? any/c) (#:copies natural?) multiset?)]
   [multiset-add-all (-> multiset? multiset-coercible-sequence/c multiset?)]
@@ -25,6 +28,7 @@
   [in-multiset (-> multiset? sequence?)]
   [into-multiset (reducer/c any/c multiset?)]))
 
+
 (require (for-syntax racket/base)
          racket/hash
          racket/math
@@ -32,13 +36,17 @@
          racket/sequence
          racket/stream
          racket/struct
+         rebellion/collection/entry
          rebellion/private/guarded-block
+         rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/type/record)
+
 
 (module+ test
   (require (submod "..")
            rackunit))
+
 
 ;@------------------------------------------------------------------------------
 
@@ -75,6 +83,7 @@
 (define (multiset . vs)
   (for/multiset ([v (in-list vs)])
     v))
+
 
 (define empty-multiset
   (constructor:multiset #:size 0
@@ -221,9 +230,42 @@
                       seq
                       (sequence->multiset seq))))
 
+(define (multiset-of-frequencies . freqs)
+  (for/fold ([size 0]
+             [freq-hash empty-hash]
+             [unique-elems empty-set]
+             #:result (constructor:multiset #:size size
+                                            #:frequencies freq-hash
+                                            #:unique-elements unique-elems))
+            ([f (in-list freqs)])
+    (define v (entry-key f))
+    (define count (entry-value f))
+    (when (set-member? unique-elems v)
+      (raise-arguments-error
+       (name multiset-of-frequencies)
+       "duplicate frequency entries for the same element are not allowed"
+       "initial entry" (entry v (hash-ref freq-hash v))
+       "duplicate entry" f))
+    (values (+ size count)
+            (hash-set freq-hash v count)
+            (set-add unique-elems v))))
+
+
+(module+ test
+  (test-case (name-string multiset-of-frequencies)
+    (check-equal? (multiset-of-frequencies) (multiset))
+    (check-equal? (multiset-of-frequencies (entry 'a 2) (entry 'b 3) (entry 'c 1))
+                  (multiset 'a 'a 'b 'b 'b 'c))
+    (define (call-with-duplicates)
+      (multiset-of-frequencies (entry 'a 1) (entry 'a 2)))
+    (check-exn exn:fail:contract? call-with-duplicates)
+    (check-exn #rx"duplicate frequency entries" call-with-duplicates)))
+
+
 (define into-multiset
   (make-fold-reducer multiset-add empty-multiset #:name 'into-multiset))
 
+  
 (define-syntaxes (for/multiset for*/multiset)
   (make-reducer-based-for-comprehensions #'into-multiset))
 
