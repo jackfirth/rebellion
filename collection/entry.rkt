@@ -1,14 +1,18 @@
 #lang racket/base
 
+
 (require racket/contract/base)
 
+
 (provide entry)
+
 
 (provide
  (contract-out
   [entry? (-> any/c boolean?)]
   [entry-key (-> entry? any/c)]
   [entry-value (-> entry? any/c)]
+  [entry/c (-> contract? contract? contract?)]
   [bisecting (-> (-> any/c any/c) (-> any/c any/c) (transducer/c any/c entry?))]
   [mapping-keys (-> (-> any/c any/c) (transducer/c entry? entry?))]
   [mapping-values (-> (-> any/c any/c) (transducer/c entry? entry?))]
@@ -22,12 +26,15 @@
   [batching-into-entries (transducer/c any/c entry?)]
   [grouping (-> reducer? (transducer/c entry? entry?))]))
 
-(require racket/sequence
+
+(require racket/contract/combinator
+         racket/sequence
          racket/set
          rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
+         rebellion/private/contract-projection
          rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/private/total-match
@@ -36,43 +43,80 @@
          rebellion/type/record
          rebellion/type/tuple)
 
+
 (module+ test
   (require (submod "..")
            racket/match
            rackunit
            rebellion/base/option))
 
+
 ;@------------------------------------------------------------------------------
 
+
 (define-tuple-type entry (key value))
+
+
+(define (entry/c key-contract* value-contract*)
+  (define key-contract (coerce-contract 'entry/c key-contract*))
+  (define value-contract (coerce-contract 'entry/c value-contract*))
+  (define name (build-compound-type-name 'entry/c key-contract value-contract))
+  (define (late-neg blame)
+    (projection-and (contract-get-projection entry? blame)
+                    (entry-projection key-contract value-contract blame)))
+  (define maker
+    (if (and (flat-contract? key-contract) (flat-contract? value-contract))
+        make-flat-contract
+        make-chaperone-contract))
+  (maker #:name name #:late-neg-projection late-neg))
+
+
+(define (entry-projection key-contract value-contract blame)
+  (define underlying-key-projection
+    (contract-get-projection key-contract (blame-add-context blame "the key field of the entry in")))
+  (define underlying-value-projection
+    (contract-get-projection
+     value-contract (blame-add-context blame "the value field of the entry in")))
+  (λ (e missing-party)
+    (entry (underlying-key-projection (entry-key e) missing-party)
+           (underlying-value-projection (entry-value e) missing-party))))
+
 
 (define (bisecting key-function value-function)
   (mapping
    (λ (element) (entry (key-function element) (value-function element)))))
 
+
 (define (mapping-keys key-function)
   (mapping (λ/match ((entry k v)) (entry (key-function k) v))))
+
 
 (define (mapping-values value-function)
   (mapping (λ/match ((entry k v)) (entry k (value-function v)))))
 
+
 (define (indexing key-function) (bisecting key-function values))
+
 
 (define (filtering-keys key-predicate)
   (filtering (λ (e) (key-predicate (entry-key e)))))
 
+
 (define (filtering-values value-predicate)
   (filtering (λ (e) (value-predicate (entry-value e)))))
+
 
 (define (append-mapping-keys key-sequence-maker)
   (append-mapping
    (λ/match ((entry k v))
      (sequence-map (λ (k) (entry k v)) (key-sequence-maker k)))))
 
+
 (define (append-mapping-values value-sequence-maker)
   (append-mapping
    (λ/match ((entry k v))
      (sequence-map (λ (v) (entry k v)) (value-sequence-maker v)))))
+
 
 (module+ test
   (test-case "entry pattern matching"
@@ -144,9 +188,11 @@
                         (entry 'bar 5)
                         (entry 'bar 6)))))
 
+
 (define batching-into-entries-message
   "odd number of sequence elements
  last key could not be paired with a value")
+
 
 (define/name batching-into-entries
   (make-transducer
@@ -172,6 +218,7 @@
    #:finisher void
    #:name enclosing-variable-name))
 
+
 (module+ test
   (test-case (name-string batching-into-entries)
     (test-case "should turn even-length sequence into entries"
@@ -189,14 +236,17 @@
       (check-exn exn:fail:contract? actual)
       (check-exn #rx"last key: 'd" actual))))
 
+
 (define-record-type groups (reducer-states reverse-ordered-keys finished-keys))
 (define-record-type closing-groups (reducer-states encounter-ordered-keys size))
 (define-record-type group-emission (key value state))
+
 
 (define (make-empty-groups)
   (groups #:reducer-states (make-hash)
           #:reverse-ordered-keys (list)
           #:finished-keys (set)))
+
 
 (define/guard (groups-insert g k v #:reducer value-reducer)
   (define starter (reducer-starter value-reducer))
@@ -242,11 +292,13 @@
    #:value (early-finisher (variant-value value-state))
    #:state next-g))
 
+
 (define (half-close-groups g)
   (define keys (reverse (groups-reverse-ordered-keys g)))
   (closing-groups #:reducer-states (groups-reducer-states g)
                   #:encounter-ordered-keys keys
                   #:size (list-size keys)))
+
 
 (define/name (grouping value-reducer)
   (define start-value (reducer-starter value-reducer))
@@ -292,6 +344,7 @@
      (half-closed-emission next-state (entry next-key next-value)))
    #:finisher void
    #:name enclosing-function-name))
+
 
 (module+ test
   (test-case (name-string grouping)

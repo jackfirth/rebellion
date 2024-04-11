@@ -76,6 +76,12 @@ values.
    #:eval (make-evaluator) #:once
    (entry-value (entry "banana" 'yellow)))}
 
+
+@defproc[(entry/c [key-contract contract?] [value-contract contract?]) contract?]{
+ Constructs a contract for @tech{entry} values with keys that satisfy @racket[key-contract] and values
+ that satisfy @racket[value-contract].}
+
+
 @defproc[(bisecting [key-function (-> any/c any/c)]
                     [value-function (-> any/c any/c)])
          (transducer/c any/c entry?)]{
