@@ -13,7 +13,8 @@
 
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
-    #:public (list 'rebellion/collection/multiset
+    #:public (list 'rebellion/collection/entry
+                   'rebellion/collection/multiset
                    'rebellion/streaming/reducer)
     #:private (list 'racket/base)))
 
@@ -35,6 +36,18 @@ except it can contain duplicate elements. Elements are always compared with
    (multiset 'apple 'orange 'banana)
    (multiset 'apple 'orange 'orange 'banana)
    (multiset))}
+
+
+@defproc[(multiset-of-frequencies [frequency (entry/c any/c natural?)] ...) multiset?]{
+ Constructs a @tech{multiset} where each @racket[frequency] entry specifies how many copies of an
+ element the multiset should contain. The element to add is specified by the key of the
+ @racket[frequency] entry, while the mapped value in the entry is the count. Each @racket[frequency]
+ should be for a unique element, or else a contract exception is raised.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-of-frequencies (entry 'apple 2) (entry 'banana 3)))}
+
 
 @defthing[empty-multiset multiset? #:value (multiset)]{
  The empty @tech{multiset}, which contains no elements.}
