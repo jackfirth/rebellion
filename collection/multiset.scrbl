@@ -5,6 +5,7 @@
                      racket/math
                      racket/sequence
                      racket/set
+                     rebellion/collection/entry
                      rebellion/collection/multiset
                      rebellion/streaming/reducer)
           (submod rebellion/private/scribble-evaluator-factory doc)
