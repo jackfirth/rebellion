@@ -1,6 +1,7 @@
 #lang racket/base
 
-(require racket/contract/base)
+(require racket/contract/base
+         racket/contract/combinator)
 
 (provide
  (contract-out
@@ -29,7 +30,8 @@
   [default-enum-properties (-> enum-descriptor? properties/c)]
   [default-enum-custom-write (-> enum-descriptor? custom-write-function/c)]
   [default-enum-equal+hash (-> enum-descriptor? equal+hash/c)]
-  [default-enum-object-name (-> enum-descriptor? object-name/c)]))
+  [default-enum-object-name (-> enum-descriptor? object-name/c)]
+  [default-enum-flat-contract (-> enum-descriptor? flat-contract-property?)]))
 
 (require racket/math
          rebellion/base/generative-token
@@ -157,21 +159,27 @@
   (define equal+hash (default-enum-equal+hash descriptor))
   (define custom-write (default-enum-custom-write descriptor))
   (define object-name (default-enum-object-name descriptor))
+  (define flat-contract (default-enum-flat-contract descriptor))
   (list (cons prop:equal+hash equal+hash)
         (cons prop:custom-write custom-write)
         (cons prop:object-name object-name)
-        (cons prop:custom-print-quotable 'never)))
+        (cons prop:custom-print-quotable 'never)
+        (cons prop:flat-contract flat-contract)))
+
+(define (enum-type->constant-names type
+                                   [keyword->name
+                                    (compose1 string->symbol keyword->immutable-string)])
+  (define constants (enum-type-constants type))
+  (vector->immutable-vector
+   (for/vector #:length (keyset-size constants)
+     ([constant (in-keyset constants)])
+     (keyword->name constant))))
 
 (define (default-enum-custom-write descriptor)
   (define type (enum-descriptor-type descriptor))
   (define name (enum-type-name type))
   (define prefix (string-append "#<" (symbol->string name) ":"))
-  (define constants (enum-type-constants type))
-  (define constant-strings
-    (vector->immutable-vector
-     (for/vector #:length (keyset-size constants)
-       ([constant (in-keyset constants)])
-       (keyword->immutable-string constant))))
+  (define constant-strings (enum-type->constant-names type keyword->immutable-string))
   (define discriminator (enum-descriptor-discriminator descriptor))
   (λ (this out mode)
     (write-string prefix out)
@@ -193,14 +201,14 @@
   (make-delegating-equal+hash (enum-descriptor-discriminator descriptor)))
 
 (define (default-enum-object-name descriptor)
-  (define constants (enum-type-constants (enum-descriptor-type descriptor)))
-  (define names
-    (vector->immutable-vector
-     (for/vector #:length (keyset-size constants)
-       ([constant (in-keyset constants)])
-       (string->symbol (keyword->string constant)))))
+  (define names (enum-type->constant-names (enum-descriptor-type descriptor)))
   (define discriminator (enum-descriptor-discriminator descriptor))
   (λ (this) (immutable-vector-ref names (discriminator this))))
+
+(define (default-enum-flat-contract descriptor)
+  (build-flat-contract-property
+   #:name (default-enum-object-name descriptor)
+   #:first-order (λ (this) (λ (x) (eq? x this)))))
 
 (define (enum-index/c descriptor)
   (define size (enum-type-size (enum-descriptor-type descriptor)))

@@ -3,6 +3,7 @@
 @(require (for-label racket/base
                      racket/contract/base
                      racket/contract/region
+                     racket/contract/combinator
                      racket/match
                      rebellion/base/symbol
                      rebellion/collection/keyset
@@ -19,10 +20,13 @@
           scribble/example
           syntax/parse/define)
 
+@(define reference-path '(lib "scribblings/reference/reference.scrbl"))
+
 @(define make-evaluator
    (make-module-sharing-evaluator-factory
     #:public (list 'racket/contract/base
                    'racket/contract/region
+                   'racket/contract/combinator
                    'racket/match
                    'rebellion/collection/keyset
                    'rebellion/type/enum
@@ -263,9 +267,9 @@ alphabetical order.
 @defproc[(default-enum-properties [descriptor enum-descriptor?])
          (listof (cons/c struct-type-property? any/c))]{
  Returns implementations of @racket[prop:equal+hash], @racket[prop:object-name],
- and @racket[prop:custom-write] suitable for most @tech{enum types}. This
- function is called by @racket[make-enum-implementation] when no
- @racket[_prop-maker] argument is supplied.}
+ @racket[prop:custom-write], and @racket[prop:flat-contract] suitable for most
+ @tech{enum types}. This function is called by @racket[make-enum-implementation]
+ when no @racket[_prop-maker] argument is supplied.}
 
 @defproc[(default-enum-equal+hash [descriptor enum-descriptor?]) equal+hash/c]{
  Builds an equality-checking function, a hashing function, and a secondary
@@ -288,6 +292,13 @@ alphabetical order.
  @racket[object-name] to return the name of the constant when used on enum
  constants created by @racket[descriptor]. This function is used by
  @racket[default-enum-properties] to implement @racket[prop:object-name].}
+
+@defproc[(default-enum-flat-contract [descriptor enum-descriptor?])
+         flat-contract-property?]{
+ Builds a @tech[#:doc reference-path]{flat contract property} suitable for
+ use with @racket[prop:flat-contract]. The contract accepts a value if
+ and only if it is the given enum constant. This function is used by
+ @racket[default-enum-properties] to implement @racket[prop:flat-contract].}
 
 @section{Enum Type Bindings}
 @defmodule[rebellion/type/enum/binding]
