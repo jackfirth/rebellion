@@ -85,7 +85,7 @@
      (endpoint-map-range-containing-or-absent (this-endpoints this) (this-comparator this) value))
 
    (define (range-set-span-or-absent this)
-     (endpoint-map-span-or-absent (this-endpoints this)))
+     (endpoint-map-span-or-absent (this-endpoints this) (this-comparator this)))
 
    (define (range-subset this subset-range)
      (define cut-comparator (cut<=> (range-comparator subset-range)))
@@ -287,7 +287,7 @@
      (endpoint-map-range-containing-or-absent (this-endpoints this) (this-comparator this) value))
 
    (define (range-set-span-or-absent this)
-     (endpoint-map-span-or-absent (this-endpoints this)))
+     (endpoint-map-span-or-absent (this-endpoints this) (this-comparator this)))
 
    (define (range-subset this subset-range)
      TODO)]
@@ -369,8 +369,12 @@
    (λ (nearest-range) (range-contains? nearest-range value))))
 
 
-(define (endpoint-map-span-or-absent endpoints)
-  TODO)
+(define/guard (endpoint-map-span-or-absent endpoints comparator)
+  (guard (sorted-map-empty? endpoints) then
+    absent)
+  (match-define (present lower-cut) (sorted-map-least-key endpoints))
+  (match-define (present (entry _ upper-cut)) (sorted-map-greatest-entry endpoints))
+  (present (range-from-cuts lower-cut upper-cut #:comparator comparator)))
 
 
 (define/guard (endpoint-map-get-nearest-range endpoints comparator cut)

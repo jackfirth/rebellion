@@ -7,6 +7,7 @@
                      racket/sequence
                      racket/set
                      rebellion/base/comparator
+                     rebellion/base/option
                      rebellion/base/range
                      rebellion/collection/range-set
                      rebellion/streaming/reducer
@@ -268,7 +269,7 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
 
  @(examples
    #:eval (make-evaluator) #:once
-   (range-set-span (range-set (closed-range 2 5) (oepn-range 9 10)))
+   (range-set-span (range-set (closed-range 2 5) (open-range 9 10)))
    (eval:error (range-set-span (range-set #:comparator real<=>)))
    (range-set-span (range-set #:comparator real<=>) "empty range set!"))}
 
@@ -280,7 +281,7 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
 
  @(examples
    #:eval (make-evaluator) #:once
-   (range-set-span-or-absent (range-set (closed-range 2 5) (oepn-range 9 10)))
+   (range-set-span-or-absent (range-set (closed-range 2 5) (open-range 9 10)))
    (range-set-span-or-absent (range-set #:comparator real<=>)))}
 
 
