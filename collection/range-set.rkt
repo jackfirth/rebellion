@@ -593,4 +593,18 @@
       (test-case "remove span enclosing range"
         (define actual (range-set-remove ranges (closed-range 2 25)))
         (define expected (range-set #:comparator real<=>))
-        (check-equal? actual expected)))))
+        (check-equal? actual expected))))
+
+  (test-case (name-string range-set-span)
+
+    (test-case "closed ranges"
+      (define actual (range-set-span (range-set (closed-range 2 5) (closed-range 7 10))))
+      (check-equal? actual (closed-range 2 10)))
+
+    (test-case "open ranges"
+      (define actual (range-set-span (range-set (open-range 2 5) (open-range 7 10))))
+      (check-equal? actual (open-range 2 10)))
+
+    (test-case "closed and open ranges"
+      (define actual (range-set-span (range-set (closed-range 2 5) (open-range 7 10))))
+      (check-equal? actual (closed-open-range 2 10)))))
