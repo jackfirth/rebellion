@@ -31,7 +31,7 @@
 
 A @deftech{range set} is a sorted @tech{collection} of nonempty, disconnected @tech{ranges}. All
 ranges in the same range set must use the same @tech{comparator}. Two immutable range sets are
-@racket[equal?] if they contain the same ranges. Two mutable sorted maps are @racket[equal?] if they
+@racket[equal?] if they contain the same ranges. Two mutable range sets are @racket[equal?] if they
 will @emph{always} contain the same ranges, meaning that they share the same mutable state. This is
 not necessarily the same as being @racket[eq?], as some range sets may be views of others.
 
@@ -260,10 +260,28 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
 
 
 @defproc[(range-set-span [ranges range-set?] [empty-result failure-result/c (λ () (raise ...))])
-         any/c]
+         any/c]{
+ Returns the span of @racket[ranges], which is the smallest range that encloses every range in the
+ set. If @racket[ranges] is empty, then @racket[empty-result] determines the result: if it's a
+ procedure it's called with no arguments to produce the result, if it's not a procedure it's returned
+ directly.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-set-span (range-set (closed-range 2 5) (oepn-range 9 10)))
+   (eval:error (range-set-span (range-set #:comparator real<=>)))
+   (range-set-span (range-set #:comparator real<=>) "empty range set!"))}
 
 
-@defproc[(range-set-span-or-absent [ranges range-set?]) (option/c range?)]
+@defproc[(range-set-span-or-absent [ranges range-set?]) (option/c range?)]{
+ Returns the span of @racket[ranges], which is the smallest range that encloses every range in the
+ set. The returned span is wrapped in a @racket[present] option. If @racket[ranges] is empty, then
+ @racket[absent] is returned.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-set-span-or-absent (range-set (closed-range 2 5) (oepn-range 9 10)))
+   (range-set-span-or-absent (range-set #:comparator real<=>)))}
 
 
 @section{Range Set Views}
