@@ -5,7 +5,7 @@
 (define scribblings
   (list (list "main.scrbl"
               (list 'multi-page)
-              (list "Rebellion")
+              (list "Data Structures")
               "rebellion")))
 
 (define deps
