@@ -54,7 +54,7 @@ different basic operations and meant for different use cases.
 The @racketmodname[rebellion/type] module is broken down into a collection of
 modules, such as @racketmodname[rebellion/type/record] and @racketmodname[
  rebellion/type/tuple]. Each module is meant for working with a specific kind of
-data type. However, all of these modules have a few things in common.
+data type. However, these modules have a few things in common, documented below.
 
 @subsection[#:tag "nominal"]{Nominal v.s. Structural Types}
 
