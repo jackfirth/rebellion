@@ -125,8 +125,9 @@ the modified multiset.
    (multiset-add (multiset 'apple 'orange 'banana) 'orange #:copies 5))}
 
 @defproc[(multiset-add-all [set multiset?] [seq (sequence/c any/c)]) multiset?]{
- Adds @racket[seq] elements into @racket[set], returning an updated
- @tech{multiset}. The original @racket[set] is not mutated.
+ Adds @racket[seq] elements into @racket[set], returning an updated @tech{multiset}. The original
+ @racket[set] is not mutated. This function is equivalent to looping over @racket[seq] with
+ @racket[multiset-add], except it can be faster if @racket[seq] is also a multiset.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -152,6 +153,18 @@ the modified multiset.
    (multiset-remove set 'red #:copies 5)
    (multiset-remove set 'blue #:copies +inf.0)
    (multiset-remove set 'orange))}
+
+
+@defproc[(multiset-remove-all [set multiset?] [seq (sequence/c any/c)]) multiset?]{
+ Removes each element of @racket[seq] from @racket[set], returning an updated @tech{multiset}. The
+ original @racket[set] is not mutated. This function is equivalent to looping over @racket[seq] with
+ @racket[multiset-remove], except it can be faster if @racket[seq] is also a multiset.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-remove-all (multiset 1 1 2 3) (in-range 0 5))
+   (multiset-remove-all (multiset 1 1 1 2 3 3) (multiset 1 1 1 1 1)))}
+
 
 @defproc[(multiset-set-frequency [set multiset?]
                                  [element any/c]
