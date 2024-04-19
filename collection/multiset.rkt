@@ -13,13 +13,12 @@
   [multiset? (-> any/c boolean?)]
   [multiset-add (->* (multiset? any/c) (#:copies natural?) multiset?)]
   [multiset-add-all (-> multiset? multiset-coercible-sequence/c multiset?)]
-  [multiset-remove
-   (->* (multiset? any/c) (#:copies (or/c natural? +inf.0)) multiset?)]
+  [multiset-remove (->* (multiset? any/c) (#:copies (or/c natural? +inf.0)) multiset?)]
+  [multiset-remove-all (-> multiset? multiset-coercible-sequence/c multiset?)]
   [multiset-set-frequency (-> multiset? any/c natural? multiset?)]
   [multiset-contains? (-> multiset? any/c boolean?)]
   [multiset-frequency (-> multiset? any/c natural?)]
-  [multiset-frequencies
-   (-> multiset? (immutable-hash/c any/c exact-positive-integer?))]
+  [multiset-frequencies (-> multiset? (immutable-hash/c any/c exact-positive-integer?))]
   [multiset-size (-> multiset? natural?)]
   [multiset-unique-elements (-> multiset? set?)]
   [multiset->list (-> multiset? list?)]
@@ -140,12 +139,6 @@
       (check-equal? (multiset-add set 'a #:copies 0) set)
       (check-equal? (multiset-add set 'd #:copies 0) set)))
 
-  (test-case "add-all"
-    (check-equal? (multiset-add-all (multiset 1 1 2 3) (in-range 0 5))
-                  (multiset 0 1 1 1 2 2 3 3 4))
-    (check-equal? (multiset-add-all (multiset 1 2 3) (multiset 1 2 3))
-                  (multiset 1 1 2 2 3 3)))
-
   (test-case "multiset-set-frequency"
 
     (test-case "clearing-already-empty"
@@ -229,6 +222,55 @@
                   (if (multiset? seq)
                       seq
                       (sequence->multiset seq))))
+
+
+(module+ test
+  (test-case (name-string multiset-add-all)
+    (check-equal? (multiset-add-all (multiset 1 1 2 3) (in-range 0 5))
+                  (multiset 0 1 1 1 2 2 3 3 4))
+    (check-equal? (multiset-add-all (multiset 1 2 3) (multiset 1 2 3))
+                  (multiset 1 1 2 2 3 3))))
+
+
+(define (multiset-subtract a b)
+  (for/fold ([size (multiset-size a)]
+             [frequencies (multiset-frequencies a)]
+             [unique-elements (multiset-unique-elements a)]
+             #:result
+             (constructor:multiset
+              #:size size
+              #:frequencies frequencies
+              #:unique-elements unique-elements))
+            ([(v removal-count) (in-hash (multiset-frequencies b))])
+    (cond
+      [(hash-has-key? frequencies v)
+       (define existing-count (hash-ref frequencies v))
+       (if (> existing-count removal-count)
+           (values (- size removal-count)
+                   (hash-set frequencies v (- existing-count removal-count))
+                   unique-elements)
+           (values (- size existing-count)
+                   (hash-remove frequencies v)
+                   (set-remove unique-elements v)))]
+      [else (values size frequencies unique-elements)])))
+
+
+(define (multiset-remove-all set seq)
+  (if (multiset? seq)
+      (multiset-subtract set seq)
+      (for/fold ([set set])
+                ([v seq])
+        (multiset-remove set v))))
+
+
+(module+ test
+  (test-case (name-string multiset-remove-all)
+    (check-equal? (multiset-remove-all (multiset 1 1 1 2 3 3) (in-range 0 10)) (multiset 1 1 3))
+    (check-equal?
+     (multiset-remove-all (multiset-of-frequencies (entry 'a 10) (entry 'b 6))
+                          (multiset-of-frequencies (entry 'a 3) (entry 'b 100) (entry 'c 5)))
+     (multiset-of-frequencies (entry 'a 7)))))
+
 
 (define (multiset-of-frequencies . freqs)
   (for/fold ([size 0]
