@@ -17,6 +17,7 @@
   [multiset-remove-all (-> multiset? multiset-coercible-sequence/c multiset?)]
   [multiset-set-frequency (-> multiset? any/c natural? multiset?)]
   [multiset-contains? (-> multiset? any/c boolean?)]
+  [multiset-contains-all? (-> multiset? multiset-coercible-sequence/c boolean?)]
   [multiset-frequency (-> multiset? any/c natural?)]
   [multiset-frequencies (-> multiset? (immutable-hash/c any/c exact-positive-integer?))]
   [multiset-size (-> multiset? natural?)]
@@ -322,8 +323,38 @@
 (define (sequence->multiset seq)
   (if (multiset? seq) seq (reduce-all into-multiset seq)))
 
+
 (define (multiset-contains? set v)
   (hash-has-key? (multiset-frequencies set) v))
+
+
+(module+ test
+  (test-case (name-string multiset-contains?)
+    (define letters (multiset 'a 'b 'b 'b 'c 'c 'd))
+    (check-true (multiset-contains? letters 'a))
+    (check-true (multiset-contains? letters 'b))
+    (check-false (multiset-contains? letters 'foo))))
+
+
+(define (multiset-contains-all? set seq)
+  (if (multiset? seq)
+      (subset? (multiset-unique-elements seq) (multiset-unique-elements set))
+      (for/and ([v seq])
+        (set-member? (multiset-unique-elements set) v))))
+
+
+(module+ test
+  (test-case (name-string multiset-contains-all?)
+    (define letters (multiset 'a 'b 'b 'b 'c 'c 'd))
+    (check-true (multiset-contains-all? letters (list 'a 'b)))
+    (check-true (multiset-contains-all? letters (list 'a 'a 'a 'a 'a)))
+    (check-false (multiset-contains-all? letters (list 'c 'd 'e 'f)))
+    (check-false (multiset-contains-all? letters (list 'e 'e 'e)))
+    (check-true (multiset-contains-all? letters (multiset 'a 'b)))
+    (check-true (multiset-contains-all? letters (multiset 'a 'a 'a 'a 'a)))
+    (check-false (multiset-contains-all? letters (multiset 'c 'd 'e 'f)))
+    (check-false (multiset-contains-all? letters (multiset 'e 'e 'e)))))
+
 
 (define (frequency-hash->list frequencies)
   (for*/list ([(elem freq) (in-hash frequencies)]
@@ -331,21 +362,18 @@
     elem))
 
 (module+ test
-  (define letters (multiset 'a 'b 'b 'b 'c 'c 'd))
   (test-case "queries"
+    (define letters (multiset 'a 'b 'b 'b 'c 'c 'd))
     (check-equal? (multiset-frequencies letters) (hash 'a 1 'b 3 'c 2 'd 1))
     (check-equal? (multiset-frequency letters 'b) 3)
     (check-equal? (multiset-frequency letters 'foo) 0)
     (check-equal? (multiset-size letters) 7)
-    (check-equal? (multiset-unique-elements letters) (set 'a 'b 'c 'd))
-    (check-true (multiset-contains? letters 'a))
-    (check-true (multiset-contains? letters 'b))
-    (check-false (multiset-contains? letters 'foo)))
+    (check-equal? (multiset-unique-elements letters) (set 'a 'b 'c 'd)))
   (test-case "conversion"
     (check-equal? (sequence->multiset "hello")
                   (multiset #\h #\e #\l #\l #\o)))
   (test-case "iteration"
     (check-equal? (for/multiset ([char (in-string "hello")]) char)
                   (multiset #\h #\e #\l #\l #\o))
-    (check-equal? (for/set ([letter (in-multiset letters)]) letter)
+    (check-equal? (for/set ([letter (in-multiset (multiset 'a 'b 'b 'b 'c 'c 'd))]) letter)
                   (set 'a 'b 'c 'd))))

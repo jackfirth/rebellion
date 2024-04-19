@@ -83,8 +83,9 @@ except it can contain duplicate elements. Elements are always compared with
    (multiset-frequencies
     (multiset 'red 'red 'red 'blue 'green 'green 'green 'green)))}
 
+
 @defproc[(multiset-contains? [set multiset?] [v any/c]) boolean?]{
- Returns @racket[#t] if @racket[set] contains @racket[v], @racket[#f] otherwise.
+ Returns @racket[#true] if @racket[set] contains @racket[v], @racket[#false] otherwise.
 
  @(examples
    #:eval (make-evaluator) #:once
@@ -92,6 +93,20 @@ except it can contain duplicate elements. Elements are always compared with
    (multiset-contains? set 'apple)
    (multiset-contains? set 'orange)
    (multiset-contains? set 42))}
+
+
+@defproc[(multiset-contains-all? [set multiset?] [seq (sequence/c any/c)]) boolean?]{
+ Returns @racket[#true] if @racket[set] contains every element of @racket[seq], returns
+ @racket[#false] otherwise. The quantity of duplicate elements in @racket[set] and @racket[seq] does
+ not affect the result. This function is equivalent to looping over @racket[seq] with
+ @racket[multiset-contains?], except it can be faster if @racket[seq] is also a multiset.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-contains-all? (multiset 1 1 1 2 3 3) (list 1 2 3))
+   (multiset-contains-all? (multiset 1 1 1 2 3 3) (list 1 2 3 4))
+   (multiset-contains-all? (multiset 1 1 1 2 3 3) (list 1 1 1 1 1 1 1)))}
+
 
 @defproc[(multiset-unique-elements [set multiset?]) set?]{
  Removes all duplicate elements from @racket[set], returning the resulting set.
