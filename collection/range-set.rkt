@@ -427,6 +427,11 @@
         (define expected (range-set (closed-open-range 5 10) (closed-open-range 12 20)))
         (check-equal? actual expected))
 
+      (test-case "insert dual-adjacent range between"
+        (define actual (range-set-add ranges (closed-open-range 10 15)))
+        (define expected (range-set (closed-open-range 5 20)))
+        (check-equal? actual expected))
+
       (test-case "insert left-overlapping range between"
         (define actual (range-set-add ranges (closed-open-range 8 14)))
         (define expected (range-set (closed-open-range 5 14) (closed-open-range 15 20)))
@@ -437,6 +442,11 @@
         (define expected (range-set (closed-open-range 5 10) (closed-open-range 12 20)))
         (check-equal? actual expected))
 
+      (test-case "insert dual-overlapping range between"
+        (define actual (range-set-add ranges (closed-open-range 8 18)))
+        (define expected (range-set (closed-open-range 5 20)))
+        (check-equal? actual expected))
+
       (test-case "insert left-enclosing range between"
         (define actual (range-set-add ranges (closed-open-range 5 14)))
         (define expected (range-set (closed-open-range 5 14) (closed-open-range 15 20)))
@@ -445,7 +455,207 @@
       (test-case "insert right-enclosing range between"
         (define actual (range-set-add ranges (closed-open-range 12 20)))
         (define expected (range-set (closed-open-range 5 10) (closed-open-range 12 20)))
+        (check-equal? actual expected))
+
+      (test-case "insert dual-enclosing range between"
+        (define actual (range-set-add ranges (closed-open-range 5 20)))
+        (define expected (range-set (closed-open-range 5 20)))
         (check-equal? actual expected))))
+
+  (test-case (name-string range-set-add!)
+
+    (test-case "empty case"
+      
+      (test-case "inserting bounded range"
+        (define ranges (make-mutable-range-set #:comparator real<=>))
+        (range-set-add! ranges (closed-range 4 8))
+        (define expected (list (closed-range 4 8)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "inserting unbounded range"
+        (define ranges (make-mutable-range-set #:comparator real<=>))
+        (range-set-add! ranges (unbounded-range))
+        (define expected (list (unbounded-range)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "inserting bounded-below range"
+        (define ranges (make-mutable-range-set #:comparator real<=>))
+        (range-set-add! ranges (greater-than-range 6))
+        (define expected (list (greater-than-range 6)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "inserting bounded-above range"
+        (define ranges (make-mutable-range-set #:comparator real<=>))
+        (range-set-add! ranges (less-than-range 5))
+        (define expected (list (less-than-range 5)))
+        (check-equal? (sequence->list ranges) expected)))
+
+
+    (test-case "singleton case"
+      (test-case "insert range before"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 2 4))
+        (define expected (list (closed-open-range 2 4) (closed-open-range 5 10)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert adjacent range before"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 2 5))
+        (define expected (list (closed-open-range 2 10)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert overlapping range before"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 2 8))
+        (define expected (list (closed-open-range 2 10)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert enclosing range before"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 2 10))
+        (define expected (list (closed-open-range 2 10)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert range after"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 15 20))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert adjacent range after"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 10 20))
+        (define expected (list (closed-open-range 5 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert overlapping range after"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 8 20))
+        (define expected (list (closed-open-range 5 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert enclosing range after"
+        (define ranges (make-mutable-range-set (list (closed-open-range 5 10)) #:comparator real<=>))
+        (range-set-add! ranges (closed-open-range 5 20))
+        (define expected (list (closed-open-range 5 20)))
+        (check-equal? (sequence->list ranges) expected)))
+
+    (test-case "two range case"
+      (define (make-ranges)
+        (make-mutable-range-set (list (closed-open-range 5 10) (closed-open-range 15 20))
+                                #:comparator real<=>))
+
+      (test-case "insert range before"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 2 4))
+        (define expected
+          (list (closed-open-range 2 4) (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert adjacent range before"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 2 5))
+        (define expected (list (closed-open-range 2 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert overlapping range before"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 2 8))
+        (define expected (list (closed-open-range 2 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert enclosing range before"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 2 10))
+        (define expected (list (closed-open-range 2 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert range after"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 22 25))
+        (define expected
+          (list (closed-open-range 5 10) (closed-open-range 15 20) (closed-open-range 22 25)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert adjacent range after"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 20 25))
+        (define expected
+          (list (closed-open-range 5 10) (closed-open-range 15 25)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert overlapping range after"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 18 25))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 25)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert enclosing range after"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 15 25))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 25)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 12 14))
+        (define expected
+          (list (closed-open-range 5 10) (closed-open-range 12 14) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert left-adjacent range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 10 14))
+        (define expected (list (closed-open-range 5 14) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert right-adjacent range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 12 15))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 12 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert dual-adjacent range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 10 15))
+        (define expected (list (closed-open-range 5 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert left-overlapping range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 8 14))
+        (define expected (list (closed-open-range 5 14) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert right-overlapping range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 12 18))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 12 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert dual-overlapping range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 8 18))
+        (define expected (list (closed-open-range 5 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert left-enclosing range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 5 14))
+        (define expected (list (closed-open-range 5 14) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert right-enclosing range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 12 20))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 12 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "insert dual-enclosing range between"
+        (define ranges (make-ranges))
+        (range-set-add! ranges (closed-open-range 5 20))
+        (define expected (list (closed-open-range 5 20)))
+        (check-equal? (sequence->list ranges) expected))))
 
   (test-case (name-string range-set-remove)
 

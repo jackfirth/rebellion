@@ -337,7 +337,23 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
    (range-set-add ranges (closed-range 4 8)))}
 
 
-@defproc[(range-set-add! [ranges mutable-range-set?] [new-range range?]) void?]
+@defproc[(range-set-add! [ranges mutable-range-set?] [new-range range?]) void?]{
+
+ Adds @racket[new-range] to @racket[ranges]. Overlapping and adjacent ranges are coalesced.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define ranges (make-mutable-range-set #:comparator real<=>))
+    (range-set-add! ranges (closed-range 2 5))
+    (range-set-add! ranges (closed-range 7 10)))
+
+   ranges
+
+   (eval:no-prompt
+    (range-set-add! ranges (closed-range 4 8)))
+   
+   ranges)}
 
 
 @defproc[(range-set-add-all [ranges immutable-range-set?] [new-ranges (sequence/c range?)])

@@ -295,10 +295,10 @@
   #:methods gen:mutable-range-set
 
   [(define (this-endpoints this)
-     (immutable-endpoint-map-range-set-endpoints this))
+     (mutable-endpoint-map-range-set-endpoints this))
 
    (define (this-comparator this)
-     (immutable-endpoint-map-range-set-comparator this))
+     (mutable-endpoint-map-range-set-comparator this))
 
    (define/guard (range-set-add! this range)
      (define cmp (this-comparator this))
@@ -311,7 +311,37 @@
       "range set comparator" cmp)
      (guard (empty-range? range) then
        (void))
-     TODO)
+     (define endpoints (this-endpoints this))
+     (define cut-cmp (sorted-map-key-comparator endpoints))
+     (define lower-endpoint-cut (range-lower-cut range))
+     (define upper-endpoint-cut (range-upper-cut range))
+     (define left-overlapping-range (sorted-map-entry-at-most endpoints lower-endpoint-cut))
+     (define right-overlapping-range
+       (sorted-map-entry-at-most
+        (sorted-submap endpoints (at-least-range lower-endpoint-cut #:comparator cut-cmp))
+        upper-endpoint-cut))
+
+     (define new-lower-endpoint
+       (match left-overlapping-range
+         [(present (entry left-overlapping-lower-endpoint left-overlapping-upper-endpoint))
+          (if (compare-infix cut-cmp left-overlapping-upper-endpoint >= lower-endpoint-cut)
+              (comparator-min cut-cmp lower-endpoint-cut left-overlapping-lower-endpoint)
+              lower-endpoint-cut)]
+         [(== absent) lower-endpoint-cut]))
+  
+     (define new-upper-endpoint
+       (match right-overlapping-range
+         [(present (entry _ right-overlapping-upper-endpoint))
+          (comparator-max cut-cmp upper-endpoint-cut right-overlapping-upper-endpoint)]
+         [(== absent) upper-endpoint-cut]))
+
+     (define range-to-remove
+       (closed-range new-lower-endpoint new-upper-endpoint #:comparator cut-cmp))
+     (define endpoints-to-remove
+       (sequence->list (sorted-map-keys (sorted-submap endpoints range-to-remove))))
+     (sorted-map-remove-all! endpoints endpoints-to-remove)
+     (sorted-map-put! endpoints new-lower-endpoint new-upper-endpoint)
+     (void))
 
    (define/guard (range-set-remove! this range)
      (define cmp (this-comparator this))
