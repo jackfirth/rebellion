@@ -79,6 +79,21 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
    (range-set (closed-open-range 2 5) #:comparator real<=>))}
 
 
+@defproc[(make-mutable-range-set
+          [initial-ranges (sequence/c range?) '()]
+          [#:comparator comparator comparator?])
+         mutable-range-set?]{
+ Constructs a new mutable @tech{range set} containing @racket[initial-ranges] (which defaults to the
+ empty list). All ranges must use @racket[comparator] as their endpoint comparators or a contract
+ exception is raised. As in the @racket[range-set] constructor, overlapping ranges are disallowed.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (make-mutable-range-set #:comparator real<=>)
+   (make-mutable-range-set (list (closed-range 2 5) (open-range 10 20))
+                           #:comparator real<=>))}
+
+
 @defproc[(sequence->range-set
           [ranges (sequence/c nonempty-range?)]
           [#:comparator comparator comparator?])
@@ -93,7 +108,9 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
     #:comparator real<=>))}
 
 
-@defform[(for/range-set #:comparator comparator (for-clause ...) body-or-break ... body)]{
+@defform[(for/range-set #:comparator comparator (for-clause ...)
+           body-or-break ...
+           body)]{
  Like @racket[for], but collects the iterated ranges into an immutable @tech{range set}.
 
  @(examples
@@ -103,7 +120,9 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
      (closed-open-range codepoint (add1 codepoint))))}
 
 
-@defform[(for*/range-set #:comparator comparator (for-clause ...) body-or-break ... body)]{
+@defform[(for*/range-set #:comparator comparator (for-clause ...)
+           body-or-break ...
+           body)]{
  Like @racket[for*], but collects the iterated ranges into an immutable @tech{range set}.
 
  @(examples
