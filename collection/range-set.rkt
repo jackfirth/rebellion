@@ -805,6 +805,202 @@
         (define expected (range-set #:comparator real<=>))
         (check-equal? actual expected))))
 
+  (test-case (name-string range-set-remove!)
+
+    (test-case "empty case"
+      
+      (define (check-removing-from-empty-does-nothing range-to-remove)
+        (define ranges (make-mutable-range-set #:comparator real<=>))
+        (range-set-remove! ranges range-to-remove)
+        (check-true (range-set-empty? ranges)))
+
+      (check-removing-from-empty-does-nothing (closed-range 5 10))
+      (check-removing-from-empty-does-nothing (open-range 5 10))
+      (check-removing-from-empty-does-nothing (closed-open-range 5 10))
+      (check-removing-from-empty-does-nothing (open-closed-range 5 10))
+      (check-removing-from-empty-does-nothing (greater-than-range 5))
+      (check-removing-from-empty-does-nothing (at-least-range 10))
+      (check-removing-from-empty-does-nothing (less-than-range 5))
+      (check-removing-from-empty-does-nothing (at-most-range 5))
+      (check-removing-from-empty-does-nothing (unbounded-range)))
+
+    (define (make-ranges . ranges)
+        (make-mutable-range-set ranges #:comparator real<=>))
+
+    (test-case "singleton case"
+      
+      (test-case "remove range before"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-range 2 3))
+        (check-equal? (sequence->list ranges) (list (closed-open-range 5 10))))
+
+      (test-case "remove adjacent range before"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-open-range 2 5))
+        (check-equal? (sequence->list ranges) (list (closed-open-range 5 10))))
+
+      (test-case "remove overlapping range before"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-range 2 7))
+        (check-equal? (sequence->list ranges) (list (open-range 7 10))))
+
+      (test-case "remove enclosing range before"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-open-range 2 10))
+        (check-equal? (sequence->list ranges) (list)))
+
+      (test-case "remove range after"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-range 12 14))
+        (check-equal? (sequence->list ranges) (list (closed-open-range 5 10))))
+
+      (test-case "remove adjacent range after"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-range 10 14))
+        (check-equal? (sequence->list ranges) (list (closed-open-range 5 10))))
+
+      (test-case "remove overlapping range after"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-range 7 12))
+        (check-equal? (sequence->list ranges) (list (closed-open-range 5 7))))
+
+      (test-case "remove enclosing range after"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-range 5 12))
+        (check-equal? (sequence->list ranges) (list)))
+
+      (test-case "remove enclosed range"
+        (define ranges (make-ranges (closed-open-range 5 10)))
+        (range-set-remove! ranges (closed-range 7 9))
+        (check-equal? (sequence->list ranges) (list (closed-open-range 5 7) (open-range 9 10)))))
+
+    (test-case "two-range case"
+      
+      (test-case "remove range before"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 2 3))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove adjacent range before"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (open-range 2 5))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove overlapping range before"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 2 7))
+        (define expected (list (open-range 7 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove enclosing range before"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-open-range 2 10))
+        (define expected (list (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove left-enclosed range"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 7 8))
+        (define expected (list (closed-open-range 5 7) (open-range 8 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove range after"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 25 28))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove adjacent range after"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 20 28))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove overlapping range after"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 18 28))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 18)))
+        (check-equal? (sequence->list ranges) expected))
+      
+      (test-case "remove enclosing range after"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 15 28))
+        (define expected (list (closed-open-range 5 10)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove right-enclosed range"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (open-range 17 18))
+        (define expected
+          (list (closed-open-range 5 10) (closed-range 15 17) (closed-open-range 18 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 12 14))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove left-adjacent range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 10 14))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove right-adjacent range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-open-range 12 15))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove left and right-adjacent range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-open-range 10 15))
+        (define expected (list (closed-open-range 5 10) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove left-overlapping range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 8 14))
+        (define expected (list (closed-open-range 5 8) (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove right-overlapping range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 12 17))
+        (define expected (list (closed-open-range 5 10) (open-range 17 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove left and right-overlapping range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 8 17))
+        (define expected (list (closed-open-range 5 8) (open-range 17 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove left-enclosing range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 5 14))
+        (define expected (list (closed-open-range 15 20)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove right-enclosing range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-open-range 12 20))
+        (define expected (list (closed-open-range 5 10)))
+        (check-equal? (sequence->list ranges) expected))
+
+      (test-case "remove left and right-enclosing range between"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-open-range 5 20))
+        (check-equal? (sequence->list ranges) (list)))
+
+      (test-case "remove span enclosing range"
+        (define ranges (make-ranges (closed-open-range 5 10) (closed-open-range 15 20)))
+        (range-set-remove! ranges (closed-range 2 25))
+        (check-equal? (sequence->list ranges) (list)))))
+
   (test-case (name-string range-set-span)
 
     (test-case "closed ranges"

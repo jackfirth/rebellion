@@ -354,7 +354,64 @@
       "range set comparator" cmp)
      (guard (empty-range? range) then
        (void))
-     TODO)
+     (define endpoints (this-endpoints this))
+     (define cut-cmp (sorted-map-key-comparator endpoints))
+     (define lower-endpoint (range-lower-cut range))
+     (define upper-endpoint (range-upper-cut range))
+     (define left-overlapping-range (sorted-map-entry-at-most endpoints lower-endpoint))
+     (define right-overlapping-range (sorted-map-entry-at-most endpoints upper-endpoint))
+
+     (define lowest-endpoint
+       (match left-overlapping-range
+         [(present (entry left-overlapping-lower-endpoint left-overlapping-upper-endpoint))
+          (if (compare-infix cut-cmp left-overlapping-upper-endpoint >= lower-endpoint)
+              (comparator-min cut-cmp lower-endpoint left-overlapping-lower-endpoint)
+              lower-endpoint)]
+         [(== absent) lower-endpoint]))
+
+     (define new-left-overlapping-endpoints
+       (match left-overlapping-range
+         [(present (entry left-overlapping-lower-endpoint left-overlapping-upper-endpoint))
+          (present
+           (entry
+            left-overlapping-lower-endpoint
+            (comparator-min cut-cmp left-overlapping-upper-endpoint lower-endpoint)))]
+         [(== absent) absent]))
+  
+     (define highest-endpoint
+       (match right-overlapping-range
+         [(present (entry _ right-overlapping-upper-endpoint))
+          (comparator-max cut-cmp upper-endpoint right-overlapping-upper-endpoint)]
+         [(== absent) upper-endpoint]))
+
+     (define new-right-overlapping-endpoints
+       (match right-overlapping-range
+         [(present (entry right-overlapping-lower-endpoint right-overlapping-upper-endpoint))
+          (if (compare-infix cut-cmp upper-endpoint < right-overlapping-upper-endpoint)
+              (present
+               (entry
+                (comparator-max cut-cmp right-overlapping-lower-endpoint upper-endpoint)
+                right-overlapping-upper-endpoint))
+              absent)]
+         [(== absent) absent]))
+
+     (define range-to-remove
+       (closed-range lowest-endpoint highest-endpoint #:comparator cut-cmp))
+     (define endpoints-to-remove
+       (sequence->list (sorted-map-keys (sorted-submap endpoints range-to-remove))))
+
+     (sorted-map-remove-all! endpoints endpoints-to-remove)
+     (match new-left-overlapping-endpoints
+       [(present (entry new-left-lower new-left-upper))
+        #:when (not (equal? new-left-lower new-left-upper))
+        (sorted-map-put! endpoints new-left-lower new-left-upper)]
+       [_ (void)])
+     (match new-right-overlapping-endpoints
+       [(present (entry new-right-lower new-right-upper))
+        #:when (not (equal? new-right-lower new-right-upper))
+        (sorted-map-put! endpoints new-right-lower new-right-upper)]
+       [_ (void)])
+     (void))
 
    (define (range-set-clear! this)
      (sorted-map-clear! (this-endpoints this)))])
