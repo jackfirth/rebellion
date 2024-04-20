@@ -423,11 +423,41 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
 
 
 @defproc[(range-set-remove-all [ranges immutable-range-set?] [ranges-to-remove (sequence/c range?)])
-         immutable-range-set?]
+         immutable-range-set?]{
+
+ Functionally removes every range in @racket[ranges-to-remove] from @racket[ranges] by returning a new
+ range set containing all of the ranges in @racket[ranges] except any ranges enclosed by a range in
+ @racket[ranges-to-remove]. If a range only partially intersects @racket[range-to-remove], only the
+ intersecting portion is removed in the returned range set. The input range set is not modified. This
+ function is equivalent to looping over @racket[ranges-to-remove] with @racket[range-set-remove].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-set-remove-all (range-set (closed-range 1 5) (closed-range 8 10))
+                         (range-set (open-range 3 7) (closed-range 9 15))))}
 
 
 @defproc[(range-set-remove-all! [ranges mutable-range-set?] [ranges-to-remove (sequence/c range?)])
-         void?]
+         void?]{
+
+ Removes every range in @racket[ranges-to-remove] from @racket[ranges] by removing all of the ranges
+ in @racket[ranges] that are enclosed by any range in @racket[ranges-to-remove]. If a range only
+ partially intersects a range in @racket[ranges-to-remove], only the intersecting portion is removed
+ from the range set. This function is equivalent to looping over @racket[ranges-to-remove] with
+ @racket[range-set-remove!].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define ranges (make-mutable-range-set #:comparator real<=>))
+    (range-set-add-all! ranges (list (closed-range 1 5) (closed-range 8 10))))
+
+   ranges
+
+   (eval:no-prompt
+    (range-set-remove-all! ranges (list (open-range 3 7) (closed-range 9 15))))
+
+   ranges)}
 
 
 @defproc[(range-set-clear! [ranges mutable-range-set?]) void?]
