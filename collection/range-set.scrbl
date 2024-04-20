@@ -357,10 +357,35 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
 
 
 @defproc[(range-set-add-all [ranges immutable-range-set?] [new-ranges (sequence/c range?)])
-         immutable-range-set?]
+         immutable-range-set?]{
+
+ Functionally adds every range in @racket[new-ranges] to @racket[ranges] by returning a new range set
+ containing all of the ranges in @racket[ranges] and all of the ranges in @racket[new-ranges].
+ Overlapping and adjacent ranges are coalesced. The input range set is not modified. This function is
+ equivalent to looping over @racket[new-ranges] with @racket[range-set-add].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (range-set-add-all (range-set (closed-range 2 5) (open-range 10 12))
+                      (range-set (open-range 3 8) (closed-range 15 20))))}
 
 
-@defproc[(range-set-add-all! [ranges mutable-range-set?] [new-ranges (sequence/c range?)]) void?]
+@defproc[(range-set-add-all! [ranges mutable-range-set?] [new-ranges (sequence/c range?)]) void?]{
+
+ Adds every range in @racket[new-ranges] to @racket[ranges]. Overlapping and adjacent ranges are
+ coalesced. This function is equivalent to looping over @racket[new-ranges] with
+ @racket[range-set-add!].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define ranges (make-mutable-range-set #:comparator real<=>)))
+
+   (eval:no-prompt
+    (range-set-add-all! ranges (list (closed-range 2 5) (open-range 10 12)))
+    (range-set-add-all! ranges (list (open-range 3 8) (closed-range 15 20))))
+
+   ranges)}
 
 
 @defproc[(range-set-remove [ranges immutable-range-set?] [range-to-remove range?])
