@@ -108,6 +108,26 @@ except it can contain duplicate elements. Elements are always compared with
    (multiset-contains-all? (multiset 1 1 1 2 3 3) (list 1 1 1 1 1 1 1)))}
 
 
+@defproc[(multiset-contains-any? [set multiset?] [seq (sequence/c any/c)]) boolean?]{
+ Returns @racket[#true] if @racket[set] contains at least one element of @racket[seq], returns
+ @racket[#false] otherwise. Returns @racket[#false] if @racket[seq] is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-contains-any? (multiset 1 2 3) (list 2 4 6))
+   (multiset-contains-any? (multiset 1 2 3) (list 10 20 30)))}
+
+
+@defproc[(multiset-contains-none? [set multiset?] [seq (sequence/c any/c)]) boolean?]{
+ Returns @racket[#true] if @racket[set] does not contain any element of @racket[seq], returns
+ @racket[#false] otherwise. Returns @racket[#true] if @racket[seq] is empty.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (multiset-contains-none? (multiset 1 2 3) (list 2 4 6))
+   (multiset-contains-none? (multiset 1 2 3) (list 10 20 30)))}
+
+
 @defproc[(multiset-unique-elements [set multiset?]) set?]{
  Removes all duplicate elements from @racket[set], returning the resulting set.
 
