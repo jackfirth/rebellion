@@ -305,7 +305,7 @@
      (define cmp (this-comparator this))
      (check-precondition
       (equal? cmp (range-comparator range))
-      (name range-set-add)
+      (name range-set-add!)
       "added range does not use the same comparator as the range set"
       "range" range
       "range comparator" (range-comparator range)
@@ -348,7 +348,7 @@
      (define cmp (this-comparator this))
      (check-precondition
       (equal? cmp (range-comparator range))
-      (name range-set-remove)
+      (name range-set-remove!)
       "removed range does not use the same comparator as the range set"
       "range" range
       "range comparator" (range-comparator range)
@@ -427,6 +427,7 @@
   [(define/generic generic-range-set-comparator range-set-comparator)
    (define/generic generic-range-set-contains? range-set-contains?)
    (define/generic generic-range-set-encloses? range-set-encloses?)
+   (define/generic generic-range-set-range-containing-or-absent range-set-range-containing-or-absent)
 
    (define (this-delegate-range-set this)
      (mutable-endpoint-submap-range-set-delegate-range-set this))
@@ -454,8 +455,12 @@
    (define (range-set-intersects? this range)
      TODO)
 
-   (define (range-set-range-containing-or-absent this value)
-     TODO)
+   (define/guard (range-set-range-containing-or-absent this value)
+     (define subrange (this-subrange this))
+     (guard (range-contains? subrange value) else
+       absent)
+     (option-map (generic-range-set-range-containing-or-absent (this-delegate-range-set this) value)
+                 (λ (r) (range-intersection subrange r))))
 
    (define (range-set-span-or-absent this)
      TODO)
@@ -466,7 +471,10 @@
 
   #:methods gen:mutable-range-set
 
-  [(define (this-delegate-range-set this)
+  [(define/generic generic-range-set-add! range-set-add!)
+   (define/generic generic-range-set-remove! range-set-remove!)
+
+   (define (this-delegate-range-set this)
      (mutable-endpoint-submap-range-set-delegate-range-set this))
 
    (define (this-subrange this)
@@ -476,30 +484,37 @@
      (define cmp (range-set-comparator (this-delegate-range-set this)))
      (check-precondition
       (equal? cmp (range-comparator range))
-      (name range-set-add)
+      (name range-set-add!)
       "added range does not use the same comparator as the range set"
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
      (guard (empty-range? range) then
        (void))
-     TODO)
+     (check-precondition
+      (range-encloses? (this-subrange this) range)
+      (name range-set-add!)
+      "cannot add ranges outside the bounds of a range subset view"
+      "range" range
+      "subset boundary range" (this-subrange this))
+     (generic-range-set-add! (this-delegate-range-set this) range))
 
    (define/guard (range-set-remove! this range)
-     (define cmp (range-set-comparator (this-delegate-range-set this)))
+     (define delegate (this-delegate-range-set this))
+     (define cmp (range-set-comparator delegate))
      (check-precondition
       (equal? cmp (range-comparator range))
-      (name range-set-remove)
+      (name range-set-remove!)
       "removed range does not use the same comparator as the range set"
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
      (guard (empty-range? range) then
        (void))
-     TODO)
+     (generic-range-set-remove! delegate (range-intersection (this-subrange this) range)))
 
    (define (range-set-clear! this)
-     TODO)])
+     (generic-range-set-remove! (this-delegate-range-set this) (this-subrange this)))])
 
 
 (define (make-mutable-range-set [initial-ranges '()] #:comparator comparator)
