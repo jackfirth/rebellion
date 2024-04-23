@@ -18,6 +18,7 @@
 
 (require (for-syntax racket/base
                      rebellion/private/for-body)
+         racket/generic
          (only-in racket/list empty? first)
          racket/match
          racket/sequence
@@ -423,7 +424,11 @@
 
   #:methods gen:range-set
 
-  [(define (this-delegate-range-set this)
+  [(define/generic generic-range-set-comparator range-set-comparator)
+   (define/generic generic-range-set-contains? range-set-contains?)
+   (define/generic generic-range-set-encloses? range-set-encloses?)
+
+   (define (this-delegate-range-set this)
      (mutable-endpoint-submap-range-set-delegate-range-set this))
 
    (define (this-subrange this)
@@ -433,18 +438,18 @@
      TODO)
 
    (define (range-set-comparator this)
-     (range-set-comparator (this-delegate-range-set this)))
+     (generic-range-set-comparator (this-delegate-range-set this)))
 
    (define (range-set-size this)
      TODO)
 
    (define (range-set-contains? this value)
      (and (range-contains? (this-subrange this) value)
-          (range-set-contains? (this-delegate-range-set this) value)))
+          (generic-range-set-contains? (this-delegate-range-set this) value)))
 
    (define (range-set-encloses? this range)
      (and (range-encloses? (this-subrange this) range)
-          (range-set-encloses? (this-delegate-range-set this) range)))
+          (generic-range-set-encloses? (this-delegate-range-set this) range)))
 
    (define (range-set-intersects? this range)
      TODO)
