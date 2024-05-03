@@ -291,6 +291,14 @@
      (endpoint-map-span-or-absent (this-endpoints this) (this-comparator this)))
 
    (define (range-subset this subset-range)
+     (define cmp (this-comparator this))
+     (check-precondition
+      (equal? cmp (range-comparator subset-range))
+      (name range-subset)
+      "subset range does not use the same comparator as the range set"
+      "subset range" range
+      "subset range comparator" (range-comparator subset-range)
+      "range set comparator" cmp)
      (mutable-endpoint-submap-range-set this subset-range))]
 
   #:methods gen:mutable-range-set
@@ -435,14 +443,28 @@
    (define (this-subrange this)
      (mutable-endpoint-submap-range-set-subrange this))
 
+   (define (endpoints-submap this)
+     (define delegate-endpoints
+       (mutable-endpoint-map-range-set-endpoints (this-delegate-range-set this)))
+     (endpoint-map-overlapping-submap delegate-endpoints (this-subrange this)))
+
    (define (in-range-set this #:descending? [descending? #false])
-     TODO)
+     (define cmp (range-set-comparator this))
+     (define subendpoints (endpoints-submap this))
+     (define size (sorted-map-size subendpoints))
+     (for/stream ([endpoint-entry (in-sorted-map subendpoints #:descending? descending?)]
+                  [i (in-naturals)])
+       (match-define (entry lower upper) endpoint-entry)
+       (define range (range-from-cuts lower upper #:comparator cmp))
+       (if (or (zero? i) (equal? i (sub1 size)))
+           (range-intersection range (this-subrange this))
+           range)))
 
    (define (range-set-comparator this)
      (generic-range-set-comparator (this-delegate-range-set this)))
 
    (define (range-set-size this)
-     TODO)
+     (sorted-map-size (endpoints-submap this)))
 
    (define (range-set-contains? this value)
      (and (range-contains? (this-subrange this) value)
@@ -547,7 +569,6 @@
   (guard-match (present (entry _ upper)) (sorted-map-entry-at-most endpoints upper-cut) else
     #false)
   (compare-infix (cut<=> (range-comparator range)) lower-cut < upper))
-    
 
 
 (define (endpoint-map-range-containing-or-absent endpoints comparator value)
@@ -568,6 +589,24 @@
   (guard-match (present (entry lower upper)) (sorted-map-entry-at-most endpoints cut) else
     absent)
   (present (range-from-cuts lower upper #:comparator comparator)))
+
+
+(define (endpoint-map-overlapping-submap endpoints subrange)
+  (define lower-cut (range-lower-cut subrange))
+  (define upper-cut (range-upper-cut subrange))
+  (define cmp (range-comparator subrange))
+  (define true-lower-cut
+    (match (sorted-map-entry-at-most endpoints lower-cut)
+      [(present (entry nearest-smaller-range-lower-cut nearest-smaller-range-upper-cut))
+       (define nearest-smaller-range
+         (range-from-cuts nearest-smaller-range-lower-cut nearest-smaller-range-upper-cut
+                          #:comparator cmp))
+       (if (range-overlaps? nearest-smaller-range subrange)
+           nearest-smaller-range-lower-cut
+           lower-cut)]
+      [(== absent) lower-cut]))
+  (define endpoint-subrange (closed-open-range true-lower-cut upper-cut #:comparator (cut<=> cmp)))
+  (sorted-submap endpoints endpoint-subrange))
 
 
 ;@----------------------------------------------------------------------------------------------------
