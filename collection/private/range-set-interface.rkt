@@ -17,7 +17,7 @@
   [range-set-contains-all? (-> range-set? (sequence/c any/c) boolean?)]
   [range-set-encloses? (-> range-set? range? boolean?)]
   [range-set-encloses-all? (-> range-set? (sequence/c range?) boolean?)]
-  [range-set-intersects? (-> range-set? range? boolean?)]
+  [range-set-overlaps? (-> range-set? range? boolean?)]
   [range-set-range-containing (->* (range-set? any/c) (failure-result/c) any)]
   [range-set-range-containing-or-absent (-> range-set? any/c (option/c range?))]
   [range-set-span (->* (range-set?) (failure-result/c) any)]
@@ -85,7 +85,7 @@
   (range-set-contains-all? range-set values)
   (range-set-encloses? range-set range)
   (range-set-encloses-all? range-set ranges)
-  (range-set-intersects? range-set range)
+  (range-set-overlaps? range-set range)
   (range-set-range-containing range-set value [failure-result])
   (range-set-range-containing-or-absent range-set value)
   (range-set-span range-set [failure-result])

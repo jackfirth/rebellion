@@ -233,16 +233,16 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
                             (range-set (closed-range 3 4) (closed-range 8 9))))}
 
 
-@defproc[(range-set-intersects? [ranges range-set?] [other-range range?]) boolean?]{
- Determines if any range in @racket[ranges] intersects with @racket[other-range].
+@defproc[(range-set-overlaps? [ranges range-set?] [other-range range?]) boolean?]{
+ Determines if any range in @racket[ranges] overlaps with @racket[other-range].
 
  @(examples
    #:eval (make-evaluator) #:once
    (eval:no-prompt
     (define ranges (range-set (closed-range 2 5) (closed-range 9 10))))
 
-   (range-set-intersects? ranges (closed-range 4 8))
-   (range-set-intersects? ranges (closed-range 6 8)))}
+   (range-set-overlaps? ranges (closed-range 4 8))
+   (range-set-overlaps? ranges (closed-range 6 8)))}
 
 
 @defproc[(range-set-range-containing [ranges range-set?]

@@ -25,7 +25,7 @@
   range-set-contains-all?
   range-set-encloses?
   range-set-encloses-all?
-  range-set-intersects?
+  range-set-overlaps?
   range-set-range-containing
   range-set-range-containing-or-absent
   range-set-span
@@ -40,6 +40,10 @@
   range-set-remove-all!
   range-set-clear!
   range-subset)
+
+ ;; Deprecated legacy alias of range-set-overlaps?
+ (rename-out [range-set-overlaps? range-set-intersects?])
+
  (contract-out
   [empty-range-set? predicate/c]
   [nonempty-range-set? predicate/c]))
@@ -57,7 +61,7 @@
 
 
 ;@----------------------------------------------------------------------------------------------------
-;; Data definition
+
 
 (define (empty-range-set? v)
   (and (range-set? v) (range-set-empty? v)))
