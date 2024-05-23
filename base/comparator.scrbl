@@ -4,6 +4,7 @@
                      racket/bool
                      racket/contract/base
                      racket/contract/region
+                     racket/math
                      rebellion/base/comparator
                      rebellion/base/immutable-string
                      rebellion/base/symbol
