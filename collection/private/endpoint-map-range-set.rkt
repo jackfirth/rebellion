@@ -79,8 +79,8 @@
    (define (range-set-encloses? this range)
      (endpoint-map-encloses? (this-endpoints this) (this-comparator this) range))
 
-   (define (range-set-intersects? this range)
-     (endpoint-map-intersects? (this-endpoints this) (this-comparator this) range))
+   (define (range-set-overlaps? this range)
+     (endpoint-map-overlaps? (this-endpoints this) (this-comparator this) range))
 
    (define (range-set-range-containing-or-absent this value)
      (endpoint-map-range-containing-or-absent (this-endpoints this) (this-comparator this) value))
@@ -281,8 +281,8 @@
    (define (range-set-encloses? this range)
      (endpoint-map-encloses? (this-endpoints this) (this-comparator this) range))
 
-   (define (range-set-intersects? this range)
-     (endpoint-map-intersects? (this-endpoints this) (this-comparator this) range))
+   (define (range-set-overlaps? this range)
+     (endpoint-map-overlaps? (this-endpoints this) (this-comparator this) range))
 
    (define (range-set-range-containing-or-absent this value)
      (endpoint-map-range-containing-or-absent (this-endpoints this) (this-comparator this) value))
@@ -474,7 +474,7 @@
      (and (range-encloses? (this-subrange this) range)
           (generic-range-set-encloses? (this-delegate-range-set this) range)))
 
-   (define (range-set-intersects? this range)
+   (define (range-set-overlaps? this range)
      TODO)
 
    (define/guard (range-set-range-containing-or-absent this value)
@@ -563,7 +563,7 @@
     [(present nearest-range) (range-encloses? nearest-range range)]))
 
 
-(define/guard (endpoint-map-intersects? endpoints comparator range)
+(define/guard (endpoint-map-overlaps? endpoints comparator range)
   (define lower-cut (range-lower-cut range))
   (define upper-cut (range-upper-cut range))
   (guard-match (present (entry _ upper)) (sorted-map-entry-at-most endpoints upper-cut) else
