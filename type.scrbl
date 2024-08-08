@@ -144,10 +144,7 @@ example, @racket[define-enum-type] creates a type binding using
 @racket[define-syntax] and the corresponding syntax class @racket[enum-id]
 extracts that binding.
 
-At present, not all kinds of types support type bindings --- follow
-@hyperlink["https://github.com/jackfirth/rebellion/issues/179"]{issue #179} for
-updates on this feature and the current status of supported type bindings. More
-advanced compile-time type functionality such as a full static type system and
+More advanced compile-time type functionality such as a full static type system and
 checker are out of scope for now, but it is hoped that such an effort can either
 build on top of the Rebellion type libraries. If you are interested in such a
 project please reach out to the Rebellion project owners, we'd love to hear
