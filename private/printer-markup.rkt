@@ -35,7 +35,7 @@
 (require racket/pretty
          racket/sequence
          rebellion/custom-write
-         rebellion/private/guarded-block)
+         guard)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -61,7 +61,7 @@
      (define inline-separator (sequence-markup-inline-separator this))
      (define inline
        (inline-sequence-markup elements #:prefix prefix #:suffix suffix #:separator inline-separator))
-     (guard (pretty-printing-with-finite-columns?) else
+     (guard (pretty-printing-with-finite-columns?) #:else
        (custom-write inline out mode))
      (unless (try-pretty-print-single-line inline out mode)
        (define multiline

@@ -22,7 +22,7 @@
          racket/string
          racket/struct
          rebellion/private/contract-projection
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/type/tuple)
 
@@ -144,7 +144,8 @@
   (define first-order-case-tests (map contract-first-order case-contracts))
   (λ (first-order-test v)
     (guarded-block
-      (guard (variant? v) else #false)
+      (guard (variant? v) #:else
+        #false)
       (define index (index-of case-keywords (variant-tag v)))
       (and index ((list-ref first-order-case-tests index) v)))))
 

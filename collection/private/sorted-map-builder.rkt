@@ -25,7 +25,7 @@
          (submod rebellion/collection/private/regular-immutable-sorted-map private-for-rebellion-only)
          rebellion/collection/private/sorted-map-interface
          rebellion/streaming/transducer
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -56,7 +56,7 @@
   (define key<=> (sorted-map-builder-key-comparator builder))
   (define mutable-entries (build-mutable-vector (sorted-map-builder-entry-vector-builder builder)))
 
-  (guard (vector-empty? mutable-entries) then
+  (guard (not (vector-empty? mutable-entries)) #:else
     (empty-sorted-map key<=>))
 
   (define (entry< e1 e2)

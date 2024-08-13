@@ -26,7 +26,7 @@
          rebellion/collection/private/sorted-set-builder
          rebellion/collection/private/synchronized-sorted-set
          rebellion/collection/private/unmodifiable-sorted-set
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer)
@@ -44,8 +44,8 @@
   ;; immutable-sorted-set? because the latter includes subset views. A subset view could be a tiny
   ;; portion of a much larger backing set, and there's a soft expectation that copying a sequence into
   ;; an immutable collection retains space linear in the size of the returned collection.
-  (guard (and (regular-immutable-sorted-set? elements)
-              (equal? (sorted-set-comparator elements) comparator)) then
+  (guard (not (and (regular-immutable-sorted-set? elements)
+                   (equal? (sorted-set-comparator elements) comparator))) #:else
     elements)
   (transduce elements #:into (into-sorted-set comparator)))
 

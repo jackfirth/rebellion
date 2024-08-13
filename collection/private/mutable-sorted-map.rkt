@@ -27,7 +27,7 @@
          rebellion/collection/private/sorted-map-key-set
          rebellion/collection/private/sorted-submap
          rebellion/collection/vector
-         rebellion/private/guarded-block
+         guard
          rebellion/private/precondition
          rebellion/private/static-name)
 
@@ -267,7 +267,7 @@
    (define/guard (sorted-submap this key-range)
      (define delegate (get-delegate this))
      (define original-range (get-range this))
-     (guard (range-overlaps? original-range key-range) else
+     (guard (range-overlaps? original-range key-range) #:else
        (make-empty-mutable-sorted-map (generic-sorted-map-key-comparator delegate)))
      (define intersection (range-intersection original-range key-range))
      (constructor:regular-mutable-sorted-submap delegate intersection))

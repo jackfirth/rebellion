@@ -24,7 +24,7 @@
          (submod rebellion/base/range private-for-rebellion-only)
          rebellion/collection/entry
          rebellion/collection/private/mutable-red-black-tree-base
-         rebellion/private/guarded-block)
+         guard)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -35,7 +35,7 @@
   (define (recur node)
     (in-mutable-rb-tree-node node #:descending? descending?))
 
-  (guard (nil-leaf? node) then
+  (guard (not (nil-leaf? node)) #:else
     (stream))
   (define entry (mutable-rb-node-entry node))
   (define true-left (mutable-rb-node-child node left))
@@ -69,7 +69,7 @@
   (define (recur node)
     (in-mutable-rb-subtree-node node key-range #:descending? descending?))
 
-  (guard (nil-leaf? node) then
+  (guard (not (nil-leaf? node)) #:else
     (stream))
   
   (define key (mutable-rb-node-key node))

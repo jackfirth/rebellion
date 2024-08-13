@@ -19,7 +19,7 @@
          rebellion/binary/immutable-bytes
          rebellion/collection/record
          rebellion/media
-         rebellion/private/guarded-block
+         guard
          rebellion/type/tuple)
 
 (module+ test
@@ -57,7 +57,8 @@
   (define type (media-get-type m))
   (define padding
     (guarded-block
-      (guard (application/octet-stream? type) else 0)
+      (guard (application/octet-stream? type) #:else
+        0)
       (define params (media-type-parameters type))
       (if (record-contains-key? params '#:padding)
           (string->number (record-ref params '#:padding))

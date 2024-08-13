@@ -29,7 +29,6 @@
          rebellion/base/variant
          rebellion/collection/list
          rebellion/collection/vector
-         rebellion/private/guarded-block
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer
@@ -130,7 +129,7 @@
 (define no-value (gensym "no-value"))
 
 
-(define/guard (permuting perm)
+(define (permuting perm)
   (let ([perm (permutation-reverse perm)])
     (define size (permutation-size perm))
     (define temp-storage (make-vector size no-value))

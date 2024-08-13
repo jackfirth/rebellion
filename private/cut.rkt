@@ -20,7 +20,7 @@
 
 (require racket/match
          rebellion/base/comparator
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -69,38 +69,28 @@
 
 
 (define/guard ((cut-compare base-comparator) left right)
-  (guard (and (equal? left bottom-cut) (equal? right bottom-cut)) then
-    equivalent)
-  (guard (equal? left bottom-cut) then
-    lesser)
-  (guard (equal? right bottom-cut) then
-    greater)
-  (guard (and (equal? left top-cut) (equal? right top-cut)) then
-    equivalent)
-  (guard (equal? left top-cut) then
-    greater)
-  (guard (equal? right top-cut) then
-    lesser)
-  (define result
-    (compare
-     base-comparator
-     (intermediate-cut-value left)
-     (intermediate-cut-value right)))
-  (guard (or (equal? result lesser) (equal? result greater)) then
-    result)
-  (guard (and (lower-cut? left) (lower-cut? right)) then
-    equivalent)
-  (guard (lower-cut? left) then
-    lesser)
-  (guard (lower-cut? right) then
-    greater)
-  (guard (and (middle-cut? left) (middle-cut? right)) then
-    equivalent)
-  (guard (middle-cut? left) then
-    lesser)
-  (guard (middle-cut? right) then
-    greater)
-  equivalent)
+  (cond
+    [(and (equal? left bottom-cut) (equal? right bottom-cut)) equivalent]
+    [(equal? left bottom-cut) lesser]
+    [(equal? right bottom-cut) greater]
+    [(and (equal? left top-cut) (equal? right top-cut)) equivalent]
+    [(equal? left top-cut) greater]
+    [(equal? right top-cut) lesser]
+    [else
+     (define result
+       (compare
+        base-comparator
+        (intermediate-cut-value left)
+        (intermediate-cut-value right)))
+     (cond
+       [(or (equal? result lesser) (equal? result greater)) result]
+       [(and (lower-cut? left) (lower-cut? right)) equivalent]
+       [(lower-cut? left) lesser]
+       [(lower-cut? right) greater]
+       [(and (middle-cut? left) (middle-cut? right)) equivalent]
+       [(middle-cut? left) lesser]
+       [(middle-cut? right) greater]
+       [else equivalent])]))
 
 
 (define (cut-flip-side cut)

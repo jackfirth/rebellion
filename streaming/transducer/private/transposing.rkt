@@ -14,7 +14,7 @@
          racket/sequence
          rebellion/base/variant
          rebellion/collection/vector
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base

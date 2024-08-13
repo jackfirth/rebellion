@@ -9,7 +9,8 @@
               "rebellion")))
 
 (define deps
-  (list "base"))
+  (list "base"
+        "guard"))
 
 (define build-deps
   (list "net-doc"

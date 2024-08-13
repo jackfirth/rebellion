@@ -19,10 +19,10 @@
          #:inspector inspector?)
         initialized-object-descriptor?)]
   [default-object-properties
-   (-> object-descriptor? (listof (cons/c struct-type-property? any/c)))]
+    (-> object-descriptor? (listof (cons/c struct-type-property? any/c)))]
   [default-object-equal+hash (-> object-descriptor? equal+hash/c)]
   [default-object-custom-write
-   (-> object-descriptor? custom-write-function/c)]
+    (-> object-descriptor? custom-write-function/c)]
   [default-object-name-property (-> object-descriptor? natural?)]
   [make-object-field-accessor (-> object-descriptor? natural? procedure?)]
   [object-impersonate
@@ -38,7 +38,7 @@
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
-         rebellion/private/guarded-block
+         guard
          rebellion/private/impersonation
          rebellion/type/record
          rebellion/type/object/base
@@ -127,9 +127,9 @@
   (define (positional-keyword-constructor kws vs)
     (define args
       (guarded-block
-        (guard (equal? (length kws) size) then vs)
-        (define-values (before-name after-name) (split-at vs name-position))
-        (append before-name (list #false) after-name)))
+       (guard (not (equal? (length kws) size)) #:else vs)
+       (define-values (before-name after-name) (split-at vs name-position))
+       (append before-name (list #false) after-name)))
     (apply constructor args))
   (define arity-unchecked-constructor
     (make-keyword-procedure positional-keyword-constructor))

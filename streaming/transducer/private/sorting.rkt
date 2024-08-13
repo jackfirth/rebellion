@@ -15,7 +15,7 @@
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
-         rebellion/private/guarded-block
+         guard
          rebellion/streaming/transducer/base
          rebellion/type/record
          rebellion/type/singleton
@@ -70,7 +70,7 @@
 (define-record-type tree-trimming (minimum-leaves leftover-tree))
 
 (define/guard (tree-trim-minimum possibly-unbuilt-tree comparator)
-  (guard (partially-sorted-tree? possibly-unbuilt-tree) then
+  (guard (not (partially-sorted-tree? possibly-unbuilt-tree)) #:else
     (partially-sorted-tree-trim-minimum possibly-unbuilt-tree comparator))
   (define elements
     (list-reverse (unsorted-stack-value possibly-unbuilt-tree)))
@@ -84,7 +84,7 @@
   (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
   (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
   (define greater-stack (partially-sorted-tree-greater-stack tree))
-  (guard (empty-tree? lesser-subtree) then
+  (guard (not (empty-tree? lesser-subtree)) #:else
     (define leaves (list-insert (list-reverse equivalent-stack) pivot-element))
     (define leftovers
       (if (empty-list? greater-stack)
@@ -109,29 +109,29 @@
    #:greater-stack empty-list))
 
 (define/guard (tree-insert tree element #:comparator comparator)
-  (guard (empty-tree? tree) then (singleton-tree element))
+  (guard (not (empty-tree? tree)) #:else
+    (singleton-tree element))
   (define pivot (partially-sorted-tree-pivot-element tree))
   (define lesser-subtree (partially-sorted-tree-lesser-subtree tree))
   (define equivalent-stack (partially-sorted-tree-equivalent-stack tree))
   (define greater-stack (partially-sorted-tree-greater-stack tree))
   (define comparison-to-pivot (compare comparator element pivot))
 
-  (guard (equal? comparison-to-pivot equivalent) then
+  (guard (not (equal? comparison-to-pivot equivalent)) #:else
     (partially-sorted-tree
      #:pivot-element pivot
      #:lesser-subtree lesser-subtree
      #:equivalent-stack (list-insert equivalent-stack element)
      #:greater-stack greater-stack))
   
-  (guard (equal? comparison-to-pivot greater) then
+  (guard (not (equal? comparison-to-pivot greater)) #:else
     (partially-sorted-tree
      #:pivot-element pivot
      #:lesser-subtree lesser-subtree
      #:equivalent-stack equivalent-stack
      #:greater-stack (list-insert greater-stack element)))
   
-  (define new-subtree
-    (tree-insert lesser-subtree element #:comparator comparator))
+  (define new-subtree (tree-insert lesser-subtree element #:comparator comparator))
   (partially-sorted-tree
    #:pivot-element pivot
    #:lesser-subtree new-subtree

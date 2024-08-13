@@ -41,7 +41,7 @@
          rebellion/collection/private/mutable-red-black-tree-iteration
          rebellion/collection/private/vector-binary-search
          rebellion/private/cut
-         rebellion/private/guarded-block)
+         guard)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -70,13 +70,13 @@
   (define key<=> (mutable-rb-tree-key-comparator tree))
   (let loop ([node (mutable-rb-tree-root-node tree)])
     (guarded-block
-     (guard (nil-leaf? node) then
-       node)
-     (define node-key (mutable-rb-node-key node))
-     (match (compare key<=> key node-key)
-       [(== equivalent) node]
-       [(== lesser) (loop (mutable-rb-node-child node left))]
-       [(== greater) (loop (mutable-rb-node-child node right))]))))
+      (guard (not (nil-leaf? node)) #:else
+        node)
+      (define node-key (mutable-rb-node-key node))
+      (match (compare key<=> key node-key)
+        [(== equivalent) node]
+        [(== lesser) (loop (mutable-rb-node-child node left))]
+        [(== greater) (loop (mutable-rb-node-child node right))]))))
 
 
 (define (mutable-rb-node-min-child node)
@@ -105,7 +105,7 @@
 (define/guard (mutable-rb-tree-contains-entry? tree entry)
   (define cmp (mutable-rb-tree-key-comparator tree))
   (define key (entry-key entry))
-  (guard (contract-first-order-passes? (comparator-operand-contract cmp) key) else
+  (guard (contract-first-order-passes? (comparator-operand-contract cmp) key) #:else
     #false)
   (define node (mutable-rb-tree-get-node tree key))
   (and (proper-mutable-rb-node? node) (equal? (mutable-rb-node-value node) (entry-value entry))))
@@ -176,7 +176,7 @@
                       [min-start-index 0]
                       [lower-entry absent]
                       [upper-entry absent])
-    (guard (proper-mutable-rb-node? node) else
+    (guard (proper-mutable-rb-node? node) #:else
       (map-gap min-start-index lower-entry upper-entry))
     (define key (mutable-rb-node-key node))
     (define value (mutable-rb-node-value node))

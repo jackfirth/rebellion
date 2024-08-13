@@ -25,7 +25,7 @@
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
-         rebellion/private/guarded-block
+         guard
          rebellion/private/printer-markup
          rebellion/private/static-name
          rebellion/streaming/reducer
@@ -156,7 +156,7 @@
   (define size (table-builder-size builder))
   (define columns (table-builder-columns builder))
   (define lists (table-builder-lists builder))
-  (guard (zero? size) then
+  (guard (positive? size) #:else
     (define lists
       (for/vector #:length (record-size record)
         ([v (in-vector (record-values record))])

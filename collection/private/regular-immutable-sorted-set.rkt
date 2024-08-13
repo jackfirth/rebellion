@@ -29,7 +29,7 @@
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
-         rebellion/private/guarded-block)
+         guard)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -186,7 +186,7 @@
           (list-position? (vector-binary-search vec value start end #:comparator cmp))))
 
    (define/guard (sorted-set-least-element this)
-     (guard (sorted-set-empty? this) then
+     (guard (not (sorted-set-empty? this)) #:else
        absent)
      (define vec (regular-immutable-sorted-subset-sorted-vector this))
      (define start (regular-immutable-sorted-subset-start-index this))

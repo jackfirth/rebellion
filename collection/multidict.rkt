@@ -42,7 +42,7 @@
          rebellion/collection/entry
          rebellion/collection/multiset
          rebellion/collection/keyset
-         rebellion/private/guarded-block
+         guard
          rebellion/private/printer-markup
          rebellion/streaming/reducer
          rebellion/type/record)
@@ -66,9 +66,10 @@
   (or/c set? multiset? (sequence/c any/c)))
 
 (define/guard (sequence->set seq)
-  (guard (set? seq) then seq)
-  (guard (multiset? seq) then (multiset-unique-elements seq))
-  (for/set ([v seq]) v))
+  (cond
+    [(set? seq) seq]
+    [(multiset? seq) (multiset-unique-elements seq)]
+    [else (for/set ([v seq]) v)]))
 
 (define (make-multidict-properties descriptor)
   (define type (record-descriptor-type descriptor))
@@ -174,7 +175,8 @@
 
 (define/guard (multidict-add dict k v)
   (define old-vs (multidict-ref dict k))
-  (guard (set-member? old-vs v) then dict)
+  (guard (not (set-member? old-vs v)) #:else
+    dict)
   (define delta
     (set-delta #:extra-elements (set) #:missing-elements (set v)))
   (multidict-replace-values dict k (set-add old-vs v)
@@ -185,7 +187,8 @@
 
 (define/guard (multidict-remove dict k v)
   (define old-vs (multidict-ref dict k))
-  (guard (set-member? old-vs v) else dict)
+  (guard (set-member? old-vs v) #:else
+    dict)
   (define delta (set-delta #:extra-elements (set v) #:missing-elements (set)))
   (multidict-replace-values
    dict k (set-remove old-vs v) #:precomputed-value-set-delta delta))

@@ -11,7 +11,7 @@
 
 
 (require rebellion/collection/vector/builder
-         rebellion/private/guarded-block)
+         guard)
 
 
 (module+ test
@@ -33,7 +33,7 @@
 ;;
 (define/guard (vector-merge-adjacent vec should-merge? merge-function)
   (define count (vector-length vec))
-  (guard (< count 2) then
+  (guard (>= count 2) #:else
     (vector->immutable-vector vec))
   (for/fold ([builder (make-vector-builder #:expected-size count)]
              [element (vector-ref vec 0)]

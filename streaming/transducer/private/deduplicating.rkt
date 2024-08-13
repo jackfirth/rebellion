@@ -11,7 +11,7 @@
          rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
-         rebellion/private/guarded-block
+         guard
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
@@ -26,7 +26,8 @@
    (λ (encountered v)
      (guarded-block
        (define k (key-function v))
-       (guard (set-member? encountered k) then (variant #:consume encountered))
+       (guard (not (set-member? encountered k)) #:else
+         (variant #:consume encountered))
        (define state
          (emit-state #:previously-encountered (set-add encountered k)
                      #:novel-element v))
@@ -50,11 +51,11 @@
    (λ (previous v)
      (guarded-block
        (define k (key-function v))
-       (guard (present? previous) else
+       (guard (present? previous) #:else
          (variant #:emit
                   (consecutive-emit-state #:previous-key (present k)
                                           #:novel-element v)))
-       (guard (equal? (present-value previous) k) then
+       (guard (not (equal? (present-value previous) k)) #:else
          (variant #:consume previous))
        (variant #:emit
                 (consecutive-emit-state #:previous-key (present k)

@@ -86,7 +86,7 @@
          rebellion/base/symbol
          rebellion/collection/entry
          rebellion/collection/private/sorted-set-interface
-         rebellion/private/guarded-block
+         guard
          rebellion/private/printer-markup)
 
 
@@ -229,14 +229,14 @@
 
   [(define/guard (equal-proc this other recur)
 
-     (guard (recur (sorted-map-key-comparator this) (sorted-map-key-comparator other)) else
+     (guard (recur (sorted-map-key-comparator this) (sorted-map-key-comparator other)) #:else
        #false)
 
      ;; We check emptiness as a fast path, since empty collections are common in practice and
      ;; easy to optimize for.
-     (guard (sorted-map-empty? this) then
+     (guard (not (sorted-map-empty? this)) #:else
        (sorted-map-empty? other))
-     (guard (sorted-map-empty? other) then
+     (guard (not (sorted-map-empty? other)) #:else
        #false)
 
      ;; We check the size before comparing elements so that we can avoid paying the O(n) element

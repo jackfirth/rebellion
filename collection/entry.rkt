@@ -35,7 +35,7 @@
          rebellion/base/variant
          rebellion/collection/list
          rebellion/private/contract-projection
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/private/total-match
          rebellion/streaming/reducer
@@ -255,11 +255,12 @@
   (define states (groups-reducer-states g))
   (define keys (groups-reverse-ordered-keys g))
   (define finished (groups-finished-keys g))
-  (guard (not (set-member? finished k)) else g)
+  (guard (not (set-member? finished k)) #:else
+    g)
 
-  (guard (not (hash-has-key? states k)) else
+  (guard (not (hash-has-key? states k)) #:else
     (define value-state (consumer (hash-ref states k) v))
-    (guard (variant-tagged-as? value-state '#:consume) else
+    (guard (variant-tagged-as? value-state '#:consume) #:else
       (hash-remove! states k)
       (define next-g
         (groups
@@ -274,7 +275,7 @@
     g)
     
   (define value-state (starter))
-  (guard (variant-tagged-as? value-state '#:early-finish) else
+  (guard (variant-tagged-as? value-state '#:early-finish) #:else
     (hash-set! states k (variant-value value-state))
     (define intermediate-g
       (groups
@@ -311,7 +312,8 @@
    (λ/match (g (entry k v))
      (guarded-block
        (define next (groups-insert g k v #:reducer value-reducer))
-       (guard (groups? next) else (variant #:emit next))
+       (guard (groups? next) #:else
+         (variant #:emit next))
        (variant #:consume next)))
    #:emitter
    (λ (state)
@@ -322,7 +324,7 @@
    (λ (g*)
      (guarded-block
        (define g (half-close-groups g*))
-       (guard (positive? (closing-groups-size g)) else
+       (guard (positive? (closing-groups-size g)) #:else
          (variant #:finish #false))
        (variant #:half-closed-emit g)))
    #:half-closed-emitter

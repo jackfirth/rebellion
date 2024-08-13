@@ -11,7 +11,7 @@
 
 (require rebellion/collection/private/mutable-red-black-tree-base
          rebellion/collection/private/mutable-red-black-tree-search
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -38,10 +38,10 @@
   (define right-child (mutable-rb-node-child node right))
 
   ;; First we check for the simple cases that don't require any rebalancing.
-  (guard (and root? (nil-leaf? left-child) (nil-leaf? right-child)) then
+  (guard (not (and root? (nil-leaf? left-child) (nil-leaf? right-child))) #:else
     (mutable-rb-tree-clear! tree))
 
-  (guard (and (proper-mutable-rb-node? left-child) (proper-mutable-rb-node? right-child)) then
+  (guard (not (and (proper-mutable-rb-node? left-child) (proper-mutable-rb-node? right-child))) #:else
     (define choose-left? (>= (mutable-rb-node-size left-child) (mutable-rb-node-size right-child)))
     (define child
       (if choose-left?
@@ -52,16 +52,16 @@
 
   (define color (mutable-rb-node-color node))
 
-  (guard (equal? color red) then
+  (guard (not (equal? color red)) #:else
     (if root?
         (mutable-rb-tree-clear! tree)
         (mutable-rb-node-remove-from-parent! node)))
 
-  (guard (proper-mutable-rb-node? left-child) then
+  (guard (not (proper-mutable-rb-node? left-child)) #:else
     (mutable-rb-node-swap-contents! node left-child)
     (mutable-rb-tree-remove-node! tree left-child))
 
-  (guard (proper-mutable-rb-node? right-child) then
+  (guard (not (proper-mutable-rb-node? right-child)) #:else
     (mutable-rb-node-swap-contents! node right-child)
     (mutable-rb-tree-remove-node! tree right-child))
 
@@ -70,7 +70,7 @@
   (define parent (mutable-rb-node-parent node))
   (define dir (mutable-rb-node-parent-direction node))
   
-  (define/guard (rebalance! node)
+  (define (rebalance! node)
     (cond
 
       [(deletion-case1? node)
@@ -172,7 +172,7 @@
 
 (define/guard (mutable-rb-node-sibling node)
   (define parent (mutable-rb-node-parent node))
-  (guard (mutable-rb-root? parent) then
+  (guard (not (mutable-rb-root? parent)) #:else
     #false)
   (define parents-left-child (mutable-rb-node-child parent left))
   (if (equal? parents-left-child node)
@@ -182,7 +182,7 @@
 
 (define/guard (mutable-rb-node-close-nephew node)
   (define parent (mutable-rb-node-parent node))
-  (guard (mutable-rb-root? parent) then
+  (guard (not (mutable-rb-root? parent)) #:else
     #false)
   (define parents-left-child (mutable-rb-node-child parent left))
   (cond
@@ -196,7 +196,7 @@
 
 (define/guard (mutable-rb-node-distant-nephew node)
   (define parent (mutable-rb-node-parent node))
-  (guard (mutable-rb-root? parent) then
+  (guard (not (mutable-rb-root? parent)) #:else
     #false)
   (define parents-left-child (mutable-rb-node-child parent left))
   (cond

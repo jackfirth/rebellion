@@ -34,7 +34,7 @@
          rebellion/collection/entry
          rebellion/collection/private/sorted-map-interface
          rebellion/private/cut
-         rebellion/private/guarded-block)
+         guard)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@
 (define/guard (sorted-submap-get map key-range key failure-result)
   (define key-cmp (sorted-map-key-comparator map))
   (guard (and (contract-first-order-passes? (comparator-operand-contract key-cmp) key)
-              (range-contains? key-range key)) else
+              (range-contains? key-range key)) #:else
     (if (procedure? failure-result) (failure-result) failure-result))
   (sorted-map-get map key failure-result))
 
@@ -68,18 +68,18 @@
 (define/guard (sorted-submap-get-option map key-range key)
   (define key-cmp (sorted-map-key-comparator map))
   (guard (and (contract-first-order-passes? (comparator-operand-contract key-cmp) key)
-              (range-contains? key-range key)) else
+              (range-contains? key-range key)) #:else
     absent)
   (sorted-map-get-option map key))
 
 
-(define/guard (sorted-submap-get-entry map key-range key failure-result)
+(define (sorted-submap-get-entry map key-range key failure-result)
   (entry key (sorted-submap-get map key-range key failure-result)))
 
 
 (define/guard (sorted-submap-least-key map key-range)
   (define lower (range-lower-bound key-range))
-  (guard (equal? lower unbounded) then
+  (guard (not (equal? lower unbounded)) #:else
     (sorted-map-least-key map))
   (define endpoint (range-bound-endpoint lower))
   (match (range-bound-type lower)
@@ -89,7 +89,7 @@
 
 (define/guard (sorted-submap-least-entry map key-range)
   (define lower (range-lower-bound key-range))
-  (guard (equal? lower unbounded) then
+  (guard (not (equal? lower unbounded)) #:else
     (sorted-map-least-entry map))
   (define endpoint (range-bound-endpoint lower))
   (match (range-bound-type lower)
@@ -99,7 +99,7 @@
 
 (define/guard (sorted-submap-greatest-key map key-range)
   (define upper (range-upper-bound key-range))
-  (guard (equal? upper unbounded) then
+  (guard (not (equal? upper unbounded)) #:else
     (sorted-map-greatest-key map))
   (define endpoint (range-bound-endpoint upper))
   (match (range-bound-type upper)
@@ -109,7 +109,7 @@
 
 (define/guard (sorted-submap-greatest-entry map key-range)
   (define upper (range-upper-bound key-range))
-  (guard (equal? upper unbounded) then
+  (guard (not (equal? upper unbounded)) #:else
     (sorted-map-greatest-entry map))
   (define endpoint (range-bound-endpoint upper))
   (match (range-bound-type upper)

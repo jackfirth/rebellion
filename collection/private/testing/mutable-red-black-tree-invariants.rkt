@@ -10,7 +10,7 @@
 (module+ test
   (require rackunit
            rebellion/collection/private/mutable-red-black-tree-base
-           rebellion/private/guarded-block))
+           guard))
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -59,7 +59,7 @@
   (define-check (check-mutable-rb-tree-invariants tree)
 
     (define/guard (check-red-node-children-are-black node)
-      (guard (nil-leaf? node) then
+      (guard (not (nil-leaf? node)) #:else
         (void))
       (define left-child (mutable-rb-node-child node left))
       (define right-child (mutable-rb-node-child node right))
@@ -76,7 +76,7 @@
       (check-red-node-children-are-black right-child))
 
     (define/guard (check-path-black-node-counts node)
-      (guard (nil-leaf? node) then
+      (guard (not (nil-leaf? node)) #:else
         0)
       (define left-count (check-path-black-node-counts (mutable-rb-node-child node left)))
       (define right-count (check-path-black-node-counts (mutable-rb-node-child node right)))
@@ -89,7 +89,7 @@
       (if (black-node? node) (add1 left-count) left-count))
 
     (define/guard (check-node-sizes node)
-      (guard (nil-leaf? node) then
+      (guard (not (nil-leaf? node)) #:else
         (void))
       (define size (mutable-rb-node-size node))
       (define left-child (mutable-rb-node-child node left))

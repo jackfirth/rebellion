@@ -12,7 +12,7 @@
 
 (require racket/math
          racket/sequence
-         rebellion/private/guarded-block)
+         guard)
 
 (module+ test
   (require (submod "..")
@@ -21,7 +21,8 @@
 ;@------------------------------------------------------------------------------
 
 (define/guard (subsequence sequence start [end #false])
-  (guard end else (sequence-tail sequence start))
+  (guard end #:else
+    (sequence-tail sequence start))
   (define limit (- end start))
   (define indexed-tail
     (sequence-map cons (in-indexed (sequence-tail sequence start))))
