@@ -49,7 +49,7 @@
          rebellion/base/immutable-string
          rebellion/base/symbol
          rebellion/private/contract-projection
-         rebellion/private/guarded-block
+         guard
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/private/strict-cond
@@ -443,7 +443,7 @@
 
 (define/guard (comparator-operand-contract comparator)
   (define contract (value-contract comparator))
-  (guard (abstract-comparator-contract? contract) else
+  (guard (abstract-comparator-contract? contract) #:else
     any/c)
   (abstract-comparator-contract-operand-contract contract))
 

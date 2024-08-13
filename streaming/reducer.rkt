@@ -76,7 +76,7 @@
          rebellion/base/option/private/guard
          rebellion/base/symbol
          rebellion/base/variant
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/streaming/reducer/private/base
          rebellion/streaming/reducer/private/zip
@@ -123,9 +123,10 @@
   (define finisher (reducer-finisher red))
   (define early-finisher (reducer-early-finisher red))
   (define/guard (loop [tagged-state (starter)] [vs vs])
-    (guard-match (variant #:consume state) tagged-state else
+    (guard-match (variant #:consume state) tagged-state #:else
       (early-finisher (variant-value tagged-state)))
-    (guard-match (cons v next-vs) vs else (finisher state))
+    (guard-match (cons v next-vs) vs #:else
+      (finisher state))
     (loop (consumer state v) next-vs))
   (loop))
 
@@ -139,10 +140,11 @@
                       [sequence-position 0]
                       [first-vs first-vs]
                       [generate-rest generate-rest])
-    (guard-match (variant #:consume state) tagged-state else
+    (guard-match (variant #:consume state) tagged-state #:else
       (early-finisher (variant-value tagged-state)))
-    (guard (false? first-vs) then (finisher state))
-    (guard-match (list v) first-vs else
+    (guard first-vs #:else
+      (finisher state))
+    (guard-match (list v) first-vs #:else
       (apply raise-result-arity-error
              enclosing-function-name 1
              (format "\n  in: sequence elements at position ~a" sequence-position)
@@ -199,9 +201,9 @@
 
   (define/guard (start)
     (define original (original-starter))
-    (guard-match (variant #:consume original-state) original else
+    (guard-match (variant #:consume original-state) original #:else
       (variant #:early-finish (original-result (variant-value original))))
-    (guard (zero? amount) then
+    (guard (positive? amount) #:else
       (variant #:early-finish (limited-result (variant-value original))))
     (define state (limited-state #:amount-left amount #:original-state original-state))
     (variant #:consume state))
@@ -209,9 +211,9 @@
   (define/guard (consume state element)
     (define next-state (original-consumer (limited-state-original-state state) element))
     (define next-amount (sub1 (limited-state-amount-left state)))
-    (guard-match (variant #:consume next-state-value) next-state else
+    (guard-match (variant #:consume next-state-value) next-state #:else
       (variant #:early-finish (original-result (variant-value next-state))))
-    (guard (zero? next-amount) then
+    (guard (positive? next-amount) #:else
       (variant #:early-finish (limited-result next-state-value)))
     (variant #:consume (limited-state #:amount-left next-amount #:original-state next-state-value)))
 
@@ -509,7 +511,7 @@
    #:name enclosing-variable-name))
 
 (define/guard (nonempty-into-last-finish state)
-  (guard-present last-element state else
+  (guard-present last-element state #:else
     (raise-arguments-error (name nonempty-into-last) "expected at least one element"))
   last-element)
 
@@ -521,14 +523,15 @@
    #:early-finisher values
    #:name enclosing-variable-name))
 
-(define/guard (into-option-consume previous element)
-  (guard-present first previous then
-    (raise-arguments-error
-     (name into-option)
-     "expected at most one element"
-     "first element" first
-     "second element" element))
-  (variant #:consume (present element)))
+(define (into-option-consume previous element)
+  (match previous
+    [(present first)
+     (raise-arguments-error
+      (name into-option)
+      "expected at most one element"
+      "first element" first
+      "second element" element)]
+    [_ (variant #:consume (present element))]))
 
 (define/name into-option
   (make-reducer
@@ -538,17 +541,18 @@
    #:early-finisher values
    #:name enclosing-variable-name))
 
-(define/guard (into-only-element-consume previous element)
-  (guard-present first previous then
-    (raise-arguments-error
-     (name into-only-element)
-     "expected exactly one element, but multiple elements were received"
-     "first element" first
-     "second element" element))
-  (variant #:consume (present element)))
+(define (into-only-element-consume previous element)
+  (match previous
+    [(present first)
+     (raise-arguments-error
+      (name into-only-element)
+      "expected exactly one element, but multiple elements were received"
+      "first element" first
+      "second element" element)]
+    [_ (variant #:consume (present element))]))
 
 (define/guard (into-only-element-finish result-option)
-  (guard-present result result-option else
+  (guard-present result result-option #:else
     (raise-arguments-error
      (name into-only-element)
      "expected exactly one element, but zero elements were received"))
@@ -612,13 +616,13 @@
    #:consumer
    (λ (best-candidate elem)
      (guarded-block
-       (define key (key-function elem))
-       (guard (present? best-candidate) else
-         (variant #:consume (present (candidate #:element elem #:key key))))
-       (define best-key (candidate-key (present-value best-candidate)))
-       (guard (equal? (compare comparator best-key key) lesser) else
-         (variant #:consume best-candidate))
-       (variant #:consume (present (candidate #:element elem #:key key)))))
+      (define key (key-function elem))
+      (guard (present? best-candidate) #:else
+        (variant #:consume (present (candidate #:element elem #:key key))))
+      (define best-key (candidate-key (present-value best-candidate)))
+      (guard (equal? (compare comparator best-key key) lesser) #:else
+        (variant #:consume best-candidate))
+      (variant #:consume (present (candidate #:element elem #:key key)))))
    #:finisher (λ (best) (option-map best candidate-element))
    #:early-finisher values
    #:name enclosing-function-name))
@@ -627,12 +631,12 @@
   (into-max (comparator-reverse comparator) #:key key-function))
 
 (define/guard (check-max result-option)
-  (guard-present result result-option else
+  (guard-present result result-option #:else
     (raise-arguments-error (name nonempty-into-max) "expected at least one element"))
   result)
 
 (define/guard (check-min result-option)
-  (guard-present result result-option else
+  (guard-present result result-option #:else
     (raise-arguments-error (name nonempty-into-min) "expected at least one element"))
   result)
 

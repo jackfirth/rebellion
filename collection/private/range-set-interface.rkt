@@ -60,7 +60,7 @@
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
-         rebellion/private/guarded-block
+         guard
          rebellion/private/printer-markup
          rebellion/private/static-name)
 
@@ -189,14 +189,14 @@
 
   [(define/guard (equal-proc this other recur)
 
-     (guard (recur (range-set-comparator this) (range-set-comparator other)) else
+     (guard (recur (range-set-comparator this) (range-set-comparator other)) #:else
        #false)
 
      ;; We check emptiness as a fast path, since empty collections are common in practice and
      ;; easy to optimize for.
-     (guard (range-set-empty? this) then
+     (guard (not (range-set-empty? this)) #:else
        (range-set-empty? other))
-     (guard (range-set-empty? other) then
+     (guard (not (range-set-empty? other)) #:else
        #false)
 
      ;; We check the size before comparing elements so that we can avoid paying the O(n) range

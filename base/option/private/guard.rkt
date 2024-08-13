@@ -6,7 +6,7 @@
                      racket/syntax)
          racket/block
          rebellion/base/option
-         rebellion/private/guarded-block
+         guard
          syntax/parse/define)
 
 (module+ test
@@ -26,23 +26,13 @@
 
 (define-syntax-parser guard-present
   #:track-literals
-  #:literals (then else)
-
-  [(_ id:id expr then ~! body:expr ...+)
+  
+  [(_ id:id expr #:else ~! body:expr ...+)
    #:declare expr (expr/c #'option?)
    #:with id-option (make-option-id #'id)
    #'(begin
        (define id-option expr.c)
-       (guard (present? id-option) then
-         (define id (present-value id-option))
-         (block body ...)))]
-
-  [(_ id:id expr else ~! body:expr ...+)
-   #:declare expr (expr/c #'option?)
-   #:with id-option (make-option-id #'id)
-   #'(begin
-       (define id-option expr.c)
-       (guard (present? id-option) else body ...)
+       (guard (present? id-option) #:else body ...)
        (define id (present-value id-option)))]
 
   [(_ id:id expr)
@@ -50,23 +40,16 @@
    #:with id-option (make-option-id #'id)
    #'(begin
        (define id-option expr.c)
-       (guard (present? id-option) else
+       (guard (present? id-option) #:else
          (raise-arguments-error 'guard-present "expected a present option"))
        (define id (present-value id-option)))])
 
 (module+ test
   (test-case "guard-present"
 
-    (test-case "then case"
-      (define/guard (run opt)
-        (guard-present v opt then v)
-        #false)
-      (check-equal? (run (present 4)) 4)
-      (check-false (run absent)))
-
     (test-case "else case"
       (define/guard (run opt)
-        (guard-present v opt else #false)
+        (guard-present v opt #:else #false)
         v)
       (check-equal? (run (present 4)) 4)
       (check-false (run absent)))
@@ -89,11 +72,6 @@
        "other binding")
       (check-equal?
        (guarded-block
-         (guard-present foo absent then foo)
-         foo-option)
-       "other binding")
-      (check-equal?
-       (guarded-block
-         (guard-present foo absent else foo-option)
+         (guard-present foo absent #:else foo-option)
          foo)
        "other binding"))))

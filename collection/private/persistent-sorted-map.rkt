@@ -28,22 +28,21 @@
          rebellion/collection/private/sorted-map-entry-set
          rebellion/collection/private/sorted-map-key-set
          rebellion/collection/private/sorted-submap
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
 ;@----------------------------------------------------------------------------------------------------
 
 
-(define (sorted-map->persistent-sorted-map map)
-  (cond
-    [(persistent-sorted-map? map) map]
-    [else
-     (define key<=> (sorted-map-key-comparator map))
-     (constructor:persistent-sorted-map
-      (for/fold ([tree (empty-persistent-red-black-tree key<=>)])
-                ([e map])
-        (persistent-red-black-tree-insert tree (entry-key e) (entry-value e))))]))
+(define/guard (sorted-map->persistent-sorted-map map)
+  (guard (not (persistent-sorted-map? map)) #:else
+    map)
+  (define key<=> (sorted-map-key-comparator map))
+  (constructor:persistent-sorted-map
+   (for/fold ([tree (empty-persistent-red-black-tree key<=>)])
+             ([e map])
+     (persistent-red-black-tree-insert tree (entry-key e) (entry-value e)))))
 
 
 ;; We define a specialized implementation of the empty map for speed. It's included in this module so
@@ -422,7 +421,7 @@
    (define/guard (sorted-submap this key-range)
      (define delegate (get-delegate this))
      (define original-range (get-range this))
-     (guard (range-overlaps? original-range key-range) else
+     (guard (range-overlaps? original-range key-range) #:else
        (empty-sorted-map (generic-sorted-map-key-comparator delegate)))
      (define intersection (range-intersection original-range key-range))
      (constructor:persistent-sorted-submap delegate intersection))

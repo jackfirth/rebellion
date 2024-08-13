@@ -39,7 +39,7 @@
          (submod rebellion/collection/private/sorted-map-interface private-for-rebellion-only)
          rebellion/collection/private/vector-binary-search
          rebellion/private/cut
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -176,7 +176,7 @@
      (define keys (regular-immutable-sorted-map-sorted-key-vector this))
      (define values (regular-immutable-sorted-map-sorted-value-vector this))
      (define key<=> (regular-immutable-sorted-map-key-comparator this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        #false)
      (match (vector-binary-search keys key #:comparator key<=>)
        [(list-position i _) (equal? (vector-ref values i) value)]
@@ -195,7 +195,7 @@
      (define keys (regular-immutable-sorted-map-sorted-key-vector this))
      (define values (regular-immutable-sorted-map-sorted-value-vector this))
      (define key<=> (regular-immutable-sorted-map-key-comparator this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        (if (procedure? failure-result) (failure-result) failure-result))
      (match (vector-binary-search keys key #:comparator key<=>)
        [(list-position i _) (vector-ref values i)]
@@ -205,7 +205,7 @@
      (define keys (regular-immutable-sorted-map-sorted-key-vector this))
      (define values (regular-immutable-sorted-map-sorted-value-vector this))
      (define key<=> (regular-immutable-sorted-map-key-comparator this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        absent)
      (match (vector-binary-search keys key #:comparator key<=>)
        [(list-position i _) (present (vector-ref values i))]
@@ -219,7 +219,7 @@
      (define keys (regular-immutable-sorted-map-sorted-key-vector this))
      (define values (regular-immutable-sorted-map-sorted-value-vector this))
      (define key<=> (regular-immutable-sorted-map-key-comparator this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        (entry key (if (procedure? failure-result) (failure-result) failure-result)))
      (match (vector-binary-search keys key #:comparator key<=>)
        [(list-position i real-key) (entry real-key (vector-ref values i))]
@@ -397,7 +397,7 @@
      (define key<=> (regular-immutable-sorted-submap-key-comparator this))
      (define start (regular-immutable-sorted-submap-start-index this))
      (define end (regular-immutable-sorted-submap-end-index this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        #false)
      (match (vector-binary-search keys key start end #:comparator key<=>)
        [(list-position i _) (equal? (vector-ref values i) value)]
@@ -413,7 +413,7 @@
      (define key<=> (regular-immutable-sorted-submap-key-comparator this))
      (define start (regular-immutable-sorted-submap-start-index this))
      (define end (regular-immutable-sorted-submap-end-index this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        (if (procedure? failure-result) (failure-result) failure-result))
      (match (vector-binary-search keys key start end #:comparator key<=>)
        [(list-position i _) (vector-ref values i)]
@@ -425,7 +425,7 @@
      (define key<=> (regular-immutable-sorted-submap-key-comparator this))
      (define start (regular-immutable-sorted-submap-start-index this))
      (define end (regular-immutable-sorted-submap-end-index this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        absent)
      (match (vector-binary-search keys key start end #:comparator key<=>)
        [(list-position i _) (present (vector-ref values i))]
@@ -441,21 +441,21 @@
      (define key<=> (regular-immutable-sorted-submap-key-comparator this))
      (define start (regular-immutable-sorted-submap-start-index this))
      (define end (regular-immutable-sorted-submap-end-index this))
-     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) else
+     (guard (contract-first-order-passes? (comparator-operand-contract key<=>) key) #:else
        (entry key (if (procedure? failure-result) (failure-result) failure-result)))
      (match (vector-binary-search keys key start end #:comparator key<=>)
        [(list-position i real-key) (entry real-key (vector-ref values i))]
        [_ (entry key (if (procedure? failure-result) (failure-result) failure-result))]))
 
    (define/guard (sorted-map-least-key this)
-     (guard (sorted-map-empty? this) then
+     (guard (not (sorted-map-empty? this)) #:else
        absent)
      (define keys (regular-immutable-sorted-submap-sorted-key-vector this))
      (define start (regular-immutable-sorted-submap-start-index this))
      (present (vector-ref keys start)))
 
    (define/guard (sorted-map-least-entry this)
-     (guard (sorted-map-empty? this) then
+     (guard (not (sorted-map-empty? this)) #:else
        absent)
      (define keys (regular-immutable-sorted-submap-sorted-key-vector this))
      (define values (regular-immutable-sorted-submap-sorted-value-vector this))

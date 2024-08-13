@@ -56,7 +56,6 @@
            rebellion/base/comparator
            rebellion/base/range
            rebellion/private/static-name
-           rebellion/private/todo
            rebellion/streaming/transducer))
 
 

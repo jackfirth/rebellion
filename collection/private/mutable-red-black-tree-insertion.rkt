@@ -18,7 +18,7 @@
          rebellion/collection/entry
          rebellion/collection/private/mutable-red-black-tree-base
          rebellion/collection/private/mutable-red-black-tree-search
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -36,14 +36,14 @@
 
 (define/guard (mutable-rb-tree-put! tree key value)
   (define previous-leaf (mutable-rb-tree-get-node tree key))
-  (guard (nil-leaf? previous-leaf) else
+  (guard (nil-leaf? previous-leaf) #:else
     (mutable-rb-node-set-value! previous-leaf value))
   (mutable-rb-tree-put-absent! tree previous-leaf key value))
 
 
 (define/guard (mutable-rb-tree-put-if-absent! tree key value)
   (define previous-leaf (mutable-rb-tree-get-node tree key))
-  (guard (nil-leaf? previous-leaf) else
+  (guard (nil-leaf? previous-leaf) #:else
     (present (mutable-rb-node-value previous-leaf)))
   (mutable-rb-tree-put-absent! tree previous-leaf key value)
   absent)
@@ -51,7 +51,7 @@
 
 (define/guard (mutable-rb-tree-get! tree key failure-result)
   (define previous-leaf (mutable-rb-tree-get-node tree key))
-  (guard (nil-leaf? previous-leaf) else
+  (guard (nil-leaf? previous-leaf) #:else
     (mutable-rb-node-value previous-leaf))
   (define value (if (procedure? failure-result) (failure-result) failure-result))
   (mutable-rb-tree-put-absent! tree previous-leaf key value)
@@ -60,7 +60,7 @@
 
 (define/guard (mutable-rb-tree-get-entry! tree key failure-result)
   (define previous-leaf (mutable-rb-tree-get-node tree key))
-  (guard (nil-leaf? previous-leaf) else
+  (guard (nil-leaf? previous-leaf) #:else
     (mutable-rb-node-entry previous-leaf))
   (define value (if (procedure? failure-result) (failure-result) failure-result))
   (mutable-rb-tree-put-absent! tree previous-leaf key value)
@@ -69,7 +69,7 @@
 
 (define/guard (mutable-rb-tree-update! tree key updater failure-result)
   (define previous-leaf (mutable-rb-tree-get-node tree key))
-  (guard (nil-leaf? previous-leaf) else
+  (guard (nil-leaf? previous-leaf) #:else
     (define new-value (updater (mutable-rb-node-value previous-leaf)))
     (mutable-rb-node-set-value! previous-leaf new-value))
   (define value (updater (if (procedure? failure-result) (failure-result) failure-result)))
@@ -77,7 +77,7 @@
 
 
 (define/guard (mutable-rb-tree-put-absent! tree previous-leaf key value)
-  (guard (root-node? previous-leaf) then
+  (guard (not (root-node? previous-leaf)) #:else
     (mutable-rb-tree-add-root-child! tree (make-red-node key value)))
   (define parent (mutable-rb-node-parent previous-leaf))
   (define direction (mutable-rb-node-parent-direction previous-leaf))
@@ -86,14 +86,14 @@
   
   (define/guard (rebalancing-loop node parent)
     
-    (guard (red-node? parent) else
+    (guard (red-node? parent) #:else
       ;; Insertion case 3: parent is black. No rebalancing necessary, black parent node with new red
       ;; child node is fine.
       (void))
     
     (define grandparent (mutable-rb-node-parent parent))
     
-    (guard (mutable-rb-root? grandparent) then
+    (guard (not (mutable-rb-root? grandparent)) #:else
       ;; Insertion case 6: parent is red and root.
       (mutable-rb-node-repaint! parent black))
     
@@ -103,7 +103,7 @@
     (define uncle
       (mutable-rb-node-child grandparent grandparent-uncle-direction))
     
-    (guard (black-node? uncle) then
+    (guard (not (black-node? uncle)) #:else
       ;; Insertion cases 4 and 5: parent is red and uncle is black.
       (cond
         [(equal? (mutable-rb-node-parent-direction node) grandparent-parent-direction)
@@ -127,7 +127,7 @@
     (mutable-rb-node-repaint! uncle black)
     (mutable-rb-node-repaint! grandparent red)
     (define great-grandparent (mutable-rb-node-parent grandparent))
-    (guard (mutable-rb-root? great-grandparent) then
+    (guard (not (mutable-rb-root? great-grandparent)) #:else
       ;; Insertion case 2: same as case 1, except the grandparent is the root so after repainting it
       ;; the tree is already fully balanced.
       (void))

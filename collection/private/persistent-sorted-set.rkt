@@ -23,7 +23,7 @@
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
          rebellion/collection/private/sorted-subset
-         rebellion/private/guarded-block
+         guard
          rebellion/private/sequence-empty)
 
 
@@ -206,7 +206,7 @@
    (define/guard (sorted-subset this element-range)
      (define delegate (get-delegate this))
      (define original-range (get-range this))
-     (guard (range-overlaps? original-range element-range) else
+     (guard (range-overlaps? original-range element-range) #:else
        (empty-sorted-set (generic-sorted-set-comparator delegate)))
      (define intersection (range-intersection original-range element-range))
      (constructor:persistent-sorted-subset delegate intersection))

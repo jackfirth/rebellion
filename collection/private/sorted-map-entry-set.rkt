@@ -25,7 +25,7 @@
          rebellion/collection/private/sorted-map-interface
          rebellion/collection/sorted-set
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -249,7 +249,7 @@
 
 
 (define/guard (make-key-bound bound)
-  (guard (unbounded? bound) then
+  (guard (not (unbounded? bound)) #:else
     unbounded)
   (define key (entry-key (range-bound-endpoint bound)))
   (range-bound key (range-bound-type bound)))

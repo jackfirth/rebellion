@@ -19,7 +19,7 @@
          rebellion/collection/private/persistent-red-black-tree
          rebellion/collection/private/sorted-set-interface
          (submod rebellion/collection/private/sorted-set-interface private-for-rebellion-only)
-         rebellion/private/guarded-block
+         guard
          rebellion/private/sequence-empty)
 
 

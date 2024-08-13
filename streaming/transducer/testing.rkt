@@ -21,7 +21,7 @@
   [half-closed-emit-event-value (-> half-closed-emit-event? any/c)]))
 
 (require rebellion/base/variant
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/streaming/transducer/private/contract
          rebellion/streaming/transducer/base
@@ -113,8 +113,9 @@
     (define original-state (materialized-transduction-step-original-state step))
     (define next-state
       (guarded-block
-        (guard (variant? original-state) else (variant #:finish #false))
-        (guard (equal? (variant-tag original-state) '#:half-closed-emit) else
+        (guard (variant? original-state) #:else
+          (variant #:finish #false))
+        (guard (equal? (variant-tag original-state) '#:half-closed-emit) #:else
           (original-finisher (variant-value original-state))
           (define next-step
             (materialized-transduction-step

@@ -73,7 +73,7 @@
          rebellion/collection/entry
          rebellion/collection/private/vector-binary-search
          rebellion/private/cut
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -200,10 +200,10 @@
 
 
 (define/guard (persistent-red-black-subtree-copy tree range)
-  (guard-match (present least) (persistent-red-black-tree-least-key tree) else
+  (guard-match (present least) (persistent-red-black-tree-least-key tree) #:else
     (empty-persistent-red-black-tree (persistent-red-black-tree-comparator tree)))
   (match-define (present greatest) (persistent-red-black-tree-greatest-key tree))
-  (guard (and (range-contains? range least) (range-contains? range greatest)) then
+  (guard (not (and (range-contains? range least) (range-contains? range greatest))) #:else
     tree)
   (for/fold ([tree (empty-persistent-red-black-tree (persistent-red-black-tree-comparator tree))])
             ([element (in-persistent-red-black-subtree tree range)])
@@ -248,7 +248,7 @@
 (define/guard (in-persistent-red-black-subtree-node
                node key-range #:descending? [descending? #false])
 
-  (guard (persistent-red-black-node? node) else
+  (guard (persistent-red-black-node? node) #:else
     (stream))
 
   (define (recur node)
@@ -298,7 +298,7 @@
   (define cmp (persistent-red-black-tree-comparator tree))
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
-    (guard (persistent-red-black-node? node) else
+    (guard (persistent-red-black-node? node) #:else
       #false)
     (match-define (persistent-red-black-node _ left node-key _ right _) node)
     (match (compare cmp node-key key)
@@ -313,7 +313,7 @@
   (define cmp (persistent-red-black-tree-comparator tree))
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
-    (guard (persistent-red-black-node? node) else
+    (guard (persistent-red-black-node? node) #:else
       #false)
     (match-define (persistent-red-black-node _ left node-key _ right _) node)
     (match (compare cmp node-key key)
@@ -330,7 +330,7 @@
   (define cmp (persistent-red-black-tree-comparator tree))
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
-    (guard (persistent-red-black-node? node) else
+    (guard (persistent-red-black-node? node) #:else
       (if (procedure? failure-result) (failure-result) failure-result))
     (match-define (persistent-red-black-node _ left node-key value right _) node)
     (match (compare cmp node-key key)
@@ -347,7 +347,7 @@
   (define cmp (persistent-red-black-tree-comparator tree))
 
   (define/guard (loop [node (persistent-red-black-tree-root-node tree)])
-    (guard (persistent-red-black-node? node) else
+    (guard (persistent-red-black-node? node) #:else
       absent)
     (match-define (persistent-red-black-node _ left node-key value right _) node)
     (match (compare cmp node-key key)
@@ -369,7 +369,7 @@
   (define root (persistent-red-black-tree-root-node tree))
   
   (define/guard (loop node)
-    (guard (persistent-red-black-node? node) else
+    (guard (persistent-red-black-node? node) #:else
       (define value (if (procedure? failure-result) (failure-result) failure-result))
       (singleton-red-black-node key (updater value)))
     (define node-element (persistent-red-black-node-key node))
@@ -411,7 +411,7 @@
                       [min-start-index 0]
                       [lower-entry absent]
                       [upper-entry absent])
-    (guard-match (persistent-red-black-node _ left key value right _) node else
+    (guard-match (persistent-red-black-node _ left key value right _) node #:else
       (map-gap min-start-index lower-entry upper-entry))
     (match (search-function key)
       [(== lesser)
@@ -452,7 +452,7 @@
 
 (define/guard (persistent-red-black-tree-least-key tree)
   (define root (persistent-red-black-tree-root-node tree))
-  (guard (persistent-red-black-node? root) else
+  (guard (persistent-red-black-node? root) #:else
     absent)
   
   (define (loop node)
@@ -465,7 +465,7 @@
 
 (define/guard (persistent-red-black-tree-least-entry tree)
   (define root (persistent-red-black-tree-root-node tree))
-  (guard (persistent-red-black-node? root) else
+  (guard (persistent-red-black-node? root) #:else
     absent)
   
   (define (loop node)
@@ -479,7 +479,7 @@
 
 (define/guard (persistent-red-black-tree-greatest-key tree)
   (define root (persistent-red-black-tree-root-node tree))
-  (guard (persistent-red-black-node? root) else
+  (guard (persistent-red-black-node? root) #:else
     absent)
   
   (define (loop node)
@@ -492,7 +492,7 @@
 
 (define/guard (persistent-red-black-tree-greatest-entry tree)
   (define root (persistent-red-black-tree-root-node tree))
-  (guard (persistent-red-black-node? root) else
+  (guard (persistent-red-black-node? root) #:else
     absent)
   
   (define (loop node)
@@ -548,7 +548,7 @@
   (define root (persistent-red-black-tree-root-node tree))
   
   (define/guard (loop node)
-    (guard (persistent-red-black-node? node) else
+    (guard (persistent-red-black-node? node) #:else
       (singleton-red-black-node key value))
     (define node-key (persistent-red-black-node-key node))
     (match (compare key<=> key node-key)

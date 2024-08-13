@@ -38,7 +38,7 @@
          (submod rebellion/streaming/reducer private-for-rebellion-only)
          rebellion/streaming/transducer
          rebellion/private/cut
-         rebellion/private/guarded-block
+         guard
          rebellion/private/precondition
          rebellion/private/static-name
          rebellion/private/todo
@@ -101,13 +101,13 @@
        (guarded-block
         (guard-match (present (entry leftmost-range-lower-cut leftmost-range-upper-cut))
           (sorted-map-entry-at-most (this-endpoints this) lower-subset-cut)
-          else
+          #:else
           endpoints-submap)
-        (guard (compare-infix cut-comparator leftmost-range-upper-cut > lower-subset-cut) else
+        (guard (compare-infix cut-comparator leftmost-range-upper-cut > lower-subset-cut) #:else
           endpoints-submap)
         (define corrected-lower-range
           (range-from-cuts lower-subset-cut leftmost-range-upper-cut #:comparator cut-comparator))
-        (guard (empty-range? corrected-lower-range) then
+        (guard (not (empty-range? corrected-lower-range)) #:else
           endpoints-submap)
         (sorted-map-put endpoints-submap lower-subset-cut leftmost-range-upper-cut)))
 
@@ -115,13 +115,13 @@
        (guarded-block
         (guard-match (present (entry rightmost-range-lower-cut rightmost-range-upper-cut))
           (sorted-map-greatest-entry endpoints-submap-with-left-end-corrected)
-          else
+          #:else
           endpoints-submap-with-left-end-corrected)
         (define corrected-upper-cut
           (comparator-min cut-comparator rightmost-range-upper-cut upper-subset-cut))
         (define corrected-rightmost-range
           (range-from-cuts rightmost-range-lower-cut corrected-upper-cut #:comparator cut-comparator))
-        (guard (empty-range? corrected-rightmost-range) then
+        (guard (not (empty-range? corrected-rightmost-range)) #:else
           (sorted-map-remove endpoints-submap-with-left-end-corrected rightmost-range-lower-cut))
         (sorted-map-put
          endpoints-submap-with-left-end-corrected rightmost-range-lower-cut corrected-upper-cut)))
@@ -146,7 +146,7 @@
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
-     (guard (empty-range? range) then
+     (guard (not (empty-range? range)) #:else
        this)
      (define endpoints (this-endpoints this))
      (define cut-cmp (sorted-map-key-comparator endpoints))
@@ -189,7 +189,7 @@
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
-     (guard (empty-range? range) then
+     (guard (not (empty-range? range)) #:else
        this)
      (define endpoints (this-endpoints this))
      (define cut-cmp (sorted-map-key-comparator endpoints))
@@ -318,7 +318,7 @@
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
-     (guard (empty-range? range) then
+     (guard (not (empty-range? range)) #:else
        (void))
      (define endpoints (this-endpoints this))
      (define cut-cmp (sorted-map-key-comparator endpoints))
@@ -361,7 +361,7 @@
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
-     (guard (empty-range? range) then
+     (guard (not (empty-range? range)) #:else
        (void))
      (define endpoints (this-endpoints this))
      (define cut-cmp (sorted-map-key-comparator endpoints))
@@ -479,7 +479,7 @@
 
    (define/guard (range-set-range-containing-or-absent this value)
      (define subrange (this-subrange this))
-     (guard (range-contains? subrange value) else
+     (guard (range-contains? subrange value) #:else
        absent)
      (option-map (generic-range-set-range-containing-or-absent (this-delegate-range-set this) value)
                  (λ (r) (range-intersection subrange r))))
@@ -511,7 +511,7 @@
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
-     (guard (empty-range? range) then
+     (guard (not (empty-range? range)) #:else
        (void))
      (check-precondition
       (range-encloses? (this-subrange this) range)
@@ -531,7 +531,7 @@
       "range" range
       "range comparator" (range-comparator range)
       "range set comparator" cmp)
-     (guard (empty-range? range) then
+     (guard (not (empty-range? range)) #:else
        (void))
      (generic-range-set-remove! delegate (range-intersection (this-subrange this) range)))
 
@@ -566,7 +566,7 @@
 (define/guard (endpoint-map-overlaps? endpoints comparator range)
   (define lower-cut (range-lower-cut range))
   (define upper-cut (range-upper-cut range))
-  (guard-match (present (entry _ upper)) (sorted-map-entry-at-most endpoints upper-cut) else
+  (guard-match (present (entry _ upper)) (sorted-map-entry-at-most endpoints upper-cut) #:else
     #false)
   (compare-infix (cut<=> (range-comparator range)) lower-cut < upper))
 
@@ -578,7 +578,7 @@
 
 
 (define/guard (endpoint-map-span-or-absent endpoints comparator)
-  (guard (sorted-map-empty? endpoints) then
+  (guard (not (sorted-map-empty? endpoints)) #:else
     absent)
   (match-define (present lower-cut) (sorted-map-least-key endpoints))
   (match-define (present (entry _ upper-cut)) (sorted-map-greatest-entry endpoints))
@@ -586,7 +586,7 @@
 
 
 (define/guard (endpoint-map-get-nearest-range endpoints comparator cut)
-  (guard-match (present (entry lower upper)) (sorted-map-entry-at-most endpoints cut) else
+  (guard-match (present (entry lower upper)) (sorted-map-entry-at-most endpoints cut) #:else
     absent)
   (present (range-from-cuts lower upper #:comparator comparator)))
 

@@ -22,7 +22,7 @@
          (submod rebellion/collection/private/regular-immutable-sorted-set private-for-rebellion-only)
          rebellion/collection/private/sorted-set-interface
          rebellion/streaming/transducer
-         rebellion/private/guarded-block)
+         guard)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -51,7 +51,7 @@
 (define/guard (build-sorted-set builder)
   (define element<=> (sorted-set-builder-comparator builder))
   (define mutable-elements (build-mutable-vector (sorted-set-builder-vector-builder builder)))
-  (guard (zero? (vector-length mutable-elements)) then
+  (guard (positive? (vector-length mutable-elements)) #:else
     (empty-sorted-set element<=>))
   
   (define (< x y)

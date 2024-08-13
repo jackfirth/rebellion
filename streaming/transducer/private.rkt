@@ -25,7 +25,7 @@
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
@@ -131,7 +131,7 @@
   (define upstream-element (transducer-position-upstream-element position))
   (define upstream-generator (transducer-position-upstream-generator position))
 
-  (guard upstream-element else
+  (guard upstream-element #:else
     (define next-state (half-closer (variant-value state)))
     (transducer-position #:state next-state
                          #:downstream-element absent
@@ -173,7 +173,7 @@
      "cannot try emitting when in consuming position"
      position))
 
-  (guard (variant-tagged-as? state '#:emit) then
+  (guard (not (variant-tagged-as? state '#:emit)) #:else
     (define em (emitter (variant-value state)))
     (transducer-position
      #:state (emission-state em)
@@ -181,7 +181,7 @@
      #:upstream-element upstream-element
      #:upstream-generator upstream-generator))
 
-  (guard (variant-tagged-as? state '#:half-closed-emit) then
+  (guard (not (variant-tagged-as? state '#:half-closed-emit)) #:else
     (define em (half-closed-emitter (variant-value state)))
     (transducer-position
      #:state (half-closed-emission-state em)

@@ -40,7 +40,7 @@
          (submod rebellion/base/range private-for-rebellion-only)
          rebellion/collection/entry
          rebellion/private/cut
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 
@@ -111,7 +111,7 @@
                       [lower-element absent]
                       [upper (sub1 end)]
                       [upper-element absent])
-    (guard (<= lower upper) else
+    (guard (<= lower upper) #:else
       (list-gap lower lower-element upper-element))
     (define middle (quotient (+ lower upper) 2))
     (define middle-element (vector-ref vec middle))

@@ -26,8 +26,10 @@
         #:pre/name (lower-bound upper-bound cmp)
         "lower endpoint must be less than or equal to upper endpoint"
         (guarded-block
-          (guard (unbounded? lower-bound) then #true)
-          (guard (unbounded? upper-bound) then #true)
+          (guard (not (unbounded? lower-bound)) #:else
+            #true)
+          (guard (not (unbounded? upper-bound)) #:else
+            #true)
           (define lower (range-bound-endpoint lower-bound))
           (define upper (range-bound-endpoint upper-bound))
           (not (equal? (compare (default-real<=> cmp) lower upper) greater)))
@@ -146,7 +148,7 @@
          racket/match
          rebellion/base/comparator
          rebellion/private/cut
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/private/strict-cond
          rebellion/type/enum
@@ -467,7 +469,8 @@
             (inclusive-bound? (range-upper-bound range)))))
 
 (define/guard (nonempty-range? range)
-  (guard (range? range) else #false)
+  (guard (range? range) #:else
+    #false)
   (define lower (range-lower-bound range))
   (define upper (range-upper-bound range))
   (or (unbounded? lower)
@@ -806,12 +809,12 @@
 
 (define/guard (range-gap range1 range2)
   (define cmp (cut<=> (range-comparator range1)))
-  (guard (equal? (compare cmp (range-upper-cut range1) (range-lower-cut range2)) greater) else
+  (guard (equal? (compare cmp (range-upper-cut range1) (range-lower-cut range2)) greater) #:else
     (range
      (range-bound-flip (range-upper-bound range1))
      (range-bound-flip (range-lower-bound range2))
      #:comparator (range-comparator range1)))
-  (guard (equal? (compare cmp (range-lower-cut range1) (range-upper-cut range2)) lesser) else
+  (guard (equal? (compare cmp (range-lower-cut range1) (range-upper-cut range2)) lesser) #:else
     (range
      (range-bound-flip (range-upper-bound range2))
      (range-bound-flip (range-lower-bound range1))

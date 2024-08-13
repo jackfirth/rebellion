@@ -7,7 +7,7 @@
   [batching (-> reducer? transducer?)]))
 
 (require rebellion/base/variant
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
@@ -46,7 +46,8 @@
   (define (emit batch-result)
     (emission (start) batch-result))
   (define/guard (half-close last-batch)
-    (guard (unstarted-batch-placeholder? last-batch) then (variant #:finish #f))
+    (guard (not (unstarted-batch-placeholder? last-batch)) #:else
+      (variant #:finish #f))
     (define last-batch-result (batch-finisher (batch-state last-batch)))
     (variant #:half-closed-emit last-batch-result))
   (define (half-closed-emit last-batch-result)

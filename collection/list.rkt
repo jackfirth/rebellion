@@ -21,7 +21,7 @@
 
 (require racket/math
          rebellion/base/option
-         rebellion/private/guarded-block
+         guard
          rebellion/streaming/reducer)
 
 (module+ test
@@ -44,8 +44,10 @@
 
 (define (list-ref-safe lst pos)
   (define/guard (loop lst pos)
-    (guard (nonempty-list? lst) else absent)
-    (guard (zero? pos) else (loop (list-rest lst) (sub1 pos)))
+    (guard (nonempty-list? lst) #:else
+      absent)
+    (guard (zero? pos) #:else
+      (loop (list-rest lst) (sub1 pos)))
     (present (list-first lst)))
   (loop lst pos))
 

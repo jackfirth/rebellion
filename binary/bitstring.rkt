@@ -34,7 +34,7 @@
          rebellion/binary/bit
          rebellion/binary/byte
          rebellion/collection/list
-         rebellion/private/guarded-block
+         guard
          rebellion/streaming/reducer
          rebellion/type/tuple)
 
@@ -104,7 +104,8 @@
                  #false #false #false #false #false #false #false #true)))])
     (guarded-block
       (define next-byte (+ b (* current-byte 2)))
-      (guard eighth-bit? else (values next-byte current-index))
+      (guard eighth-bit? #:else
+        (values next-byte current-index))
       (bytes-set! mutable-padded-bytes current-index next-byte)
       (values 0 (add1 current-index))))
 
@@ -137,7 +138,8 @@
 
 (define (bytes->bitstring bytes #:padding [padding 0])
   (guarded-block
-    (guard (positive? padding) else (constructor:bitstring bytes 0))
+    (guard (positive? padding) #:else
+      (constructor:bitstring bytes 0))
     (define size (bytes-length bytes))
     (define last-pos (sub1 size))
     (define mutable-padded-bytes (make-bytes size 0))

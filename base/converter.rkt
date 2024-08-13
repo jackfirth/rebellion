@@ -31,7 +31,7 @@
                   number->immutable-string)
          rebellion/collection/list
          rebellion/private/contract-projection
-         rebellion/private/guarded-block
+         guard
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/type/object)
@@ -265,7 +265,8 @@
 ;; Built-in converters and converter utilities
 
 (define/guard (converter-pipe #:name [name 'piped] . converters)
-  (guard (nonempty-list? converters) else identity-converter)
+  (guard (nonempty-list? converters) #:else
+    identity-converter)
   (define forward-functions (map converter-forward-function converters))
   (define backward-functions (map converter-backward-function converters))
   (make-converter

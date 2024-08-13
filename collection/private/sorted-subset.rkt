@@ -23,7 +23,7 @@
          (submod rebellion/base/range private-for-rebellion-only)
          rebellion/collection/private/sorted-set-interface
          rebellion/private/cut
-         rebellion/private/guarded-block)
+         guard)
 
 
 ;@----------------------------------------------------------------------------------------------------
@@ -37,7 +37,7 @@
 
 (define/guard (sorted-subset-least-element tree range)
   (define lower (range-lower-bound range))
-  (guard (equal? lower unbounded) then
+  (guard (not (equal? lower unbounded)) #:else
     (sorted-set-least-element tree))
   (define endpoint (range-bound-endpoint lower))
   (match (range-bound-type lower)
@@ -47,7 +47,7 @@
 
 (define/guard (sorted-subset-greatest-element tree range)
   (define upper (range-upper-bound range))
-  (guard (equal? upper unbounded) then
+  (guard (not (equal? upper unbounded)) #:else
     (sorted-set-greatest-element tree))
   (define endpoint (range-bound-endpoint upper))
   (match (range-bound-type upper)

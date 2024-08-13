@@ -12,7 +12,7 @@
          racket/match
          rebellion/base/impossible-function
          rebellion/base/variant
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name
          rebellion/streaming/transducer/base
          rebellion/type/record)
@@ -21,9 +21,10 @@
 ;; Wrappers that provide a nicer API over core binary composition
 
 (define/guard (transducer-pipe . transducers-list)
-  (guard (empty? transducers-list) then identity-transducer)
-  (for/fold ([piped (first transducers-list)])
-            ([trans (in-list (rest transducers-list))])
+  (guard-match (cons first-transducer remaining-transducers) transducers-list #:else
+    identity-transducer)
+  (for/fold ([piped first-transducer])
+            ([trans (in-list remaining-transducers)])
     (transducer-binary-pipe piped trans)))
 
 (define (transducer-compose . transducers)
@@ -52,7 +53,8 @@
    downstream-state))
 
 (define/guard (emit-pipe-state? v)
-  (guard (pipe-state? v) else #false)
+  (guard (pipe-state? v) #:else
+    #false)
   (define upstream (pipe-state-upstream-state v))
   (define downstream (pipe-state-downstream-state v))
   (and (variant-tagged-as? downstream '#:emit)
@@ -61,7 +63,8 @@
                 (not (variant-tagged-as? upstream '#:finish))))))
 
 (define/guard (half-closed-emit-pipe-state? v)
-  (guard (pipe-state? v) else #false)
+  (guard (pipe-state? v) #:else
+    #false)
   (define upstream (pipe-state-upstream-state v))
   (define downstream (pipe-state-downstream-state v))
   (or (variant-tagged-as? downstream '#:half-closed-emit)
@@ -108,7 +111,7 @@
   (define downstream (pipe-state-downstream-transducer state))
   (define downstream-state (pipe-state-downstream-state state))
 
-  (guard (internal-half-close-pipe-state? state) then
+  (guard (not (internal-half-close-pipe-state? state)) #:else
     (define downstream-half-closer (transducer-half-closer downstream))
     (define next-downstream-state
       (downstream-half-closer (variant-value downstream-state)))
@@ -118,7 +121,7 @@
                  #:downstream-transducer downstream
                  #:downstream-state next-downstream-state)))
 
-  (guard (internal-finish-pipe-state? state) then
+  (guard (not (internal-finish-pipe-state? state)) #:else
     (define upstream-finisher (transducer-finisher upstream))
     (upstream-finisher (variant-value upstream-state))
     (resolve-internal-pipe-state-transitions
@@ -127,7 +130,7 @@
                  #:downstream-transducer downstream
                  #:downstream-state downstream-state)))
 
-  (guard (internal-consume-pipe-state? state) then
+  (guard (not (internal-consume-pipe-state? state)) #:else
     (define upstream-emitter (transducer-emitter upstream))
     (define downstream-consumer (transducer-consumer downstream))
     (define em (upstream-emitter (variant-value upstream-state)))
@@ -141,7 +144,7 @@
                  #:downstream-transducer downstream
                  #:downstream-state next-downstream-state)))
 
-  (guard (internal-half-closed-consume-pipe-state? state) then
+  (guard (not (internal-half-closed-consume-pipe-state? state)) #:else
     (define upstream-emitter (transducer-half-closed-emitter upstream))
     (define downstream-consumer (transducer-consumer downstream))
     (define em (upstream-emitter (variant-value upstream-state)))

@@ -22,7 +22,7 @@
          racket/vector
          rebellion/collection/immutable-vector
          rebellion/collection/list
-         rebellion/private/guarded-block
+         guard
          rebellion/private/static-name)
 
 

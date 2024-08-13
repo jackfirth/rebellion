@@ -28,7 +28,7 @@
          racket/fixnum
          rebellion/base/symbol
          rebellion/private/static-name
-         rebellion/private/guarded-block
+         guard
          syntax/parse/define)
 
 (module+ test
@@ -63,8 +63,9 @@
 (define/name (atomic-fixnum-compare-and-exchange! num expected replacement)
   (guarded-block
     (define x (atomic-fixnum-get num))
-    (guard (eq? x expected) else x)
-    (guard (atomic-fixnum-compare-and-set! num expected replacement) else
+    (guard (eq? x expected) #:else
+      x)
+    (guard (atomic-fixnum-compare-and-set! num expected replacement) #:else
       (log-atomic-fixnum-contention num)
       (atomic-fixnum-compare-and-exchange! num expected replacement))
     x))
@@ -72,7 +73,7 @@
 (define/name (atomic-fixnum-get-then-set! num replacement)
   (guarded-block
     (define x (atomic-fixnum-get num))
-    (guard (atomic-fixnum-compare-and-set! num x replacement) else
+    (guard (atomic-fixnum-compare-and-set! num x replacement) #:else
       (log-atomic-fixnum-contention num)
       (atomic-fixnum-get-then-set! num replacement))
     x))
@@ -86,7 +87,7 @@
 (define/name (atomic-fixnum-get-then-add! num amount)
   (guarded-block
     (define x (atomic-fixnum-get num))
-    (guard (atomic-fixnum-compare-and-add! num x amount) else
+    (guard (atomic-fixnum-compare-and-add! num x amount) #:else
       (log-atomic-fixnum-contention num)
       (atomic-fixnum-get-then-add! num amount))
     x))
@@ -95,7 +96,7 @@
   (guarded-block
     (define x (atomic-fixnum-get num))
     (define x* (fx+ x amount))
-    (guard (atomic-fixnum-compare-and-set! num x x*) else
+    (guard (atomic-fixnum-compare-and-set! num x x*) #:else
       (log-atomic-fixnum-contention num)
       (atomic-fixnum-add-then-get! num amount))
     x*))
@@ -109,7 +110,7 @@
 (define/name (atomic-fixnum-get-then-update! num updater)
   (guarded-block
     (define x (atomic-fixnum-get num))
-    (guard (atomic-fixnum-compare-and-set! num x (updater x)) else
+    (guard (atomic-fixnum-compare-and-set! num x (updater x)) #:else
       (log-atomic-fixnum-contention num)
       (atomic-fixnum-get-then-update! num updater))
     x))
@@ -118,7 +119,7 @@
   (guarded-block
     (define x (atomic-fixnum-get num))
     (define x* (updater x))
-    (guard (atomic-fixnum-compare-and-set! num x x*) else
+    (guard (atomic-fixnum-compare-and-set! num x x*) #:else
       (log-atomic-fixnum-contention num)
       (atomic-fixnum-update-then-get! num updater))
     x*))
