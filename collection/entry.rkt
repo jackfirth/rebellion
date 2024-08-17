@@ -27,7 +27,9 @@
   [grouping (-> reducer? (transducer/c entry? entry?))]))
 
 
-(require racket/contract/combinator
+(require guard
+         racket/contract/combinator
+         racket/match
          racket/sequence
          racket/set
          rebellion/base/impossible-function
@@ -35,9 +37,7 @@
          rebellion/base/variant
          rebellion/collection/list
          rebellion/private/contract-projection
-         guard
          rebellion/private/static-name
-         rebellion/private/total-match
          rebellion/streaming/reducer
          rebellion/streaming/transducer
          rebellion/type/record
@@ -46,7 +46,6 @@
 
 (module+ test
   (require (submod "..")
-           racket/match
            rackunit
            rebellion/base/option))
 
@@ -88,11 +87,11 @@
 
 
 (define (mapping-keys key-function)
-  (mapping (λ/match ((entry k v)) (entry (key-function k) v))))
+  (mapping (λ (e) (match e [(entry k v) (entry (key-function k) v)]))))
 
 
 (define (mapping-values value-function)
-  (mapping (λ/match ((entry k v)) (entry k (value-function v)))))
+  (mapping (λ (e) (match e [(entry k v) (entry k (value-function v))]))))
 
 
 (define (indexing key-function) (bisecting key-function values))
@@ -108,14 +107,16 @@
 
 (define (append-mapping-keys key-sequence-maker)
   (append-mapping
-   (λ/match ((entry k v))
-     (sequence-map (λ (k) (entry k v)) (key-sequence-maker k)))))
+   (λ (e)
+     (match-define (entry k v) e)
+     (sequence-map (λ (k2) (entry k2 v)) (key-sequence-maker k)))))
 
 
 (define (append-mapping-values value-sequence-maker)
   (append-mapping
-   (λ/match ((entry k v))
-     (sequence-map (λ (v) (entry k v)) (value-sequence-maker v)))))
+   (λ (e)
+     (match-define (entry k v) e)
+     (sequence-map (λ (v2) (entry k v2)) (value-sequence-maker v)))))
 
 
 (module+ test
@@ -309,8 +310,9 @@
   (make-transducer
    #:starter (λ () (variant #:consume (make-empty-groups)))
    #:consumer
-   (λ/match (g (entry k v))
+   (λ (g e)
      (guarded-block
+       (match-define (entry k v) e)
        (define next (groups-insert g k v #:reducer value-reducer))
        (guard (groups? next) #:else
          (variant #:emit next))
