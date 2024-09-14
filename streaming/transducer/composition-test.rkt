@@ -66,11 +66,33 @@
        #:half-closed-emitter (λ (_) em)
        #:finisher void))
 
+    (define finishing
+      (make-transducer
+       #:starter (λ () (variant #:finish #false))
+       #:consumer (λ (state element) (error "impossible"))
+       #:emitter impossible
+       #:half-closer impossible
+       #:half-closed-emitter impossible
+       #:finisher void))
+
     (test-case "half closed upstream emisisons makes downstream half closed"
       (define piped
         (observing-transduction-events
          (transducer-pipe (half-closed-emitting #\a)
                           (taking 3))))
+      (define inputs (in-naturals))
+      (define expected
+        (list start-event
+              (half-closed-emit-event #\a)
+              (half-closed-emit-event #\a)
+              (half-closed-emit-event #\a)
+              finish-event))
+      (check-equal? (transduce inputs piped #:into into-list) expected))
+
+    (test-case "finished upstream makes downstream half closed"
+      (define piped
+        (observing-transduction-events
+         (transducer-pipe finishing (emitting #\a) (taking 3))))
       (define inputs (in-naturals))
       (define expected
         (list start-event

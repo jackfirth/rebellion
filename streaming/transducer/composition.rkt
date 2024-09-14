@@ -58,9 +58,9 @@
   (define upstream (pipe-state-upstream-state v))
   (define downstream (pipe-state-downstream-state v))
   (and (variant-tagged-as? downstream '#:emit)
-       (or (not (variant? upstream))
-           (and (not (variant-tagged-as? upstream '#:half-closed-emit))
-                (not (variant-tagged-as? upstream '#:finish))))))
+       upstream
+       (not (variant-tagged-as? upstream '#:half-closed-emit))
+       (not (variant-tagged-as? upstream '#:finish))))
 
 (define/guard (half-closed-emit-pipe-state? v)
   (guard (pipe-state? v) #:else
@@ -69,8 +69,8 @@
   (define downstream (pipe-state-downstream-state v))
   (or (variant-tagged-as? downstream '#:half-closed-emit)
       (and (variant-tagged-as? downstream '#:emit)
-           (variant? upstream)
-           (or (variant-tagged-as? upstream '#:half-closed-emit)
+           (or (not upstream)
+               (variant-tagged-as? upstream '#:half-closed-emit)
                (variant-tagged-as? upstream '#:finish)))))
 
 (define (finish-pipe-state? v)
