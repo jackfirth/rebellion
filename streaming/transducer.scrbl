@@ -106,12 +106,16 @@ early, before the input sequence is fully consumed.
               (mapping (λ (x) (* x x)))
               #:into into-list))}
 
+@(define java-stream-flat-map-url
+   (string-append "https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html"
+                  "#flatMap-java.util.function.Function-"))
+
 @defproc[(append-mapping [f (-> any/c sequence?)]) transducer?]{
  Constructs a @tech{transducer} that applies @racket[f] to input elements and
  emits @italic{each} element in the returned sequence downstream.
  
  This is similar to Java's
- @hyperlink["https://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html#flatMap-java.util.function.Function-"]{@tt{Stream.flatMap}}
+ @hyperlink[java-stream-flat-map-url]{@tt{Stream.flatMap}}
  method.
 
  @(examples
@@ -475,6 +479,17 @@ early, before the input sequence is fully consumed.
    (transduce gems
               (sorting #:key gem-weight #:descending? #t)
               #:into into-list))}
+
+
+@defproc[(shuffling) transducer?]{
+ Constructs a @tech{transducer} that shuffles the stream's elements randomly. The entire input stream
+ is consumed before any elements are emitted downstream.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (transduce "hello my friend"
+              (shuffling)
+              #:into into-string))}
 
 
 @defproc[(transposing
