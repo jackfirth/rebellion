@@ -9,6 +9,7 @@
          rebellion/streaming/transducer/private/deduplicating
          rebellion/streaming/transducer/private/enumerating
          rebellion/streaming/transducer/private/reducer
+         rebellion/streaming/transducer/private/shuffling
          rebellion/streaming/transducer/private/sorting
          rebellion/streaming/transducer/private/splicing-between
          rebellion/streaming/transducer/private/taking-duplicates
@@ -26,6 +27,7 @@
                        rebellion/streaming/transducer/private/deduplicating
                        rebellion/streaming/transducer/private/enumerating
                        rebellion/streaming/transducer/private/reducer
+                       rebellion/streaming/transducer/private/shuffling
                        rebellion/streaming/transducer/private/sorting
                        rebellion/streaming/transducer/private/splicing-between
                        rebellion/streaming/transducer/private/taking-duplicates
