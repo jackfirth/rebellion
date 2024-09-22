@@ -8,15 +8,16 @@
   [in-transduced (-> (sequence/c any/c) transducer? (sequence/c any/c))]
   [mapping (-> (-> any/c any/c) transducer?)]
   [peeking (-> (-> any/c void?) transducer?)]
-  [filtering (-> predicate/c transducer?)]
+  [filtering (-> (-> any/c boolean?) transducer?)]
   [folding (-> (-> any/c any/c any/c) any/c transducer?)]
   [append-mapping (-> (-> any/c (sequence/c any/c)) transducer?)]
   [taking (-> natural? transducer?)]
-  [taking-while (-> predicate/c transducer?)]
+  [taking-while (-> (-> any/c boolean?) transducer?)]
   [dropping (-> natural? transducer?)]
-  [dropping-while (-> predicate/c transducer?)]))
+  [dropping-while (-> (-> any/c boolean?) transducer?)]))
 
-(require racket/bool
+(require guard
+         racket/bool
          racket/list
          racket/match
          racket/math
@@ -25,7 +26,6 @@
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
-         guard
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base

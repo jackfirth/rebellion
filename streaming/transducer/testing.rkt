@@ -6,25 +6,25 @@
  (contract-out
   [observing-transduction-events
    (-> transducer? (transducer/c any/c transduction-event?))]
-  [transduction-event? predicate/c]
+  [transduction-event? (-> any/c boolean?)]
   [start-event transduction-event?]
   [half-close-event transduction-event?]
   [finish-event transduction-event?]
   [consume-event (-> any/c consume-event?)]
-  [consume-event? predicate/c]
+  [consume-event? (-> any/c boolean?)]
   [consume-event-value (-> consume-event? any/c)]
   [emit-event (-> any/c emit-event?)]
-  [emit-event? predicate/c]
+  [emit-event? (-> any/c boolean?)]
   [emit-event-value (-> emit-event? any/c)]
   [half-closed-emit-event (-> any/c half-closed-emit-event?)]
-  [half-closed-emit-event? predicate/c]
+  [half-closed-emit-event? (-> any/c boolean?)]
   [half-closed-emit-event-value (-> half-closed-emit-event? any/c)]))
 
-(require rebellion/base/variant
-         guard
+(require guard
+         rebellion/base/variant
          rebellion/private/static-name
-         rebellion/streaming/transducer/private/contract
          rebellion/streaming/transducer/base
+         rebellion/streaming/transducer/private/contract
          rebellion/type/record
          rebellion/type/singleton
          rebellion/type/wrapper)
