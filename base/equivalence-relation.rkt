@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [equivalence-relation? predicate/c]
+  [equivalence-relation? (-> any/c boolean?)]
   [make-equivalence-relation
    (->* ((-> any/c any/c boolean?))
         (#:name (or/c interned-symbol? #f))
