@@ -37,7 +37,7 @@ jobs:
           dest: '"${HOME}/racketdist-current-CS"'
           sudo: never
       - name: Install Rebellion
-        run: raco pkg install --auto --link --name rebellion .
+        run: raco pkg install --auto --link --name rebellion
       - name: Install Resyntax
         run: raco pkg install --auto resyntax
       - name: Create a new branch
