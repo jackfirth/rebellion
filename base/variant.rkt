@@ -12,8 +12,8 @@
   [variant-tag (-> variant? keyword?)]
   [variant-tagged-as? (-> variant? keyword? boolean?)]))
 
-(require (for-syntax racket/base
-                     syntax/parse)
+(require (for-syntax racket/base syntax/parse)
+         guard
          racket/contract/combinator
          racket/format
          racket/list
@@ -22,7 +22,6 @@
          racket/string
          racket/struct
          rebellion/private/contract-projection
-         guard
          rebellion/private/static-name
          rebellion/type/tuple)
 

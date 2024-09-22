@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [immutable-string? predicate/c]
+  [immutable-string? (-> any/c boolean?)]
   [immutable-string (-> char? ... immutable-string?)]
   [immutable-string-append (-> immutable-string? ... immutable-string?)]
   [make-immutable-string (->* (natural?) (char?) immutable-string?)]
@@ -48,8 +48,8 @@
   [immutable-string-locale-upcase (-> immutable-string? immutable-string?)]
   [immutable-string-locale-downcase (-> immutable-string? immutable-string?)]
   [empty-immutable-string empty-immutable-string?]
-  [empty-immutable-string? predicate/c]
-  [nonempty-immutable-string? predicate/c]
+  [empty-immutable-string? (-> any/c boolean?)]
+  [nonempty-immutable-string? (-> any/c boolean?)]
   [symbol->immutable-string (-> symbol? immutable-string?)]
   [keyword->immutable-string (-> keyword? immutable-string?)]
   [immutable-string-join
@@ -129,8 +129,7 @@
       #:with lambda-argument-binders #'(arg ... . rest-arg)
       #:with function-call-expression #'(apply id arg.id ... rest-arg))))
 
-(define-simple-macro
-  (define-wrapper header:string-function-header)
+(define-syntax-parse-rule (define-wrapper header:string-function-header)
   #:do [(define id-str (symbol->string (syntax-e #'header.id)))
         (define imm-str (string-replace id-str "string" "immutable-string"))]
   #:with immutable-id (datum->syntax #'header.id (string->symbol imm-str))
