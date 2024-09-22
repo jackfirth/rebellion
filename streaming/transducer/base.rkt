@@ -6,7 +6,7 @@
  (contract-out
   [transduction-state/c flat-contract?]
   [half-closed-transduction-state/c flat-contract?]
-  [transducer? predicate/c]
+  [transducer? (-> any/c boolean?)]
   [transducer-starter (-> transducer? any)]
   [transducer-consumer (-> transducer? any)]
   [transducer-emitter (-> transducer? any)]
@@ -14,12 +14,12 @@
   [transducer-half-closed-emitter (-> transducer? any)]
   [transducer-finisher (-> transducer? any)]
   [emission (-> transduction-state/c any/c emission?)]
-  [emission? predicate/c]
+  [emission? (-> any/c boolean?)]
   [emission-state (-> emission? transduction-state/c)]
   [emission-value (-> emission? any/c)]
   [half-closed-emission
    (-> half-closed-transduction-state/c any/c half-closed-emission?)]
-  [half-closed-emission? predicate/c]
+  [half-closed-emission? (-> any/c boolean?)]
   [half-closed-emission-state
    (-> half-closed-emission? half-closed-transduction-state/c)]
   [half-closed-emission-value (-> half-closed-emission? any/c)]
