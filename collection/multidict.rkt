@@ -7,7 +7,7 @@
  for*/multidict
  (contract-out
   [multidict (->* () #:rest key-value-list/c multidict?)]
-  [multidict? predicate/c]
+  [multidict? (-> any/c boolean?)]
   [multidict-add (-> multidict? any/c any/c multidict?)]
   [multidict-add-entry (-> multidict? entry? multidict?)]
   [multidict-remove (-> multidict? any/c any/c multidict?)]
@@ -28,21 +28,21 @@
        (hash/c any/c nonempty-set? #:immutable #t #:flat? #t))]
   [multidict-inverse (-> multidict? multidict?)]
   [empty-multidict empty-multidict?]
-  [empty-multidict? predicate/c]
-  [nonempty-multidict? predicate/c]
+  [empty-multidict? (-> any/c boolean?)]
+  [nonempty-multidict? (-> any/c boolean?)]
   [in-multidict-entries (-> multidict? (sequence/c entry?))]
   [into-multidict (reducer/c entry? multidict?)]))
 
 (require (for-syntax racket/base)
+         guard
          racket/list
          racket/math
          racket/sequence
          racket/set
          racket/stream
          rebellion/collection/entry
-         rebellion/collection/multiset
          rebellion/collection/keyset
-         guard
+         rebellion/collection/multiset
          rebellion/private/printer-markup
          rebellion/streaming/reducer
          rebellion/type/record)

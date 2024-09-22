@@ -5,8 +5,8 @@
 (provide
  (contract-out
   [empty-list empty-list?]
-  [empty-list? predicate/c]
-  [nonempty-list? predicate/c]
+  [empty-list? (-> any/c boolean?)]
+  [nonempty-list? (-> any/c boolean?)]
   [list-insert (-> list? any/c nonempty-list?)]
   [list-first (-> nonempty-list? any/c)]
   [list-rest (-> nonempty-list? list?)]
@@ -19,9 +19,9 @@
   [into-reversed-list (reducer/c any/c list?)]
   [append-into-list (reducer/c list? list?)]))
 
-(require racket/math
+(require guard
+         racket/math
          rebellion/base/option
-         guard
          rebellion/streaming/reducer)
 
 (module+ test

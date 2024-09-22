@@ -5,15 +5,15 @@
 
   (provide test-sorted-set)
   
-  (require (only-in racket/list shuffle)
-           racket/match
+  (require racket/match
            racket/sequence
            rackunit
            rebellion/base/comparator
            rebellion/base/option
            rebellion/base/range
            rebellion/collection/sorted-set
-           rebellion/concurrency/lock))
+           rebellion/concurrency/lock
+           (only-in racket/list shuffle)))
 
 
 ;@----------------------------------------------------------------------------------------------------
