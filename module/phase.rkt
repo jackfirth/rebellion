@@ -5,13 +5,13 @@
 (provide
  (contract-out
   [phase (-> (or/c exact-integer? #f) phase?)]
-  [phase? predicate/c]
+  [phase? (-> any/c boolean?)]
   [phase-level (-> phase? (or/c exact-integer? #f))]
   [phase-shift (-> phase? exact-integer? phase?)]
   [label-phase label-phase?]
-  [label-phase? predicate/c]
+  [label-phase? (-> any/c boolean?)]
   [execution-phase (-> exact-integer? execution-phase?)]
-  [execution-phase? predicate/c]
+  [execution-phase? (-> any/c boolean?)]
   [execution-phase-level (-> execution-phase? exact-integer?)]
   [execution-phase-shift (-> execution-phase? exact-integer? execution-phase?)]
   [runtime-phase execution-phase?]
