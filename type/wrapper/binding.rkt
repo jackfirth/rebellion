@@ -5,7 +5,7 @@
 (provide
  wrapper-id
  (contract-out
-  [wrapper-binding? predicate/c]
+  [wrapper-binding? (-> any/c boolean?)]
   [wrapper-binding-type (-> wrapper-binding? wrapper-type?)]
   [wrapper-binding-descriptor (-> wrapper-binding? identifier?)]
   [wrapper-binding-predicate (-> wrapper-binding? identifier?)]

@@ -5,7 +5,7 @@
 (provide
  (contract-out
   [module-binding (-> module-path? phase? symbol? module-binding?)]
-  [module-binding? predicate/c]
+  [module-binding? (-> any/c boolean?)]
   [module-binding-source (-> module-binding? module-path?)]
   [module-binding-name (-> module-binding? symbol?)]
   [module-binding-phase (-> module-binding? phase?)]
