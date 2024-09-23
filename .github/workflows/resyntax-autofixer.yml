@@ -3,7 +3,7 @@ name: Resyntax Autofixer
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 0 * * 1"
+    - cron: "0 0 * * *"
 
 jobs:
   autofix:
@@ -29,3 +29,4 @@ jobs:
         with:
           private-key: ${{ secrets.RESYNTAX_APP_PRIVATE_KEY }}
           max-pass-count: 1
+          max-modified-files: 10
