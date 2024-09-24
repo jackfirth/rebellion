@@ -10,8 +10,8 @@
    (-> vector? (-> any/c any/c boolean?) (-> any/c any/c any/c) (and/c vector? immutable?))]))
 
 
-(require rebellion/collection/vector/builder
-         guard)
+(require guard
+         rebellion/collection/vector/builder)
 
 
 (module+ test

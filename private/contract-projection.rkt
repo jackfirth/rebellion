@@ -5,12 +5,12 @@
 (provide
  (contract-out
   [projection/c contract?]
-  [contract-get-projection (-> predicate/c blame? projection/c)]
+  [contract-get-projection (-> (-> any/c boolean?) blame? projection/c)]
   [projection-and (-> projection/c ... projection/c)]
   [projection-convert
    (-> projection/c (-> any/c any/c) (-> any/c any/c) projection/c)]
-  [projection-filter (-> projection/c predicate/c projection/c)]
-  [assert-satisfies (-> any/c predicate/c blame? #:missing-party any/c void?)]))
+  [projection-filter (-> projection/c (-> any/c boolean?) projection/c)]
+  [assert-satisfies (-> any/c (-> any/c boolean?) blame? #:missing-party any/c void?)]))
 
 (require racket/contract/combinator)
 

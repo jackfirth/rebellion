@@ -22,8 +22,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-simple-macro
-  (define-object-type id:id (private-field:id ...)
+(define-syntax-parse-rule (define-object-type id:id (private-field:id ...)
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
      

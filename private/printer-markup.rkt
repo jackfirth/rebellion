@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [sequence-markup? predicate/c]
+  [sequence-markup? (-> any/c boolean?)]
   [sequence-markup
    (->* ((sequence/c any/c))
         (#:indentation exact-nonnegative-integer?
@@ -14,14 +14,14 @@
          #:suffix any/c
          #:inline-separator any/c)
         sequence-markup?)]
-  [inline-sequence-markup? predicate/c]
+  [inline-sequence-markup? (-> any/c boolean?)]
   [inline-sequence-markup
    (->* ((sequence/c any/c))
         (#:prefix any/c
          #:suffix any/c
          #:separator any/c)
         inline-sequence-markup?)]
-  [mode-sensitive-markup? predicate/c]
+  [mode-sensitive-markup? (-> any/c boolean?)]
   [mode-sensitive-markup
    (-> #:written-form any/c
        #:displayed-form any/c
@@ -32,10 +32,10 @@
    (-> symbol? (-> any/c (sequence/c any/c)) custom-write-function/c)]))
 
 
-(require racket/pretty
+(require guard
+         racket/pretty
          racket/sequence
-         rebellion/custom-write
-         guard)
+         rebellion/custom-write)
 
 
 ;@----------------------------------------------------------------------------------------------------
