@@ -58,21 +58,21 @@
       (raise-syntax-error #f "named identifier not bound" context-stx id-stx))
     (syntax-parse-state-cons! 'literals id-stx)))
 
-(define-simple-macro (name/derived id:id #:context context)
+(define-syntax-parse-rule (name/derived id:id #:context context)
   #:do [(check-name-has-binding! #'id #'context)]
   (quote id))
 
-(define-simple-macro (name id:id)
+(define-syntax-parse-rule (name id:id)
   #:with context this-syntax
   (#%expression (name/derived id #:context context)))
 
-(define-simple-macro (name-string/derived id:id #:context context)
+(define-syntax-parse-rule (name-string/derived id:id #:context context)
   #:do [(check-name-has-binding! #'id #'context)]
   #:with literal-string (string->immutable-string
                          (symbol->string (syntax-e #'id)))
   (quote literal-string))
 
-(define-simple-macro (name-string id:id)
+(define-syntax-parse-rule (name-string id:id)
   #:with context this-syntax
   (#%expression (name-string/derived id #:context context)))
 
@@ -98,8 +98,7 @@
     (pattern (header:function-header-with-recursive-name . args:formals)
       #:with function-name #'header.function-name)))
 
-(define-simple-macro
-  (define/name
+(define-syntax-parse-rule (define/name
     (~or id:id header:function-header-with-recursive-name)
     body ...)
   (~? (splicing-let ([variable-name (quote id)])

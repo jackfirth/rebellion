@@ -4,14 +4,14 @@
 
 (provide
  (contract-out
-  [charset? predicate/c]
+  [charset? (-> any/c boolean?)]
   [us-ascii charset?]
   [utf-8 charset?]
-  [text? predicate/c]
+  [text? (-> any/c boolean?)]
   [text (-> (or/c charset? #f) immutable-bytes? text?)]
   [text-charset (-> text? (or/c charset? #f))]
   [text-bytes (-> text? immutable-bytes?)]
-  [text-media? predicate/c]
+  [text-media? (-> any/c boolean?)]
   [text->media (-> text? text-media?)]
   [media->text (-> text-media? text?)]
   [text/plain (-> #:charset (or/c charset? #f) media-type?)]
@@ -19,8 +19,8 @@
 
 (require racket/bool
          rebellion/binary/immutable-bytes
-         rebellion/media
          rebellion/collection/record
+         rebellion/media
          rebellion/type/tuple)
 
 (module+ test

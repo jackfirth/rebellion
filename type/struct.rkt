@@ -56,8 +56,7 @@
   (define (format-one-identifier id template-string)
     (format-id id template-string (syntax-e id) #:source id #:props id)))
 
-(define-simple-macro
-  (define-and-provide-struct-descriptor-field-accessors
+(define-syntax-parse-rule (define-and-provide-struct-descriptor-field-accessors
     [field:id contract:expr] ...)
   #:do [(define (format-fields template-string)
           (map (λ (field-id) (format-one-identifier field-id template-string))

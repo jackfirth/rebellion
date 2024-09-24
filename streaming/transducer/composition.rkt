@@ -7,12 +7,12 @@
   [transducer-pipe (-> transducer? ... transducer?)]
   [transducer-compose (-> transducer? ... transducer?)]))
 
-(require racket/bool
+(require guard
+         racket/bool
          racket/list
          racket/match
          rebellion/base/impossible-function
          rebellion/base/variant
-         guard
          rebellion/private/static-name
          rebellion/streaming/transducer/base
          rebellion/type/record)
