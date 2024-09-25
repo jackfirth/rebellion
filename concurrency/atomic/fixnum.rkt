@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [atomic-fixnum? predicate/c]
+  [atomic-fixnum? (-> any/c boolean?)]
   [make-atomic-fixnum
    (->* (fixnum?) (#:name (or/c interned-symbol? #false)) atomic-fixnum?)]
   [atomic-fixnum-get (-> atomic-fixnum? fixnum?)]
@@ -24,12 +24,12 @@
   [atomic-fixnum-update-then-get!
    (-> atomic-fixnum? (-> fixnum? fixnum?) fixnum?)]))
 
-(require (only-in racket/unsafe/ops unsafe-struct*-cas!)
+(require guard
          racket/fixnum
          rebellion/base/symbol
          rebellion/private/static-name
-         guard
-         syntax/parse/define)
+         syntax/parse/define
+         (only-in racket/unsafe/ops unsafe-struct*-cas!))
 
 (module+ test
   (require (submod "..")
@@ -39,7 +39,7 @@
 
 (define-logger rebellion/concurrency/atomic/fixnum)
 
-(define-simple-macro (log-atomic-fixnum-contention num:id)
+(define-syntax-parse-rule (log-atomic-fixnum-contention num:id)
   (log-rebellion/concurrency/atomic/fixnum-debug
    "Retrying an atomic fixnum operation due to contention.
   fixnum: ~e
@@ -140,8 +140,7 @@
         (thread (λ () (for ([_ (in-range num-calls)]) (thunk))))))
     (for ([thd (in-list threads)]) (thread-wait thd)))
     
-  (define-simple-macro
-    (with-contention #:threads threads:expr #:calls calls:expr body:expr ...+)
+  (define-syntax-parse-rule (with-contention #:threads threads:expr #:calls calls:expr body:expr ...+)
     (call/contention #:threads threads #:calls calls (λ () body ...)))
   
   (test-case (name-string atomic-fixnum-compare-and-set!)

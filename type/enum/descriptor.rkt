@@ -4,16 +4,16 @@
 
 (provide
  (contract-out
-  [enum-descriptor? predicate/c]
-  [initialized-enum-descriptor? predicate/c]
-  [uninitialized-enum-descriptor? predicate/c]
+  [enum-descriptor? (-> any/c boolean?)]
+  [initialized-enum-descriptor? (-> any/c boolean?)]
+  [uninitialized-enum-descriptor? (-> any/c boolean?)]
   [make-enum-implementation
    (->* (enum-type?)
         (#:inspector inspector?
          #:property-maker (-> uninitialized-enum-descriptor? properties/c))
         initialized-enum-descriptor?)]
   [enum-descriptor-type (-> enum-descriptor? enum-type?)]
-  [enum-descriptor-predicate (-> enum-descriptor? predicate/c)]
+  [enum-descriptor-predicate (-> enum-descriptor? (-> any/c boolean?))]
   [enum-descriptor-selector
    (->i #:chaperone
         ([descriptor enum-descriptor?])
