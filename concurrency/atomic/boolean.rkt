@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [atomic-boolean? predicate/c]
+  [atomic-boolean? (-> any/c boolean?)]
   [make-atomic-boolean (-> boolean? atomic-boolean?)]
   [atomic-boolean-get (-> atomic-boolean? boolean?)]
   [rename set-atomic-boolean-get! atomic-boolean-set!
@@ -15,8 +15,8 @@
    (-> atomic-boolean? boolean? boolean? boolean?)]
   [atomic-boolean-get-then-set! (-> atomic-boolean? boolean? boolean?)]))
 
-(require (only-in racket/unsafe/ops unsafe-struct*-cas!)
-         rebellion/base/symbol)
+(require rebellion/base/symbol
+         (only-in racket/unsafe/ops unsafe-struct*-cas!))
 
 (module+ test
   (require (submod "..")

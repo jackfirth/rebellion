@@ -5,7 +5,7 @@
 (provide
  enum-id
  (contract-out
-  [enum-binding? predicate/c]
+  [enum-binding? (-> any/c boolean?)]
   [enum-binding-type (-> enum-binding? enum-type?)]
   [enum-binding-constants
    (-> enum-binding? (vectorof identifier? #:immutable #t))]

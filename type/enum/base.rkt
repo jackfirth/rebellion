@@ -10,7 +10,7 @@
          #:discriminator-name (or/c interned-symbol? #f)
          #:selector-name (or/c interned-symbol? #f))
         enum-type?)]
-  [enum-type? predicate/c]
+  [enum-type? (-> any/c boolean?)]
   [enum-type-name (-> enum-type? interned-symbol?)]
   [enum-type-constants (-> enum-type? keyset?)]
   [enum-type-predicate-name (-> enum-type? interned-symbol?)]
