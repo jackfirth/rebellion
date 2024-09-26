@@ -319,6 +319,22 @@ descending order, use @racket[in-range-set] with @racket[#:descending?] set to t
    (range-subset ranges (less-than-range 4)))}
 
 
+@defproc[(range-set-complement [ranges range-set?]) range-set?]{
+
+ Returns a range set that is the complement of @racket[ranges], meaning it contains exactly the ranges
+ that are @emph{not} contained by @racket[ranges]. The returned set is a @tech{collection view} of
+ @racket[ranges]. The returned set is immutable if @racket[ranges] is immutable, and if
+ @racket[ranges] is mutable then the returned set is a @tech{write-through view}. Adding a range to
+ the returned complement set removes that range from the underlying set, and vice-versa for removing
+ ranges from the complement set.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define ranges (range-set (closed-range 2 5) (closed-range 7 10))))
+   (range-set-complement ranges))}
+
+
 @section{Modifying Range Sets}
 
 

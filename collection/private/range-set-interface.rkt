@@ -31,7 +31,8 @@
   [range-set-remove-all (-> immutable-range-set? (sequence/c range?) immutable-range-set?)]
   [range-set-remove-all! (-> mutable-range-set? (sequence/c range?) void?)]
   [range-set-clear! (-> mutable-range-set? void?)]
-  [range-subset (-> range-set? range? range-set?)]))
+  [range-subset (-> range-set? range? range-set?)]
+  [range-set-complement (-> range-set? range-set?)]))
 
 
 ;; The APIs for creating the generic, extensible hierarchy of collection implementations exist only to
@@ -91,6 +92,7 @@
   (range-set-span range-set [failure-result])
   (range-set-span-or-absent range-set)
   (range-subset range-set subrange)
+  (range-set-complement range-set)
 
   #:fallbacks
 
