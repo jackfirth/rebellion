@@ -30,6 +30,7 @@
          (submod rebellion/base/range private-for-rebellion-only)
          rebellion/collection/entry
          rebellion/collection/private/range-set-interface
+         rebellion/collection/private/endpoint-map-complement
          (submod rebellion/collection/private/range-set-interface private-for-rebellion-only)
          rebellion/collection/sorted-map
          rebellion/collection/vector
@@ -127,7 +128,11 @@
          endpoints-submap-with-left-end-corrected rightmost-range-lower-cut corrected-upper-cut)))
 
      (immutable-endpoint-map-range-set
-      endpoints-submap-with-right-end-corrected (this-comparator this)))]
+      endpoints-submap-with-right-end-corrected (this-comparator this)))
+
+   (define (range-set-complement this)
+     (immutable-endpoint-map-range-set (immutable-endpoint-map-complement (this-endpoints this))
+                                       (this-comparator this)))]
 
   #:methods gen:immutable-range-set
 
@@ -299,7 +304,11 @@
       "subset range" range
       "subset range comparator" (range-comparator subset-range)
       "range set comparator" cmp)
-     (mutable-endpoint-submap-range-set this subset-range))]
+     (mutable-endpoint-submap-range-set this subset-range))
+
+   (define (range-set-complement this)
+     (mutable-endpoint-map-range-set (mutable-endpoint-map-complement (this-endpoints this))
+                                     (this-comparator this)))]
 
   #:methods gen:mutable-range-set
 
@@ -489,7 +498,11 @@
 
    (define (range-subset this subset-range)
      (define new-range (range-intersection (this-subrange this) subset-range))
-     (mutable-endpoint-submap-range-set (this-delegate-range-set this) new-range))]
+     (mutable-endpoint-submap-range-set (this-delegate-range-set this) new-range))
+
+   (define (range-set-complement this)
+     (mutable-endpoint-submap-range-set (range-set-complement (this-delegate-range-set this))
+                                        (this-subrange this)))]
 
   #:methods gen:mutable-range-set
 

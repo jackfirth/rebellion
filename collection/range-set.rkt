@@ -39,7 +39,8 @@
   range-set-remove-all
   range-set-remove-all!
   range-set-clear!
-  range-subset)
+  range-subset
+  range-set-complement)
 
  ;; Deprecated legacy alias of range-set-overlaps?
  (rename-out [range-set-overlaps? range-set-intersects?])

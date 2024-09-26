@@ -76,6 +76,7 @@
 
 
 (require racket/generic
+         racket/match
          racket/sequence
          racket/stream
          racket/unsafe/ops
@@ -134,9 +135,24 @@
   #:fallbacks
 
   [(define/generic generic-sorted-map-size sorted-map-size)
+   (define/generic generic-in-sorted-map in-sorted-map)
+   (define/generic generic-sorted-map-get-option sorted-map-get-option)
+
+   (define (in-sorted-map-keys this #:descending? [descending? #false])
+     (for/stream ([e (generic-in-sorted-map this #:descending? descending?)])
+       (entry-key e)))
+
+   (define (in-sorted-map-values this #:descending? [descending? #false])
+     (for/stream ([e (generic-in-sorted-map this #:descending? descending?)])
+       (entry-value e)))
    
    (define (sorted-map-empty? this)
-     (zero? (generic-sorted-map-size this)))])
+     (zero? (generic-sorted-map-size this)))
+
+   (define (sorted-map-contains-entry? this e)
+     (match (generic-sorted-map-get-option this (entry-key e))
+       [(== absent) #false]
+       [(present actual-value) (equal? actual-value (entry-value e))]))])
 
 
 ;; Subtypes must implement the gen:sorted-map interface.
