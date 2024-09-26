@@ -4,14 +4,14 @@
 
 (provide
  (contract-out
-  [object-descriptor? predicate/c]
+  [object-descriptor? (-> any/c boolean?)]
   [object-descriptor-type (-> object-descriptor? object-type?)]
   [object-descriptor-constructor (-> object-descriptor? procedure?)]
-  [object-descriptor-predicate (-> object-descriptor? predicate/c)]
+  [object-descriptor-predicate (-> object-descriptor? (-> any/c boolean?))]
   [object-descriptor-accessor
    (-> object-descriptor? (-> any/c natural? any/c))]
-  [initialized-object-descriptor? predicate/c]
-  [uninitialized-object-descriptor? predicate/c]
+  [initialized-object-descriptor? (-> any/c boolean?)]
+  [uninitialized-object-descriptor? (-> any/c boolean?)]
   [make-object-implementation
    (->* (object-type?)
         (#:property-maker (-> uninitialized-object-descriptor?
@@ -33,15 +33,15 @@
          #:chaperone? [chaperone? boolean?])
         [_ (descriptor) (object-descriptor-predicate descriptor)])]))
 
-(require racket/list
+(require guard
+         racket/list
          racket/math
          rebellion/collection/keyset/low-dependency
          rebellion/custom-write
          rebellion/equal+hash
-         guard
          rebellion/private/impersonation
-         rebellion/type/record
          rebellion/type/object/base
+         rebellion/type/record
          rebellion/type/tuple/base
          rebellion/type/tuple/descriptor)
 

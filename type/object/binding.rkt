@@ -5,7 +5,7 @@
 (provide
  object-id
  (contract-out
-  [object-binding? predicate/c]
+  [object-binding? (-> any/c boolean?)]
   [object-binding-type (-> object-binding? object-type?)]
   [object-binding-descriptor (-> object-binding? identifier?)]
   [object-binding-predicate (-> object-binding? identifier?)]
