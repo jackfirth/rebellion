@@ -32,7 +32,7 @@
           node))))
 
 
-(define-simple-macro (mutable-rbtree!
+(define-syntax-parse-rule (mutable-rbtree!
                       #:key-comparator key-comparator:expr root-node:literal-mutable-rb-node)
   (let ([tree (make-mutable-rb-tree key-comparator)]
         [root root-node.initialization-expr])

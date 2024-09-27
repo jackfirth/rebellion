@@ -25,8 +25,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-simple-macro
-  (define-singleton-type id:id
+(define-syntax-parse-rule (define-singleton-type id:id
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
      

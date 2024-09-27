@@ -7,7 +7,7 @@
 (provide
  compare-infix
  (contract-out
-  [comparator? predicate/c]
+  [comparator? (-> any/c boolean?)]
   [compare (-> comparator? any/c any/c comparison?)]
   [make-comparator
    (->* ((-> any/c any/c comparison?)) (#:name (or/c interned-symbol? #false)) comparator?)]
