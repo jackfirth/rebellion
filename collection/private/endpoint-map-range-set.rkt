@@ -683,13 +683,14 @@
 (define (check-ranges-disjoint #:who who ranges)
   (unless (zero? (vector-length ranges))
     (for ([range (in-vector ranges)]
-          [next-range (in-vector ranges 1)])
-      (when (range-overlaps? range next-range)
-        (raise-arguments-error
-         who
-         "overlapping ranges not allowed"
-         "range" range
-         "next range" next-range)))))
+          [next-range (in-vector ranges 1)]
+          #:when (range-overlaps? range next-range))
+      (raise-arguments-error who
+                             "overlapping ranges not allowed"
+                             "range"
+                             range
+                             "next range"
+                             next-range))))
 
 
 (define (into-range-set comparator)

@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [persistent-red-black-tree? predicate/c]
+  [persistent-red-black-tree? (-> any/c boolean?)]
   [in-persistent-red-black-tree
    (->* (persistent-red-black-tree?) (#:descending? boolean?) (sequence/c entry?))]
   [in-persistent-red-black-tree-keys

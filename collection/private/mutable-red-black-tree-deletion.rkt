@@ -9,9 +9,9 @@
   [mutable-rb-tree-remove! (-> mutable-rb-tree? any/c void?)]))
 
 
-(require rebellion/collection/private/mutable-red-black-tree-base
+(require guard
+         rebellion/collection/private/mutable-red-black-tree-base
          rebellion/collection/private/mutable-red-black-tree-search
-         guard
          rebellion/private/static-name)
 
 
