@@ -46,45 +46,43 @@
 
       #:fail-when
       (check-duplicate-identifier (syntax->list #'(unsorted-id ...)))
-      "duplicate enum constants are not allowed")))
+      "duplicate enum constants are not allowed"))
 
-(define-syntax-parse-rule (define-enum-type id:id constants:enum-constants
-    (~alt
-     (~optional (~and #:omit-root-binding omit-root-binding-kw))
+  (define-splicing-syntax-class enum-options
+    #:attributes (omit-root-binding-kw
+                  descriptor
+                  predicate
+                  discriminator
+                  selector
+                  inspector
+                  prop-maker)
+    (pattern
+      (~seq
+       (~alt
+        (~optional (~and #:omit-root-binding omit-root-binding-kw))
+        (~optional (~seq #:descriptor-name descriptor:id) #:name "#:descriptor-name option")
+        (~optional (~seq #:predicate-name predicate:id) #:name "#:predicate-name option")
+        (~optional (~seq #:discriminator-name discriminator:id) #:name "#:discriminator-name option")
+        (~optional (~seq #:selector-name selector:id) #:name "#:selector-name option")
 
-     (~optional
-      (~seq #:descriptor-name descriptor:id)
-      #:defaults ([descriptor (default-descriptor-identifier #'id)])
-      #:name "#:descriptor-name option")
+        (~optional (~seq #:inspector inspector:expr)
+                   #:name "#:inspector option"
+                   #:defaults ([inspector #'(current-inspector)]))
 
-     (~optional
-      (~seq #:predicate-name predicate:id)
-      #:defaults ([predicate (default-predicate-identifier #'id)])
-      #:name "#:predicate-name option")
+        (~optional (~seq #:property-maker prop-maker:expr)
+                   #:defaults ([prop-maker #'default-enum-properties])
+                   #:name "#:property-maker option"))
+       ...))))
 
-     (~optional
-      (~seq #:discriminator-name discriminator:id)
-      #:defaults ([discriminator (default-discriminator-identifier #'id)])
-      #:name "#:discriminator-name option")
 
-     (~optional
-      (~seq #:selector-name selector:id)
-      #:defaults ([selector (default-selector-identifier #'id)])
-      #:name "#:selector-name option")
-
-     (~optional
-      (~seq #:inspector inspector:expr)
-      #:name "#:inspector option"
-      #:defaults ([inspector #'(current-inspector)]))
-
-     (~optional
-      (~seq #:property-maker prop-maker:expr)
-      #:defaults ([prop-maker #'default-enum-properties])
-      #:name "#:property-maker option"))
-    ...)
+(define-syntax-parse-rule (define-enum-type id:id constants:enum-constants options:enum-options)
+  #:with descriptor (or (attribute options.descriptor) (default-descriptor-identifier #'id))
+  #:with predicate (or (attribute options.predicate) (default-predicate-identifier #'id))
+  #:with discriminator (or (attribute options.discriminator) (default-discriminator-identifier #'id))
+  #:with selector (or (attribute options.selector) (default-selector-identifier #'id))
 
   #:with root-binding
-  (if (attribute omit-root-binding-kw)
+  (if (attribute options.omit-root-binding-kw)
       #'(begin)
       #'(define-syntax id
           (enum-binding
@@ -108,14 +106,15 @@
         #:predicate-name 'predicate
         #:discriminator-name 'discriminator
         #:selector-name 'selector)
-       #:inspector inspector
-       #:property-maker prop-maker))
+       #:inspector options.inspector
+       #:property-maker options.prop-maker))
     (define predicate (enum-descriptor-predicate descriptor))
     (define discriminator (enum-descriptor-discriminator descriptor))
     (define selector (enum-descriptor-selector descriptor))
     (define constants.id (selector constants.index))
     ...
     root-binding))
+
 
 (module+ test
   (test-case (name-string define-enum-type)
