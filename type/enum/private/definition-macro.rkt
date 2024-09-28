@@ -48,8 +48,7 @@
       (check-duplicate-identifier (syntax->list #'(unsorted-id ...)))
       "duplicate enum constants are not allowed")))
 
-(define-simple-macro
-  (define-enum-type id:id constants:enum-constants
+(define-syntax-parse-rule (define-enum-type id:id constants:enum-constants
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
 
@@ -132,7 +131,7 @@
     (check-equal? (~a south) "#<compass-direction:south>")
     (check-equal? (~v east) "#<compass-direction:east>")
     (check-equal? (~s west) "#<compass-direction:west>")
-    (define-simple-macro (enum-constants enum:enum-id)
+    (define-syntax-parse-rule (enum-constants enum:enum-id)
       (set enum.constant ...))
     (check-equal? (enum-constants compass-direction)
                   (set north south east west))))

@@ -12,7 +12,7 @@
 (module+ private-for-rebellion-only
   (provide
    (contract-out
-    [regular-immutable-sorted-set? predicate/c]
+    [regular-immutable-sorted-set? (-> any/c boolean?)]
     [make-regular-immutable-sorted-set
      (-> (and/c vector? immutable?) comparator? immutable-sorted-set?)])))
 

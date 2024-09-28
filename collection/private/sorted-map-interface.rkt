@@ -6,9 +6,9 @@
 
 (provide
  (contract-out
-  [sorted-map? predicate/c]
-  [immutable-sorted-map? predicate/c]
-  [mutable-sorted-map? predicate/c]
+  [sorted-map? (-> any/c boolean?)]
+  [immutable-sorted-map? (-> any/c boolean?)]
+  [mutable-sorted-map? (-> any/c boolean?)]
   [in-sorted-map (->* (sorted-map?) (#:descending? boolean?) (sequence/c entry?))]
   [in-sorted-map-keys (->* (sorted-map?) (#:descending? boolean?) (sequence/c any/c))]
   [in-sorted-map-values (->* (sorted-map?) (#:descending? boolean?) (sequence/c any/c))]
@@ -75,7 +75,8 @@
       (-> interned-symbol? any/c sorted-map? failure-result/c)])))
 
 
-(require racket/generic
+(require guard
+         racket/generic
          racket/match
          racket/sequence
          racket/stream
@@ -87,7 +88,6 @@
          rebellion/base/symbol
          rebellion/collection/entry
          rebellion/collection/private/sorted-set-interface
-         guard
          rebellion/private/printer-markup)
 
 
