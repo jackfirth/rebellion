@@ -5,7 +5,7 @@
 (provide
  tuple-id
  (contract-out
-  [tuple-binding? predicate/c]
+  [tuple-binding? (-> any/c boolean?)]
   [tuple-binding-type (-> tuple-binding? tuple-type?)]
   [tuple-binding-descriptor (-> tuple-binding? identifier?)]
   [tuple-binding-predicate (-> tuple-binding? identifier?)]

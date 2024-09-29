@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [immutable-vector? predicate/c]
+  [immutable-vector? (-> any/c boolean?)]
   [make-immutable-vector (-> natural? any/c immutable-vector?)]
   [immutable-vector (-> any/c ... immutable-vector?)]
   [immutable-vector-length (-> immutable-vector? natural?)]
@@ -29,9 +29,9 @@
    (-> immutable-vector? natural? (values immutable-vector? immutable-vector?))]
   [immutable-vector-copy
    (-> immutable-vector? natural? natural? immutable-vector?)]
-  [immutable-vector-filter (-> predicate/c immutable-vector? immutable-vector?)]
+  [immutable-vector-filter (-> (-> any/c boolean?) immutable-vector? immutable-vector?)]
   [immutable-vector-filter-not
-   (-> predicate/c immutable-vector? immutable-vector?)]
+   (-> (-> any/c boolean?) immutable-vector? immutable-vector?)]
   [immutable-vector-count
    (-> (-> any/c any/c) immutable-vector? immutable-vector? ... natural?)]
   [immutable-vector-argmin (-> (-> any/c real?) immutable-vector? any/c)]
@@ -44,8 +44,8 @@
         (natural? natural? #:key (-> any/c any/c) #:cache-keys? boolean?)
         immutable-vector?)]
   [empty-immutable-vector empty-immutable-vector?]
-  [empty-immutable-vector? predicate/c]
-  [nonempty-immutable-vector? predicate/c]))
+  [empty-immutable-vector? (-> any/c boolean?)]
+  [nonempty-immutable-vector? (-> any/c boolean?)]))
 
 (require (for-syntax racket/base
                      racket/string)
@@ -100,8 +100,7 @@
       #:with lambda-argument-binders #'(arg ... . rest-arg)
       #:with function-call-expression #'(apply id arg.id ... rest-arg))))
 
-(define-simple-macro
-  (define-wrapper header:vector-function-header)
+(define-syntax-parse-rule (define-wrapper header:vector-function-header)
   #:do [(define id-str (symbol->string (syntax-e #'header.id)))
         (define imm-str (string-replace id-str "vector" "immutable-vector"))]
   #:with immutable-id (datum->syntax #'header.id (string->symbol imm-str))
