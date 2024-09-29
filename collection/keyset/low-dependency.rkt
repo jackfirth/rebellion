@@ -6,7 +6,7 @@
  keyset
  (contract-out
   [empty-keyset keyset?]
-  [keyset? predicate/c]
+  [keyset? (-> any/c boolean?)]
   [keyset-contains? (-> keyset? keyword? boolean?)]
   [keyset-index-of
    (->i ([keys keyset?] [kw keyword?])
@@ -90,7 +90,7 @@
           h)))
   (plain-make-keyset sorted-keywords-vec index-hash))
 
-(define-simple-macro (keyset kw:keyword ...)
+(define-syntax-parse-rule (keyset kw:keyword ...)
   #:do [(define kws (map syntax-e (syntax->list #'(kw ...))))
         (define sorted-kws (remove-duplicates (sort kws keyword<?)))
         (define sorted-kw-vec

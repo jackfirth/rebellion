@@ -4,9 +4,9 @@
 
 (require (for-syntax racket/base
                      racket/syntax)
+         guard
          racket/block
          rebellion/base/option
-         guard
          syntax/parse/define)
 
 (module+ test

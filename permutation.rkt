@@ -85,7 +85,7 @@
   (findf (λ (pos) (>= (syntax-e pos) size)) (syntax->list positions)))
 
 
-(define-simple-macro (permutation position:nat ...)
+(define-syntax-parse-rule (permutation position:nat ...)
   #:do [(define size (length (syntax->list #'(position ...))))]
   #:fail-when (check-position-bounds #'(position ...) size)
   (format "position out of bounds for permutation of size ~a" size)
@@ -93,7 +93,7 @@
   (constructor:permutation (vector-immutable position ...)))
 
 
-(define-simple-macro (cyclic-permutation position:nat ...+)
+(define-syntax-parse-rule (cyclic-permutation position:nat ...+)
   #:do [(define positions
           (map syntax-e (syntax->list #'(position ...))))
         (define size (add1 (apply max 0 positions)))
