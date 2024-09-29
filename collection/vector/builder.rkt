@@ -6,8 +6,8 @@
 
 (provide
  (contract-out
-  [vector-builder? predicate/c]
-  [unused-vector-builder/c predicate/c]
+  [vector-builder? (-> any/c boolean?)]
+  [unused-vector-builder/c (-> any/c boolean?)]
   [make-vector-builder
    (->* () ((sequence/c any/c) #:expected-size (or/c natural? #f)) vector-builder?)]
   [vector-builder-add (-> vector-builder? any/c ... vector-builder?)]
@@ -16,13 +16,13 @@
   [build-mutable-vector (-> vector-builder? (and/c vector? (not/c immutable?)))]))
 
 
-(require racket/contract/combinator
+(require guard
+         racket/contract/combinator
          racket/math
          racket/sequence
          racket/vector
          rebellion/collection/immutable-vector
          rebellion/collection/list
-         guard
          rebellion/private/static-name)
 
 

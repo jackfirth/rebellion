@@ -43,8 +43,8 @@
          rebellion/custom-write
          rebellion/equal+hash
          rebellion/private/impersonation
-         rebellion/type/tuple/base
-         rebellion/type/struct)
+         rebellion/type/struct
+         rebellion/type/tuple/base)
 
 (module+ test
   (require (submod "..")
