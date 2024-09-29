@@ -6,11 +6,11 @@
 
 (provide
  (contract-out
-  [lock? predicate/c]
+  [lock? (-> any/c boolean?)]
   [lock! (-> lock? (-> any) any)]
   [lock-acquire! (-> lock? void?)]
   [lock-release! (-> lock? void?)]
-  [read-write-lock? predicate/c]
+  [read-write-lock? (-> any/c boolean?)]
   [read-write-lock-read-lock (-> read-write-lock? lock?)]
   [read-write-lock-write-lock (-> read-write-lock? lock?)]
   [make-lock (->* () (#:reentrant? boolean?) lock?)]

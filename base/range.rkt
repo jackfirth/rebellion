@@ -6,16 +6,16 @@
 
 (provide
  (contract-out
-  [range? predicate/c]
-  [bounded-range? predicate/c]
-  [bounded-below-range? predicate/c]
-  [bounded-above-range? predicate/c]
-  [unbounded-range? predicate/c]
-  [unbounded-below-range? predicate/c]
-  [unbounded-above-range? predicate/c]
-  [singleton-range? predicate/c]
-  [empty-range? predicate/c]
-  [nonempty-range? predicate/c]
+  [range? (-> any/c boolean?)]
+  [bounded-range? (-> any/c boolean?)]
+  [bounded-below-range? (-> any/c boolean?)]
+  [bounded-above-range? (-> any/c boolean?)]
+  [unbounded-range? (-> any/c boolean?)]
+  [unbounded-below-range? (-> any/c boolean?)]
+  [unbounded-above-range? (-> any/c boolean?)]
+  [singleton-range? (-> any/c boolean?)]
+  [empty-range? (-> any/c boolean?)]
+  [nonempty-range? (-> any/c boolean?)]
 
   [range
    (->i #:chaperone
@@ -122,7 +122,7 @@
   [range-lower-endpoint (-> bounded-below-range? any/c)]
   [range-upper-endpoint (-> bounded-above-range? any/c)]
   [range-comparator (-> range? comparator?)]
-  [unbounded? predicate/c]
+  [unbounded? (-> any/c boolean?)]
   [unbounded unbounded?]
   [bound-type? predicate/c]
   [inclusive bound-type?]

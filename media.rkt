@@ -5,7 +5,7 @@
 (provide
  (contract-out
   [media (-> media-type? immutable-bytes? media?)]
-  [media? predicate/c]
+  [media? (-> any/c boolean?)]
   [media-bytes (-> media? immutable-bytes?)]
   [media-get-type (-> media? media-type?)]
   [media-type
@@ -17,7 +17,7 @@
          #:suffix (or/c interned-symbol? #f)
          #:parameters record?)
         media-type?)]
-  [media-type? predicate/c]
+  [media-type? (-> any/c boolean?)]
   [media-type-top-level (-> media-type? interned-symbol?)]
   [media-type-subtype (-> media-type? interned-symbol?)]
   [media-type-tree (-> media-type? (or/c interned-symbol? #f))]
