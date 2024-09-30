@@ -21,8 +21,7 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-simple-macro
-  (define-wrapper-type id:id
+(define-syntax-parse-rule (define-wrapper-type id:id
     (~alt
      (~optional (~and #:omit-root-binding omit-root-binding-kw))
 

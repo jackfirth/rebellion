@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [immutable-bytes? predicate/c]
+  [immutable-bytes? (-> any/c boolean?)]
   [make-immutable-bytes (-> natural? byte? immutable-bytes?)]
   [immutable-bytes (-> byte? ... immutable-bytes?)]
   [immutable-bytes-length (-> immutable-bytes? natural?)]
@@ -44,13 +44,13 @@
   [immutable-bytes-join
    (-> (listof immutable-bytes?) immutable-bytes? immutable-bytes?)]
   [empty-immutable-bytes empty-immutable-bytes?]
-  [empty-immutable-bytes? predicate/c]
-  [nonempty-immutable-bytes? predicate/c]))
+  [empty-immutable-bytes? (-> any/c boolean?)]
+  [nonempty-immutable-bytes? (-> any/c boolean?)]))
 
 (require (for-syntax racket/base
                      racket/string)
-         racket/math
          racket/bytes
+         racket/math
          rebellion/base/immutable-string
          syntax/parse/define)
 
@@ -116,8 +116,7 @@
       #:with lambda-argument-binders #'(arg ... . rest-arg)
       #:with function-call-expression #'(apply id arg.id ... rest-arg))))
 
-(define-simple-macro
-  (define-wrapper header:bytes-function-header)
+(define-syntax-parse-rule (define-wrapper header:bytes-function-header)
   #:do [(define id-str (symbol->string (syntax-e #'header.id)))
         (define imm-str (string-replace id-str "bytes" "immutable-bytes"))]
   #:with immutable-id (datum->syntax #'header.id (string->symbol imm-str))
