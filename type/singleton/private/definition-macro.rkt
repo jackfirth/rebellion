@@ -25,54 +25,41 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-simple-macro
-  (define-singleton-type id:id
-    (~alt
-     (~optional (~and #:omit-root-binding omit-root-binding-kw))
-     
-     (~optional
-      (~seq #:descriptor-name descriptor:id)
-      #:name "#:descriptor-name option"
-      #:defaults ([descriptor (default-descriptor-identifier #'id)]))
+(define-syntax-parse-rule (define-singleton-type
+                           id:id
+                           (~alt
+                            (~optional (~and #:omit-root-binding omit-root-binding-kw))
+                            (~optional (~seq #:descriptor-name descriptor:id)
+                                       #:name "#:descriptor-name option"
+                                       #:defaults ([descriptor (default-descriptor-identifier #'id)]))
+                            (~optional (~seq #:predicate-name predicate:id)
+                                       #:name "#:predicate-name option"
+                                       #:defaults ([predicate (default-predicate-identifier #'id)]))
+                            (~optional (~seq #:instance-name instance:id)
+                                       #:name "#:instance-name option"
+                                       #:defaults ([instance (default-instance-identifier #'id)]))
+                            (~optional (~seq #:inspector inspector:expr)
+                                       #:name "#:inspector option"
+                                       #:defaults ([inspector #'(current-inspector)]))
+                            (~optional (~seq #:property-maker prop-maker:expr)
+                                       #:name "#:property-maker option"
+                                       #:defaults ([prop-maker #'default-singleton-properties]))) ...)
 
-     (~optional
-      (~seq #:predicate-name predicate:id)
-      #:name "#:predicate-name option"
-      #:defaults ([predicate (default-predicate-identifier #'id)]))
+  #:with root-binding (if (attribute omit-root-binding-kw)
+                          #'(begin)
+                          #'
+                          (define-syntax id
+                            (singleton-binding #:type (singleton-type 'id #:predicate-name 'predicate)
+                                               #:descriptor #'descriptor
+                                               #:predicate #'predicate
+                                               #:instance #'instance
+                                               #:macro (make-variable-like-transformer #'instance))))
 
-     (~optional
-      (~seq #:instance-name instance:id)
-      #:name "#:instance-name option"
-      #:defaults ([instance (default-instance-identifier #'id)]))
-
-     (~optional
-      (~seq #:inspector inspector:expr)
-      #:name "#:inspector option"
-      #:defaults ([inspector #'(current-inspector)]))
-
-     (~optional
-      (~seq #:property-maker prop-maker:expr)
-      #:name "#:property-maker option"
-      #:defaults ([prop-maker #'default-singleton-properties])))
-    ...)
-
-  #:with root-binding
-  (if (attribute omit-root-binding-kw)
-      #'(begin)
-      #'(define-syntax id
-          (singleton-binding
-           #:type (singleton-type 'id #:predicate-name 'predicate)
-           #:descriptor #'descriptor
-           #:predicate #'predicate
-           #:instance #'instance
-           #:macro (make-variable-like-transformer #'instance))))
-  
   (begin
     (define descriptor
-      (make-singleton-implementation
-       (singleton-type 'id #:predicate-name 'predicate)
-       #:inspector inspector
-       #:property-maker prop-maker))
+      (make-singleton-implementation (singleton-type 'id #:predicate-name 'predicate)
+                                     #:inspector inspector
+                                     #:property-maker prop-maker))
     (define predicate (singleton-descriptor-predicate descriptor))
     (define instance (singleton-descriptor-instance descriptor))
     root-binding))

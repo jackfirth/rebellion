@@ -5,7 +5,7 @@
 (provide
  singleton-id
  (contract-out
-  [singleton-binding? predicate/c]
+  [singleton-binding? (-> any/c boolean?)]
   [singleton-binding-type (-> singleton-binding? singleton-type?)]
   [singleton-binding-descriptor (-> singleton-binding? identifier?)]
   [singleton-binding-predicate (-> singleton-binding? identifier?)]

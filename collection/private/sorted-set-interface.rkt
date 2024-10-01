@@ -6,9 +6,9 @@
 
 (provide
  (contract-out
-  [sorted-set? predicate/c]
-  [immutable-sorted-set? predicate/c]
-  [mutable-sorted-set? predicate/c]
+  [sorted-set? (-> any/c boolean?)]
+  [immutable-sorted-set? (-> any/c boolean?)]
+  [mutable-sorted-set? (-> any/c boolean?)]
   [in-sorted-set (->* (sorted-set?) (#:descending? boolean?) (sequence/c any/c))]
   [sorted-set-empty? (-> sorted-set? boolean?)]
   [sorted-set-size (-> sorted-set? exact-nonnegative-integer?)]
@@ -52,14 +52,14 @@
    gen:immutable-sorted-set))
 
 
-(require racket/generic
+(require guard
+         racket/generic
          racket/sequence
          racket/struct
          racket/unsafe/ops
          rebellion/base/comparator
          rebellion/base/option
-         rebellion/base/range
-         guard)
+         rebellion/base/range)
 
 
 ;@----------------------------------------------------------------------------------------------------

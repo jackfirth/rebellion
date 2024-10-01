@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [sorted-set-builder? predicate/c]
+  [sorted-set-builder? (-> any/c boolean?)]
   [sorted-set-builder-add (-> sorted-set-builder? any/c any/c ... sorted-set-builder?)]
   [sorted-set-builder-add-all (-> sorted-set-builder? (sequence/c any/c) sorted-set-builder?)]
   [make-sorted-set-builder (-> comparator? sorted-set-builder?)]
