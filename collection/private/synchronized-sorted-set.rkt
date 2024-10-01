@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [synchronized-sorted-set? predicate/c]
+  [synchronized-sorted-set? (-> any/c boolean?)]
   [synchronized-sorted-set (-> mutable-sorted-set? synchronized-sorted-set?)]
   [synchronized-sorted-set-lock (-> synchronized-sorted-set? read-write-lock?)]))
 

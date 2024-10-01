@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [range-set? predicate/c]
+  [range-set? (-> any/c boolean?)]
   [immutable-range-set? predicate/c]
   [mutable-range-set? predicate/c]
   [in-range-set (->* (range-set?) (#:descending? boolean?) (sequence/c nonempty-range?))]

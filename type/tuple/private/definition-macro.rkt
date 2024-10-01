@@ -21,92 +21,71 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-simple-macro
-  (define-tuple-type id:id (field:id ...)
-    (~alt
+(define-syntax-parse-rule (define-tuple-type
+                           id:id
+                           (field:id ...)
+                           (~alt
+                            (~optional (~and #:omit-root-binding omit-root-binding-kw))
+                            (~optional (~seq #:descriptor-name descriptor:id)
+                                       #:defaults ([descriptor (default-descriptor-identifier #'id)])
+                                       #:name "#:descriptor-name option")
+                            (~optional (~seq #:predicate-name predicate:id)
+                                       #:defaults ([predicate (default-predicate-identifier #'id)])
+                                       #:name "#:predicate-name option")
+                            (~optional (~seq #:constructor-name constructor:id)
+                                       #:defaults ([constructor
+                                                    (default-constructor-identifier #'id)])
+                                       #:name "#:constructor-name option")
+                            (~optional (~seq #:accessor-name accessor:id)
+                                       #:defaults ([accessor (default-accessor-identifier #'id)])
+                                       #:name "#:accessor-name option")
+                            (~optional (~seq #:pattern-name pattern:id)
+                                       #:defaults ((pattern (default-pattern-identifier #'id)))
+                                       #:name "#:pattern-name option")
+                            (~optional (~seq #:inspector inspector:expr)
+                                       #:name "#:inspector option"
+                                       #:defaults ([inspector #'(current-inspector)]))
+                            (~optional (~seq #:property-maker property-maker:expr)
+                                       #:defaults ([property-maker #'default-tuple-properties])
+                                       #:name "#:property-maker option")) ...)
 
-     (~optional (~and #:omit-root-binding omit-root-binding-kw))
-
-     (~optional
-      (~seq #:descriptor-name descriptor:id)
-      #:defaults ([descriptor (default-descriptor-identifier #'id)])
-      #:name "#:descriptor-name option")
-     
-     (~optional
-      (~seq #:predicate-name predicate:id)
-      #:defaults ([predicate (default-predicate-identifier #'id)])
-      #:name "#:predicate-name option")
-     
-     (~optional
-      (~seq #:constructor-name constructor:id)
-      #:defaults ([constructor (default-constructor-identifier #'id)])
-      #:name "#:constructor-name option")
-     
-     (~optional
-      (~seq #:accessor-name accessor:id)
-      #:defaults ([accessor (default-accessor-identifier #'id)])
-      #:name "#:accessor-name option")
-     
-     (~optional
-      (~seq #:pattern-name pattern:id)
-      #:defaults ([pattern (default-pattern-identifier #'id)])
-      #:name "#:pattern-name option")
-
-     (~optional
-      (~seq #:inspector inspector:expr)
-      #:name "#:inspector option"
-      #:defaults ([inspector #'(current-inspector)]))
-     
-     (~optional
-      (~seq #:property-maker property-maker:expr)
-      #:defaults ([property-maker #'default-tuple-properties])
-      #:name "#:property-maker option"))
-    ...)
-  
   #:do [(define size (length (syntax->list #'(field ...))))]
 
-  #:with (field-accessor ...)
-  (for/list ([field-id (in-syntax #'(field ...))])
-    (default-field-accessor-identifier #'id field-id))
-  
+  #:with (field-accessor ...) (for/list ([field-id (in-syntax #'(field ...))])
+                                (default-field-accessor-identifier #'id field-id))
+
   #:with (field-position ...) (build-list size (λ (n) #`(quote #,n)))
 
-  #:with root-binding
-  (if (attribute omit-root-binding-kw)
-      #'(begin)
-      #'(define-syntax id
-          (tuple-binding
-           #:type
-           (tuple-type
-            'id (list 'field ...)
-            #:predicate-name 'predicate
-            #:accessor-name 'accessor
-            #:constructor-name 'constructor)
-           #:descriptor #'descriptor
-           #:predicate #'predicate
-           #:constructor #'constructor
-           #:accessor #'accessor
-           #:fields (list #'field ...)
-           #:field-accessors (list #'field-accessor ...)
-           #:pattern #'pattern
-           #:macro (make-variable-like-transformer #'constructor))))
-  
+  #:with root-binding (if (attribute omit-root-binding-kw)
+                          #'(begin)
+                          #'(define-syntax id
+                              (tuple-binding #:type (tuple-type 'id
+                                                                (list 'field ...)
+                                                                #:predicate-name 'predicate
+                                                                #:accessor-name 'accessor
+                                                                #:constructor-name 'constructor)
+                                             #:descriptor #'descriptor
+                                             #:predicate #'predicate
+                                             #:constructor #'constructor
+                                             #:accessor #'accessor
+                                             #:fields (list #'field ...)
+                                             #:field-accessors (list #'field-accessor ...)
+                                             #:pattern #'pattern
+                                             #:macro (make-variable-like-transformer #'constructor))))
+
   (begin
     (define descriptor
-      (make-tuple-implementation
-       (tuple-type
-        'id (list 'field ...)
-        #:predicate-name 'predicate
-        #:accessor-name 'accessor
-        #:constructor-name 'constructor)
-       #:inspector inspector
-       #:property-maker property-maker))
+      (make-tuple-implementation (tuple-type 'id
+                                             (list 'field ...)
+                                             #:predicate-name 'predicate
+                                             #:accessor-name 'accessor
+                                             #:constructor-name 'constructor)
+                                 #:inspector inspector
+                                 #:property-maker property-maker))
     (define constructor (tuple-descriptor-constructor descriptor))
     (define predicate (tuple-descriptor-predicate descriptor))
     (define accessor (tuple-descriptor-accessor descriptor))
-    (define field-accessor
-      (make-tuple-field-accessor descriptor field-position))
-    ...
+    (define field-accessor (make-tuple-field-accessor descriptor field-position)) ...
     (define-match-expander pattern
       (syntax-parser
         [(_ field ...) #'(? predicate (app field-accessor field) ...)]))

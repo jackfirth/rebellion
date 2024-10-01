@@ -7,7 +7,7 @@
   [singleton-type
    (->* (interned-symbol?) (#:predicate-name (or/c interned-symbol? #f))
         singleton-type?)]
-  [singleton-type? predicate/c]
+  [singleton-type? (-> any/c boolean?)]
   [singleton-type-name (-> singleton-type? interned-symbol?)]
   [singleton-type-predicate-name (-> singleton-type? interned-symbol?)]))
 

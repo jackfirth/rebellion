@@ -4,17 +4,17 @@
 
 (provide
  (contract-out
-  [singleton-descriptor? predicate/c]
+  [singleton-descriptor? (-> any/c boolean?)]
   [make-singleton-implementation
    (->* (singleton-type?)
         (#:inspector inspector?
          #:property-maker (-> uninitialized-singleton-descriptor?
                               (listof (cons/c struct-type-property? any/c))))
         initialized-singleton-descriptor?)]
-  [initialized-singleton-descriptor? predicate/c]
-  [uninitialized-singleton-descriptor? predicate/c]
+  [initialized-singleton-descriptor? (-> any/c boolean?)]
+  [uninitialized-singleton-descriptor? (-> any/c boolean?)]
   [singleton-descriptor-instance (-> initialized-singleton-descriptor? any/c)]
-  [singleton-descriptor-predicate (-> singleton-descriptor? predicate/c)]
+  [singleton-descriptor-predicate (-> singleton-descriptor? (-> any/c boolean?))]
   [default-singleton-properties
    (-> singleton-descriptor? (listof (cons/c struct-type-property? any/c)))]
   [default-singleton-custom-write
