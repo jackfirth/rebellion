@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [bit? predicate/c]
+  [bit? (-> any/c boolean?)]
   [bit->boolean (-> bit? boolean?)]
   [boolean->bit (-> boolean? bit?)]))
 

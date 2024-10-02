@@ -10,9 +10,9 @@
         ([end (start) (or/c (integer-in start #f) #f)])
         [_ sequence?])]))
 
-(require racket/math
-         racket/sequence
-         guard)
+(require guard
+         racket/math
+         racket/sequence)
 
 (module+ test
   (require (submod "..")

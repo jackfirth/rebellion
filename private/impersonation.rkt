@@ -60,12 +60,12 @@
 (define (function-application-guard guard result-guard)
   (strict-cond
     [(false? result-guard) guard]
-    [(false? guard) (λ xs (apply values (cons result-guard xs)))]
+    [(false? guard) (λ xs (apply values result-guard xs))]
     [else
      (λ xs
        (call-with-values
         (λ () (apply guard xs))
-        (λ guarded (apply values (cons result-guard guarded)))))]))
+        (λ guarded (apply values result-guard guarded))))]))
     
 
 (define (struct-impersonate instance type
