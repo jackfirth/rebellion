@@ -78,17 +78,17 @@
      (tester widget) (list widget-description widget-price widget-weight)))
 
   (test-case "object-id.name-field"
-    (define-simple-macro (tester object:object-id) 'object.name-field)
+    (define-syntax-parse-rule (tester object:object-id) 'object.name-field)
     (check-equal? (tester widget) 'name))
   
   (test-case "object-id.name-field-name"
-    (define-simple-macro (tester object:object-id) object.name-field-name)
+    (define-syntax-parse-rule (tester object:object-id) object.name-field-name)
     (check-equal? (tester widget) 'name))
   
   (test-case "object-id.name-field-keyword"
-    (define-simple-macro (tester object:object-id) 'object.name-field-keyword)
+    (define-syntax-parse-rule (tester object:object-id) 'object.name-field-keyword)
     (check-equal? (tester widget) '#:name))
 
   (test-case "object-id.name-accessor"
-    (define-simple-macro (tester object:object-id) object.name-accessor)
+    (define-syntax-parse-rule (tester object:object-id) object.name-accessor)
     (check-equal? (tester widget) widget-name)))

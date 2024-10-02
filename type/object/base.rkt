@@ -11,7 +11,7 @@
          #:accessor-name (or/c interned-symbol? #f)
          #:predicate-name (or/c interned-symbol? #f))
         object-type?)]
-  [object-type? predicate/c]
+  [object-type? (-> any/c boolean?)]
   [object-type-name (-> object-type? interned-symbol?)]
   [object-type-fields (-> object-type? keyset?)]
   [object-type-private-fields (-> object-type? keyset?)]

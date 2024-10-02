@@ -9,7 +9,7 @@
  for*/bitstring
  (contract-out
   [bitstring (-> bit? ... bitstring?)]
-  [bitstring? predicate/c]
+  [bitstring? (-> any/c boolean?)]
   [bitstring-size (-> bitstring? natural?)]
   [bitstring-ref
    (->i ([bits () bitstring?]
@@ -25,6 +25,7 @@
 
 
 (require (for-syntax racket/base)
+         guard
          racket/format
          racket/list
          racket/math
@@ -34,7 +35,6 @@
          rebellion/binary/bit
          rebellion/binary/byte
          rebellion/collection/list
-         guard
          rebellion/streaming/reducer
          rebellion/type/tuple)
 

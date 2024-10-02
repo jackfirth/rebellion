@@ -9,18 +9,18 @@
  (struct-out middle-cut)
  (struct-out lower-cut)
  (contract-out
-  [cut? predicate/c]
+  [cut? (-> any/c boolean?)]
   [top-cut cut?]
   [bottom-cut cut?]
-  [intermediate-cut? predicate/c]
+  [intermediate-cut? (-> any/c boolean?)]
   [intermediate-cut-value (-> intermediate-cut? any/c)]
   [cut<=> (-> comparator? (comparator/c cut?))]
   [cut-flip-side (-> cut? cut?)]))
 
 
-(require racket/match
+(require guard
+         racket/match
          rebellion/base/comparator
-         guard
          rebellion/private/static-name)
 
 
