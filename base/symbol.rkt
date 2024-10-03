@@ -4,9 +4,9 @@
 
 (provide
  (contract-out
-  [interned-symbol? predicate/c]
-  [uninterned-symbol? predicate/c]
-  [unreadable-symbol? predicate/c]))
+  [interned-symbol? (-> any/c boolean?)]
+  [uninterned-symbol? (-> any/c boolean?)]
+  [unreadable-symbol? (-> any/c boolean?)]))
 
 (module+ test
   (require (submod "..")

@@ -124,10 +124,10 @@
   [range-comparator (-> range? comparator?)]
   [unbounded? (-> any/c boolean?)]
   [unbounded unbounded?]
-  [bound-type? predicate/c]
+  [bound-type? (-> any/c boolean?)]
   [inclusive bound-type?]
   [exclusive bound-type?]
-  [range-bound? predicate/c]
+  [range-bound? (-> any/c boolean?)]
   [range-bound (-> any/c bound-type? range-bound?)]
   [range-bound-endpoint (-> range-bound? any/c)]
   [range-bound-type (-> range-bound? bound-type?)]
@@ -144,11 +144,11 @@
            range-from-cuts))
 
 
-(require racket/bool
+(require guard
+         racket/bool
          racket/match
          rebellion/base/comparator
          rebellion/private/cut
-         guard
          rebellion/private/static-name
          rebellion/private/strict-cond
          rebellion/type/enum

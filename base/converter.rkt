@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [converter? predicate/c]
+  [converter? (-> any/c boolean?)]
   [make-converter
    (->* ((-> any/c any/c) (-> any/c any/c))
         (#:name (or/c interned-symbol? #false))
@@ -21,20 +21,18 @@
   [converter-flip
    (->* (converter?) (#:name (or/c interned-symbol? #false)) converter?)]))
 
-(require racket/bool
+(require guard
+         racket/bool
          racket/contract/combinator
          racket/keyword
          racket/symbol
          rebellion/base/symbol
-         (only-in rebellion/base/immutable-string
-                  immutable-string?
-                  number->immutable-string)
          rebellion/collection/list
          rebellion/private/contract-projection
-         guard
          rebellion/private/impersonation
          rebellion/private/static-name
-         rebellion/type/object)
+         rebellion/type/object
+         (only-in rebellion/base/immutable-string immutable-string? number->immutable-string))
 
 (module+ test
   (require (submod "..")
