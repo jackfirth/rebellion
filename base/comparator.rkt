@@ -7,7 +7,7 @@
 (provide
  compare-infix
  (contract-out
-  [comparator? predicate/c]
+  [comparator? (-> any/c boolean?)]
   [compare (-> comparator? any/c any/c comparison?)]
   [make-comparator
    (->* ((-> any/c any/c comparison?)) (#:name (or/c interned-symbol? #false)) comparator?)]
@@ -18,7 +18,7 @@
   [comparator-of-constants (-> any/c ... comparator?)]
   [comparator-min (-> comparator? any/c any/c ... any/c)]
   [comparator-max (-> comparator? any/c any/c ... any/c)]
-  [comparison? predicate/c]
+  [comparison? (-> any/c boolean?)]
   [lesser comparison?]
   [greater comparison?]
   [equivalent comparison?]
@@ -28,7 +28,7 @@
   [char<=> (comparator/c char?)]
   [symbol<=> (comparator/c symbol?)]
   [interned-symbol<=> (comparator/c interned-symbol?)]
-  [comparable-real? predicate/c]
+  [comparable-real? (-> any/c boolean?)]
   [comparator-impersonate
    (->* (comparator?)
         (#:operand-guard (or/c (-> any/c any/c) #false)
@@ -42,6 +42,7 @@
 
 (require (for-syntax racket/base
                      syntax/parse)
+         guard
          racket/contract/combinator
          racket/list
          racket/math
@@ -49,7 +50,6 @@
          rebellion/base/immutable-string
          rebellion/base/symbol
          rebellion/private/contract-projection
-         guard
          rebellion/private/impersonation
          rebellion/private/static-name
          rebellion/private/strict-cond
@@ -154,18 +154,16 @@
 
 (define (comparator-min comparator v . vs)
   (for/fold ([min-so-far v])
-            ([v (in-list vs)])
-    (if (equal? (compare comparator v min-so-far) lesser)
-        v
-        min-so-far)))
+            ([v (in-list vs)]
+             #:when (equal? (compare comparator v min-so-far) lesser))
+    v))
 
 
 (define (comparator-max comparator v . vs)
   (for/fold ([max-so-far v])
-            ([v (in-list vs)])
-    (if (equal? (compare comparator v max-so-far) greater)
-        v
-        max-so-far)))
+            ([v (in-list vs)]
+             #:when (equal? (compare comparator v max-so-far) greater))
+    v))
 
 
 (define (comparable-real? v) (and (real? v) (not (equal? v +nan.0))))
@@ -373,7 +371,9 @@
 (module+ test
   (test-case (name-string comparator-impersonate)
     (define (ensure-integer v)
-      (if (integer? v) v (raise-argument-error 'integer<=> "integer?" v)))
+      (unless (integer? v)
+        (raise-argument-error 'integer<=> "integer?" v))
+      v)
     (check-equal? (ensure-integer 5) 5)
     (define chaperoned
       (comparator-impersonate real<=>

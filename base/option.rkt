@@ -9,17 +9,17 @@
 
 (provide
  (contract-out
-  [option? predicate/c]
+  [option? (-> any/c boolean?)]
   [option-case (-> option? #:present (-> any/c any/c) #:absent (-> any/c) any/c)]
   [option-map (-> option? (-> any/c any/c) option?)]
-  [option-filter (-> option? predicate/c option?)]
+  [option-filter (-> option? (-> any/c boolean?) option?)]
   [option-flat-map (-> option? (-> any/c option?) option?)]
   [option-or (-> option? option? ... option?)]
   [option-or-call (-> option? (-> option?) ... option?)]
   [option-get (-> option? any/c any/c)]
   [falsey->option (-> any/c option?)]
   [in-option (-> option? (sequence/c any/c))]
-  [present? predicate/c]
+  [present? (-> any/c boolean?)]
   [present-value (-> present? any/c)]
   [absent absent?]
   [absent? predicate/c]

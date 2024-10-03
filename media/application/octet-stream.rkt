@@ -8,18 +8,18 @@
   [media->octet-stream (-> media? octet-stream?)]
   [octet-stream
    (->* (immutable-bytes?) (#:padding (integer-in 0 7)) octet-stream?)]
-  [octet-stream? predicate/c]
+  [octet-stream? (-> any/c boolean?)]
   [octet-stream-bytes (-> octet-stream? immutable-bytes?)]
   [octet-stream-padding (-> octet-stream? (integer-in 0 7))]
   [octet-stream->bitstring (-> octet-stream? bitstring?)]
   [octet-stream->media (-> octet-stream? media?)]))
 
-(require rebellion/base/immutable-string
+(require guard
+         rebellion/base/immutable-string
          rebellion/binary/bitstring
          rebellion/binary/immutable-bytes
          rebellion/collection/record
          rebellion/media
-         guard
          rebellion/type/tuple)
 
 (module+ test
