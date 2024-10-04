@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [sorted-map-builder? predicate/c]
+  [sorted-map-builder? (-> any/c boolean?)]
   [sorted-map-builder-put (-> sorted-map-builder? any/c any/c sorted-map-builder?)]
   [sorted-map-builder-put-all (-> sorted-map-builder? (sequence/c entry?) sorted-map-builder?)]
   [make-sorted-map-builder (-> comparator? sorted-map-builder?)]

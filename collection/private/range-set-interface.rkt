@@ -7,8 +7,8 @@
 (provide
  (contract-out
   [range-set? (-> any/c boolean?)]
-  [immutable-range-set? predicate/c]
-  [mutable-range-set? predicate/c]
+  [immutable-range-set? (-> any/c boolean?)]
+  [mutable-range-set? (-> any/c boolean?)]
   [in-range-set (->* (range-set?) (#:descending? boolean?) (sequence/c nonempty-range?))]
   [range-set-comparator (-> range-set? comparator?)]
   [range-set-empty? (-> range-set? boolean?)]
@@ -54,14 +54,14 @@
     [default-empty-range-set-span-failure-result failure-result/c])))
 
 
-(require racket/generic
+(require guard
+         racket/generic
          racket/match
          racket/sequence
          racket/unsafe/ops
          rebellion/base/comparator
          rebellion/base/option
          rebellion/base/range
-         guard
          rebellion/private/printer-markup
          rebellion/private/static-name)
 

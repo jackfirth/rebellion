@@ -12,7 +12,7 @@
   (define-record-type widget (price weight description))
 
   (test-case "basic record-id parsing"
-    (define-simple-macro (tester :record-id) 'success!)
+    (define-syntax-parse-rule (tester :record-id) 'success!)
     (check-equal? (tester widget) 'success!))
   
   (test-case "record-id.name"

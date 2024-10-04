@@ -12,7 +12,7 @@
 (module+ private-for-rebellion-only
   (provide
    (contract-out
-    [regular-immutable-sorted-map? predicate/c]
+    [regular-immutable-sorted-map? (-> any/c boolean?)]
     [make-regular-immutable-sorted-map
      (-> (sequence/c entry?) comparator? immutable-sorted-map?)]
     [constructor:regular-immutable-sorted-map

@@ -10,7 +10,7 @@
          #:constructor-name (or/c interned-symbol? #f)
          #:accessor-name (or/c interned-symbol? #f))
         record-type?)]
-  [record-type? predicate/c]
+  [record-type? (-> any/c boolean?)]
   [record-type-name (-> record-type? interned-symbol?)]
   [record-type-fields (-> record-type? keyset?)]
   [record-type-predicate-name (-> record-type? interned-symbol?)]

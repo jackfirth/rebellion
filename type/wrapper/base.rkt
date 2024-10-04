@@ -10,7 +10,7 @@
          #:constructor-name (or/c interned-symbol? #f)
          #:accessor-name (or/c interned-symbol? #f))
         wrapper-type?)]
-  [wrapper-type? predicate/c]
+  [wrapper-type? (-> any/c boolean?)]
   [wrapper-type-name (-> wrapper-type? interned-symbol?)]
   [wrapper-type-constructor-name (-> wrapper-type? interned-symbol?)]
   [wrapper-type-predicate-name (-> wrapper-type? interned-symbol?)]

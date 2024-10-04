@@ -10,11 +10,11 @@
                               (listof (cons/c struct-type-property? any/c)))
          #:inspector inspector?)
         initialized-wrapper-descriptor?)]
-  [wrapper-descriptor? predicate/c]
-  [uninitialized-wrapper-descriptor? predicate/c]
-  [initialized-wrapper-descriptor? predicate/c]
+  [wrapper-descriptor? (-> any/c boolean?)]
+  [uninitialized-wrapper-descriptor? (-> any/c boolean?)]
+  [initialized-wrapper-descriptor? (-> any/c boolean?)]
   [wrapper-descriptor-constructor (-> wrapper-descriptor? (-> any/c any/c))]
-  [wrapper-descriptor-predicate (-> wrapper-descriptor? predicate/c)]
+  [wrapper-descriptor-predicate (-> wrapper-descriptor? (-> any/c boolean?))]
   [wrapper-descriptor-accessor (-> wrapper-descriptor? (-> any/c any/c))]
   [default-wrapper-properties
    (-> wrapper-descriptor? (listof (cons/c struct-type-property? any/c)))]
