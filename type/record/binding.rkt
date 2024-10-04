@@ -5,7 +5,7 @@
 (provide
  record-id
  (contract-out
-  [record-binding? predicate/c]
+  [record-binding? (-> any/c boolean?)]
   [record-binding-type (-> record-binding? record-type?)]
   [record-binding-descriptor (-> record-binding? identifier?)]
   [record-binding-predicate (-> record-binding? identifier?)]

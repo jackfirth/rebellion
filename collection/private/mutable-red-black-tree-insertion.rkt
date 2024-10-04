@@ -13,12 +13,12 @@
   [mutable-rb-tree-update! (-> mutable-rb-tree? any/c (-> any/c any/c) failure-result/c void?)]))
 
 
-(require rebellion/base/comparator
+(require guard
+         rebellion/base/comparator
          rebellion/base/option
          rebellion/collection/entry
          rebellion/collection/private/mutable-red-black-tree-base
          rebellion/collection/private/mutable-red-black-tree-search
-         guard
          rebellion/private/static-name)
 
 
