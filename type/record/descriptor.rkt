@@ -9,11 +9,11 @@
         (#:inspector inspector?
          #:property-maker (-> uninitialized-record-descriptor? properties/c))
         initialized-record-descriptor?)]
-  [record-descriptor? predicate/c]
-  [initialized-record-descriptor? predicate/c]
-  [uninitialized-record-descriptor? predicate/c]
+  [record-descriptor? (-> any/c boolean?)]
+  [initialized-record-descriptor? (-> any/c boolean?)]
+  [uninitialized-record-descriptor? (-> any/c boolean?)]
   [record-descriptor-type (-> record-descriptor? record-type?)]
-  [record-descriptor-predicate (-> record-descriptor? predicate/c)]
+  [record-descriptor-predicate (-> record-descriptor? (-> any/c boolean?))]
   [record-descriptor-constructor (-> record-descriptor? procedure?)]
   [record-descriptor-accessor (-> record-descriptor? procedure?)]
   [default-record-properties (-> record-descriptor? properties/c)]

@@ -16,40 +16,40 @@
     (check-equal? (tester widget) 'success!))
   
   (test-case "record-id.name"
-    (define-simple-macro (tester record:record-id) record.name)
+    (define-syntax-parse-rule (tester record:record-id) record.name)
     (check-equal? (tester widget) 'widget))
 
   (test-case "record-id.descriptor"
-    (define-simple-macro (tester record:record-id) record.descriptor)
+    (define-syntax-parse-rule (tester record:record-id) record.descriptor)
     (check-equal? (tester widget) descriptor:widget))
 
   (test-case "record-id.predicate"
-    (define-simple-macro (tester record:record-id) record.predicate)
+    (define-syntax-parse-rule (tester record:record-id) record.predicate)
     (check-equal? (tester widget) widget?))
 
   (test-case "record-id.constructor"
-    (define-simple-macro (tester record:record-id) record.constructor)
+    (define-syntax-parse-rule (tester record:record-id) record.constructor)
     (check-equal? (tester widget) widget))
 
   (test-case "record-id.accessor"
-    (define-simple-macro (tester record:record-id) record.accessor)
+    (define-syntax-parse-rule (tester record:record-id) record.accessor)
     (check-equal? (tester widget) accessor:widget))
 
   (test-case "record-id.field"
-    (define-simple-macro (tester record:record-id) (list 'record.field ...))
+    (define-syntax-parse-rule (tester record:record-id) (list 'record.field ...))
     (check-equal? (tester widget) (list 'description 'price 'weight)))
 
   (test-case "record-id.field-name"
-    (define-simple-macro (tester record:record-id) (list record.field-name ...))
+    (define-syntax-parse-rule (tester record:record-id) (list record.field-name ...))
     (check-equal? (tester widget) (list 'description 'price 'weight)))
 
   (test-case "record-id.field-keyword"
-    (define-simple-macro (tester record:record-id)
+    (define-syntax-parse-rule (tester record:record-id)
       (list 'record.field-keyword ...))
     (check-equal? (tester widget) (list '#:description '#:price '#:weight)))
 
   (test-case "record-id.field-accessor"
-    (define-simple-macro (tester record:record-id)
+    (define-syntax-parse-rule (tester record:record-id)
       (list record.field-accessor ...))
     (check-equal?
      (tester widget) (list widget-description widget-price widget-weight))))

@@ -6,8 +6,8 @@
  (contract-out
   [batching (-> reducer? transducer?)]))
 
-(require rebellion/base/variant
-         guard
+(require guard
+         rebellion/base/variant
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base

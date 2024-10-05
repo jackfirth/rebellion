@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [enumerated? predicate/c]
+  [enumerated? (-> any/c boolean?)]
   [enumerated (-> #:element any/c #:position natural? enumerated?)]
   [enumerated-element (-> enumerated? any/c)]
   [enumerated-position (-> enumerated? natural?)]
@@ -14,8 +14,8 @@
          rebellion/base/impossible-function
          rebellion/base/variant
          rebellion/private/static-name
-         rebellion/streaming/transducer/private/contract
          rebellion/streaming/transducer/base
+         rebellion/streaming/transducer/private/contract
          rebellion/type/record)
 
 ;@------------------------------------------------------------------------------

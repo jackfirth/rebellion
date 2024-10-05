@@ -9,8 +9,8 @@
 (require racket/match
          rebellion/base/impossible-function
          rebellion/base/variant
-         rebellion/private/static-name
          rebellion/collection/list
+         rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base
          rebellion/type/record)

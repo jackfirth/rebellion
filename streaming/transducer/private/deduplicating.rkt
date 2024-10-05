@@ -7,11 +7,11 @@
   [deduplicating (->* () (#:key (-> any/c any/c)) transducer?)]
   [deduplicating-consecutive (->* () (#:key (-> any/c any/c)) transducer?)]))
 
-(require racket/set
+(require guard
+         racket/set
          rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
-         guard
          rebellion/streaming/transducer/base
          rebellion/type/record)
 
