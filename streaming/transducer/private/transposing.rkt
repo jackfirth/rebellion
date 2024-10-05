@@ -10,11 +10,11 @@
    (->* (#:into reducer?) (#:ordered? boolean?) (transducer/c (sequence/c any/c) any/c))]))
 
 
-(require racket/match
+(require guard
+         racket/match
          racket/sequence
          rebellion/base/variant
          rebellion/collection/vector
-         guard
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/streaming/transducer/base

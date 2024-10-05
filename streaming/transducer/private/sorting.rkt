@@ -8,14 +8,14 @@
    (->* () (comparator? #:key (-> any/c any/c) #:descending? boolean?)
         transducer?)]))
 
-(require racket/bool
+(require guard
+         racket/bool
          racket/sequence
          rebellion/base/comparator
          rebellion/base/impossible-function
          rebellion/base/option
          rebellion/base/variant
          rebellion/collection/list
-         guard
          rebellion/streaming/transducer/base
          rebellion/type/record
          rebellion/type/singleton
