@@ -27,12 +27,12 @@
   [into-only-element reducer?]
   [into-nth (-> natural? (reducer/c any/c option?))]
   [into-index-of (-> any/c (reducer/c any/c (option/c natural?)))]
-  [into-index-where (-> predicate/c (reducer/c any/c (option/c natural?)))]
+  [into-index-where (-> (-> any/c boolean?) (reducer/c any/c (option/c natural?)))]
   [nonempty-into-first reducer?]
   [nonempty-into-last reducer?]
-  [into-any-match? (-> predicate/c (reducer/c any/c boolean?))]
-  [into-all-match? (-> predicate/c (reducer/c any/c boolean?))]
-  [into-none-match? (-> predicate/c (reducer/c any/c boolean?))]
+  [into-any-match? (-> (-> any/c boolean?) (reducer/c any/c boolean?))]
+  [into-all-match? (-> (-> any/c boolean?) (reducer/c any/c boolean?))]
+  [into-none-match? (-> (-> any/c boolean?) (reducer/c any/c boolean?))]
   [into-for-each (-> (-> any/c void?) (reducer/c any/c void?))]
   [into-max (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
   [into-min (->* () (comparator? #:key (-> any/c any/c)) (reducer/c any/c option?))]
@@ -53,7 +53,7 @@
    (->* (reducer?)
         (#:domain (-> any/c any/c) #:range (-> any/c any/c))
         reducer?)]
-  [reducer-filter (-> reducer? predicate/c reducer?)]
+  [reducer-filter (-> reducer? (-> any/c boolean?) reducer?)]
   [reducer-limit (-> reducer? natural? reducer?)])
  (all-from-out rebellion/streaming/reducer/private/base)
  (all-from-out rebellion/streaming/reducer/private/zip))
@@ -67,6 +67,7 @@
 (require (for-syntax racket/base
                      racket/contract/base
                      rebellion/private/for-body)
+         guard
          racket/bool
          racket/match
          racket/math
@@ -76,7 +77,6 @@
          rebellion/base/option/private/guard
          rebellion/base/symbol
          rebellion/base/variant
-         guard
          rebellion/private/static-name
          rebellion/streaming/reducer/private/base
          rebellion/streaming/reducer/private/zip

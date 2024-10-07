@@ -61,12 +61,12 @@
   (define (consume state element)
     (define substates (zip-state-substate-values state))
     (define finished (zip-state-finished-reducers state))
-    (for ([i (in-range 0 reducer-count)])
-      (unless (vector-ref finished i)
-        (define substate (vector-ref substates i))
-        (define next-substate ((vector-ref consumers i) substate element))
-        (vector-set! substates i (variant-value next-substate))
-        (vector-set! finished i (variant-tagged-as? next-substate '#:early-finish))))
+    (for ([i (in-range 0 reducer-count)]
+          #:unless (vector-ref finished i))
+      (define substate (vector-ref substates i))
+      (define next-substate ((vector-ref consumers i) substate element))
+      (vector-set! substates i (variant-value next-substate))
+      (vector-set! finished i (variant-tagged-as? next-substate '#:early-finish)))
     (tag-state state))
 
   (define (finish state)

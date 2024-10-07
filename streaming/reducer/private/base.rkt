@@ -6,7 +6,7 @@
 
 (provide
  (contract-out
-  [reducer? predicate/c]
+  [reducer? (-> any/c boolean?)]
   [reducer/c (-> contract? contract? contract?)]
   [make-reducer
    (->*
