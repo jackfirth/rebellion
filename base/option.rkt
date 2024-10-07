@@ -22,7 +22,7 @@
   [present? (-> any/c boolean?)]
   [present-value (-> present? any/c)]
   [absent absent?]
-  [absent? predicate/c]
+  [absent? (-> any/c boolean?)]
   [option/c (-> chaperone-contract? chaperone-contract?)]
   [present/c (-> chaperone-contract? chaperone-contract?)]))
 

@@ -4,11 +4,11 @@
 
 (provide
  (contract-out
-  [immutable-hash? predicate/c]
-  [mutable-hash? predicate/c]
+  [immutable-hash? (-> any/c boolean?)]
+  [mutable-hash? (-> any/c boolean?)]
   [empty-hash empty-immutable-hash?]
-  [empty-immutable-hash? predicate/c]
-  [nonempty-immutable-hash? predicate/c]
+  [empty-immutable-hash? (-> any/c boolean?)]
+  [nonempty-immutable-hash? (-> any/c boolean?)]
   [in-hash-entries (-> immutable-hash? (sequence/c entry?))]
   [in-mutable-hash-entries (-> mutable-hash? (sequence/c entry?))]
   [into-hash (reducer/c entry? immutable-hash?)]

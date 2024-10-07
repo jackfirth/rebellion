@@ -4,7 +4,7 @@
 
 (provide
  (contract-out
-  [mutable-vector? predicate/c]
+  [mutable-vector? (-> any/c boolean?)]
   [into-vector
    (->* () (#:size (or/c natural? +inf.0)) (reducer/c any/c immutable-vector?))]
   [into-mutable-vector
@@ -13,12 +13,12 @@
    (-> (or/c vector? list? set? (sequence/c any/c))
        immutable-vector?)]))
 
-(require racket/math
+(require guard
+         racket/math
          racket/sequence
          racket/set
-         rebellion/collection/vector/builder
          rebellion/collection/immutable-vector
-         guard
+         rebellion/collection/vector/builder
          rebellion/private/static-name
          rebellion/streaming/reducer)
 

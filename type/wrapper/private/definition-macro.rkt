@@ -21,82 +21,63 @@
 
 ;@------------------------------------------------------------------------------
 
-(define-simple-macro
-  (define-wrapper-type id:id
-    (~alt
-     (~optional (~and #:omit-root-binding omit-root-binding-kw))
+(define-syntax-parse-rule (define-wrapper-type
+                           id:id
+                           (~alt
+                            (~optional (~and #:omit-root-binding omit-root-binding-kw))
+                            (~optional (~seq #:descriptor-name descriptor:id)
+                                       #:defaults ([descriptor (default-descriptor-identifier #'id)])
+                                       #:name "#:descriptor-name option")
+                            (~optional (~seq #:predicate-name predicate:id)
+                                       #:defaults ([predicate (default-predicate-identifier #'id)])
+                                       #:name "#:predicate-name option")
+                            (~optional (~seq #:constructor-name constructor:id)
+                                       #:defaults ([constructor
+                                                    (default-constructor-identifier #'id)])
+                                       #:name "#:constructor-name option")
+                            (~optional (~seq #:accessor-name accessor:id)
+                                       #:defaults
+                                       ([accessor (default-unwrapping-accessor-identifier #'id)])
+                                       #:name "#:accessor-name option")
+                            (~optional (~seq #:pattern-name pattern:id)
+                                       #:defaults ((pattern (default-pattern-identifier #'id)))
+                                       #:name "#:pattern-name option")
+                            (~optional (~seq #:inspector inspector:expr)
+                                       #:name "#:inspector option"
+                                       #:defaults ([inspector #'(current-inspector)]))
+                            (~optional (~seq #:property-maker prop-maker:expr)
+                                       #:defaults ([prop-maker #'default-wrapper-properties])
+                                       #:name "#:property-maker option")) ...)
 
-     (~optional
-      (~seq #:descriptor-name descriptor:id)
-      #:defaults ([descriptor (default-descriptor-identifier #'id)])
-      #:name "#:descriptor-name option")
+  #:with root-binding (if (attribute omit-root-binding-kw)
+                          #'(begin)
+                          #'(define-syntax id
+                              (wrapper-binding #:type (wrapper-type 'id
+                                                                    #:constructor-name 'constructor
+                                                                    #:predicate-name 'predicate
+                                                                    #:accessor-name 'accessor)
+                                               #:descriptor #'descriptor
+                                               #:predicate #'predicate
+                                               #:constructor #'constructor
+                                               #:accessor #'accessor
+                                               #:pattern #'pattern
+                                               #:macro
+                                               (make-variable-like-transformer #'constructor))))
 
-     (~optional
-      (~seq #:predicate-name predicate:id)
-      #:defaults ([predicate (default-predicate-identifier #'id)])
-      #:name "#:predicate-name option")
-     
-     (~optional
-      (~seq #:constructor-name constructor:id)
-      #:defaults ([constructor (default-constructor-identifier #'id)])
-      #:name "#:constructor-name option")
-     
-     (~optional
-      (~seq #:accessor-name accessor:id)
-      #:defaults ([accessor (default-unwrapping-accessor-identifier #'id)])
-      #:name "#:accessor-name option")
-     
-     (~optional
-      (~seq #:pattern-name pattern:id)
-      #:defaults ([pattern (default-pattern-identifier #'id)])
-      #:name "#:pattern-name option")
-
-     (~optional
-      (~seq #:inspector inspector:expr)
-      #:name "#:inspector option"
-      #:defaults ([inspector #'(current-inspector)]))
-     
-     (~optional
-      (~seq #:property-maker prop-maker:expr)
-      #:defaults ([prop-maker #'default-wrapper-properties])
-      #:name "#:property-maker option"))
-    ...)
-  
-  #:with root-binding
-  (if (attribute omit-root-binding-kw)
-      #'(begin)
-      #'(define-syntax id
-          (wrapper-binding
-           #:type
-           (wrapper-type
-            'id
-            #:constructor-name 'constructor
-            #:predicate-name 'predicate
-            #:accessor-name 'accessor)
-           #:descriptor #'descriptor
-           #:predicate #'predicate
-           #:constructor #'constructor
-           #:accessor #'accessor
-           #:pattern #'pattern
-           #:macro (make-variable-like-transformer #'constructor))))
-  
   (begin
     (define descriptor
-      (make-wrapper-implementation
-       (wrapper-type
-        'id
-        #:predicate-name 'predicate
-        #:constructor-name 'constructor
-        #:accessor-name 'accessor)
-       #:inspector inspector
-       #:property-maker prop-maker))
+      (make-wrapper-implementation (wrapper-type 'id
+                                                 #:predicate-name 'predicate
+                                                 #:constructor-name 'constructor
+                                                 #:accessor-name 'accessor)
+                                   #:inspector inspector
+                                   #:property-maker prop-maker))
     (define predicate (wrapper-descriptor-predicate descriptor))
     (define constructor (wrapper-descriptor-constructor descriptor))
     (define accessor (wrapper-descriptor-accessor descriptor))
     (define-match-expander pattern
       (syntax-parser
-        [(_ value-pattern)
-         #'(? predicate (app accessor value-pattern))]))
+        [(_ value-pattern) #'(? predicate (app accessor value-pattern))]))
     root-binding))
 
 (module+ test

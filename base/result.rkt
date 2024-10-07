@@ -8,14 +8,14 @@
 
 (provide
  (contract-out
-  [result? predicate/c]
+  [result? (-> any/c boolean?)]
   [result-case
    (-> result? #:success (-> any/c any/c) #:failure (-> any/c any/c) any/c)]
   [result/c (-> chaperone-contract? chaperone-contract? chaperone-contract?)]
-  [success? predicate/c]
+  [success? (-> any/c boolean?)]
   [success-value (-> success? any/c)]
   [success/c (-> chaperone-contract? chaperone-contract?)]
-  [failure? predicate/c]
+  [failure? (-> any/c boolean?)]
   [failure-error (-> failure? any/c)]
   [failure/c (-> chaperone-contract? chaperone-contract?)]))
 
@@ -37,7 +37,7 @@
 
 (define (result? v) (or (success? v) (failure? v)))
 
-(define-simple-macro (result body:expr ...+) (call/result (λ () body ...)))
+(define-syntax-parse-rule (result body:expr ...+) (call/result (λ () body ...)))
 
 (define (call/result thunk)
   (with-handlers ([(λ (_) #t) failure]) (success (thunk))))
