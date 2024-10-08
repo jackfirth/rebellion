@@ -5,7 +5,7 @@
 (provide
  (contract-out
   [association-list (->* () #:rest key-value-list/c association-list?)]
-  [association-list? predicate/c]
+  [association-list? (-> any/c boolean?)]
   [association-list-ref (-> association-list? any/c immutable-vector?)]
   [association-list-size (-> association-list? natural?)]
   [association-list-keys (-> association-list? multiset?)]
@@ -22,8 +22,8 @@
   [association-list-contains-value? (-> association-list? any/c boolean?)]
   [association-list-contains-entry? (-> association-list? entry? boolean?)]
   [empty-association-list association-list?]
-  [empty-association-list? predicate/c]
-  [nonempty-association-list? predicate/c]))
+  [empty-association-list? (-> any/c boolean?)]
+  [nonempty-association-list? (-> any/c boolean?)]))
 
 (require racket/list
          racket/math

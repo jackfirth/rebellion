@@ -32,14 +32,14 @@
 
 
 (require (for-syntax racket/base)
+         guard
          racket/hash
          racket/math
-         racket/set
          racket/sequence
+         racket/set
          racket/stream
          racket/struct
          rebellion/collection/entry
-         guard
          rebellion/private/static-name
          rebellion/streaming/reducer
          rebellion/type/record)
