@@ -46,8 +46,8 @@
  (rename-out [range-set-overlaps? range-set-intersects?])
 
  (contract-out
-  [empty-range-set? predicate/c]
-  [nonempty-range-set? predicate/c]))
+  [empty-range-set? (-> any/c boolean?)]
+  [nonempty-range-set? (-> any/c boolean?)]))
 
 
 (module+ test

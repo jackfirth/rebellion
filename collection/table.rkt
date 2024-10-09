@@ -19,13 +19,13 @@
   [into-table (reducer/c record? table?)]))
 
 (require (for-syntax racket/base)
+         guard
          racket/math
          racket/sequence
          racket/stream
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
-         guard
          rebellion/private/printer-markup
          rebellion/private/static-name
          rebellion/streaming/reducer
@@ -88,34 +88,26 @@
   (define msg "cannot be used outside a table expression")
   (raise-syntax-error 'row msg stx))
 
-(define-simple-macro
-  (table ((~literal columns) column:keyword ...)
-         (~and full-row ((~literal row) row-value:expr ...)) ...)
-  #:do [(define column-keywords
-          (sort (map syntax-e (syntax->list #'(column ...))) keyword<?))
+(define-syntax-parse-rule (table ((~literal columns) column:keyword ...)
+                                 (~and full-row ((~literal row) row-value:expr ...)) ...)
+  #:do [(define column-keywords (sort (map syntax-e (syntax->list #'(column ...))) keyword<?))
         (define num-columns (length column-keywords))
         (define row-stxs (syntax->list #'(full-row ...)))
         (define num-rows (length row-stxs))]
-  #:fail-when (findf (λ (row-stx)
-                       (> (length (syntax->list row-stx))
-                          (add1 num-columns)))
-                     row-stxs)
-  (format "too many values in row, table has only ~v columns" num-columns)
-  #:fail-when (findf (λ (row-stx)
-                       (< (length (syntax->list row-stx))
-                          (add1 num-columns)))
-                     row-stxs)
-  (format "not enough values in row, table expects ~v columns" num-columns)
+  #:fail-when (findf (λ (row-stx) (> (length (syntax->list row-stx)) (add1 num-columns)))
+                     row-stxs) (format "too many values in row, table has only ~v columns"
+                                       num-columns)
+  #:fail-when (findf (λ (row-stx) (< (length (syntax->list row-stx)) (add1 num-columns)))
+                     row-stxs) (format "not enough values in row, table expects ~v columns"
+                                       num-columns)
   #:with size num-rows
-  #:with ((column-kw column-value ...) ...)
-  (apply map
-         list
-         (syntax->list #'(column ...))
-         (map syntax->list (syntax->list #'((row-value ...) ...))))
-  #:with ((column-kw-arg ...) ...)
-  #'((column-kw (immutable-vector column-value ...)) ...)
-  (constructor:table #:backing-column-vectors (record column-kw-arg ... ...)
-                     #:size 'size))
+  #:with ((column-kw column-value ...) ...) (apply map
+                                                   list
+                                                   (syntax->list #'(column ...))
+                                                   (map syntax->list
+                                                        (syntax->list #'((row-value ...) ...))))
+  #:with ((column-kw-arg ...) ...) #'((column-kw (immutable-vector column-value ...)) ...)
+  (constructor:table #:backing-column-vectors (record column-kw-arg ... ...) #:size 'size))
 
 (define (table-columns-ref tab column)
   (record-ref (table-backing-column-vectors tab) column))
