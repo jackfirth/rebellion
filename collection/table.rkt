@@ -88,9 +88,8 @@
   (define msg "cannot be used outside a table expression")
   (raise-syntax-error 'row msg stx))
 
-(define-simple-macro
-  (table ((~literal columns) column:keyword ...)
-         (~and full-row ((~literal row) row-value:expr ...)) ...)
+(define-syntax-parse-rule (table ((~literal columns) column:keyword ...)
+                                 (~and full-row ((~literal row) row-value:expr ...)) ...)
   #:do [(define column-keywords
           (sort (map syntax-e (syntax->list #'(column ...))) keyword<?))
         (define num-columns (length column-keywords))
