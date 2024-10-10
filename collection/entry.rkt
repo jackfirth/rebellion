@@ -17,8 +17,8 @@
   [mapping-keys (-> (-> any/c any/c) (transducer/c entry? entry?))]
   [mapping-values (-> (-> any/c any/c) (transducer/c entry? entry?))]
   [indexing (-> (-> any/c any/c) (transducer/c any/c entry?))]
-  [filtering-keys (-> predicate/c (transducer/c entry? entry?))]
-  [filtering-values (-> predicate/c (transducer/c entry? entry?))]
+  [filtering-keys (-> (-> any/c boolean?) (transducer/c entry? entry?))]
+  [filtering-values (-> (-> any/c boolean?) (transducer/c entry? entry?))]
   [append-mapping-keys
    (-> (-> any/c (sequence/c any/c)) (transducer/c entry? entry?))]
   [append-mapping-values
@@ -87,11 +87,15 @@
 
 
 (define (mapping-keys key-function)
-  (mapping (λ (e) (match e [(entry k v) (entry (key-function k) v)]))))
+  (mapping (λ (e)
+             (match-define (entry k v) e)
+             (entry (key-function k) v))))
 
 
 (define (mapping-values value-function)
-  (mapping (λ (e) (match e [(entry k v) (entry k (value-function v))]))))
+  (mapping (λ (e)
+             (match-define (entry k v) e)
+             (entry k (value-function v)))))
 
 
 (define (indexing key-function) (bisecting key-function values))

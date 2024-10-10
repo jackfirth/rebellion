@@ -39,87 +39,68 @@
       #:with (position ...)
       (for/list ([_ (in-syntax #'(id ...))] [n (in-naturals)]) #`'#,n))))
 
-(define-simple-macro
-  (define-record-type id:id fields:record-fields
-    (~alt
-     (~optional (~and #:omit-root-binding omit-root-binding-kw))
+(define-syntax-parse-rule (define-record-type
+                           id:id
+                           fields:record-fields
+                           (~alt
+                            (~optional (~and #:omit-root-binding omit-root-binding-kw))
+                            (~optional (~seq #:descriptor-name descriptor:id)
+                                       #:defaults ([descriptor (default-descriptor-identifier #'id)])
+                                       #:name "#:descriptor-name option")
+                            (~optional (~seq #:predicate-name predicate:id)
+                                       #:defaults ([predicate (default-predicate-identifier #'id)])
+                                       #:name "#:predicate-name option")
+                            (~optional (~seq #:constructor-name constructor:id)
+                                       #:defaults ([constructor
+                                                    (default-constructor-identifier #'id)])
+                                       #:name "#:constructor-name option")
+                            (~optional (~seq #:accessor-name accessor:id)
+                                       #:defaults ([accessor (default-accessor-identifier #'id)])
+                                       #:name "#:accessor-name option")
+                            (~optional (~seq #:pattern-name pattern:id)
+                                       #:defaults ((pattern (default-pattern-identifier #'id)))
+                                       #:name "#:pattern-name option")
+                            (~optional (~seq #:inspector inspector:expr)
+                                       #:name "#:inspector option"
+                                       #:defaults ([inspector #'(current-inspector)]))
+                            (~optional (~seq #:property-maker prop-maker:expr)
+                                       #:defaults ([prop-maker #'default-record-properties])
+                                       #:name "#:property-maker option")) ...)
 
-     (~optional
-      (~seq #:descriptor-name descriptor:id)
-      #:defaults ([descriptor (default-descriptor-identifier #'id)])
-      #:name "#:descriptor-name option")
-     
-     (~optional
-      (~seq #:predicate-name predicate:id)
-      #:defaults ([predicate (default-predicate-identifier #'id)])
-      #:name "#:predicate-name option")
-     
-     (~optional
-      (~seq #:constructor-name constructor:id)
-      #:defaults ([constructor (default-constructor-identifier #'id)])
-      #:name "#:constructor-name option")
-     
-     (~optional
-      (~seq #:accessor-name accessor:id)
-      #:defaults ([accessor (default-accessor-identifier #'id)])
-      #:name "#:accessor-name option")
-     
-     (~optional
-      (~seq #:pattern-name pattern:id)
-      #:defaults ([pattern (default-pattern-identifier #'id)])
-      #:name "#:pattern-name option")
+  #:with (field-accessor ...) (for/list ([field-id-stx (in-syntax #'(fields.id ...))])
+                                (default-field-accessor-identifier #'id field-id-stx))
 
-     (~optional
-      (~seq #:inspector inspector:expr)
-      #:name "#:inspector option"
-      #:defaults ([inspector #'(current-inspector)]))
-     
-     (~optional
-      (~seq #:property-maker prop-maker:expr)
-      #:defaults ([prop-maker #'default-record-properties])
-      #:name "#:property-maker option"))
-    ...)
-  
-  #:with (field-accessor ...)
-  (for/list ([field-id-stx (in-syntax #'(fields.id ...))])
-    (default-field-accessor-identifier #'id field-id-stx))
+  #:with root-binding (if (attribute omit-root-binding-kw)
+                          #'(begin)
+                          #'(define-syntax id
+                              (record-binding #:type (record-type 'id
+                                                                  fields.keys
+                                                                  #:predicate-name 'predicate
+                                                                  #:constructor-name 'constructor
+                                                                  #:accessor-name 'accessor)
+                                              #:descriptor #'descriptor
+                                              #:predicate #'predicate
+                                              #:constructor #'constructor
+                                              #:accessor #'accessor
+                                              #:fields (list #'fields.id ...)
+                                              #:field-accessors (list #'field-accessor ...)
+                                              #:pattern #'pattern
+                                              #:macro
+                                              (make-variable-like-transformer #'constructor))))
 
-  #:with root-binding
-  (if (attribute omit-root-binding-kw)
-      #'(begin)
-      #'(define-syntax id
-          (record-binding
-           #:type
-           (record-type
-            'id fields.keys
-            #:predicate-name 'predicate
-            #:constructor-name 'constructor
-            #:accessor-name 'accessor)
-           #:descriptor #'descriptor
-           #:predicate #'predicate
-           #:constructor #'constructor
-           #:accessor #'accessor
-           #:fields (list #'fields.id ...)
-           #:field-accessors (list #'field-accessor ...)
-           #:pattern #'pattern
-           #:macro (make-variable-like-transformer #'constructor))))
-  
   (begin
     (define descriptor
-      (make-record-implementation
-       (record-type
-        'id fields.keys
-        #:predicate-name 'predicate
-        #:constructor-name 'constructor
-        #:accessor-name 'accessor)
-       #:inspector inspector
-       #:property-maker prop-maker))
+      (make-record-implementation (record-type 'id
+                                               fields.keys
+                                               #:predicate-name 'predicate
+                                               #:constructor-name 'constructor
+                                               #:accessor-name 'accessor)
+                                  #:inspector inspector
+                                  #:property-maker prop-maker))
     (define predicate (record-descriptor-predicate descriptor))
     (define constructor (record-descriptor-constructor descriptor))
     (define accessor (record-descriptor-accessor descriptor))
-    (define field-accessor
-      (make-record-field-accessor descriptor fields.position))
-    ...
+    (define field-accessor (make-record-field-accessor descriptor fields.position)) ...
     (define-match-expander pattern
       (syntax-parser
         #:track-literals
@@ -148,13 +129,12 @@
      (~s ted) "#<person: #:age 42 #:favorite-color grey #:name \"Ted\">")))
 
 
-(define-simple-macro
-  (define-record-setter record:record-id
-    (~optional
-     setter:id #:defaults ([setter (default-setter-identifier #'record)])))
+(define-syntax-parse-rule (define-record-setter
+                           record:record-id
+                           (~optional setter:id
+                                      #:defaults ([setter (default-setter-identifier #'record)])))
   (define (setter instance
-                  (~@ record.field-keyword
-                      [record.field (record.field-accessor instance)]) ...)
+                  (~@ record.field-keyword [record.field (record.field-accessor instance)]) ...)
     (record.constructor (~@ record.field-keyword record.field) ...)))
 
 (module+ test

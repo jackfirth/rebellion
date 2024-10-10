@@ -7,7 +7,7 @@
   [build-record (-> (-> keyword? any/c) keyset? record?)]
   [empty-record record?]
   [record (unconstrained-domain-> record?)]
-  [record? predicate/c]
+  [record? (-> any/c boolean?)]
   [record-contains-key? (-> record? keyword? boolean?)]
   [record-map (-> record? (-> any/c any/c) record?)]
   [record-merge2
@@ -18,7 +18,7 @@
   [record-remove (-> record? keyword? record?)]
   [record-size (-> record? natural?)]
   [record-field (unconstrained-domain-> record-field?)]
-  [record-field? predicate/c]
+  [record-field? (-> any/c boolean?)]
   [record-field-name (-> record-field? keyword?)]
   [record-field-value (-> record-field? any/c)]))
 

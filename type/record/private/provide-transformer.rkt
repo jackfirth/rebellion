@@ -1,9 +1,9 @@
 #lang racket/base
 
 (require (for-syntax racket/base
-                     syntax/parse
                      racket/provide-transform
-                     rebellion/type/record/binding))
+                     rebellion/type/record/binding
+                     syntax/parse))
 
 (module+ test
   (require rackunit
