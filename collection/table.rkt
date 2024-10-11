@@ -19,13 +19,13 @@
   [into-table (reducer/c record? table?)]))
 
 (require (for-syntax racket/base)
+         guard
          racket/math
          racket/sequence
          racket/stream
          rebellion/collection/immutable-vector
          rebellion/collection/keyset
          rebellion/collection/record
-         guard
          rebellion/private/printer-markup
          rebellion/private/static-name
          rebellion/streaming/reducer
