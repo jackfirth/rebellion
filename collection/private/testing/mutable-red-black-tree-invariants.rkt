@@ -8,9 +8,9 @@
 
 
 (module+ test
-  (require rackunit
-           rebellion/collection/private/mutable-red-black-tree-base
-           guard))
+  (require guard
+           rackunit
+           rebellion/collection/private/mutable-red-black-tree-base))
 
 
 ;@----------------------------------------------------------------------------------------------------

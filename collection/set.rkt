@@ -5,9 +5,9 @@
 (provide
  (contract-out
   [empty-set empty-set?]
-  [empty-set? predicate/c]
-  [nonempty-set? predicate/c]
-  [mutable-set? predicate/c]
+  [empty-set? (-> any/c boolean?)]
+  [nonempty-set? (-> any/c boolean?)]
+  [mutable-set? (-> any/c boolean?)]
   [into-set (reducer/c any/c set?)]
   [into-mutable-set (reducer/c any/c mutable-set?)]))
 
