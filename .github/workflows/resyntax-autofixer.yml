@@ -25,7 +25,7 @@ jobs:
       - name: Install Rebellion
         run: raco pkg install --auto --link --name rebellion
       - name: Create a Resyntax pull request
-        uses: jackfirth/create-resyntax-pull-request@v0.3.8
+        uses: jackfirth/create-resyntax-pull-request@v0.5.1
         with:
           private-key: ${{ secrets.RESYNTAX_APP_PRIVATE_KEY }}
           max-pass-count: 1
