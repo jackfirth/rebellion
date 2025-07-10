@@ -32,6 +32,9 @@
                    'rebellion/type/tuple)
     #:private (list 'racket/base)))
 
+@(define lexicographic-order-url "https://en.wikipedia.org/wiki/Lexicographic_order")
+
+
 @title{Comparators}
 @defmodule[rebellion/base/comparator]
 
@@ -199,6 +202,34 @@ with equality unless otherwise stated.
               (sorting (comparator-chain gemstone-by-type<=> gemstone-by-weight<=>))
               #:into into-list))}
 
+
+@defproc[(lexicographic-comparator [element-comparator comparator?])
+         (comparator/c (sequence/c any/c))]{
+ Constructs a @tech{comparator} of
+ @tech[#:doc '(lib "scribblings/reference/reference.scrbl")]{sequences} which compares sequences in
+ @hyperlink[lexicographic-order-url]{lexicographic order} by comparing each sequence element with
+ @racket[element-comparator].
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (eval:no-prompt
+    (define real-seq<=> (lexicographic-comparator real<=>)))
+   (compare real-seq<=> (list 1 2 3) (list 3 2 1))
+   (compare real-seq<=> (list 1 2 3) (list 1))
+   (compare real-seq<=> (list 1 2 3) (list 2))
+   (compare real-seq<=> (list 1 2 3) (list 1 2 3))
+   (compare real-seq<=> (list 1 2 3) (list 1 2 3 0)))
+
+ The two sequences need not be of the same type: they will be considered equivalent if they have
+ equivalent elements in the same order. This makes this comparator @tech{inconsistent with equality}
+ when two sequences are not @racket[equal?] but contain equal elements in the same order.
+
+ @(examples
+   #:eval (make-evaluator) #:once
+   (equal? (list 1 2 3) (vector 1 2 3))
+   (compare (lexicographic-comparator real<=>) (list 1 2 3) (vector 1 2 3)))}
+
+
 @section{Predefined Comparators}
 
 @defthing[real<=> (comparator/c comparable-real?)]{
@@ -248,8 +279,8 @@ with equality unless otherwise stated.
    (eval:error (compare natural<=> 42 -10)))}
 
 @defthing[string<=> (comparator/c immutable-string?)]{
- A @tech{comparator} that lexicographically compares immutable strings. Mutable
- strings are disallowed, to prevent clients from concurrently mutating a string
+ A @tech{comparator} that @hyperlink[lexicographic-order-url]{lexicographically} compares immutable
+ strings. Mutable strings are disallowed, to prevent clients from concurrently mutating a string
  while it's being compared.
 
  @(examples
@@ -266,11 +297,11 @@ with equality unless otherwise stated.
    (compare char<=> #\a #\z))}
 
 @defthing[symbol<=> (comparator/c symbol?)]{
- A @tech{comparator} that lexicographically compares symbols. Symbols are equivalent if they contain
- the same characters. Note that this comparator is @tech{inconsistent with equality}, because symbols
- that print the same are not necessarily equal, due to the existence of unreadable and uninterned
- symbols. If only interned symbols need to be compared, use @racket[interned-symbol<=>] to ensure
- comparisons are consistent with equality.
+ A @tech{comparator} that @hyperlink[lexicographic-order-url]{lexicographically} compares symbols.
+ Symbols are equivalent if they contain the same characters. Note that this comparator is
+ @tech{inconsistent with equality}, because symbols that print the same are not necessarily equal, due
+ to the existence of unreadable and uninterned symbols. If only interned symbols need to be compared,
+ use @racket[interned-symbol<=>] to ensure comparisons are consistent with equality.
 
  @(examples
    #:eval (make-evaluator) #:once
