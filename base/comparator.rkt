@@ -18,6 +18,7 @@
   [comparator-of-constants (-> any/c ... comparator?)]
   [comparator-min (-> comparator? any/c any/c ... any/c)]
   [comparator-max (-> comparator? any/c any/c ... any/c)]
+  [lexicographic-comparator (-> comparator? (comparator/c (sequence/c any/c)))]
   [comparison? (-> any/c boolean?)]
   [lesser comparison?]
   [greater comparison?]
@@ -45,7 +46,9 @@
          guard
          racket/contract/combinator
          racket/list
+         racket/match
          racket/math
+         racket/sequence
          racket/set
          rebellion/base/immutable-string
          rebellion/base/symbol
@@ -149,6 +152,25 @@
      (unless j
        (raise-argument-error enclosing-function-name (format "one of ~v" ascending-constants) y))
      (compare real<=> i j))
+   #:name enclosing-function-name))
+
+
+(define/name (lexicographic-comparator element-comparator)
+  (make-comparator
+   (λ (xs ys)
+     (define-values (more-xs? get-next-x) (sequence-generate xs))
+     (define-values (more-ys? get-next-y) (sequence-generate ys))
+     (let loop ()
+       (match (list (more-xs?) (more-ys?))
+         [(list #false #false) equivalent]
+         [(list #false #true) lesser]
+         [(list #true #false) greater]
+         [(list #true #true)
+          (define x (get-next-x))
+          (define y (get-next-y))
+          (match (compare element-comparator x y)
+            [(== equivalent) (loop)]
+            [result result])])))
    #:name enclosing-function-name))
 
 
@@ -321,6 +343,31 @@
     (check-exn
      #rx"'\\(small medium small\\)" (λ () (comparator-of-constants 'small 'medium 'small)))
     (check-exn exn:fail:contract? (λ () (comparator-of-constants #false #false))))
+
+  (test-case (name-string lexicographic-comparator)
+    (define nums<=> (lexicographic-comparator real<=>))
+    (check-equal? (compare nums<=> (list 1) (list 1)) equivalent)
+    (check-equal? (compare nums<=> (list 2) (list 1)) greater)
+    (check-equal? (compare nums<=> (list 1) (list 2)) lesser)
+    (check-equal? (compare nums<=> (list 1 2) (list 1 2)) equivalent)
+    (check-equal? (compare nums<=> (list 1 3) (list 1 2)) greater)
+    (check-equal? (compare nums<=> (list 1 2) (list 1 3)) lesser)
+    (check-equal? (compare nums<=> (list 1) (list 1 2)) lesser)
+    (check-equal? (compare nums<=> (list 1 2) (list 1)) greater)
+    (check-equal? (compare nums<=> (list 1 2 3) (list 1 2)) greater)
+    (check-equal? (compare nums<=> (list 1 2) (list 1 2 3)) lesser)
+    (check-equal? (compare nums<=> (list 2) (list 1 2)) greater)
+    (check-equal? (compare nums<=> (list 1 2) (list 2)) lesser)
+    (check-equal? (compare nums<=> (list 0) (list 1 2)) lesser)
+    (check-equal? (compare nums<=> (list 1 2) (list 0)) greater)
+    (check-equal? (compare nums<=> (list 1 2) (list 0)) greater)
+    (check-equal? (compare nums<=> (list 1 2 3 4 5) (vector 1 2 3 4 5)) equivalent)
+    (check-equal? (compare nums<=> (vector 1 2 3 4 5) (list 1 2 3 4 5)) equivalent)
+    (check-equal? (compare nums<=> (list 1 2 3 4 5) (vector-immutable 1 2 3 4 5)) equivalent)
+    (check-equal? (compare nums<=> (vector-immutable 1 2 3 4 5) (list 1 2 3 4 5)) equivalent)
+    (check-equal? (compare nums<=> (vector 1 2 3 4 5) (vector-immutable 1 2 3 4 5)) equivalent)
+    (check-equal? (compare nums<=> (vector-immutable 1 2 3 4 5) (vector 1 2 3 4 5)) equivalent)
+    (check-equal? (compare (lexicographic-comparator char<=>) (list #\a #\b #\c) "abc") equivalent))
 
   (test-case (name-string comparator-min)
     (check-equal? (comparator-min real<=> 1 99 99) 1)
